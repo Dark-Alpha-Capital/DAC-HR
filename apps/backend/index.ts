@@ -1,1 +1,1 @@
-console.log("Hello via Bun!");
+import { db } from "@workspace/db";

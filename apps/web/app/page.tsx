@@ -5,6 +5,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@workspace/ui/components/accordion";
+import { db } from "@workspace/db";
 
 export default function Page() {
   return (

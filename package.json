@@ -22,5 +22,8 @@
   "packageManager": "bun@latest",
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "minimatch": "^10.1.1"
   }
 }
