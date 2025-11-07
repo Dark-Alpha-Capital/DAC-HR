@@ -20,5 +20,5 @@ async function UserContent() {
   if (!session) {
     redirect("/signup");
   }
-  return <h1>Welcome {JSON.stringify(session)}</h1>;
+  return <h1>Welcome {session.user.isAdmin ? "Admin" : "User"}</h1>;
 }

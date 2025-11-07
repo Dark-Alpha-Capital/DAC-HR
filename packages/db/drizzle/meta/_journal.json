@@ -15,6 +15,13 @@
       "when": 1762505489842,
       "tag": "0001_blue_wind_dancer",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1762513368620,
+      "tag": "0002_colossal_spot",
+      "breakpoints": true
     }
   ]
 }
