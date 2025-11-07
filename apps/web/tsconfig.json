@@ -6,7 +6,9 @@
     "declarationMap": false,
     "paths": {
       "@/*": ["./*"],
-      "@workspace/ui/*": ["../../packages/ui/src/*"]
+      "@workspace/ui/*": ["../../packages/ui/src/*"],
+      "@workspace/db": ["../../packages/db/index.ts"],
+      "@workspace/db/*": ["../../packages/db/*"]
     }
   },
   "include": [
