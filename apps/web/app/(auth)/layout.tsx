@@ -2,8 +2,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import "@workspace/ui/globals.css";
 import { Providers } from "@/components/providers";
-import Header from "@/components/header";
-import Footer from "@/components/footer";
 
 const fontSans = Geist({
   subsets: ["latin"],
@@ -15,7 +13,7 @@ const fontMono = Geist_Mono({
   variable: "--font-mono",
 });
 
-export default function RootLayout({
+export default function AuthLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -23,12 +21,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased `}
+        className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased flex flex-col min-h-screen`}
       >
         <Providers>
-          <Header />
-          {children}
-          <Footer />
+          <main className="flex-1">{children}</main>
         </Providers>
       </body>
     </html>
