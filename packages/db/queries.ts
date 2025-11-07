@@ -49,6 +49,44 @@ export const getCandidates = async () => {
   }
 };
 
+export const getCandidatesWithPositions = async () => {
+  try {
+    const results = await db
+      .select({
+        candidate: {
+          id: candidate.id,
+          firstName: candidate.firstName,
+          lastName: candidate.lastName,
+          email: candidate.email,
+          status: candidate.status,
+        },
+        position: {
+          id: position.id,
+          name: position.name,
+        },
+      })
+      .from(candidate)
+      .leftJoin(
+        candidatePosition,
+        eq(candidate.id, candidatePosition.candidateId)
+      )
+      .leftJoin(position, eq(candidatePosition.positionId, position.id));
+
+    return results.map((result) => ({
+      ...result.candidate,
+      position: result.position?.id
+        ? {
+            id: result.position.id,
+            name: result.position.name,
+          }
+        : null,
+    }));
+  } catch (error) {
+    console.error("Error fetching candidates with positions", error);
+    return [];
+  }
+};
+
 /**
  *
  * Fetches a candidate by its ID

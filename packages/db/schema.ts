@@ -1,5 +1,5 @@
 import { pgTable, text, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+import { sql, type InferSelectModel } from "drizzle-orm";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -105,6 +105,8 @@ export const candidate = pgTable("candidate", {
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
 });
+
+export type Candidate = InferSelectModel<typeof candidate>;
 
 export const candidatePosition = pgTable("candidate_position", {
   id: text("id")

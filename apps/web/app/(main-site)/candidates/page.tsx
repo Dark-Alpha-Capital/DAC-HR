@@ -1,8 +1,8 @@
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import React, { Suspense } from "react";
-import { getCandidates } from "@workspace/db/queries";
-import CandidateCard from "@/components/candidate-card";
+import { getCandidatesWithPositions } from "@workspace/db/queries";
+import CandidateContainer from "./CandidateContainer";
 
 const page = () => {
   return (
@@ -24,7 +24,7 @@ const page = () => {
 export default page;
 
 const CandidatesList = async () => {
-  const candidates = await getCandidates();
+  const candidates = await getCandidatesWithPositions();
 
   if (candidates.length === 0) {
     return (
@@ -37,11 +37,5 @@ const CandidatesList = async () => {
     );
   }
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {candidates.map((candidate) => (
-        <CandidateCard key={candidate.id} candidate={candidate} />
-      ))}
-    </div>
-  );
+  return <CandidateContainer candidates={candidates} />;
 };
