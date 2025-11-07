@@ -7,6 +7,8 @@ import { user, account, session, verification } from "@workspace/db/schema";
 import { admin, customSession } from "better-auth/plugins";
 import { createAuthMiddleware } from "better-auth/api";
 import { eq } from "drizzle-orm";
+import type { Auth } from "better-auth";
+
 config({
   path: ".env",
 });
@@ -22,7 +24,7 @@ const isAdminEmail = (email: string): boolean => {
   return ADMIN_EMAILS.includes(email.toLowerCase());
 };
 
-export const auth = betterAuth({
+export const auth: Auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {

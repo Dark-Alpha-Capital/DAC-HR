@@ -1,12 +1,20 @@
 {
   "name": "@workspace/db",
-  "module": "index.ts",
+  "main": "./index.ts",
+  "types": "./index.ts",
   "type": "module",
   "private": true,
   "devDependencies": {
     "@types/bun": "^1.3.1",
     "drizzle-kit": "^0.31.6"
   },
+  "exports": {
+    ".": "./index.ts",
+    "./queries": "./queries.ts",
+    "./schema": "./schema.ts",
+    "./index": "./index.ts"
+  },
+  
   "scripts": {
     "db:generate": "drizzle-kit generate",
     "db:migrate": "npx tsx migrate.ts",

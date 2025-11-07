@@ -1,4 +1,5 @@
-import { pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -58,6 +59,63 @@ export const verification = pgTable("verification", {
   identifier: text("identifier").notNull(),
   value: text("value").notNull(),
   expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+});
+
+export const candidateStatusEnum = pgEnum("candidate_status", [
+  "applied",
+  "screening",
+  "interviewing",
+  "hired",
+  "rejected",
+]);
+
+export const position = pgTable("position", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+});
+
+export const candidate = pgTable("candidate", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone"),
+  location: text("location"),
+  status: candidateStatusEnum("status").default("applied").notNull(),
+  note: text("note"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+});
+
+export const candidatePosition = pgTable("candidate_position", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  candidateId: text("candidate_id")
+    .notNull()
+    .references(() => candidate.id, { onDelete: "cascade" }),
+  positionId: text("position_id")
+    .notNull()
+    .references(() => position.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
