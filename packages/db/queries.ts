@@ -8,8 +8,11 @@ import {
   positionRoundTemplates,
   roundTemplateQuestions,
   application,
+  interview,
+  interviewFeedback,
+  user,
 } from "./schema";
-import { eq, asc, inArray } from "drizzle-orm";
+import { eq, asc, inArray, and } from "drizzle-orm";
 
 /**
  *
@@ -166,9 +169,20 @@ export const getCandidateWithApplications = async (id: string) => {
       .where(eq(application.candidateId, id))
       .orderBy(asc(application.createdAt));
 
+    // Fetch interviews for each application
+    const applicationsWithInterviews = await Promise.all(
+      applications.map(async (app) => {
+        const interviews = await getInterviewsByApplicationId(app.id);
+        return {
+          ...app,
+          interviews,
+        };
+      })
+    );
+
     return {
       ...candidateResult,
-      applications,
+      applications: applicationsWithInterviews,
     };
   } catch (error) {
     console.error("Error fetching candidate with applications", error);
@@ -501,5 +515,298 @@ export const getRoundById = async (id: string) => {
   } catch (error) {
     console.error("Error fetching round by id", error);
     return null;
+  }
+};
+
+/**
+ * Fetches a positionRoundTemplate by positionId and stageOrder
+ * @param positionId The ID of the position
+ * @param stageOrder The stage order number
+ * @returns The positionRoundTemplate or null if not found
+ */
+export const getPositionRoundTemplateByStage = async (
+  positionId: string,
+  stageOrder: number
+) => {
+  try {
+    const [result] = await db
+      .select({
+        id: positionRoundTemplates.id,
+        positionId: positionRoundTemplates.positionId,
+        roundTemplateId: positionRoundTemplates.roundTemplateId,
+        stageOrder: positionRoundTemplates.stageOrder,
+        roundTemplate: {
+          id: roundTemplate.id,
+          name: roundTemplate.name,
+          description: roundTemplate.description,
+        },
+      })
+      .from(positionRoundTemplates)
+      .innerJoin(
+        roundTemplate,
+        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id)
+      )
+      .where(
+        and(
+          eq(positionRoundTemplates.positionId, positionId),
+          eq(positionRoundTemplates.stageOrder, stageOrder)
+        )
+      );
+    return result || null;
+  } catch (error) {
+    console.error("Error fetching position round template by stage", error);
+    return null;
+  }
+};
+
+/**
+ * Fetches an application by ID with full details including position and rounds
+ * @param applicationId The ID of the application
+ * @returns The application with position and round details or null if not found
+ */
+export const getApplicationById = async (applicationId: string) => {
+  try {
+    const [appResult] = await db
+      .select({
+        application: {
+          id: application.id,
+          candidateId: application.candidateId,
+          positionId: application.positionId,
+          status: application.status,
+          currentStage: application.currentStage,
+          createdAt: application.createdAt,
+          updatedAt: application.updatedAt,
+        },
+        position: {
+          id: position.id,
+          name: position.name,
+          slug: position.slug,
+          description: position.description,
+        },
+      })
+      .from(application)
+      .innerJoin(position, eq(application.positionId, position.id))
+      .where(eq(application.id, applicationId));
+
+    if (!appResult) {
+      return null;
+    }
+
+    // Get all rounds for this position
+    const rounds = await getRoundsByPositionId(
+      appResult.application.positionId
+    );
+
+    return {
+      ...appResult.application,
+      position: appResult.position,
+      rounds,
+    };
+  } catch (error) {
+    console.error("Error fetching application by id", error);
+    return null;
+  }
+};
+
+/**
+ * Fetches all interviews for an application
+ * @param applicationId The ID of the application
+ * @returns An array of interviews with round and interviewer details
+ */
+export const getInterviewsByApplicationId = async (applicationId: string) => {
+  try {
+    const results = await db
+      .select({
+        interview: {
+          id: interview.id,
+          applicationId: interview.applicationId,
+          status: interview.status,
+          scheduledAt: interview.scheduledAt,
+          overallFeedback: interview.overallFeedback,
+          createdAt: interview.createdAt,
+        },
+        roundTemplate: {
+          id: roundTemplate.id,
+          name: roundTemplate.name,
+          description: roundTemplate.description,
+        },
+        positionRoundTemplate: {
+          id: positionRoundTemplates.id,
+          stageOrder: positionRoundTemplates.stageOrder,
+        },
+        interviewer: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        },
+      })
+      .from(interview)
+      .innerJoin(
+        positionRoundTemplates,
+        eq(interview.positionRoundTemplateId, positionRoundTemplates.id)
+      )
+      .innerJoin(
+        roundTemplate,
+        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id)
+      )
+      .leftJoin(user, eq(interview.interviewerId, user.id))
+      .where(eq(interview.applicationId, applicationId))
+      .orderBy(asc(positionRoundTemplates.stageOrder));
+
+    return results.map((result) => ({
+      ...result.interview,
+      roundTemplate: result.roundTemplate,
+      stageOrder: result.positionRoundTemplate.stageOrder,
+      interviewer: result.interviewer,
+    }));
+  } catch (error) {
+    console.error("Error fetching interviews by application id", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches an interview by ID with full details
+ * @param interviewId The ID of the interview
+ * @returns The interview with round, questions, and feedback or null if not found
+ */
+export const getInterviewById = async (interviewId: string) => {
+  try {
+    const [interviewResult] = await db
+      .select({
+        interview: {
+          id: interview.id,
+          applicationId: interview.applicationId,
+          status: interview.status,
+          scheduledAt: interview.scheduledAt,
+          overallFeedback: interview.overallFeedback,
+          createdAt: interview.createdAt,
+        },
+        roundTemplate: {
+          id: roundTemplate.id,
+          name: roundTemplate.name,
+          description: roundTemplate.description,
+        },
+        positionRoundTemplate: {
+          id: positionRoundTemplates.id,
+          stageOrder: positionRoundTemplates.stageOrder,
+        },
+        interviewer: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        },
+      })
+      .from(interview)
+      .innerJoin(
+        positionRoundTemplates,
+        eq(interview.positionRoundTemplateId, positionRoundTemplates.id)
+      )
+      .innerJoin(
+        roundTemplate,
+        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id)
+      )
+      .leftJoin(user, eq(interview.interviewerId, user.id))
+      .where(eq(interview.id, interviewId));
+
+    if (!interviewResult) {
+      return null;
+    }
+
+    // Get questions for this round template
+    const questions = await getQuestionsByRoundId(
+      interviewResult.roundTemplate.id
+    );
+
+    // Get feedback for each question
+    const feedbackResults = await db
+      .select({
+        id: interviewFeedback.id,
+        questionId: interviewFeedback.questionId,
+        notes: interviewFeedback.notes,
+        rating: interviewFeedback.rating,
+        question: {
+          id: questionBank.id,
+          questionText: questionBank.questionText,
+          questionType: questionBank.questionType,
+        },
+      })
+      .from(interviewFeedback)
+      .innerJoin(
+        questionBank,
+        eq(interviewFeedback.questionId, questionBank.id)
+      )
+      .where(eq(interviewFeedback.interviewId, interviewId));
+
+    // Map questions with their feedback
+    const questionsWithFeedback = questions.map((question) => {
+      const feedback = feedbackResults.find(
+        (f) => f.questionId === question.id
+      );
+      return {
+        ...question,
+        feedback: feedback
+          ? {
+              id: feedback.id,
+              notes: feedback.notes,
+              rating: feedback.rating,
+            }
+          : null,
+      };
+    });
+
+    return {
+      ...interviewResult.interview,
+      roundTemplate: interviewResult.roundTemplate,
+      stageOrder: interviewResult.positionRoundTemplate.stageOrder,
+      interviewer: interviewResult.interviewer,
+      questions: questionsWithFeedback,
+    };
+  } catch (error) {
+    console.error("Error fetching interview by id", error);
+    return null;
+  }
+};
+
+/**
+ * Fetches an application with all interviews and their progress
+ * @param applicationId The ID of the application
+ * @returns The application with position, rounds, and interviews or null if not found
+ */
+export const getApplicationWithInterviews = async (applicationId: string) => {
+  try {
+    const app = await getApplicationById(applicationId);
+    if (!app) {
+      return null;
+    }
+
+    const interviews = await getInterviewsByApplicationId(applicationId);
+
+    return {
+      ...app,
+      interviews,
+    };
+  } catch (error) {
+    console.error("Error fetching application with interviews", error);
+    return null;
+  }
+};
+
+/**
+ * Fetches all users from the database (for interviewer selection)
+ * @returns An array of users
+ */
+export const getUsers = async () => {
+  try {
+    return await db
+      .select({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      })
+      .from(user);
+  } catch (error) {
+    console.error("Error fetching users", error);
+    return [];
   }
 };

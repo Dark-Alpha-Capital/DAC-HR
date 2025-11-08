@@ -21,6 +21,12 @@ import {
   MapPin,
   Briefcase,
   ArrowRight,
+  CheckCircle2,
+  Circle,
+  XCircle,
+  Users,
+  Plus,
+  Eye,
 } from "lucide-react";
 import DeleteCandidateButton from "@/components/delete-candidate-button";
 import { formatDate } from "@/lib/utils";
@@ -78,6 +84,26 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
     rejected: "destructive",
     withdrawn: "outline",
   } as const;
+
+  const interviewStatusColors: Record<
+    string,
+    "default" | "secondary" | "outline" | "destructive"
+  > = {
+    scheduled: "outline",
+    completed: "default",
+    cancelled: "destructive",
+  } as const;
+
+  const getInterviewStatusIcon = (status: string) => {
+    switch (status) {
+      case "completed":
+        return <CheckCircle2 className="h-3 w-3" />;
+      case "cancelled":
+        return <XCircle className="h-3 w-3" />;
+      default:
+        return <Circle className="h-3 w-3" />;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -233,16 +259,98 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
                       </span>
                       <span>•</span>
                       <span>{formatDate(app.createdAt)}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 ml-auto"
-                        asChild
-                      >
-                        <Link href={`/positions/${app.position.slug}`}>
-                          <ArrowRight className="h-3 w-3" />
-                        </Link>
-                      </Button>
+                      <div className="flex items-center gap-1 ml-auto">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2"
+                          asChild
+                        >
+                          <Link href={`/applications/${app.id}`}>
+                            <Eye className="h-3 w-3 mr-1" />
+                            View
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2"
+                          asChild
+                        >
+                          <Link href={`/positions/${app.position.slug}`}>
+                            <ArrowRight className="h-3 w-3" />
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="mt-3 pt-3 border-t space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                          <Users className="h-3 w-3" />
+                          <span>
+                            Interviews ({app.interviews?.length || 0})
+                          </span>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs"
+                          asChild
+                        >
+                          <Link
+                            href={`/applications/${app.id}?action=schedule`}
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            Schedule
+                          </Link>
+                        </Button>
+                      </div>
+                      {app.interviews && app.interviews.length > 0 && (
+                        <div className="space-y-1.5">
+                          {app.interviews.map((interview) => (
+                            <div
+                              key={interview.id}
+                              className="flex items-center justify-between text-xs p-2 rounded-md hover:bg-accent/50 transition-colors"
+                            >
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                {getInterviewStatusIcon(interview.status)}
+                                <span className="truncate">
+                                  Stage {interview.stageOrder}:{" "}
+                                  {interview.roundTemplate.name}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                {interview.scheduledAt && (
+                                  <span className="text-muted-foreground">
+                                    {formatDate(interview.scheduledAt)}
+                                  </span>
+                                )}
+                                <Badge
+                                  variant={
+                                    interviewStatusColors[interview.status] ||
+                                    "outline"
+                                  }
+                                  className="text-xs h-5"
+                                >
+                                  {interview.status}
+                                </Badge>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-5 px-2"
+                                  asChild
+                                >
+                                  <Link
+                                    href={`/applications/${app.id}?interview=${interview.id}`}
+                                  >
+                                    <Eye className="h-3 w-3" />
+                                  </Link>
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
