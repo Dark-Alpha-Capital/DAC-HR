@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@workspace/db";
-import { candidate } from "@workspace/db/schema";
+import { candidate, application } from "@workspace/db/schema";
 import {
   CandidateFormSchema,
   candidateFormSchema,
@@ -24,7 +24,8 @@ export const createCandidate = async (data: CandidateFormSchema) => {
     return { error: result.error.flatten().fieldErrors };
   }
 
-  const { firstName, lastName, email, phone, location, note } = result.data;
+  const { firstName, lastName, email, phone, location, note, positionId } =
+    result.data;
 
   try {
     const [newCandidate] = await db
@@ -41,6 +42,16 @@ export const createCandidate = async (data: CandidateFormSchema) => {
 
     if (!newCandidate) {
       return { error: "Failed to create candidate" };
+    }
+
+    // Automatically create an application if a position is selected
+    if (positionId && positionId.trim() !== "") {
+      await db.insert(application).values({
+        candidateId: newCandidate.id,
+        positionId,
+        status: "pending",
+        currentStage: 1,
+      });
     }
 
     revalidatePath("/candidates");

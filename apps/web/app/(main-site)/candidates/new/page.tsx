@@ -23,5 +23,9 @@ export default page;
 
 async function DisplayCandidateUploadForm() {
   const positions = await getPositions();
-  return <CandidateUploadForm positions={positions} />;
+  const cleanedPositions = positions.map((position) => ({
+    id: position.id,
+    name: position.name,
+  }));
+  return <CandidateUploadForm positions={cleanedPositions} />;
 }

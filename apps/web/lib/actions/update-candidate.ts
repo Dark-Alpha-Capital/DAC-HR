@@ -28,16 +28,8 @@ export const updateCandidate = async (
     return { error: result.error.flatten().fieldErrors };
   }
 
-  const {
-    firstName,
-    lastName,
-    email,
-    phone,
-    location,
-    status,
-    note,
-    positionId,
-  } = result.data;
+  const { firstName, lastName, email, phone, location, note, positionId } =
+    result.data;
 
   try {
     const [updatedCandidate] = await db
@@ -48,7 +40,6 @@ export const updateCandidate = async (
         email,
         phone: phone || null,
         location: location || null,
-        status: status || "applied",
         note: note || null,
         updatedAt: new Date(),
       })
@@ -103,4 +94,3 @@ export const updateCandidate = async (
     return { error: "Failed to update candidate" };
   }
 };
-

@@ -31,7 +31,10 @@ import {
 } from "@workspace/ui/components/input-group";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { candidateFormSchema } from "@/lib/schemas/candidate-form-schema";
+import {
+  candidateFormSchema,
+  type CandidateFormSchema,
+} from "@/lib/schemas/candidate-form-schema";
 import {
   Select,
   SelectContent,
@@ -61,17 +64,26 @@ const CandidateUploadForm = ({
       phone: "",
       location: "New York, NY",
       note: "",
+      positionId: positions[0]?.id,
     },
     validators: {
       onSubmit: candidateFormSchema,
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
-        const result = await createCandidate(value);
+        const result = await createCandidate({
+          ...value,
+          positionId: value.positionId || "",
+        });
         if (result.error) {
-          toast.error(result.error as string, {
-            position: "bottom-right",
-          });
+          toast.error(
+            typeof result.error === "string"
+              ? result.error
+              : "Failed to create candidate",
+            {
+              position: "bottom-right",
+            }
+          );
         } else {
           toast.success("Candidate created successfully", {
             position: "bottom-right",
@@ -99,7 +111,7 @@ const CandidateUploadForm = ({
       </CardHeader>
       <CardContent>
         <form
-          id="position-upload-form"
+          id="candidate-upload-form"
           onSubmit={(e) => {
             e.preventDefault();
             form.handleSubmit();
@@ -211,6 +223,47 @@ const CandidateUploadForm = ({
             />
 
             <form.Field
+              name="positionId"
+              children={(field) => {
+                const isInvalid =
+                  field.state.meta.isTouched && !field.state.meta.isValid;
+                return (
+                  <Field data-invalid={isInvalid}>
+                    <FieldLabel htmlFor={field.name}>Position</FieldLabel>
+                    <Select
+                      value={field.state.value || ""}
+                      onValueChange={(value) => {
+                        console.log("value", value);
+                        field.handleChange(value);
+                      }}
+                    >
+                      <SelectTrigger
+                        id={field.name}
+                        aria-invalid={isInvalid}
+                        className="w-full"
+                      >
+                        <SelectValue placeholder="Select a position (optional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {positions.map((position) => (
+                          <SelectItem key={position.id} value={position.id}>
+                            {position.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FieldDescription>
+                      Select a position to automatically create an application
+                    </FieldDescription>
+                    {isInvalid && (
+                      <FieldError errors={field.state.meta.errors} />
+                    )}
+                  </Field>
+                );
+              }}
+            />
+
+            <form.Field
               name="note"
               children={(field) => {
                 const isInvalid =
@@ -260,7 +313,7 @@ const CandidateUploadForm = ({
           </Button>
           <Button
             type="submit"
-            form="position-upload-form"
+            form="candidate-upload-form"
             className="cursor-pointer"
             disabled={isPending}
           >

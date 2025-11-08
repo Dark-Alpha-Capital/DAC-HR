@@ -7,6 +7,7 @@ import {
   roundTemplate,
   positionRoundTemplates,
   roundTemplateQuestions,
+  application,
 } from "./schema";
 import { eq, asc, inArray } from "drizzle-orm";
 
@@ -124,6 +125,53 @@ export const getCandidateById = async (id: string) => {
     };
   } catch (error) {
     console.error("Error fetching candidate by id", error);
+    return null;
+  }
+};
+
+/**
+ *
+ * Fetches a candidate by its ID with all their applications
+ * @param id The ID of the candidate to fetch
+ * @returns The candidate with applications (including position details) or null if not found
+ */
+export const getCandidateWithApplications = async (id: string) => {
+  try {
+    const [candidateResult] = await db
+      .select()
+      .from(candidate)
+      .where(eq(candidate.id, id));
+
+    if (!candidateResult) {
+      return null;
+    }
+
+    // Fetch all applications for this candidate with position details
+    const applications = await db
+      .select({
+        id: application.id,
+        status: application.status,
+        currentStage: application.currentStage,
+        createdAt: application.createdAt,
+        updatedAt: application.updatedAt,
+        position: {
+          id: position.id,
+          name: position.name,
+          slug: position.slug,
+          description: position.description,
+        },
+      })
+      .from(application)
+      .innerJoin(position, eq(application.positionId, position.id))
+      .where(eq(application.candidateId, id))
+      .orderBy(asc(application.createdAt));
+
+    return {
+      ...candidateResult,
+      applications,
+    };
+  } catch (error) {
+    console.error("Error fetching candidate with applications", error);
     return null;
   }
 };

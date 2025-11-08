@@ -18,7 +18,6 @@ import {
   Field,
   FieldDescription,
   FieldError,
-  FieldContent,
   FieldGroup,
   FieldLabel,
 } from "@workspace/ui/components/field";
@@ -32,12 +31,10 @@ import {
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { candidateFormSchema } from "@/lib/schemas/candidate-form-schema";
-import { candidateStatusEnum } from "@workspace/db/schema";
 import {
   Select,
   SelectContent,
   SelectItem,
-  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
@@ -46,14 +43,6 @@ import type { InferSelectModel } from "drizzle-orm";
 import type { candidate } from "@workspace/db/schema";
 
 type Candidate = InferSelectModel<typeof candidate>;
-
-const statuses = [
-  { label: "Applied", value: "applied" },
-  { label: "Screening", value: "screening" },
-  { label: "Interviewing", value: "interviewing" },
-  { label: "Hired", value: "hired" },
-  { label: "Rejected", value: "rejected" },
-] as const;
 
 interface CandidateEditFormProps {
   candidate: Candidate & { positionId?: string };
@@ -76,8 +65,6 @@ const CandidateEditForm = ({
       lastName: candidate.lastName,
       email: candidate.email,
       phone: candidate.phone || "",
-      status:
-        candidate.status as (typeof candidateStatusEnum.enumValues)[number],
       location: candidate.location || "",
       note: candidate.note || "",
       positionId: candidate.positionId || positions[0]?.id || "",
@@ -87,11 +74,19 @@ const CandidateEditForm = ({
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
-        const result = await updateCandidate(candidate.id, value);
+        const result = await updateCandidate(candidate.id, {
+          ...value,
+          positionId: value.positionId || "",
+        });
         if (result.error) {
-          toast.error(result.error as string, {
-            position: "bottom-right",
-          });
+          toast.error(
+            typeof result.error === "string"
+              ? result.error
+              : "Failed to update candidate",
+            {
+              position: "bottom-right",
+            }
+          );
         } else {
           toast.success("Candidate updated successfully", {
             position: "bottom-right",
@@ -234,31 +229,22 @@ const CandidateEditForm = ({
                 const isInvalid =
                   field.state.meta.isTouched && !field.state.meta.isValid;
                 return (
-                  <Field orientation="responsive" data-invalid={isInvalid}>
-                    <FieldContent>
-                      <FieldLabel htmlFor="form-tanstack-select-position">
-                        Position
-                      </FieldLabel>
-                      <FieldDescription>
-                        Select the position of the candidate.
-                      </FieldDescription>
-                      {isInvalid && (
-                        <FieldError errors={field.state.meta.errors} />
-                      )}
-                    </FieldContent>
+                  <Field data-invalid={isInvalid}>
+                    <FieldLabel htmlFor={field.name}>Position</FieldLabel>
                     <Select
-                      name={field.name}
-                      value={field.state.value}
-                      onValueChange={field.handleChange}
+                      value={field.state.value || ""}
+                      onValueChange={(value) => {
+                        field.handleChange(value);
+                      }}
                     >
                       <SelectTrigger
-                        id="form-tanstack-select-position"
+                        id={field.name}
                         aria-invalid={isInvalid}
-                        className="min-w-[120px]"
+                        className="w-full"
                       >
-                        <SelectValue placeholder="Select" />
+                        <SelectValue placeholder="Select a position (optional)" />
                       </SelectTrigger>
-                      <SelectContent position="item-aligned">
+                      <SelectContent>
                         {positions.map((position) => (
                           <SelectItem key={position.id} value={position.id}>
                             {position.name}
@@ -266,54 +252,12 @@ const CandidateEditForm = ({
                         ))}
                       </SelectContent>
                     </Select>
-                  </Field>
-                );
-              }}
-            />
-
-            <form.Field
-              name="status"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
-                  <Field orientation="responsive" data-invalid={isInvalid}>
-                    <FieldContent>
-                      <FieldLabel htmlFor="form-tanstack-select-status">
-                        Status
-                      </FieldLabel>
-                      <FieldDescription>
-                        Select the status of the candidate.
-                      </FieldDescription>
-                      {isInvalid && (
-                        <FieldError errors={field.state.meta.errors} />
-                      )}
-                    </FieldContent>
-                    <Select
-                      name={field.name}
-                      value={field.state.value}
-                      onValueChange={(value) =>
-                        field.handleChange(
-                          value as (typeof candidateStatusEnum.enumValues)[number]
-                        )
-                      }
-                    >
-                      <SelectTrigger
-                        id="form-tanstack-select-status"
-                        aria-invalid={isInvalid}
-                        className="min-w-[120px]"
-                      >
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent position="item-aligned">
-                        <SelectSeparator />
-                        {statuses.map((status) => (
-                          <SelectItem key={status.value} value={status.value}>
-                            {status.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FieldDescription>
+                      Select a position to automatically create an application
+                    </FieldDescription>
+                    {isInvalid && (
+                      <FieldError errors={field.state.meta.errors} />
+                    )}
                   </Field>
                 );
               }}
@@ -387,19 +331,7 @@ const CandidateEditForm = ({
           <Button
             type="button"
             variant="outline"
-            onClick={() =>
-              form.reset({
-                firstName: candidate.firstName,
-                lastName: candidate.lastName,
-                email: candidate.email,
-                phone: candidate.phone || "",
-                status:
-                  candidate.status as (typeof candidateStatusEnum.enumValues)[number],
-                location: candidate.location || "",
-                note: candidate.note || "",
-                positionId: candidate.positionId || positions[0]?.id || "",
-              })
-            }
+            onClick={() => form.reset()}
             className="cursor-pointer"
             disabled={isPending}
           >
