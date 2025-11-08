@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@workspace/db";
-import { candidate, candidatePosition } from "@workspace/db/schema";
+import { candidate } from "@workspace/db/schema";
 import {
   CandidateFormSchema,
   candidateFormSchema,
@@ -24,16 +24,7 @@ export const createCandidate = async (data: CandidateFormSchema) => {
     return { error: result.error.flatten().fieldErrors };
   }
 
-  const {
-    firstName,
-    lastName,
-    email,
-    phone,
-    location,
-    status,
-    note,
-    positionId,
-  } = result.data;
+  const { firstName, lastName, email, phone, location, note } = result.data;
 
   try {
     const [newCandidate] = await db
@@ -44,7 +35,6 @@ export const createCandidate = async (data: CandidateFormSchema) => {
         email,
         phone,
         location,
-        status,
         note,
       })
       .returning();
@@ -52,11 +42,6 @@ export const createCandidate = async (data: CandidateFormSchema) => {
     if (!newCandidate) {
       return { error: "Failed to create candidate" };
     }
-
-    await db.insert(candidatePosition).values({
-      candidateId: newCandidate.id,
-      positionId,
-    });
 
     revalidatePath("/candidates");
 

@@ -20,6 +20,13 @@ import {
 import { Spinner } from "@workspace/ui/components/spinner";
 import { User, LogOut } from "lucide-react";
 
+const navLinks = [
+  { href: "/candidates", label: "Candidates" },
+  { href: "/positions", label: "Positions" },
+  { href: "/rounds", label: "Rounds" },
+  { href: "/questions", label: "Questions" },
+];
+
 const Header = () => {
   const { data: session, isPending } = authClient.useSession();
   const router = useRouter();
@@ -59,18 +66,15 @@ const Header = () => {
           dac-hr
         </Link>
         <nav className="flex items-center gap-6">
-          <Link
-            href="/candidates"
-            className="text-sm font-medium hover:text-primary transition-colors"
-          >
-            Candidates
-          </Link>
-          <Link
-            href="/positions"
-            className="text-sm font-medium hover:text-primary transition-colors"
-          >
-            Positions
-          </Link>
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-sm font-medium hover:text-primary transition-colors"
+            >
+              {link.label}
+            </Link>
+          ))}
           {isPending ? (
             <Spinner className="size-6 animate-spin" />
           ) : session?.user ? (
