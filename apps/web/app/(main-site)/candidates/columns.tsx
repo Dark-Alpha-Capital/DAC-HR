@@ -3,7 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { candidateStatusEnum } from "@workspace/db/schema";
 
-import { MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -16,6 +16,10 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+
+import { Checkbox } from "@workspace/ui/components/checkbox";
+import { deleteCandidate } from "@/lib/actions/delete-candidate";
 
 export type Candidate = {
   id: string;
@@ -28,6 +32,27 @@ export type Candidate = {
 };
 
 export const columns: ColumnDef<Candidate>[] = [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+  },
+
   {
     accessorKey: "firstName",
     header: "First Name",
@@ -42,7 +67,17 @@ export const columns: ColumnDef<Candidate>[] = [
   },
   {
     accessorKey: "email",
-    header: "Email",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Email
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
   },
   {
     accessorKey: "positionName",
@@ -52,7 +87,8 @@ export const columns: ColumnDef<Candidate>[] = [
   {
     id: "actions",
     cell: ({ row }) => {
-      const payment = row.original;
+      const router = useRouter();
+      const candidate = row.original;
 
       return (
         <DropdownMenu>
@@ -64,17 +100,29 @@ export const columns: ColumnDef<Candidate>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
+
             <DropdownMenuItem
               onSelect={() => {
-                console.log(payment.id);
-                toast.success("Candidate ID copied to clipboard");
+                router.push(`/candidates/${candidate.id}`);
               }}
             >
-              Copy candidate ID
+              View candidate
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              variant={"destructive"}
+              onSelect={async () => {
+                const response = await deleteCandidate(candidate.id);
+                if (response?.error) {
+                  toast.error(response.error);
+                }
+                if (response?.success) {
+                  toast.success("Candidate deleted successfully");
+                }
+              }}
+            >
+              Delete candidate
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>View customer</DropdownMenuItem>
-            <DropdownMenuItem>View payment details</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );

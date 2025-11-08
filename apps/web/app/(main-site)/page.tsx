@@ -2,6 +2,12 @@ import { Suspense } from "react";
 import { headers } from "next/headers";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Home",
+  description: "Home page",
+};
 
 export default function Page() {
   return (
@@ -20,5 +26,5 @@ async function UserContent() {
   if (!session) {
     redirect("/signup");
   }
-  return <h1>Welcome {session.user.isAdmin ? "Admin" : "User"}</h1>;
+  return <h1>Welcome {session.user.role}</h1>;
 }

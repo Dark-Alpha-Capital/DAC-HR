@@ -3,11 +3,15 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@workspace/db";
 import { config } from "dotenv";
 import { nextCookies } from "better-auth/next-js";
-import { user, account, session, verification } from "@workspace/db/schema";
+import {
+  user as usersTable,
+  account as accountsTable,
+  session as sessionsTable,
+  verification as verificationsTable,
+} from "@workspace/db/schema";
 import { admin, customSession } from "better-auth/plugins";
 import { createAuthMiddleware } from "better-auth/api";
 import { eq } from "drizzle-orm";
-import type { Auth } from "better-auth";
 
 config({
   path: ".env",
@@ -24,14 +28,14 @@ const isAdminEmail = (email: string): boolean => {
   return ADMIN_EMAILS.includes(email.toLowerCase());
 };
 
-export const auth: Auth = betterAuth({
+export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {
-      user,
-      account,
-      session,
-      verification,
+      user: usersTable,
+      account: accountsTable,
+      session: sessionsTable,
+      verification: verificationsTable,
     },
   }),
 
@@ -52,7 +56,7 @@ export const auth: Auth = betterAuth({
       return {
         user: {
           ...user,
-          isAdmin,
+          role: isAdmin ? "admin" : "user",
         },
         session: {
           ...session,
@@ -102,9 +106,9 @@ export const auth: Auth = betterAuth({
         ) {
           // Update the user's role to admin
           await db
-            .update(user)
+            .update(usersTable)
             .set({ role: "admin" })
-            .where(eq(user.id, signedInUser.id));
+            .where(eq(usersTable.id, signedInUser.id));
         }
       }
     }),

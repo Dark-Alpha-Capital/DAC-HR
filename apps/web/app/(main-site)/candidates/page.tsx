@@ -3,6 +3,12 @@ import Link from "next/link";
 import React, { Suspense } from "react";
 import { getCandidatesWithPositions } from "@workspace/db/queries";
 import CandidateContainer from "./CandidateContainer";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Candidates",
+  description: "Candidates list",
+};
 
 const page = () => {
   return (
