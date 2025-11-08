@@ -7,5 +7,4 @@ export type CandidateWithPosition = {
   firstName: string;
   lastName: string;
   email: string;
-  status: "applied" | "screening" | "interviewing" | "hired" | "rejected";
 };

@@ -15,7 +15,6 @@ const CandidateContainer = ({
     firstName: candidate.firstName,
     lastName: candidate.lastName,
     email: candidate.email,
-    status: candidate.status,
     positionName: candidate.position?.name || "No Position",
     positionId: candidate.position?.id || "",
   }));

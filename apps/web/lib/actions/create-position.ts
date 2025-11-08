@@ -17,10 +17,14 @@ export const createPosition = async (data: PositionFormSchema) => {
   });
 
   if (!session?.user) {
+    console.log("unauthorized");
+
     return { error: "Unauthorized" };
   }
 
   const result = positionFormSchema.safeParse(data);
+  console.log("result", result);
+
   if (!result.success) {
     return { error: result.error.flatten().fieldErrors };
   }
@@ -36,6 +40,8 @@ export const createPosition = async (data: PositionFormSchema) => {
         description,
       })
       .returning();
+
+    console.log("new position created", newPosition);
 
     revalidatePath("/positions");
 

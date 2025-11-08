@@ -32,7 +32,6 @@ import {
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { candidateFormSchema } from "@/lib/schemas/candidate-form-schema";
-import { candidateStatusEnum } from "@workspace/db/schema";
 import {
   Select,
   SelectContent,
@@ -42,14 +41,6 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 import { createCandidate } from "@/lib/actions/create-candidate";
-
-const statuses = [
-  { label: "Applied", value: "applied" },
-  { label: "Screening", value: "screening" },
-  { label: "Interviewing", value: "interviewing" },
-  { label: "Hired", value: "hired" },
-  { label: "Rejected", value: "rejected" },
-] as const;
 
 const CandidateUploadForm = ({
   positions,
@@ -68,10 +59,8 @@ const CandidateUploadForm = ({
       lastName: "",
       email: "test@example.com",
       phone: "",
-      status: "applied" as (typeof candidateStatusEnum.enumValues)[number],
       location: "New York, NY",
       note: "",
-      positionId: positions[0]?.id || "",
     },
     validators: {
       onSubmit: candidateFormSchema,
@@ -216,97 +205,6 @@ const CandidateUploadForm = ({
                     {isInvalid && (
                       <FieldError errors={field.state.meta.errors} />
                     )}
-                  </Field>
-                );
-              }}
-            />
-
-            <form.Field
-              name="positionId"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
-                  <Field orientation="responsive" data-invalid={isInvalid}>
-                    <FieldContent>
-                      <FieldLabel htmlFor="form-tanstack-select-status">
-                        Position
-                      </FieldLabel>
-                      <FieldDescription>
-                        Select the position of the candidate.
-                      </FieldDescription>
-                      {isInvalid && (
-                        <FieldError errors={field.state.meta.errors} />
-                      )}
-                    </FieldContent>
-                    <Select
-                      name={field.name}
-                      value={field.state.value}
-                      onValueChange={field.handleChange}
-                    >
-                      <SelectTrigger
-                        id="form-tanstack-select-status"
-                        aria-invalid={isInvalid}
-                        className="min-w-[120px]"
-                      >
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent position="item-aligned">
-                        {positions.map((position) => (
-                          <SelectItem key={position.id} value={position.id}>
-                            {position.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                );
-              }}
-            />
-
-            <form.Field
-              name="status"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
-                  <Field orientation="responsive" data-invalid={isInvalid}>
-                    <FieldContent>
-                      <FieldLabel htmlFor="form-tanstack-select-status">
-                        Status
-                      </FieldLabel>
-                      <FieldDescription>
-                        Select the status of the candidate.
-                      </FieldDescription>
-                      {isInvalid && (
-                        <FieldError errors={field.state.meta.errors} />
-                      )}
-                    </FieldContent>
-                    <Select
-                      name={field.name}
-                      value={field.state.value}
-                      onValueChange={(value) =>
-                        field.handleChange(
-                          value as (typeof candidateStatusEnum.enumValues)[number]
-                        )
-                      }
-                    >
-                      <SelectTrigger
-                        id="form-tanstack-select-status"
-                        aria-invalid={isInvalid}
-                        className="min-w-[120px]"
-                      >
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent position="item-aligned">
-                        <SelectSeparator />
-                        {statuses.map((status) => (
-                          <SelectItem key={status.value} value={status.value}>
-                            {status.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                   </Field>
                 );
               }}

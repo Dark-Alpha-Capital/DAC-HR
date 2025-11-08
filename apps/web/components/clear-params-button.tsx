@@ -1,0 +1,26 @@
+"use client";
+
+import React from "react";
+import { Button } from "@workspace/ui/components/button";
+import { useRouter, useSearchParams } from "next/navigation";
+import { X } from "lucide-react";
+
+const ClearParamsButton = () => {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  return (
+    <Button
+      variant="outline"
+      size="icon"
+      onClick={() => {
+        const params = new URLSearchParams(searchParams);
+        params.delete("type");
+        router.push(`?${params.toString()}`);
+      }}
+    >
+      <X className="h-4 w-4" />
+    </Button>
+  );
+};
+
+export default ClearParamsButton;
