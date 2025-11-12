@@ -18,7 +18,8 @@
   "scripts": {
     "db:generate": "drizzle-kit generate",
     "db:migrate": "npx tsx migrate.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "bun seed.ts"
   },
   "peerDependencies": {
     "typescript": "^5.9.3"

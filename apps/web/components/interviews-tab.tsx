@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -42,6 +44,7 @@ type InterviewRound = {
 };
 
 export default function InterviewsTab({ candidate }: { candidate: Candidate }) {
+  const router = useRouter();
   const [rounds, setRounds] = useState<InterviewRound[]>([
     {
       id: "screening",
@@ -99,18 +102,35 @@ export default function InterviewsTab({ candidate }: { candidate: Candidate }) {
     if (!currentRound) return;
 
     setIsSaving(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500));
 
-    setRounds((prev) =>
-      prev.map((r) =>
-        r.id === currentRound.id
-          ? { ...r, status: "completed" as const }
-          : r
-      )
-    );
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-    setIsSaving(false);
+      setRounds((prev) =>
+        prev.map((r) =>
+          r.id === currentRound.id
+            ? { ...r, status: "completed" as const }
+            : r
+        )
+      );
+
+      // Show success toast
+      toast.success("Interview round saved successfully!", {
+        description: `${currentRound.name} round has been saved and marked as completed.`,
+      });
+
+      // Wait a moment for the toast to be visible, then redirect
+      setTimeout(() => {
+        router.push("/candidates");
+      }, 1000);
+    } catch (error) {
+      toast.error("Failed to save interview round", {
+        description: "Please try again.",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleResponseChange = (questionIndex: number, value: string) => {

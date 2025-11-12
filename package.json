@@ -24,6 +24,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "minimatch": "^10.1.1"
+    "minimatch": "^10.1.1",
+    "zod": "^4.1.12"
   }
 }

@@ -921,12 +921,12 @@ export const getDashboardStats = async () => {
       .from(candidate);
     const totalCandidates = totalCandidatesResult?.count || 0;
 
-    // Active candidates count (candidates with applications in reviewed, interviewing or shortlisted status)
+    // Active candidates count (candidates with applications in reviewed, shortlisted, or interviewing status)
     const [activeCandidatesResult] = await db
       .select({ count: sql<number>`count(DISTINCT ${application.candidateId})::int` })
       .from(application)
       .where(
-        sql`${application.status} IN ('reviewed', 'interviewing', 'shortlisted')`
+        sql`${application.status} IN ('reviewed', 'shortlisted', 'interviewing')`
       );
     const activeCandidates = activeCandidatesResult?.count || 0;
 

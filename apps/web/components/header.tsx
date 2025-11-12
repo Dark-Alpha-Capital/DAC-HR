@@ -21,6 +21,7 @@ import { Spinner } from "@workspace/ui/components/spinner";
 import { User, LogOut } from "lucide-react";
 
 const navLinks = [
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/candidates", label: "Candidates" },
   { href: "/positions", label: "Positions" },
   { href: "/applications", label: "Applications" },
@@ -64,7 +65,7 @@ const Header = () => {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link
-          href="/"
+          href="/dashboard"
           className="text-xl font-bold hover:opacity-80 transition-opacity"
         >
           dac-hr

@@ -20,13 +20,13 @@ export function CandidatesByStatusChart({
   data: { status: string; count: number }[];
 }) {
   const COLORS: Record<string, string> = {
-    pending: "#DBEAFE",
-    reviewed: "#BFDBFE",
-    shortlisted: "#93C5FD",
+    pending: "#93C5FD",
+    reviewed: "#A78BFA",
+    shortlisted: "#6366F1",
     interviewing: "#60A5FA",
-    hired: "#3B82F6",
-    rejected: "#1E40AF",
-    withdrawn: "#1E3A8A",
+    hired: "#34D399",
+    rejected: "#EF4444",
+    withdrawn: "#9CA3AF",
   };
 
   const chartData = data.map((item) => ({
@@ -102,7 +102,7 @@ export function CandidatesByPositionChart({
             borderRadius: "0.5rem",
           }}
         />
-        <Bar dataKey="candidates" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="candidates" fill="#6366F1" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
