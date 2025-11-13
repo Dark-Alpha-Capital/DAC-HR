@@ -24,6 +24,7 @@ const navLinks = [
   { href: "/candidates", label: "Candidates" },
   { href: "/positions", label: "Positions" },
   { href: "/rounds", label: "Rounds" },
+  { href: "/documents", label: "Documents" },
   { href: "/questions", label: "Questions" },
 ];
 
