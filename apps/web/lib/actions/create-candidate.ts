@@ -24,7 +24,7 @@ export const createCandidate = async (data: CandidateFormSchema) => {
     return { error: result.error.flatten().fieldErrors };
   }
 
-  const { firstName, lastName, email, phone, location, note, positionId } =
+  const { firstName, lastName, email, phone, location, note, positionId, source } =
     result.data;
 
   try {
@@ -37,6 +37,7 @@ export const createCandidate = async (data: CandidateFormSchema) => {
         phone,
         location,
         note,
+        source
       })
       .returning();
 

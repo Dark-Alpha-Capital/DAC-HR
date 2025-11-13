@@ -45,6 +45,15 @@ import {
 } from "@workspace/ui/components/select";
 import { createCandidate } from "@/lib/actions/create-candidate";
 
+const jobSources = [
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "indeed", label: "Indeed" },
+  { value: "glassdoor", label: "Glassdoor" },
+  { value: "monster", label: "Monster" },
+  { value: "ziprecruiter", label: "ZipRecruiter" },
+  { value: "company_website", label: "Company Website" },
+];
+
 const CandidateUploadForm = ({
   positions,
 }: {
@@ -63,6 +72,7 @@ const CandidateUploadForm = ({
       email: "test@example.com",
       phone: "",
       location: "New York, NY",
+      source: "",
       note: "",
       positionId: positions[0]?.id,
     },
@@ -254,6 +264,47 @@ const CandidateUploadForm = ({
                     </Select>
                     <FieldDescription>
                       Select a position to automatically create an application
+                    </FieldDescription>
+                    {isInvalid && (
+                      <FieldError errors={field.state.meta.errors} />
+                    )}
+                  </Field>
+                );
+              }}
+            />
+
+            <form.Field
+              name="source"
+              children={(field) => {
+                const isInvalid =
+                  field.state.meta.isTouched && !field.state.meta.isValid;
+                return (
+                  <Field data-invalid={isInvalid}>
+                    <FieldLabel htmlFor={field.name}>Source</FieldLabel>
+                    <Select
+                      value={field.state.value || ""}
+                      onValueChange={(value) => {
+                        console.log("value", value);
+                        field.handleChange(value);
+                      }}
+                    >
+                      <SelectTrigger
+                        id={field.name}
+                        aria-invalid={isInvalid}
+                        className="w-full"
+                      >
+                        <SelectValue placeholder="Select a source (optional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {jobSources.map((source) => (
+                          <SelectItem key={source.value} value={source.value}>
+                            {source.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FieldDescription>
+                      Select where the candidate applied from
                     </FieldDescription>
                     {isInvalid && (
                       <FieldError errors={field.state.meta.errors} />

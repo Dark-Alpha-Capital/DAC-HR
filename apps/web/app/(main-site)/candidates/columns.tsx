@@ -28,6 +28,7 @@ export type Candidate = {
   email: string;
   positionName: string;
   positionId: string;
+  source: string;
 };
 
 export const columns: ColumnDef<Candidate>[] = [
@@ -78,7 +79,10 @@ export const columns: ColumnDef<Candidate>[] = [
     accessorKey: "positionName",
     header: "Position",
   },
-
+  {
+    accessorKey: "source",
+    header: "Source",
+  },
   {
     id: "actions",
     cell: ({ row }) => {
