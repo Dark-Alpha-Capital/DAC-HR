@@ -41,7 +41,6 @@ export const createRound = async (data: RoundFormSchema) => {
     await db.insert(positionRoundTemplates).values({
       positionId,
       roundTemplateId: newRound.id,
-      stageOrder: 1,
     });
 
     revalidatePath("/rounds");

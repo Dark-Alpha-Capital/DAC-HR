@@ -29,7 +29,7 @@ import {
 import { formatDate } from "@/lib/utils";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
-import ScheduleInterviewDialog from "@/components/schedule-interview-dialog";
+import RecordInterviewDialog from "@/components/record-interview-dialog";
 import InterviewDetailCard from "@/components/interview-detail-card";
 import ApplicationProgressTimeline from "@/components/application-progress-timeline";
 
@@ -45,7 +45,10 @@ const ApplicationPage = async ({
 }) => {
   return (
     <div className="block-space-mini container mx-auto">
-      <BackButton />
+      <Button asChild>
+        <Link href="/applications">Go Back</Link>
+      </Button>
+
       <Suspense fallback={<ApplicationLoadingSkeleton />}>
         <DisplayApplication params={params} searchParams={searchParams} />
       </Suspense>
@@ -103,13 +106,12 @@ const DisplayApplication = async ({
     string,
     "default" | "secondary" | "outline" | "destructive"
   > = {
-    scheduled: "outline",
-    completed: "default",
-    cancelled: "destructive",
+    pending: "outline",
+    complete: "default",
   } as const;
 
   const currentUser = session?.user;
-  const showScheduleDialog = action === "schedule";
+  const showRecordDialog = action === "record";
   const selectedInterview = interviewId
     ? application.interviews.find((i) => i.id === interviewId)
     : null;
@@ -136,10 +138,6 @@ const DisplayApplication = async ({
               </div>
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <Briefcase className="h-4 w-4" />
-                  <span>Stage {application.currentStage}</span>
-                </div>
-                <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
                   <span>Applied {formatDate(application.createdAt)}</span>
                 </div>
@@ -163,9 +161,9 @@ const DisplayApplication = async ({
             </div>
             {currentUser && (
               <Button asChild>
-                <Link href={`/applications/${id}?action=schedule`}>
+                <Link href={`/applications/${id}?action=record`}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Schedule Interview
+                  Record Interview
                 </Link>
               </Button>
             )}
@@ -176,7 +174,6 @@ const DisplayApplication = async ({
       {/* Progress Timeline */}
       <ApplicationProgressTimeline
         rounds={application.rounds}
-        currentStage={application.currentStage}
         interviews={application.interviews}
       />
 
@@ -189,7 +186,7 @@ const DisplayApplication = async ({
               <CardTitle className="text-lg">Interviews</CardTitle>
             </div>
             <Badge variant="secondary">
-              {application.interviews.length} scheduled
+              {application.interviews.length} recorded
             </Badge>
           </div>
         </CardHeader>
@@ -199,13 +196,13 @@ const DisplayApplication = async ({
             <div className="text-center py-8 text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
               <p className="text-sm mb-4">
-                No interviews scheduled yet for this application.
+                No interviews recorded yet for this application.
               </p>
               {currentUser && (
                 <Button asChild>
-                  <Link href={`/applications/${id}?action=schedule`}>
+                  <Link href={`/applications/${id}?action=record`}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Schedule First Interview
+                    Record First Interview
                   </Link>
                 </Button>
               )}
@@ -225,9 +222,9 @@ const DisplayApplication = async ({
         </CardContent>
       </Card>
 
-      {/* Schedule Interview Dialog */}
-      {showScheduleDialog && currentUser && (
-        <ScheduleInterviewDialog
+      {/* Record Interview Dialog */}
+      {showRecordDialog && currentUser && (
+        <RecordInterviewDialog
           applicationId={id}
           application={application}
           users={users}

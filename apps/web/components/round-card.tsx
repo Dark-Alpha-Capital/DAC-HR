@@ -15,7 +15,6 @@ import DeleteRoundButton from "./delete-round-button";
 interface Position {
   id: string;
   name: string;
-  stageOrder: number;
 }
 
 interface RoundCardProps {
@@ -38,7 +37,7 @@ const RoundCard = ({ round }: RoundCardProps) => {
           <div className="flex flex-wrap gap-2 mt-2">
             {round.positions.map((position) => (
               <Badge key={position.id} variant="secondary">
-                {position.name} (Stage {position.stageOrder})
+                {position.name}
               </Badge>
             ))}
           </div>

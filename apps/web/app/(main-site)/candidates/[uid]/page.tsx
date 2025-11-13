@@ -155,17 +155,14 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
     string,
     "default" | "secondary" | "outline" | "destructive"
   > = {
-    scheduled: "outline",
-    completed: "default",
-    cancelled: "destructive",
+    pending: "outline",
+    complete: "default",
   } as const;
 
   const getInterviewStatusIcon = (status: string) => {
     switch (status) {
-      case "completed":
+      case "complete":
         return <CheckCircle2 className="h-3 w-3" />;
-      case "cancelled":
-        return <XCircle className="h-3 w-3" />;
       default:
         return <Circle className="h-3 w-3" />;
     }
@@ -318,10 +315,6 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
                       </Badge>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                      <span className="font-medium">
-                        Stage {app.currentStage}
-                      </span>
-                      <span>•</span>
                       <span>{formatDate(app.createdAt)}</span>
                       <div className="flex items-center gap-1 ml-auto">
                         <Button
@@ -361,11 +354,9 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
                           className="h-7 text-xs"
                           asChild
                         >
-                          <Link
-                            href={`/applications/${app.id}?action=schedule`}
-                          >
+                          <Link href={`/applications/${app.id}?action=record`}>
                             <Plus className="h-3 w-3 mr-1" />
-                            Schedule
+                            Record
                           </Link>
                         </Button>
                       </div>
@@ -379,7 +370,6 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
                               <div className="flex items-center gap-2 flex-1 min-w-0">
                                 {getInterviewStatusIcon(interview.status)}
                                 <span className="truncate">
-                                  Stage {interview.stageOrder}:{" "}
                                   {interview.roundTemplate.name}
                                 </span>
                               </div>

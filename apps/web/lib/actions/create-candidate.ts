@@ -55,7 +55,6 @@ export const createCandidate = async (data: CandidateFormSchema) => {
         candidateId: newCandidate.id,
         positionId,
         status: "pending",
-        currentStage: 1,
       });
 
       // Link candidate to position in candidatePosition table for tracking
