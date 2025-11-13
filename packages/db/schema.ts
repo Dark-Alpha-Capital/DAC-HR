@@ -106,6 +106,35 @@ export const candidate = pgTable("candidate", {
 
 export type Candidate = InferSelectModel<typeof candidate>;
 
+export const candidateDocumentCategoryEnum = pgEnum(
+  "candidate_document_category",
+  ["resume", "cover-letter", "portfolio", "other"]
+);
+
+export const candidateDocument = pgTable("candidate_document", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  candidateId: text("candidate_id")
+    .notNull()
+    .references(() => candidate.id, { onDelete: "cascade" }),
+
+  name: text("name").notNull(),
+  description: text("description"),
+  category: candidateDocumentCategoryEnum("category")
+    .default("other")
+    .notNull(),
+  url: text("url").notNull(),
+  tags: text("tags").array(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+});
+
+export type CandidateDocument = InferSelectModel<typeof candidateDocument>;
+
 export const candidatePosition = pgTable("candidate_position", {
   id: text("id")
     .primaryKey()

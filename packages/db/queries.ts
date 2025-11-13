@@ -12,6 +12,7 @@ import {
   interviewFeedback,
   user,
   documents,
+  candidateDocument,
 } from "./schema";
 import { eq, asc, inArray, and } from "drizzle-orm";
 
@@ -847,6 +848,19 @@ export async function getDocuments() {
     return results;
   } catch (error) {
     console.error("Error fetching documents", error);
+    return [];
+  }
+}
+
+export async function getDocumentsByCandidateId(candidateId: string) {
+  try {
+    const results = await db
+      .select()
+      .from(candidateDocument)
+      .where(eq(candidateDocument.candidateId, candidateId));
+    return results;
+  } catch (error) {
+    console.error("Error fetching documents by candidate id", error);
     return [];
   }
 }

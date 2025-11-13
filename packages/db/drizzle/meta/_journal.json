@@ -50,6 +50,13 @@
       "when": 1763032221526,
       "tag": "0006_regular_champions",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1763041187430,
+      "tag": "0007_nice_revanche",
+      "breakpoints": true
     }
   ]
 }
