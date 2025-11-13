@@ -63,6 +63,62 @@ export const getCandidates = async () => {
   }
 };
 
+/**
+ * Fetches all applications with candidate and position details
+ * @returns An array of applications with candidate and position information
+ */
+export const getAllApplications = async () => {
+  try {
+    const results = await db
+      .select({
+        application: {
+          id: application.id,
+          candidateId: application.candidateId,
+          positionId: application.positionId,
+          status: application.status,
+          createdAt: application.createdAt,
+          updatedAt: application.updatedAt,
+        },
+        candidate: {
+          id: candidate.id,
+          firstName: candidate.firstName,
+          lastName: candidate.lastName,
+          email: candidate.email,
+        },
+        position: {
+          id: position.id,
+          name: position.name,
+          slug: position.slug,
+          description: position.description,
+        },
+      })
+      .from(application)
+      .innerJoin(candidate, eq(application.candidateId, candidate.id))
+      .innerJoin(position, eq(application.positionId, position.id))
+      .orderBy(asc(application.createdAt));
+
+    // Fetch interviews for each application
+    const applicationsWithInterviews = await Promise.all(
+      results.map(async (result) => {
+        const interviews = await getInterviewsByApplicationId(
+          result.application.id
+        );
+        return {
+          ...result.application,
+          candidate: result.candidate,
+          position: result.position,
+          interviews,
+        };
+      })
+    );
+
+    return applicationsWithInterviews;
+  } catch (error) {
+    console.error("Error fetching all applications", error);
+    return [];
+  }
+};
+
 export const getCandidatesWithPositions = async () => {
   try {
     const results = await db
@@ -156,7 +212,6 @@ export const getCandidateWithApplications = async (id: string) => {
       .select({
         id: application.id,
         status: application.status,
-        currentStage: application.currentStage,
         createdAt: application.createdAt,
         updatedAt: application.updatedAt,
         position: {
@@ -398,9 +453,6 @@ export const getRoundsWithPositions = async (positionIds?: string[]) => {
           id: position.id,
           name: position.name,
         },
-        positionRoundTemplate: {
-          stageOrder: positionRoundTemplates.stageOrder,
-        },
       })
       .from(roundTemplate)
       .leftJoin(
@@ -423,7 +475,7 @@ export const getRoundsWithPositions = async (positionIds?: string[]) => {
         description: string | null;
         createdAt: Date;
         updatedAt: Date;
-        positions: Array<{ id: string; name: string; stageOrder: number }>;
+        positions: Array<{ id: string; name: string }>;
       }
     >();
 
@@ -437,13 +489,12 @@ export const getRoundsWithPositions = async (positionIds?: string[]) => {
       }
 
       const round = roundsMap.get(roundId)!;
-      if (result.position?.id && result.positionRoundTemplate?.stageOrder) {
+      if (result.position?.id) {
         // Check if position already added (avoid duplicates)
         if (!round.positions.some((p) => p.id === result.position!.id)) {
           round.positions.push({
             id: result.position.id,
             name: result.position.name,
-            stageOrder: result.positionRoundTemplate.stageOrder,
           });
         }
       }
@@ -460,7 +511,7 @@ export const getRoundsWithPositions = async (positionIds?: string[]) => {
  *
  * Fetches all rounds linked to a specific position
  * @param positionId The ID of the position
- * @returns An array of rounds with stage order information
+ * @returns An array of rounds
  */
 export const getRoundsByPositionId = async (positionId: string) => {
   try {
@@ -474,7 +525,7 @@ export const getRoundsByPositionId = async (positionId: string) => {
           updatedAt: roundTemplate.updatedAt,
         },
         positionRoundTemplate: {
-          stageOrder: positionRoundTemplates.stageOrder,
+          id: positionRoundTemplates.id,
         },
       })
       .from(positionRoundTemplates)
@@ -482,12 +533,11 @@ export const getRoundsByPositionId = async (positionId: string) => {
         roundTemplate,
         eq(positionRoundTemplates.roundTemplateId, roundTemplate.id)
       )
-      .where(eq(positionRoundTemplates.positionId, positionId))
-      .orderBy(asc(positionRoundTemplates.stageOrder));
+      .where(eq(positionRoundTemplates.positionId, positionId));
 
     return results.map((result) => ({
       ...result.round,
-      stageOrder: result.positionRoundTemplate.stageOrder,
+      positionRoundTemplateId: result.positionRoundTemplate.id,
     }));
   } catch (error) {
     console.error("Error fetching rounds by position id", error);
@@ -521,14 +571,12 @@ export const getRoundById = async (id: string) => {
 };
 
 /**
- * Fetches a positionRoundTemplate by positionId and stageOrder
- * @param positionId The ID of the position
- * @param stageOrder The stage order number
+ * Fetches a positionRoundTemplate by ID
+ * @param positionRoundTemplateId The ID of the position round template
  * @returns The positionRoundTemplate or null if not found
  */
-export const getPositionRoundTemplateByStage = async (
-  positionId: string,
-  stageOrder: number
+export const getPositionRoundTemplateById = async (
+  positionRoundTemplateId: string
 ) => {
   try {
     const [result] = await db
@@ -536,7 +584,6 @@ export const getPositionRoundTemplateByStage = async (
         id: positionRoundTemplates.id,
         positionId: positionRoundTemplates.positionId,
         roundTemplateId: positionRoundTemplates.roundTemplateId,
-        stageOrder: positionRoundTemplates.stageOrder,
         roundTemplate: {
           id: roundTemplate.id,
           name: roundTemplate.name,
@@ -548,15 +595,10 @@ export const getPositionRoundTemplateByStage = async (
         roundTemplate,
         eq(positionRoundTemplates.roundTemplateId, roundTemplate.id)
       )
-      .where(
-        and(
-          eq(positionRoundTemplates.positionId, positionId),
-          eq(positionRoundTemplates.stageOrder, stageOrder)
-        )
-      );
+      .where(eq(positionRoundTemplates.id, positionRoundTemplateId));
     return result || null;
   } catch (error) {
-    console.error("Error fetching position round template by stage", error);
+    console.error("Error fetching position round template by id", error);
     return null;
   }
 };
@@ -575,7 +617,6 @@ export const getApplicationById = async (applicationId: string) => {
           candidateId: application.candidateId,
           positionId: application.positionId,
           status: application.status,
-          currentStage: application.currentStage,
           createdAt: application.createdAt,
           updatedAt: application.updatedAt,
         },
@@ -623,6 +664,7 @@ export const getInterviewsByApplicationId = async (applicationId: string) => {
           id: interview.id,
           applicationId: interview.applicationId,
           status: interview.status,
+          rating: interview.rating,
           scheduledAt: interview.scheduledAt,
           overallFeedback: interview.overallFeedback,
           createdAt: interview.createdAt,
@@ -634,7 +676,6 @@ export const getInterviewsByApplicationId = async (applicationId: string) => {
         },
         positionRoundTemplate: {
           id: positionRoundTemplates.id,
-          stageOrder: positionRoundTemplates.stageOrder,
         },
         interviewer: {
           id: user.id,
@@ -652,13 +693,12 @@ export const getInterviewsByApplicationId = async (applicationId: string) => {
         eq(positionRoundTemplates.roundTemplateId, roundTemplate.id)
       )
       .leftJoin(user, eq(interview.interviewerId, user.id))
-      .where(eq(interview.applicationId, applicationId))
-      .orderBy(asc(positionRoundTemplates.stageOrder));
+      .where(eq(interview.applicationId, applicationId));
 
     return results.map((result) => ({
       ...result.interview,
       roundTemplate: result.roundTemplate,
-      stageOrder: result.positionRoundTemplate.stageOrder,
+      positionRoundTemplateId: result.positionRoundTemplate.id,
       interviewer: result.interviewer,
     }));
   } catch (error) {
@@ -680,6 +720,7 @@ export const getInterviewById = async (interviewId: string) => {
           id: interview.id,
           applicationId: interview.applicationId,
           status: interview.status,
+          rating: interview.rating,
           scheduledAt: interview.scheduledAt,
           overallFeedback: interview.overallFeedback,
           createdAt: interview.createdAt,
@@ -691,7 +732,6 @@ export const getInterviewById = async (interviewId: string) => {
         },
         positionRoundTemplate: {
           id: positionRoundTemplates.id,
-          stageOrder: positionRoundTemplates.stageOrder,
         },
         interviewer: {
           id: user.id,
@@ -760,7 +800,7 @@ export const getInterviewById = async (interviewId: string) => {
     return {
       ...interviewResult.interview,
       roundTemplate: interviewResult.roundTemplate,
-      stageOrder: interviewResult.positionRoundTemplate.stageOrder,
+      positionRoundTemplateId: interviewResult.positionRoundTemplate.id,
       interviewer: interviewResult.interviewer,
       questions: questionsWithFeedback,
     };
