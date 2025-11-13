@@ -34,6 +34,19 @@ import { CandidateLoadingSkeleton } from "@/components/skeletons/candidate-skele
 
 type Params = Promise<{ slug: string }>;
 
+const jobSources = [
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "indeed", label: "Indeed" },
+  { value: "glassdoor", label: "Glassdoor" },
+  { value: "monster", label: "Monster" },
+  { value: "ziprecruiter", label: "ZipRecruiter" },
+  { value: "company_website", label: "Company Website" },
+];
+
+const getSourceLabel = (value: string | null | undefined) =>
+  jobSources.find((source) => source.value === value)?.label || "Unknown";
+
+
 const CandidatePage = async ({ params }: { params: Params }) => {
   return (
     <div className="block-space-mini container mx-auto">
@@ -176,6 +189,12 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
                   <div className="flex items-center gap-3">
                     <MapPin className="h-4 w-4 shrink-0" />
                     <span>{candidate.location}</span>
+                  </div>
+                )}
+                {candidate.source && (
+                  <div className="flex items-center gap-3">
+                    <Briefcase className="h-4 w-4 shrink-0" />
+                    <span>Source: {getSourceLabel(candidate.source)}</span>
                   </div>
                 )}
               </div>

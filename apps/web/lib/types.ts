@@ -7,4 +7,5 @@ export type CandidateWithPosition = {
   firstName: string;
   lastName: string;
   email: string;
+  source: string | null;
 };

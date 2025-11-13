@@ -70,6 +70,7 @@ export const getCandidatesWithPositions = async () => {
           firstName: candidate.firstName,
           lastName: candidate.lastName,
           email: candidate.email,
+          source: candidate.source
         },
         position: {
           id: position.id,

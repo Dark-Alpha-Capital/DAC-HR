@@ -14,6 +14,7 @@ export const candidateFormSchema = z.object({
   location: z.string().max(100, "Location must be at most 100 characters."),
   note: z.string().max(1000, "Note must be at most 1000 characters."),
   positionId: z.string(),
+  source: z.string(),
 });
 
 export type CandidateFormSchema = z.infer<typeof candidateFormSchema>;
