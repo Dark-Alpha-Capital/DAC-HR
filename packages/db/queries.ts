@@ -810,3 +810,27 @@ export const getUsers = async () => {
     return [];
   }
 };
+
+export async function getCandidatesByPositionId(positionId: string) {
+  try {
+    const results = await db
+      .select({
+        candidate: {
+          id: candidate.id,
+          firstName: candidate.firstName,
+          lastName: candidate.lastName,
+          email: candidate.email,
+        },
+      })
+      .from(candidate)
+      .leftJoin(
+        candidatePosition,
+        eq(candidate.id, candidatePosition.candidateId)
+      )
+      .where(eq(candidatePosition.positionId, positionId));
+    return results.map((result) => result.candidate);
+  } catch (error) {
+    console.error("Error fetching candidates by position id", error);
+    return [];
+  }
+}

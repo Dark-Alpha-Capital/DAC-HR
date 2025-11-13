@@ -225,7 +225,9 @@ const DisplayPosition = async ({ params }: { params: Params }) => {
                 No candidates have applied for this position yet.
               </p>
               <Button variant="outline" asChild>
-                <Link href={`/candidates/new?position=${position.id}`}>Add a Candidate</Link>
+                <Link href={`/candidates/new?position=${position.id}`}>
+                  Add a Candidate
+                </Link>
               </Button>
             </div>
           ) : (
@@ -239,27 +241,12 @@ const DisplayPosition = async ({ params }: { params: Params }) => {
                     <div className="flex items-center gap-3">
                       <User className="h-4 w-4 text-muted-foreground" />
                       <h4 className="font-semibold">
-                        {candidateData.firstName} {candidateData.lastName}
+                        {candidateData.firstName} {candidateData.lastName}{" "}
+                        {candidateData.email}
                       </h4>
-                      <Badge
-                        variant={
-                          applicationStatusColors[candidateData.application.status] ||
-                          "outline"
-                        }
-                      >
-                        {candidateData.application.status.charAt(0).toUpperCase() +
-                          candidateData.application.status.slice(1)}
-                      </Badge>
                     </div>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span>{candidateData.email}</span>
-                      <span>•</span>
-                      <span>Stage {candidateData.application.currentStage}</span>
-                      <span>•</span>
-                      <span>
-                        Applied{" "}
-                        {formatDate(candidateData.application.createdAt)}
-                      </span>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -267,12 +254,6 @@ const DisplayPosition = async ({ params }: { params: Params }) => {
                       <Link href={`/candidates/${candidateData.id}`}>
                         <Eye className="h-4 w-4" />
                         View
-                      </Link>
-                    </Button>
-                    <Button variant="outline" size="sm" asChild>
-                      <Link href={`/applications/${candidateData.application.id}`}>
-                        <User className="h-4 w-4" />
-                        Application
                       </Link>
                     </Button>
                   </div>
