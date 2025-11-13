@@ -178,9 +178,6 @@ const DisplayPosition = async ({ params }: { params: Params }) => {
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center gap-2">
                       <h4 className="font-semibold">{round.name}</h4>
-                      <Badge variant="secondary">
-                        Stage {round.stageOrder}
-                      </Badge>
                     </div>
                     {round.description ? (
                       <p className="text-sm text-muted-foreground line-clamp-2">

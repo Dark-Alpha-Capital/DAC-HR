@@ -17,7 +17,6 @@ export interface UpdateApplicationInput {
     | "hired"
     | "rejected"
     | "withdrawn";
-  currentStage?: number;
 }
 
 export const updateApplication = async (data: UpdateApplicationInput) => {
@@ -29,12 +28,11 @@ export const updateApplication = async (data: UpdateApplicationInput) => {
     return { error: "Unauthorized" };
   }
 
-  const { applicationId, status, currentStage } = data;
+  const { applicationId, status } = data;
 
   try {
     const updateData: Partial<typeof application.$inferInsert> = {};
     if (status !== undefined) updateData.status = status;
-    if (currentStage !== undefined) updateData.currentStage = currentStage;
 
     const [updatedApplication] = await db
       .update(application)

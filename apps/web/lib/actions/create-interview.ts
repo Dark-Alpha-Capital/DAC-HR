@@ -5,11 +5,11 @@ import { interview, application } from "@workspace/db/schema";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
-import { getPositionRoundTemplateByStage } from "@workspace/db/queries";
 import { eq } from "drizzle-orm";
 
 export interface CreateInterviewInput {
   applicationId: string;
+  positionRoundTemplateId: string;
   interviewerId: string;
   scheduledAt?: Date;
 }
@@ -23,10 +23,11 @@ export const createInterview = async (data: CreateInterviewInput) => {
     return { error: "Unauthorized" };
   }
 
-  const { applicationId, interviewerId, scheduledAt } = data;
+  const { applicationId, positionRoundTemplateId, interviewerId, scheduledAt } =
+    data;
 
   try {
-    // Get the application to find current stage and position
+    // Get the application to verify it exists
     const [app] = await db
       .select()
       .from(application)
@@ -37,27 +38,15 @@ export const createInterview = async (data: CreateInterviewInput) => {
       return { error: "Application not found" };
     }
 
-    // Get the positionRoundTemplate for the current stage
-    const positionRoundTemplate = await getPositionRoundTemplateByStage(
-      app.positionId,
-      app.currentStage
-    );
-
-    if (!positionRoundTemplate) {
-      return {
-        error: `No round template found for stage ${app.currentStage} of this position`,
-      };
-    }
-
     // Create the interview
     const [newInterview] = await db
       .insert(interview)
       .values({
         applicationId,
-        positionRoundTemplateId: positionRoundTemplate.id,
+        positionRoundTemplateId,
         interviewerId,
         scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
-        status: "scheduled",
+        status: "pending",
       })
       .returning();
 
@@ -83,4 +72,3 @@ export const createInterview = async (data: CreateInterviewInput) => {
     return { error: "Failed to create interview" };
   }
 };
-
