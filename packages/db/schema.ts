@@ -246,3 +246,30 @@ export const interviewFeedback = pgTable("interview_feedback", {
   notes: text("notes"), // The interviewer's notes on the answer
   rating: integer("rating"), // Optional score, e.g., 1-5
 });
+
+export const documentCategoryEnum = pgEnum("document_category", [
+  "job-description",
+  "onboarding",
+  "policy",
+  "hr-form",
+  "other",
+]);
+
+export const documents = pgTable("documents", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  category: documentCategoryEnum("category").default("other").notNull(),
+  url: text("url").notNull(),
+  tags: text("tags").array(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+});
+
+export type Document = InferSelectModel<typeof documents>;

@@ -36,6 +36,20 @@
       "when": 1762597832957,
       "tag": "0004_spooky_rafael_vega",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1763032048304,
+      "tag": "0005_cuddly_virginia_dare",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1763032221526,
+      "tag": "0006_regular_champions",
+      "breakpoints": true
     }
   ]
 }

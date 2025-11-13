@@ -11,6 +11,7 @@ import {
   interview,
   interviewFeedback,
   user,
+  documents,
 } from "./schema";
 import { eq, asc, inArray, and } from "drizzle-orm";
 
@@ -831,6 +832,21 @@ export async function getCandidatesByPositionId(positionId: string) {
     return results.map((result) => result.candidate);
   } catch (error) {
     console.error("Error fetching candidates by position id", error);
+    return [];
+  }
+}
+
+/**
+ *
+ * Fetches all documents from the database
+ * @returns An array of documents
+ */
+export async function getDocuments() {
+  try {
+    const results = await db.select().from(documents);
+    return results;
+  } catch (error) {
+    console.error("Error fetching documents", error);
     return [];
   }
 }
