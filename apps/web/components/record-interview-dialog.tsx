@@ -24,14 +24,13 @@ import { createInterview } from "@/lib/actions/create-interview";
 import { toast } from "sonner";
 import { Calendar } from "lucide-react";
 
-interface ScheduleInterviewDialogProps {
+interface RecordInterviewDialogProps {
   applicationId: string;
   application: {
-    currentStage: number;
     rounds: Array<{
       id: string;
       name: string;
-      stageOrder: number;
+      positionRoundTemplateId: string;
     }>;
   };
   users: Array<{
@@ -42,29 +41,35 @@ interface ScheduleInterviewDialogProps {
   currentUserId: string;
 }
 
-export default function ScheduleInterviewDialog({
+export default function RecordInterviewDialog({
   applicationId,
   application,
   users,
   currentUserId,
-}: ScheduleInterviewDialogProps) {
+}: RecordInterviewDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(true);
   const [loading, setLoading] = useState(false);
   const [interviewerId, setInterviewerId] = useState(currentUserId);
-  const [scheduledAt, setScheduledAt] = useState("");
-
-  const currentRound = application.rounds.find(
-    (r) => r.stageOrder === application.currentStage
+  const [positionRoundTemplateId, setPositionRoundTemplateId] = useState(
+    application.rounds[0]?.positionRoundTemplateId || ""
   );
+  const [scheduledAt, setScheduledAt] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!positionRoundTemplateId) {
+      toast.error("Please select a round");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const result = await createInterview({
         applicationId,
+        positionRoundTemplateId,
         interviewerId,
         scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
       });
@@ -73,15 +78,15 @@ export default function ScheduleInterviewDialog({
         toast.error(
           typeof result.error === "string"
             ? result.error
-            : "Failed to schedule interview"
+            : "Failed to record interview"
         );
       } else {
-        toast.success("Interview scheduled successfully");
+        toast.success("Interview recorded successfully");
         router.push(`/applications/${applicationId}`);
         router.refresh();
       }
     } catch (error) {
-      toast.error("An error occurred while scheduling the interview");
+      toast.error("An error occurred while recording the interview");
     } finally {
       setLoading(false);
     }
@@ -96,14 +101,32 @@ export default function ScheduleInterviewDialog({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Schedule Interview</DialogTitle>
+          <DialogTitle>Record Interview</DialogTitle>
           <DialogDescription>
-            Schedule an interview for Stage {application.currentStage}:{" "}
-            {currentRound?.name || "Current Stage"}
+            Record an interview that has been conducted for this application
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="round">Round</Label>
+              <Select
+                value={positionRoundTemplateId}
+                onValueChange={setPositionRoundTemplateId}
+                required
+              >
+                <SelectTrigger id="round">
+                  <SelectValue placeholder="Select a round" />
+                </SelectTrigger>
+                <SelectContent>
+                  {application.rounds.map((round) => (
+                    <SelectItem key={round.positionRoundTemplateId} value={round.positionRoundTemplateId}>
+                      {round.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="interviewer">Interviewer</Label>
               <Select
@@ -125,7 +148,7 @@ export default function ScheduleInterviewDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="scheduledAt">
-                Scheduled Date & Time (Optional)
+                Interview Date & Time (Optional)
               </Label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -138,7 +161,7 @@ export default function ScheduleInterviewDialog({
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Leave empty to schedule without a specific date
+                When the interview took place (or leave empty)
               </p>
             </div>
           </div>
@@ -147,7 +170,7 @@ export default function ScheduleInterviewDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Scheduling..." : "Schedule Interview"}
+              {loading ? "Recording..." : "Record Interview"}
             </Button>
           </DialogFooter>
         </form>

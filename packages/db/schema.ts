@@ -106,6 +106,35 @@ export const candidate = pgTable("candidate", {
 
 export type Candidate = InferSelectModel<typeof candidate>;
 
+export const candidateDocumentCategoryEnum = pgEnum(
+  "candidate_document_category",
+  ["resume", "cover-letter", "portfolio", "other"]
+);
+
+export const candidateDocument = pgTable("candidate_document", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  candidateId: text("candidate_id")
+    .notNull()
+    .references(() => candidate.id, { onDelete: "cascade" }),
+
+  name: text("name").notNull(),
+  description: text("description"),
+  category: candidateDocumentCategoryEnum("category")
+    .default("other")
+    .notNull(),
+  url: text("url").notNull(),
+  tags: text("tags").array(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+});
+
+export type CandidateDocument = InferSelectModel<typeof candidateDocument>;
+
 export const candidatePosition = pgTable("candidate_position", {
   id: text("id")
     .primaryKey()
@@ -159,7 +188,6 @@ export const positionRoundTemplates = pgTable("position_round_templates", {
   roundTemplateId: text("round_template_id")
     .notNull()
     .references(() => roundTemplate.id, { onDelete: "cascade" }),
-  stageOrder: integer("stage_order").notNull(), // 1, 2, 3...
 });
 
 // JOIN 2: Links a Round Template to its Questions
@@ -177,9 +205,8 @@ export const roundTemplateQuestions = pgTable("round_template_questions", {
 });
 
 export const interviewStatusEnum = pgEnum("interview_status", [
-  "scheduled",
-  "completed",
-  "cancelled",
+  "pending",
+  "complete",
 ]);
 
 export const applicationStatusEnum = pgEnum("application_status", [
@@ -203,7 +230,6 @@ export const application = pgTable("application", {
     .notNull()
     .references(() => position.id, { onDelete: "cascade" }),
   status: applicationStatusEnum("status").default("pending").notNull(),
-  currentStage: integer("current_stage").default(1).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -219,14 +245,15 @@ export const interview = pgTable("interview", {
   applicationId: text("application_id")
     .notNull()
     .references(() => application.id, { onDelete: "cascade" }),
-  // This links to the *pipeline stage* (e.g., "Stage 2 for Position A")
+  // This links to the round template for this position
   positionRoundTemplateId: text("position_round_template_id")
     .notNull()
     .references(() => positionRoundTemplates.id, { onDelete: "cascade" }),
   interviewerId: text("interviewer_id") // The User who is conducting it
     .notNull()
     .references(() => user.id, { onDelete: "set null" }),
-  status: interviewStatusEnum("status").default("scheduled").notNull(),
+  status: interviewStatusEnum("status").default("pending").notNull(),
+  rating: integer("rating"), // Rating from 1 to 5
   scheduledAt: timestamp("scheduled_at"),
   overallFeedback: text("overall_feedback"), // Interviewer's final summary
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -246,3 +273,30 @@ export const interviewFeedback = pgTable("interview_feedback", {
   notes: text("notes"), // The interviewer's notes on the answer
   rating: integer("rating"), // Optional score, e.g., 1-5
 });
+
+export const documentCategoryEnum = pgEnum("document_category", [
+  "job-description",
+  "onboarding",
+  "policy",
+  "hr-form",
+  "other",
+]);
+
+export const documents = pgTable("documents", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  category: documentCategoryEnum("category").default("other").notNull(),
+  url: text("url").notNull(),
+  tags: text("tags").array(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+});
+
+export type Document = InferSelectModel<typeof documents>;

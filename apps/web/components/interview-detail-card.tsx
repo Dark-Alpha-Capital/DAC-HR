@@ -19,7 +19,8 @@ import Link from "next/link";
 interface InterviewDetailCardProps {
   interview: {
     id: string;
-    status: "scheduled" | "completed" | "cancelled";
+    status: "pending" | "complete";
+    rating: number | null;
     scheduledAt: Date | null;
     overallFeedback: string | null;
     roundTemplate: {
@@ -27,7 +28,6 @@ interface InterviewDetailCardProps {
       name: string;
       description: string | null;
     };
-    stageOrder: number;
     interviewer: {
       id: string;
       name: string | null;
@@ -45,10 +45,8 @@ export default function InterviewDetailCard({
 }: InterviewDetailCardProps) {
   const getStatusIcon = () => {
     switch (interview.status) {
-      case "completed":
+      case "complete":
         return <CheckCircle2 className="h-4 w-4" />;
-      case "cancelled":
-        return <XCircle className="h-4 w-4" />;
       default:
         return <Circle className="h-4 w-4" />;
     }
@@ -58,9 +56,8 @@ export default function InterviewDetailCard({
     string,
     "default" | "secondary" | "outline" | "destructive"
   > = {
-    scheduled: "outline",
-    completed: "default",
-    cancelled: "destructive",
+    pending: "outline",
+    complete: "default",
   };
 
   return (
@@ -71,7 +68,7 @@ export default function InterviewDetailCard({
             <div className="flex items-center gap-2 mb-2">
               {getStatusIcon()}
               <h3 className="font-semibold text-base">
-                Stage {interview.stageOrder}: {interview.roundTemplate.name}
+                {interview.roundTemplate.name}
               </h3>
               <Badge
                 variant={statusColors[interview.status] || "outline"}
@@ -79,6 +76,11 @@ export default function InterviewDetailCard({
               >
                 {interview.status}
               </Badge>
+              {interview.rating && (
+                <Badge variant="secondary" className="text-xs">
+                  {interview.rating}/5 ⭐
+                </Badge>
+              )}
             </div>
             {interview.roundTemplate.description && (
               <p className="text-sm text-muted-foreground">
@@ -100,7 +102,7 @@ export default function InterviewDetailCard({
           {interview.scheduledAt && (
             <div className="flex items-center gap-3 text-sm">
               <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Scheduled:</span>
+              <span className="text-muted-foreground">Interview Date:</span>
               <span className="font-medium">
                 {formatDate(interview.scheduledAt)}
               </span>

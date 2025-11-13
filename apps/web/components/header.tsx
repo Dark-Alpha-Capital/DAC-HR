@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { authClient } from "@/auth-client";
 import {
   Avatar,
@@ -23,11 +23,15 @@ import { User, LogOut } from "lucide-react";
 const navLinks = [
   { href: "/candidates", label: "Candidates" },
   { href: "/positions", label: "Positions" },
+  { href: "/applications", label: "Applications" },
   { href: "/rounds", label: "Rounds" },
+  { href: "/documents", label: "Documents" },
   { href: "/questions", label: "Questions" },
 ];
 
 const Header = () => {
+  const pathname = usePathname();
+
   const { data: session, isPending } = authClient.useSession();
   const router = useRouter();
 
@@ -66,15 +70,21 @@ const Header = () => {
           dac-hr
         </Link>
         <nav className="flex items-center gap-6">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-sm font-medium hover:text-primary transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const isActive =
+              pathname === link.href || pathname.startsWith(`${link.href}/`);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`text-sm font-medium transition-colors ${
+                  isActive ? "text-primary font-semibold" : "hover:text-primary"
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
           {isPending ? (
             <Spinner className="size-6 animate-spin" />
           ) : session?.user ? (

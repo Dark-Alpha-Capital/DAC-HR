@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@google-cloud/storage": "^7.17.3",
     "@tanstack/react-form": "^1.23.8",
     "@workspace/db": "workspace:*",
     "@workspace/ui": "workspace:*",

@@ -2,6 +2,7 @@ import React, { Suspense } from "react";
 import {
   getPositionBySlug,
   getRoundsByPositionId,
+  getCandidatesByPositionId, // Add this import
 } from "@workspace/db/queries";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -15,7 +16,7 @@ import { Separator } from "@workspace/ui/components/separator";
 import { Badge } from "@workspace/ui/components/badge";
 import Link from "next/link";
 import BackButton from "@/components/back-button";
-import { Pencil, Calendar, Clock, Eye } from "lucide-react";
+import { Pencil, Calendar, Clock, Eye, Users, User } from "lucide-react"; // Add User icon
 import DeletePositionButton from "@/components/delete-position-button";
 import { formatDate } from "@/lib/utils";
 
@@ -74,7 +75,24 @@ const DisplayPosition = async ({ params }: { params: Params }) => {
     );
   }
 
-  const rounds = await getRoundsByPositionId(position.id);
+  const [rounds, candidates] = await Promise.all([
+    getRoundsByPositionId(position.id),
+    getCandidatesByPositionId(position.id), // Add this
+  ]);
+
+  // Application status colors
+  const applicationStatusColors: Record<
+    string,
+    "default" | "secondary" | "outline" | "destructive"
+  > = {
+    pending: "outline",
+    reviewed: "secondary",
+    shortlisted: "default",
+    interviewing: "default",
+    hired: "default",
+    rejected: "destructive",
+    withdrawn: "outline",
+  } as const;
 
   return (
     <div className="space-y-6">
@@ -160,9 +178,6 @@ const DisplayPosition = async ({ params }: { params: Params }) => {
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center gap-2">
                       <h4 className="font-semibold">{round.name}</h4>
-                      <Badge variant="secondary">
-                        Stage {round.stageOrder}
-                      </Badge>
                     </div>
                     {round.description ? (
                       <p className="text-sm text-muted-foreground line-clamp-2">
@@ -180,6 +195,65 @@ const DisplayPosition = async ({ params }: { params: Params }) => {
                       View
                     </Link>
                   </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Candidates Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              <CardTitle>Candidates</CardTitle>
+            </div>
+            <Badge variant="secondary">{candidates.length}</Badge>
+          </div>
+        </CardHeader>
+        <Separator />
+        <CardContent className="pt-6">
+          {candidates.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="h-12 w-12 mx-auto mb-3 opacity-50 text-muted-foreground" />
+              <p className="text-muted-foreground mb-4">
+                No candidates have applied for this position yet.
+              </p>
+              <Button variant="outline" asChild>
+                <Link href={`/candidates/new?position=${position.id}`}>
+                  Add a Candidate
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {candidates.map((candidateData) => (
+                <div
+                  key={candidateData.id}
+                  className="flex items-center justify-between gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-3">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <h4 className="font-semibold">
+                        {candidateData.firstName} {candidateData.lastName}{" "}
+                        {candidateData.email}
+                      </h4>
+                    </div>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span>{candidateData.email}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={`/candidates/${candidateData.id}`}>
+                        <Eye className="h-4 w-4" />
+                        View
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>

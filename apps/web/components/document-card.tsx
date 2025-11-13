@@ -1,0 +1,170 @@
+"use client";
+
+import React, { useState } from "react";
+import Link from "next/link";
+import { Button } from "@workspace/ui/components/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
+import { Badge } from "@workspace/ui/components/badge";
+import { Eye, Pencil, FileText, Loader2 } from "lucide-react";
+import type { Document } from "@workspace/db/schema";
+import DeleteDocumentButton from "./delete-document-button";
+import { toast } from "sonner";
+
+interface DocumentCardProps {
+  document: Document;
+}
+
+const categoryColors = {
+  "job-description": "default",
+  onboarding: "secondary",
+  policy: "outline",
+  "hr-form": "default",
+  other: "destructive",
+} as const;
+
+const categoryLabels = {
+  "job-description": "Job Description",
+  onboarding: "Onboarding",
+  policy: "Policy",
+  "hr-form": "HR Form",
+  other: "Other",
+} as const;
+
+const DocumentCard = ({ document }: DocumentCardProps) => {
+  const [isLoadingViewUrl, setIsLoadingViewUrl] = useState(false);
+
+  const categoryColor =
+    categoryColors[document.category] || categoryColors.other;
+  const categoryLabel =
+    categoryLabels[document.category] || categoryLabels.other;
+
+  const formatDate = (date: Date) => {
+    return new Date(date).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const handleViewDocument = async () => {
+    setIsLoadingViewUrl(true);
+    try {
+      // Check if URL is already a public URL (not GCS)
+      const isPublicUrl =
+        !document.url.includes("storage.googleapis.com") &&
+        !document.url.startsWith("gs://");
+
+      console.log("isPublicUrl", isPublicUrl);
+
+      if (isPublicUrl) {
+        // If it's already a public URL, open it directly
+        window.open(document.url, "_blank", "noopener,noreferrer");
+        setIsLoadingViewUrl(false);
+        return;
+      }
+
+      // For GCS URLs, get a signed URL
+      const response = await fetch(
+        `/api/documents/view?url=${encodeURIComponent(document.url)}`
+      );
+
+      console.log("response", response);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to generate access URL");
+      }
+
+      const { url: signedUrl } = await response.json();
+      window.open(signedUrl, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      console.error("Error viewing document:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to open document. Please try again."
+      );
+    } finally {
+      setIsLoadingViewUrl(false);
+    }
+  };
+
+  return (
+    <Card className="flex flex-col">
+      <CardHeader>
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start gap-2 flex-1 min-w-0">
+            <FileText className="h-5 w-5 mt-0.5 text-muted-foreground shrink-0" />
+            <CardTitle className="text-lg line-clamp-2">
+              {document.name}
+            </CardTitle>
+          </div>
+          <Badge variant={categoryColor} className="shrink-0">
+            {categoryLabel}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="flex-1">
+        <div className="space-y-2 text-sm">
+          {document.description && (
+            <p className="text-muted-foreground line-clamp-3">
+              {document.description}
+            </p>
+          )}
+          {document.tags && document.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {document.tags.map((tag, index) => (
+                <Badge key={index} variant="outline" className="text-xs">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          )}
+          <div className="pt-2 border-t space-y-1">
+            <p className="text-xs text-muted-foreground">
+              Created: {formatDate(document.createdAt)}
+            </p>
+            {document.updatedAt &&
+              document.updatedAt.getTime() !== document.createdAt.getTime() && (
+                <p className="text-xs text-muted-foreground">
+                  Updated: {formatDate(document.updatedAt)}
+                </p>
+              )}
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter className="border-t">
+        <div className="flex gap-2 w-full">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleViewDocument}
+            disabled={isLoadingViewUrl}
+          >
+            {isLoadingViewUrl ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Eye className="h-4 w-4" />
+            )}
+            View
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/documents/${document.slug}/edit`}>
+              <Pencil className="h-4 w-4" />
+              Edit
+            </Link>
+          </Button>
+          <DeleteDocumentButton documentId={document.id} />
+        </div>
+      </CardFooter>
+    </Card>
+  );
+};
+
+export default DocumentCard;

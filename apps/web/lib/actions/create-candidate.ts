@@ -1,7 +1,11 @@
 "use server";
 
 import { db } from "@workspace/db";
-import { candidate, application } from "@workspace/db/schema";
+import {
+  candidate,
+  application,
+  candidatePosition,
+} from "@workspace/db/schema";
 import {
   CandidateFormSchema,
   candidateFormSchema,
@@ -44,13 +48,19 @@ export const createCandidate = async (data: CandidateFormSchema) => {
       return { error: "Failed to create candidate" };
     }
 
-    // Automatically create an application if a position is selected
+    // Automatically create an application and link to position if a position is selected
     if (positionId && positionId.trim() !== "") {
+      // Create the application record
       await db.insert(application).values({
         candidateId: newCandidate.id,
         positionId,
         status: "pending",
-        currentStage: 1,
+      });
+
+      // Link candidate to position in candidatePosition table for tracking
+      await db.insert(candidatePosition).values({
+        candidateId: newCandidate.id,
+        positionId,
       });
     }
 

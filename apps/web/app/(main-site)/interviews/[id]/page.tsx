@@ -25,8 +25,8 @@ import {
   Users,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import InterviewQuestionFeedbackForm from "@/components/interview-question-feedback-form";
-import InterviewSummaryForm from "@/components/interview-summary-form";
+import InterviewQuestionFeedbackDisplay from "@/components/interview-question-feedback-display";
+import InterviewSummaryDisplay from "@/components/interview-summary-display";
 
 type Params = Promise<{ id: string }>;
 
@@ -62,7 +62,9 @@ const DisplayInterview = async ({ params }: { params: Params }) => {
     );
   }
 
-  const application = await getApplicationWithInterviews(interview.applicationId);
+  const application = await getApplicationWithInterviews(
+    interview.applicationId
+  );
   const candidate = application
     ? await getCandidateById(application.candidateId)
     : null;
@@ -76,14 +78,9 @@ const DisplayInterview = async ({ params }: { params: Params }) => {
     string,
     "default" | "secondary" | "outline" | "destructive"
   > = {
-    scheduled: "outline",
-    completed: "default",
-    cancelled: "destructive",
+    pending: "outline",
+    complete: "default",
   } as const;
-
-  const hasNextStage = Boolean(
-    application?.rounds.some((round) => round.stageOrder > application.currentStage)
-  );
 
   return (
     <div className="space-y-6">
@@ -99,17 +96,21 @@ const DisplayInterview = async ({ params }: { params: Params }) => {
                 <Badge
                   variant={interviewStatusColors[interview.status] || "outline"}
                 >
-                  {interview.status.charAt(0).toUpperCase() + interview.status.slice(1)}
+                  {interview.status.charAt(0).toUpperCase() +
+                    interview.status.slice(1)}
                 </Badge>
               </div>
               <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                <span className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4" /> Stage {interview.stageOrder}
-                </span>
+                {interview.rating && (
+                  <span className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4" /> Rating:{" "}
+                    {interview.rating}/5
+                  </span>
+                )}
                 {interview.scheduledAt && (
                   <span className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
-                    Scheduled {formatDate(interview.scheduledAt)}
+                    Interview Date: {formatDate(interview.scheduledAt)}
                   </span>
                 )}
                 <span className="flex items-center gap-2">
@@ -119,7 +120,8 @@ const DisplayInterview = async ({ params }: { params: Params }) => {
                 {interview.interviewer && (
                   <span className="flex items-center gap-2">
                     <User className="h-4 w-4" />
-                    Interviewer {interview.interviewer.name || interview.interviewer.email}
+                    Interviewer{" "}
+                    {interview.interviewer.name || interview.interviewer.email}
                   </span>
                 )}
               </div>
@@ -168,10 +170,9 @@ const DisplayInterview = async ({ params }: { params: Params }) => {
         </CardHeader>
         <Separator />
         <CardContent className="pt-6">
-          <InterviewSummaryForm
+          <InterviewSummaryDisplay
             interview={interview}
             applicationId={application?.id ?? interview.applicationId}
-            hasNextStage={hasNextStage}
           />
         </CardContent>
       </Card>
@@ -184,7 +185,9 @@ const DisplayInterview = async ({ params }: { params: Params }) => {
               <Pencil className="h-5 w-5" />
               <CardTitle className="text-lg">Question Feedback</CardTitle>
             </div>
-            <Badge variant="secondary">{interview.questions.length} questions</Badge>
+            <Badge variant="secondary">
+              {interview.questions.length} questions
+            </Badge>
           </div>
         </CardHeader>
         <Separator />
@@ -192,11 +195,13 @@ const DisplayInterview = async ({ params }: { params: Params }) => {
           {interview.questions.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Pencil className="h-10 w-10 mx-auto mb-3 opacity-50" />
-              <p className="text-sm">No questions are linked to this interview.</p>
+              <p className="text-sm">
+                No questions are linked to this interview.
+              </p>
             </div>
           ) : (
             interview.questions.map((question, index) => (
-              <InterviewQuestionFeedbackForm
+              <InterviewQuestionFeedbackDisplay
                 key={question.id}
                 interviewId={interview.id}
                 question={question}

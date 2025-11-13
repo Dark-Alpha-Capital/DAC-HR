@@ -1,39 +1,36 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@workspace/ui/components/button";
 import { Label } from "@workspace/ui/components/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@workspace/ui/components/select";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { Input } from "@workspace/ui/components/input";
-import { Checkbox } from "@workspace/ui/components/checkbox";
 import { updateInterview } from "@/lib/actions/update-interview";
 import { toast } from "sonner";
 
-type InterviewStatus = "scheduled" | "completed" | "cancelled";
+type InterviewStatus = "pending" | "complete";
 
 interface InterviewSummaryFormProps {
   interview: {
     id: string;
     status: InterviewStatus;
+    rating: number | null;
     scheduledAt: Date | null;
     overallFeedback: string | null;
   };
   applicationId: string;
-  hasNextStage: boolean;
 }
 
 const statusLabels: Record<InterviewStatus, string> = {
-  scheduled: "Scheduled",
-  completed: "Completed",
-  cancelled: "Cancelled",
+  pending: "Pending",
+  complete: "Complete",
 };
 
 const statusDescriptions: Record<InterviewStatus, string> = {
-  scheduled: "Interview is scheduled or in progress",
-  completed: "Interview has been completed",
-  cancelled: "Interview was cancelled",
+  pending: "Interview is pending or in progress",
+  complete: "Interview has been completed",
 };
 
 function formatDateForInput(value: Date | null) {
@@ -45,36 +42,33 @@ function formatDateForInput(value: Date | null) {
 export default function InterviewSummaryForm({
   interview,
   applicationId,
-  hasNextStage,
 }: InterviewSummaryFormProps) {
   const router = useRouter();
   const [status, setStatus] = useState<InterviewStatus>(interview.status);
+  const [rating, setRating] = useState<string>(
+    interview.rating?.toString() ?? "none"
+  );
   const [overallFeedback, setOverallFeedback] = useState(
     interview.overallFeedback ?? ""
   );
   const [scheduledAt, setScheduledAt] = useState(
     formatDateForInput(interview.scheduledAt)
   );
-  const [advanceStage, setAdvanceStage] = useState(false);
   const [isPending, startTransition] = useTransition();
-
-  const showAdvanceStage = useMemo(
-    () => status === "completed" && hasNextStage,
-    [status, hasNextStage]
-  );
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     startTransition(async () => {
       const parsedDate = scheduledAt ? new Date(scheduledAt) : null;
+      const parsedRating = rating && rating !== "none" ? parseInt(rating, 10) : undefined;
 
       const result = await updateInterview({
         interviewId: interview.id,
         status,
-        overallFeedback: overallFeedback.trim(),
+        rating: parsedRating,
+        overallFeedback: overallFeedback.trim() || undefined,
         scheduledAt: parsedDate,
-        advanceStage: showAdvanceStage ? advanceStage : false,
       });
 
       if (result.error) {
@@ -119,33 +113,41 @@ export default function InterviewSummaryForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="scheduledAt">Scheduled Date & Time</Label>
-          <Input
-            id="scheduledAt"
-            type="datetime-local"
-            value={scheduledAt}
-            onChange={(event) => setScheduledAt(event.target.value)}
-          />
+          <Label htmlFor="rating">Rating (1-5)</Label>
+          <Select
+            value={rating}
+            onValueChange={setRating}
+          >
+            <SelectTrigger id="rating">
+              <SelectValue placeholder="Select rating" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No rating</SelectItem>
+              {[1, 2, 3, 4, 5].map((num) => (
+                <SelectItem key={num} value={num.toString()}>
+                  {num} {num === 1 ? "star" : "stars"}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <p className="text-xs text-muted-foreground">
-            Update to reschedule or clear the date to remove it
+            Rate the candidate's performance (optional)
           </p>
         </div>
       </div>
 
-      {showAdvanceStage && (
-        <label className="flex items-center gap-2 text-sm">
-          <Checkbox
-            checked={advanceStage}
-            onCheckedChange={(checked) => setAdvanceStage(checked === true)}
-          />
-          <span>
-            Advance application to next stage after saving
-            <span className="ml-1 text-xs text-muted-foreground">
-              (Stage progression happens immediately)
-            </span>
-          </span>
-        </label>
-      )}
+      <div className="space-y-2">
+        <Label htmlFor="scheduledAt">Interview Date & Time</Label>
+        <Input
+          id="scheduledAt"
+          type="datetime-local"
+          value={scheduledAt}
+          onChange={(event) => setScheduledAt(event.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">
+          When the interview took place (or leave empty)
+        </p>
+      </div>
 
       <div className="space-y-2">
         <Label htmlFor="overallFeedback">Overall Feedback</Label>
