@@ -5,7 +5,9 @@ import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import { getPositions } from "@workspace/db/queries";
 
-const page = () => {
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
+
+const page = async ({ searchParams }: { searchParams: SearchParams }) => {
   return (
     <div className="block-space narrow-container mx-auto">
       <Button>

@@ -4,6 +4,7 @@ import * as React from "react";
 import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
+import { useSearchParams } from "next/navigation"; // Add this import
 import * as z from "zod";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -55,6 +56,16 @@ const CandidateUploadForm = ({
 }) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const searchParams = useSearchParams();
+
+  // Get the pre-selected position from URL params
+  const preSelectedPositionId = searchParams.get("position");
+
+  // Validate that the position exists in the positions array
+  const defaultPositionId =
+    preSelectedPositionId && positions.some((p) => p.id === preSelectedPositionId)
+      ? preSelectedPositionId
+      : positions[0]?.id || "";
 
   const form = useForm({
     defaultValues: {
@@ -64,7 +75,7 @@ const CandidateUploadForm = ({
       phone: "",
       location: "New York, NY",
       note: "",
-      positionId: positions[0]?.id,
+      positionId: defaultPositionId, // Use the pre-selected or default position
     },
     validators: {
       onSubmit: candidateFormSchema,
