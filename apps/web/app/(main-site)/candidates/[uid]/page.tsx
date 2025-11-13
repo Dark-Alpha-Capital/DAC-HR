@@ -1,5 +1,8 @@
 import React, { Suspense } from "react";
-import { getCandidateWithApplications } from "@workspace/db/queries";
+import {
+  getCandidateWithApplications,
+  getDocumentsByCandidateId,
+} from "@workspace/db/queries";
 import { Button } from "@workspace/ui/components/button";
 import {
   Card,
@@ -27,29 +30,92 @@ import {
   Users,
   Plus,
   Eye,
+  FileText,
 } from "lucide-react";
 import DeleteCandidateButton from "@/components/delete-candidate-button";
 import { formatDate } from "@/lib/utils";
 import { CandidateLoadingSkeleton } from "@/components/skeletons/candidate-skeleton";
+import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";
+import CandidateDocumentCard from "@/components/candidate-document-card";
 
-type Params = Promise<{ slug: string }>;
+type Params = Promise<{ uid: string }>;
 
 const CandidatePage = async ({ params }: { params: Params }) => {
   return (
     <div className="block-space-mini container mx-auto">
       <BackButton />
-      <Suspense fallback={<CandidateLoadingSkeleton />}>
-        <DisplayCandidate params={params} />
-      </Suspense>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Suspense fallback={<CandidateLoadingSkeleton />}>
+          <DisplayCandidate params={params} />
+        </Suspense>
+        <Suspense fallback={<FormLoadingFallback />}>
+          <DisplayCandidateDocuments params={params} />
+        </Suspense>
+      </div>
     </div>
   );
 };
 
 export default CandidatePage;
 
+const DisplayCandidateDocuments = async ({ params }: { params: Params }) => {
+  const { uid } = await params;
+  const documents = await getDocumentsByCandidateId(uid);
+
+  return (
+    <Card className="h-fit">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            <CardTitle className="text-lg">Documents</CardTitle>
+          </div>
+          <Badge variant="secondary">{documents.length}</Badge>
+        </div>
+      </CardHeader>
+      <Separator />
+      <CardContent className="pt-6">
+        {documents.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+            <p className="text-sm mb-4">
+              No documents found for this candidate.
+            </p>
+            <Button asChild>
+              <Link href={`/candidates/${uid}/add-document`}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Document
+              </Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {documents.map((document) => (
+              <CandidateDocumentCard
+                key={document.id}
+                document={document}
+                candidateId={uid}
+              />
+            ))}
+            <div className="pt-2">
+              <Button variant="outline" asChild>
+                <Link href={`/candidates/${uid}/add-document`}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Document
+                </Link>
+              </Button>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
 const DisplayCandidate = async ({ params }: { params: Params }) => {
-  const { slug } = await params;
-  const candidate = await getCandidateWithApplications(slug);
+  const { uid } = await params;
+  const candidate = await getCandidateWithApplications(uid);
 
   if (!candidate) {
     return (
@@ -141,9 +207,7 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
         </CardHeader>
       </Card>
 
-      {/* Two Column Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Column - Contact & Notes */}
+      <div className="">
         <div className="space-y-6">
           <Card>
             <CardHeader>

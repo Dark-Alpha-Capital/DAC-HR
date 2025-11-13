@@ -6,7 +6,7 @@ import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleto
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 
-type Params = Promise<{ slug: string }>;
+type Params = Promise<{ uid: string }>;
 
 const EditCandidatePage = async ({ params }: { params: Params }) => {
   return (
@@ -23,9 +23,9 @@ const EditCandidatePage = async ({ params }: { params: Params }) => {
 export default EditCandidatePage;
 
 const EditCandidateForm = async ({ params }: { params: Params }) => {
-  const { slug } = await params;
+  const { uid } = await params;
   const [candidate, positions] = await Promise.all([
-    getCandidateById(slug),
+    getCandidateById(uid),
     getPositions(),
   ]);
 
@@ -45,9 +45,11 @@ const EditCandidateForm = async ({ params }: { params: Params }) => {
 
   return (
     <CandidateEditForm
-      candidate={candidate}
+      candidate={{
+        ...candidate,
+        positionId: candidate.positionId || undefined,
+      }}
       positions={positions.map((p) => ({ id: p.id, name: p.name }))}
     />
   );
 };
-
