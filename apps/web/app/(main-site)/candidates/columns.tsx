@@ -2,6 +2,8 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { applicationStatusEnum } from "@workspace/db/schema";
+import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 
@@ -16,7 +18,6 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 
 import { Checkbox } from "@workspace/ui/components/checkbox";
 import { deleteCandidate } from "@/lib/actions/delete-candidate";
@@ -82,11 +83,25 @@ export const columns: ColumnDef<Candidate>[] = [
   {
     id: "actions",
     cell: ({ row }) => {
-      const router = useRouter();
       const candidate = row.original;
+      const router = useRouter();
+      const pathname = usePathname();
+      const [open, setOpen] = useState(false);
+
+      // Close dropdown when route changes
+      useEffect(() => {
+        setOpen(false);
+      }, [pathname]);
+
+      // Cleanup: ensure dropdown closes on unmount
+      useEffect(() => {
+        return () => {
+          setOpen(false);
+        };
+      }, []);
 
       return (
-        <DropdownMenu>
+        <DropdownMenu open={open} onOpenChange={setOpen}>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
               <span className="sr-only">Open menu</span>
@@ -97,8 +112,14 @@ export const columns: ColumnDef<Candidate>[] = [
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
             <DropdownMenuItem
-              onSelect={() => {
-                router.push(`/candidates/${candidate.id}`);
+              onSelect={(e) => {
+                e.preventDefault();
+                // Close dropdown immediately
+                setOpen(false);
+                // Force navigation after ensuring state update
+                setTimeout(() => {
+                  router.push(`/candidates/${candidate.id}`);
+                }, 150);
               }}
             >
               View candidate
