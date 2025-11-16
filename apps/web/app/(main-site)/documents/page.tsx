@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 const DocumentsPage = () => {
   return (
-    <div className="block-space narrow-container mx-auto">
+    <div className="block-space-mini container mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Documents</h1>
         <Button asChild>
@@ -43,7 +43,7 @@ async function PresentDocuments() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       {documents.map((document) => (
         <DocumentCard key={document.id} document={document} />
       ))}

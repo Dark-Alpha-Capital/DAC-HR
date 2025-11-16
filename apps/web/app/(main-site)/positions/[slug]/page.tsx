@@ -24,11 +24,13 @@ type Params = Promise<{ slug: string }>;
 
 const PositionPage = async ({ params }: { params: Params }) => {
   return (
-    <div className="block-space narrow-container mx-auto">
+    <div className="block-space-mini container mx-auto">
       <BackButton />
-      <Suspense fallback={<PositionLoadingSkeleton />}>
-        <DisplayPosition params={params} />
-      </Suspense>
+      <div className="mt-4 md:mt-6 lg:mt-8">
+        <Suspense fallback={<PositionLoadingSkeleton />}>
+          <DisplayPosition params={params} />
+        </Suspense>
+      </div>
     </div>
   );
 };
@@ -95,7 +97,7 @@ const DisplayPosition = async ({ params }: { params: Params }) => {
   } as const;
 
   return (
-    <div className="space-y-6">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
