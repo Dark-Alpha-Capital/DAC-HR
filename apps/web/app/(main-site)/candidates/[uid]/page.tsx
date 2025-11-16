@@ -31,6 +31,7 @@ import {
   Plus,
   Eye,
   FileText,
+  Link as LinkIcon,
 } from "lucide-react";
 import DeleteCandidateButton from "@/components/delete-candidate-button";
 import { formatDate } from "@/lib/utils";
@@ -237,6 +238,12 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
                   <div className="flex items-center gap-3">
                     <MapPin className="h-4 w-4 shrink-0" />
                     <span>{candidate.location}</span>
+                  </div>
+                )}
+                {candidate.source && (
+                  <div className="flex items-center gap-3">
+                    <LinkIcon className="h-4 w-4 shrink-0" />
+                    <span>{candidate.source}</span>
                   </div>
                 )}
               </div>

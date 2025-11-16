@@ -96,6 +96,7 @@ export const candidate = pgTable("candidate", {
   email: text("email").notNull(),
   phone: text("phone"),
   location: text("location"),
+  source: text("source"),
   note: text("note"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
