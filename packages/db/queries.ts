@@ -13,6 +13,7 @@ import {
   user,
   documents,
   candidateDocument,
+  employee,
 } from "./schema";
 import { eq, asc, inArray, and } from "drizzle-orm";
 
@@ -899,3 +900,205 @@ export async function getDocumentsByCandidateId(candidateId: string) {
     return [];
   }
 }
+
+/**
+ * Fetches all employees from the database
+ * @returns An array of employees
+ */
+export const getEmployees = async () => {
+  try {
+    return await db.select().from(employee);
+  } catch (error) {
+    console.error("Error fetching employees", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches all employees with their manager information
+ * @returns An array of employees with manager details
+ */
+export const getEmployeesWithManager = async () => {
+  try {
+    // For now, let's fetch all employees and then fetch manager info separately
+    // This avoids the complex self-join which can be tricky in Drizzle
+    const employees = await db.select().from(employee);
+    
+    const employeesWithManager = await Promise.all(
+      employees.map(async (emp) => {
+        let manager = null;
+        if (emp.managerId) {
+          const [managerResult] = await db
+            .select({
+              id: employee.id,
+              firstName: employee.firstName,
+              lastName: employee.lastName,
+              email: employee.email,
+            })
+            .from(employee)
+            .where(eq(employee.id, emp.managerId));
+          manager = managerResult || null;
+        }
+        return {
+          ...emp,
+          manager,
+        };
+      })
+    );
+    
+    return employeesWithManager;
+  } catch (error) {
+    console.error("Error fetching employees with manager", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches an employee by their ID
+ * @param id The ID of the employee to fetch
+ * @returns The employee or null if not found
+ */
+export const getEmployeeById = async (id: string) => {
+  try {
+    const [employeeResult] = await db
+      .select()
+      .from(employee)
+      .where(eq(employee.id, id));
+    return employeeResult || null;
+  } catch (error) {
+    console.error("Error fetching employee by id", error);
+    return null;
+  }
+};
+
+/**
+ * Fetches an employee by their company employee ID
+ * @param employeeId The company employee ID
+ * @returns The employee or null if not found
+ */
+export const getEmployeeByEmployeeId = async (employeeId: string) => {
+  try {
+    const [employeeResult] = await db
+      .select()
+      .from(employee)
+      .where(eq(employee.employeeId, employeeId));
+    return employeeResult || null;
+  } catch (error) {
+    console.error("Error fetching employee by employee id", error);
+    return null;
+  }
+};
+
+/**
+ * Fetches employees by department
+ * @param department The department name
+ * @returns An array of employees in the department
+ */
+export const getEmployeesByDepartment = async (department: string) => {
+  try {
+    return await db
+      .select()
+      .from(employee)
+      .where(eq(employee.department, department));
+  } catch (error) {
+    console.error("Error fetching employees by department", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches employees managed by a specific manager
+ * @param managerId The ID of the manager
+ * @returns An array of employees under the manager
+ */
+export const getEmployeesByManagerId = async (managerId: string) => {
+  try {
+    return await db
+      .select()
+      .from(employee)
+      .where(eq(employee.managerId, managerId));
+  } catch (error) {
+    console.error("Error fetching employees by manager id", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches active employees only
+ * @returns An array of active employees
+ */
+export const getActiveEmployees = async () => {
+  try {
+    return await db
+      .select()
+      .from(employee)
+      .where(eq(employee.status, "active"));
+  } catch (error) {
+    console.error("Error fetching active employees", error);
+    return [];
+  }
+};
+
+/**
+ * Helper function to create an employee from a candidate when they get hired
+ * @param candidateId The candidate ID to convert
+ * @param employeeData Additional employee-specific data
+ * @returns The created employee or null if candidate not found
+ */
+export const createEmployeeFromCandidate = async (
+  candidateId: string,
+  employeeData: {
+    employeeId?: string;
+    acceptanceDate?: Date;
+    startDate: Date;
+    salary?: number;
+    department?: string;
+    position: string;
+    managerId?: string;
+    notes?: string;
+  }
+) => {
+  try {
+    // First, get the candidate data
+    const candidateData = await getCandidateById(candidateId);
+    if (!candidateData) {
+      throw new Error("Candidate not found");
+    }
+
+    // Create the employee record
+    const [newEmployee] = await db
+      .insert(employee)
+      .values({
+        firstName: candidateData.firstName,
+        lastName: candidateData.lastName,
+        email: candidateData.email,
+        phone: candidateData.phone,
+        location: candidateData.location,
+        ...employeeData,
+      })
+      .returning();
+
+    return newEmployee;
+  } catch (error) {
+    console.error("Error creating employee from candidate", error);
+    return null;
+  }
+};
+
+/**
+ * Deletes an employee from the database permanently
+ * @param employeeId The ID of the employee to delete
+ * @returns True if deletion was successful, false otherwise
+ */
+export const deleteEmployee = async (employeeId: string) => {
+  try {
+    const result = await db
+      .delete(employee)
+      .where(eq(employee.id, employeeId));
+    
+    return true;
+  } catch (error) {
+    console.error("Error deleting employee", error);
+    return false;
+  }
+};

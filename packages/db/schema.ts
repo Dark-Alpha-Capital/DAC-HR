@@ -301,3 +301,47 @@ export const documents = pgTable("documents", {
 });
 
 export type Document = InferSelectModel<typeof documents>;
+
+// Employee Directory Schema
+export const employeeStatusEnum = pgEnum("employee_status", [
+  "active",
+  "on_leave",
+  "terminated",
+  "resigned",
+]);
+
+export const employee = pgTable("employee", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  // Basic info from candidate
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  email: text("email").notNull().unique(),
+  phone: text("phone"),
+  location: text("location"),
+  
+  // Employment specific info
+  employeeId: text("employee_id").unique(), // Company employee ID
+  acceptanceDate: timestamp("acceptance_date"), // When they accepted the offer
+  startDate: timestamp("start_date").notNull(), // When they started working
+  salary: integer("salary"), // Annual salary in cents to avoid floating point issues
+  
+  // HR info
+  department: text("department"),
+  position: text("position").notNull(), // Job title/role
+  managerId: text("manager_id"), // Will be constrained via foreign key in migration
+  
+  // Status and notes
+  status: employeeStatusEnum("status").default("active").notNull(),
+  notes: text("notes"), // HR notes
+  
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+export type Employee = InferSelectModel<typeof employee>;

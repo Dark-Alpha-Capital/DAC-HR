@@ -78,6 +78,13 @@
       "when": 1763294286365,
       "tag": "0010_flawless_wither",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1763329959119,
+      "tag": "0011_glossy_nova",
+      "breakpoints": true
     }
   ]
 }
