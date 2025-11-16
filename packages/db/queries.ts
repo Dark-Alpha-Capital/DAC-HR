@@ -272,7 +272,6 @@ export const getQuestionsWithRounds = async () => {
       .select({
         questionId: questionBank.id,
         questionText: questionBank.questionText,
-        questionType: questionBank.questionType,
         createdAt: questionBank.createdAt,
         updatedAt: questionBank.updatedAt,
         roundId: roundTemplate.id,
@@ -301,7 +300,6 @@ export const getQuestionsWithRounds = async () => {
       {
         id: string;
         questionText: string;
-        questionType: string | null;
         createdAt: Date;
         updatedAt: Date;
         rounds: Array<{ id: string; name: string }>;
@@ -315,7 +313,6 @@ export const getQuestionsWithRounds = async () => {
         questionsMap.set(questionId, {
           id: result.questionId,
           questionText: result.questionText,
-          questionType: result.questionType,
           createdAt: result.createdAt,
           updatedAt: result.updatedAt,
           rounds: [],
@@ -382,7 +379,6 @@ export const getQuestionsByRoundId = async (roundId: string) => {
       .select({
         id: questionBank.id,
         questionText: questionBank.questionText,
-        questionType: questionBank.questionType,
         createdAt: questionBank.createdAt,
         updatedAt: questionBank.updatedAt,
       })
@@ -770,7 +766,6 @@ export const getInterviewById = async (interviewId: string) => {
         question: {
           id: questionBank.id,
           questionText: questionBank.questionText,
-          questionType: questionBank.questionType,
         },
       })
       .from(interviewFeedback)

@@ -158,7 +158,6 @@ export const questionBank = pgTable("question_bank", {
     .primaryKey()
     .default(sql`gen_random_uuid()`),
   questionText: text("question_text").notNull(),
-  questionType: text("question_type").default("behavioral").notNull(), // e.g., 'behavioral', 'technical'
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -207,7 +206,8 @@ export const roundTemplateQuestions = pgTable("round_template_questions", {
 
 export const interviewStatusEnum = pgEnum("interview_status", [
   "pending",
-  "complete",
+  "move_forward",
+  "rejected",
 ]);
 
 export const applicationStatusEnum = pgEnum("application_status", [

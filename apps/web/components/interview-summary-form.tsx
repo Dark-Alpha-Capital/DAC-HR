@@ -9,7 +9,7 @@ import { Textarea } from "@workspace/ui/components/textarea";
 import { updateInterview } from "@/lib/actions/update-interview";
 import { toast } from "sonner";
 
-type InterviewStatus = "pending" | "complete";
+type InterviewStatus = "pending" | "move_forward" | "rejected";
 
 interface InterviewSummaryFormProps {
   interview: {
@@ -24,12 +24,14 @@ interface InterviewSummaryFormProps {
 
 const statusLabels: Record<InterviewStatus, string> = {
   pending: "Pending",
-  complete: "Complete",
+  move_forward: "Move Forward",
+  rejected: "Rejected",
 };
 
 const statusDescriptions: Record<InterviewStatus, string> = {
   pending: "Interview is pending or in progress",
-  complete: "Interview has been completed",
+  move_forward: "Candidate should move forward to next round",
+  rejected: "Candidate has been rejected",
 };
 
 export default function InterviewSummaryForm({

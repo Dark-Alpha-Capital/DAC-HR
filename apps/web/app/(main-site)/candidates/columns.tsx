@@ -20,6 +20,7 @@ import Link from "next/link";
 
 import { Checkbox } from "@workspace/ui/components/checkbox";
 import { deleteCandidate } from "@/lib/actions/delete-candidate";
+import { useRouter } from "next/navigation";
 
 export type Candidate = {
   id: string;
@@ -31,6 +32,7 @@ export type Candidate = {
 };
 
 function CandidateActions({ candidate }: { candidate: Candidate }) {
+  const router = useRouter();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -42,10 +44,12 @@ function CandidateActions({ candidate }: { candidate: Candidate }) {
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
-        <DropdownMenuItem asChild>
-          <Link href={`/candidates/${candidate.id}`} className="cursor-pointer">
-            View candidate
-          </Link>
+        <DropdownMenuItem
+          onSelect={() => {
+            router.push(`/candidates/${candidate.id}`);
+          }}
+        >
+          View candidate
         </DropdownMenuItem>
         <DropdownMenuItem
           variant={"destructive"}

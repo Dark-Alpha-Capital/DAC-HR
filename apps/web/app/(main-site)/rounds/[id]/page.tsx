@@ -161,19 +161,6 @@ const DisplayRoundQuestions = async ({ params }: { params: Params }) => {
   const { id } = await params;
   const questions = await getQuestionsByRoundId(id);
 
-  const getQuestionTypeColor = (type: string) => {
-    switch (type) {
-      case "behavioral":
-        return "default";
-      case "technical":
-        return "secondary";
-      case "skill":
-        return "outline";
-      default:
-        return "default";
-    }
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -204,13 +191,6 @@ const DisplayRoundQuestions = async ({ params }: { params: Params }) => {
               >
                 <div className="flex-1 space-y-2">
                   <p className="font-medium">{question.questionText}</p>
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant={getQuestionTypeColor(question.questionType)}
-                    >
-                      {question.questionType}
-                    </Badge>
-                  </div>
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" asChild>

@@ -3,7 +3,6 @@ import { getQuestionById } from "@workspace/db/queries";
 import { Button } from "@workspace/ui/components/button";
 import {
   Card,
-  CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -71,19 +70,6 @@ const DisplayQuestion = async ({ params }: { params: Params }) => {
     );
   }
 
-  const getQuestionTypeColor = (type: string) => {
-    switch (type) {
-      case "behavioral":
-        return "default";
-      case "technical":
-        return "secondary";
-      case "skill":
-        return "outline";
-      default:
-        return "default";
-    }
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -91,9 +77,6 @@ const DisplayQuestion = async ({ params }: { params: Params }) => {
           <div className="space-y-2 flex-1">
             <CardTitle className="text-3xl">{question.questionText}</CardTitle>
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant={getQuestionTypeColor(question.questionType)}>
-                {question.questionType}
-              </Badge>
               <Badge variant="outline" className="gap-1.5">
                 <Calendar className="h-3 w-3" />
                 Created {formatDate(question.createdAt)}
@@ -110,17 +93,6 @@ const DisplayQuestion = async ({ params }: { params: Params }) => {
           </div>
         </div>
       </CardHeader>
-      <Separator />
-      <CardContent className="pt-6">
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-sm font-semibold mb-2">Question Type</h3>
-            <Badge variant={getQuestionTypeColor(question.questionType)}>
-              {question.questionType}
-            </Badge>
-          </div>
-        </div>
-      </CardContent>
       <Separator />
       <CardFooter className="flex items-center justify-between gap-4 pt-6">
         <div className="text-sm text-muted-foreground">

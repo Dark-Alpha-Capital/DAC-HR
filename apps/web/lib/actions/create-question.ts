@@ -24,14 +24,13 @@ export const createQuestion = async (data: QuestionFormSchema) => {
     return { error: result.error.flatten().fieldErrors };
   }
 
-  const { questionText, questionType } = result.data;
+  const { questionText } = result.data;
 
   try {
     const [newQuestion] = await db
       .insert(questionBank)
       .values({
         questionText,
-        questionType,
       })
       .returning();
 
@@ -70,7 +69,7 @@ export const createQuestionForRound = async (
     return { error: result.error.flatten().fieldErrors };
   }
 
-  const { questionText, questionType } = result.data;
+  const { questionText } = result.data;
 
   try {
     // Create the question
@@ -78,7 +77,6 @@ export const createQuestionForRound = async (
       .insert(questionBank)
       .values({
         questionText,
-        questionType,
       })
       .returning();
 

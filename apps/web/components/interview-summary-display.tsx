@@ -7,7 +7,7 @@ import { Separator } from "@workspace/ui/components/separator";
 import { Edit, Star, Plus } from "lucide-react";
 import InterviewSummaryForm from "./interview-summary-form";
 
-type InterviewStatus = "pending" | "complete";
+type InterviewStatus = "pending" | "move_forward" | "rejected";
 
 interface InterviewSummaryDisplayProps {
   interview: {
@@ -80,10 +80,18 @@ export default function InterviewSummaryDisplay({
             Status:
           </span>
           <Badge
-            variant={interview.status === "complete" ? "default" : "outline"}
+            variant={
+              interview.status === "move_forward"
+                ? "default"
+                : interview.status === "rejected"
+                  ? "destructive"
+                  : "outline"
+            }
           >
-            {interview.status.charAt(0).toUpperCase() +
-              interview.status.slice(1)}
+            {interview.status === "move_forward"
+              ? "Move Forward"
+              : interview.status.charAt(0).toUpperCase() +
+                interview.status.slice(1)}
           </Badge>
         </div>
 

@@ -79,7 +79,8 @@ const DisplayInterview = async ({ params }: { params: Params }) => {
     "default" | "secondary" | "outline" | "destructive"
   > = {
     pending: "outline",
-    complete: "default",
+    move_forward: "default",
+    rejected: "destructive",
   } as const;
 
   return (
@@ -96,8 +97,10 @@ const DisplayInterview = async ({ params }: { params: Params }) => {
                 <Badge
                   variant={interviewStatusColors[interview.status] || "outline"}
                 >
-                  {interview.status.charAt(0).toUpperCase() +
-                    interview.status.slice(1)}
+                  {interview.status === "move_forward"
+                    ? "Move Forward"
+                    : interview.status.charAt(0).toUpperCase() +
+                      interview.status.slice(1)}
                 </Badge>
               </div>
               <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">

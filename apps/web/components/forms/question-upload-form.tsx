@@ -29,14 +29,6 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { questionFormSchema } from "@/lib/schemas/question-form-schema";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select";
-import {
   createQuestion,
   createQuestionForRound,
 } from "@/lib/actions/create-question";
@@ -56,7 +48,6 @@ const QuestionUploadForm = ({
   const form = useForm({
     defaultValues: {
       questionText: "",
-      questionType: "behavioral" as "behavioral" | "technical" | "skill",
     },
     validators: {
       onSubmit: questionFormSchema,
@@ -145,46 +136,6 @@ const QuestionUploadForm = ({
                         </InputGroupText>
                       </InputGroupAddon>
                     </InputGroup>
-                    {isInvalid && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
-                  </Field>
-                );
-              }}
-            />
-
-            <form.Field
-              name="questionType"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
-                  <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>Question Type</FieldLabel>
-                    <Select
-                      value={field.state.value}
-                      onValueChange={(value) =>
-                        field.handleChange(
-                          value as "behavioral" | "technical" | "skill"
-                        )
-                      }
-                      aria-invalid={isInvalid}
-                    >
-                      <SelectTrigger
-                        id={field.name}
-                        aria-invalid={isInvalid}
-                        className="w-full"
-                      >
-                        <SelectValue placeholder="Select question type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectSeparator />
-                        <SelectItem value="behavioral">Behavioral</SelectItem>
-                        <SelectItem value="skill">Skill</SelectItem>
-
-                        <SelectItem value="technical">Technical</SelectItem>
-                      </SelectContent>
-                    </Select>
                     {isInvalid && (
                       <FieldError errors={field.state.meta.errors} />
                     )}

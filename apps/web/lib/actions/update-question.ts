@@ -28,14 +28,13 @@ export const updateQuestion = async (
     return { error: result.error.flatten().fieldErrors };
   }
 
-  const { questionText, questionType } = result.data;
+  const { questionText } = result.data;
 
   try {
     const [updatedQuestion] = await db
       .update(questionBank)
       .set({
         questionText,
-        questionType,
         updatedAt: new Date(),
       })
       .where(eq(questionBank.id, questionId))

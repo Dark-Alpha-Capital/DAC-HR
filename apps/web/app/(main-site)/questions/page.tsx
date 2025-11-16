@@ -17,6 +17,12 @@ const page = () => {
         <h1 className="text-3xl font-bold">Questions</h1>
       </div>
 
+      <div>
+        <Button asChild>
+          <Link href="/questions/new">New Question</Link>
+        </Button>
+      </div>
+
       <Suspense fallback={<div>Loading...</div>}>
         <QuestionsList />
       </Suspense>

@@ -10,7 +10,6 @@ import InterviewQuestionFeedbackForm from "./interview-question-feedback-form";
 interface QuestionFeedback {
   id: string;
   questionText: string;
-  questionType: string | null;
   feedback: {
     id: string;
     notes: string | null;
@@ -45,14 +44,7 @@ export default function InterviewQuestionFeedbackDisplay({
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h4 className="text-sm font-semibold">
-            Question {index + 1}
-            {question.questionType && (
-              <Badge variant="outline" className="ml-2 text-xs">
-                {question.questionType.toUpperCase()}
-              </Badge>
-            )}
-          </h4>
+          <h4 className="text-sm font-semibold">Question {index + 1}</h4>
           <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
             Cancel
           </Button>
@@ -75,11 +67,6 @@ export default function InterviewQuestionFeedbackDisplay({
               <span className="text-sm font-semibold">
                 Question {index + 1}
               </span>
-              {question.questionType && (
-                <Badge variant="outline" className="text-xs">
-                  {question.questionType.toUpperCase()}
-                </Badge>
-              )}
             </div>
             <Button
               variant="outline"
@@ -107,11 +94,6 @@ export default function InterviewQuestionFeedbackDisplay({
         <div className="space-y-1 flex-1">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold">Question {index + 1}</span>
-            {question.questionType && (
-              <Badge variant="outline" className="text-xs">
-                {question.questionType.toUpperCase()}
-              </Badge>
-            )}
           </div>
           <p className="text-sm text-muted-foreground whitespace-pre-wrap">
             {question.questionText}

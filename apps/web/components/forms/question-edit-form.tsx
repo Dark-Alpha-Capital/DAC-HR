@@ -31,14 +31,6 @@ import { updateQuestion } from "@/lib/actions/update-question";
 import { useRouter } from "next/navigation";
 import type { InferSelectModel } from "drizzle-orm";
 import type { questionBank } from "@workspace/db/schema";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select";
 
 type Question = InferSelectModel<typeof questionBank>;
 
@@ -53,7 +45,6 @@ const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
   const form = useForm({
     defaultValues: {
       questionText: question.questionText,
-      questionType: question.questionType as "behavioral" | "technical" | "skill",
     },
     validators: {
       onSubmit: questionFormSchema,
@@ -134,43 +125,6 @@ const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
                 );
               }}
             />
-
-            <form.Field
-              name="questionType"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
-                  <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>Question Type</FieldLabel>
-                    <Select
-                      value={field.state.value}
-                      onValueChange={(value) =>
-                        field.handleChange(value as "behavioral" | "technical" | "skill")
-                      }
-                      aria-invalid={isInvalid}
-                    >
-                      <SelectTrigger
-                        id={field.name}
-                        aria-invalid={isInvalid}
-                        className="w-full"
-                      >
-                        <SelectValue placeholder="Select question type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectSeparator />
-                        <SelectItem value="behavioral">Behavioral</SelectItem>
-                        <SelectItem value="skill">Skill</SelectItem>
-                        <SelectItem value="technical">Technical</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {isInvalid && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
-                  </Field>
-                );
-              }}
-            />
           </FieldGroup>
         </form>
       </CardContent>
@@ -182,7 +136,6 @@ const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
             onClick={() => {
               form.reset({
                 questionText: question.questionText,
-                questionType: question.questionType as "behavioral" | "technical" | "skill",
               });
             }}
             className="cursor-pointer"

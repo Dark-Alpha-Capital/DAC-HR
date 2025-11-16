@@ -11,7 +11,6 @@ import { toast } from "sonner";
 interface QuestionFeedback {
   id: string;
   questionText: string;
-  questionType: string | null;
   feedback: {
     id: string;
     notes: string | null;
@@ -65,11 +64,6 @@ export default function InterviewQuestionFeedbackForm({
           <p className="text-sm font-semibold text-foreground">
             Question {index + 1}
           </p>
-          {question.questionType && (
-            <span className="text-xs text-muted-foreground uppercase">
-              {question.questionType}
-            </span>
-          )}
         </div>
         <p className="text-sm text-muted-foreground whitespace-pre-wrap">
           {question.questionText}
