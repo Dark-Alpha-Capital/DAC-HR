@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@workspace/ui/components/button";
 import { Label } from "@workspace/ui/components/label";
 import { Textarea } from "@workspace/ui/components/textarea";
-import { Input } from "@workspace/ui/components/input";
 import { createInterviewFeedback } from "@/lib/actions/create-interview-feedback";
 import { toast } from "sonner";
 
@@ -33,31 +32,16 @@ export default function InterviewQuestionFeedbackForm({
 }: InterviewQuestionFeedbackFormProps) {
   const router = useRouter();
   const [notes, setNotes] = useState(question.feedback?.notes ?? "");
-  const [rating, setRating] = useState(
-    question.feedback?.rating !== null && question.feedback?.rating !== undefined
-      ? String(question.feedback?.rating)
-      : ""
-  );
   const [isPending, startTransition] = useTransition();
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     startTransition(async () => {
-      const numericRating = rating.trim()
-        ? Number.parseInt(rating, 10)
-        : undefined;
-
-      if (numericRating !== undefined && (numericRating < 1 || numericRating > 5)) {
-        toast.error("Rating must be between 1 and 5");
-        return;
-      }
-
       const result = await createInterviewFeedback({
         interviewId,
         questionId: question.id,
         notes: notes.trim() === "" ? undefined : notes.trim(),
-        rating: numericRating,
       });
 
       if (result.error) {
@@ -101,23 +85,6 @@ export default function InterviewQuestionFeedbackForm({
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
             minLength={0}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <Label htmlFor={`rating-${question.id}`}>Rating</Label>
-            <span className="text-xs text-muted-foreground">Optional · 1–5</span>
-          </div>
-          <Input
-            id={`rating-${question.id}`}
-            type="number"
-            min={1}
-            max={5}
-            step={1}
-            value={rating}
-            onChange={(event) => setRating(event.target.value)}
-            placeholder="e.g. 4"
           />
         </div>
 

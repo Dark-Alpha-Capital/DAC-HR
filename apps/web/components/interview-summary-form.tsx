@@ -6,7 +6,6 @@ import { Button } from "@workspace/ui/components/button";
 import { Label } from "@workspace/ui/components/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@workspace/ui/components/select";
 import { Textarea } from "@workspace/ui/components/textarea";
-import { Input } from "@workspace/ui/components/input";
 import { updateInterview } from "@/lib/actions/update-interview";
 import { toast } from "sonner";
 
@@ -33,12 +32,6 @@ const statusDescriptions: Record<InterviewStatus, string> = {
   complete: "Interview has been completed",
 };
 
-function formatDateForInput(value: Date | null) {
-  if (!value) return "";
-  const local = new Date(value.getTime() - value.getTimezoneOffset() * 60000);
-  return local.toISOString().slice(0, 16);
-}
-
 export default function InterviewSummaryForm({
   interview,
   applicationId,
@@ -51,16 +44,12 @@ export default function InterviewSummaryForm({
   const [overallFeedback, setOverallFeedback] = useState(
     interview.overallFeedback ?? ""
   );
-  const [scheduledAt, setScheduledAt] = useState(
-    formatDateForInput(interview.scheduledAt)
-  );
   const [isPending, startTransition] = useTransition();
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     startTransition(async () => {
-      const parsedDate = scheduledAt ? new Date(scheduledAt) : null;
       const parsedRating = rating && rating !== "none" ? parseInt(rating, 10) : undefined;
 
       const result = await updateInterview({
@@ -68,7 +57,6 @@ export default function InterviewSummaryForm({
         status,
         rating: parsedRating,
         overallFeedback: overallFeedback.trim() || undefined,
-        scheduledAt: parsedDate,
       });
 
       if (result.error) {
@@ -134,19 +122,6 @@ export default function InterviewSummaryForm({
             Rate the candidate's performance (optional)
           </p>
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="scheduledAt">Interview Date & Time</Label>
-        <Input
-          id="scheduledAt"
-          type="datetime-local"
-          value={scheduledAt}
-          onChange={(event) => setScheduledAt(event.target.value)}
-        />
-        <p className="text-xs text-muted-foreground">
-          When the interview took place (or leave empty)
-        </p>
       </div>
 
       <div className="space-y-2">

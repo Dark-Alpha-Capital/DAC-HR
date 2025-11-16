@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
 import { Separator } from "@workspace/ui/components/separator";
-import { Edit, Star, Plus } from "lucide-react";
+import { Edit, Plus } from "lucide-react";
 import InterviewQuestionFeedbackForm from "./interview-question-feedback-form";
 
 interface QuestionFeedback {
@@ -34,12 +34,12 @@ export default function InterviewQuestionFeedbackDisplay({
   // Reset editing state when feedback data changes (after successful save)
   useEffect(() => {
     setIsEditing(false);
-  }, [question.feedback?.id, question.feedback?.notes, question.feedback?.rating]);
+  }, [question.feedback?.id, question.feedback?.notes]);
 
   const hasFeedback =
     question.feedback &&
-    ((question.feedback.notes && question.feedback.notes.trim() !== "") ||
-      question.feedback.rating !== null);
+    question.feedback.notes &&
+    question.feedback.notes.trim() !== "";
 
   if (isEditing) {
     return (
@@ -81,7 +81,11 @@ export default function InterviewQuestionFeedbackDisplay({
                 </Badge>
               )}
             </div>
-            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditing(true)}
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add Feedback
             </Button>
@@ -102,9 +106,7 @@ export default function InterviewQuestionFeedbackDisplay({
       <div className="flex items-center justify-between">
         <div className="space-y-1 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold">
-              Question {index + 1}
-            </span>
+            <span className="text-sm font-semibold">Question {index + 1}</span>
             {question.questionType && (
               <Badge variant="outline" className="text-xs">
                 {question.questionType.toUpperCase()}
@@ -124,42 +126,17 @@ export default function InterviewQuestionFeedbackDisplay({
       <Separator />
 
       <div className="space-y-3">
-        {question.feedback?.rating !== null && (
-          <div className="flex items-center gap-2">
+        {question.feedback?.notes && question.feedback.notes.trim() !== "" && (
+          <div className="space-y-2">
             <span className="text-sm font-medium text-muted-foreground">
-              Rating:
+              Notes:
             </span>
-            <div className="flex items-center gap-1">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star
-                  key={i}
-                  className={`h-4 w-4 ${
-                    i < (question.feedback?.rating || 0)
-                      ? "fill-yellow-400 text-yellow-400"
-                      : "text-muted-foreground"
-                  }`}
-                />
-              ))}
-              <span className="ml-1 text-sm font-medium">
-                {question.feedback?.rating}/5
-              </span>
-            </div>
+            <p className="text-sm whitespace-pre-wrap leading-relaxed bg-muted/50 p-3 rounded-md">
+              {question.feedback.notes}
+            </p>
           </div>
         )}
-
-        {question.feedback?.notes &&
-          question.feedback.notes.trim() !== "" && (
-            <div className="space-y-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Notes:
-              </span>
-              <p className="text-sm whitespace-pre-wrap leading-relaxed bg-muted/50 p-3 rounded-md">
-                {question.feedback.notes}
-              </p>
-            </div>
-          )}
       </div>
     </div>
   );
 }
-

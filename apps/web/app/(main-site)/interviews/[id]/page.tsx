@@ -163,10 +163,10 @@ const DisplayInterview = async ({ params }: { params: Params }) => {
         </CardHeader>
       </Card>
 
-      {/* Summary / Status */}
+      {/* Round Feedback */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Interview Summary</CardTitle>
+          <CardTitle className="text-lg">Round Feedback</CardTitle>
         </CardHeader>
         <Separator />
         <CardContent className="pt-6">
