@@ -19,7 +19,7 @@ import Link from "next/link";
 interface InterviewDetailCardProps {
   interview: {
     id: string;
-    status: "pending" | "complete";
+    status: "pending" | "move_forward" | "rejected";
     rating: number | null;
     scheduledAt: Date | null;
     overallFeedback: string | null;
@@ -45,8 +45,10 @@ export default function InterviewDetailCard({
 }: InterviewDetailCardProps) {
   const getStatusIcon = () => {
     switch (interview.status) {
-      case "complete":
+      case "move_forward":
         return <CheckCircle2 className="h-4 w-4" />;
+      case "rejected":
+        return <XCircle className="h-4 w-4" />;
       default:
         return <Circle className="h-4 w-4" />;
     }
@@ -57,7 +59,8 @@ export default function InterviewDetailCard({
     "default" | "secondary" | "outline" | "destructive"
   > = {
     pending: "outline",
-    complete: "default",
+    move_forward: "default",
+    rejected: "destructive",
   };
 
   return (
@@ -74,7 +77,10 @@ export default function InterviewDetailCard({
                 variant={statusColors[interview.status] || "outline"}
                 className="text-xs"
               >
-                {interview.status}
+                {interview.status === "move_forward"
+                  ? "Move Forward"
+                  : interview.status.charAt(0).toUpperCase() +
+                    interview.status.slice(1)}
               </Badge>
               {interview.rating && (
                 <Badge variant="secondary" className="text-xs">

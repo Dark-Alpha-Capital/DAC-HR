@@ -63,7 +63,8 @@ const CandidateUploadForm = ({
 
   // Validate that the position exists in the positions array
   const defaultPositionId =
-    preSelectedPositionId && positions.some((p) => p.id === preSelectedPositionId)
+    preSelectedPositionId &&
+    positions.some((p) => p.id === preSelectedPositionId)
       ? preSelectedPositionId
       : positions[0]?.id || "";
 
@@ -74,6 +75,7 @@ const CandidateUploadForm = ({
       email: "test@example.com",
       phone: "",
       location: "New York, NY",
+      source: "",
       note: "",
       positionId: defaultPositionId, // Use the pre-selected or default position
     },
@@ -223,6 +225,32 @@ const CandidateUploadForm = ({
                       onChange={(e) => field.handleChange(e.target.value)}
                       aria-invalid={isInvalid}
                       placeholder="Enter the phone number"
+                      autoComplete="off"
+                    />
+                    {isInvalid && (
+                      <FieldError errors={field.state.meta.errors} />
+                    )}
+                  </Field>
+                );
+              }}
+            />
+
+            <form.Field
+              name="source"
+              children={(field) => {
+                const isInvalid =
+                  field.state.meta.isTouched && !field.state.meta.isValid;
+                return (
+                  <Field data-invalid={isInvalid}>
+                    <FieldLabel htmlFor={field.name}>Source</FieldLabel>
+                    <Input
+                      id={field.name}
+                      name={field.name}
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      aria-invalid={isInvalid}
+                      placeholder="Enter the source (e.g., LinkedIn, Referral)"
                       autoComplete="off"
                     />
                     {isInvalid && (

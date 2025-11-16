@@ -31,6 +31,7 @@ import {
   Plus,
   Eye,
   FileText,
+  Link as LinkIcon,
 } from "lucide-react";
 import DeleteCandidateButton from "@/components/delete-candidate-button";
 import { formatDate } from "@/lib/utils";
@@ -45,14 +46,12 @@ const CandidatePage = async ({ params }: { params: Params }) => {
     <div className="block-space-mini container mx-auto">
       <BackButton />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Suspense fallback={<CandidateLoadingSkeleton />}>
-          <DisplayCandidate params={params} />
-        </Suspense>
-        <Suspense fallback={<FormLoadingFallback />}>
-          <DisplayCandidateDocuments params={params} />
-        </Suspense>
-      </div>
+      <Suspense fallback={<CandidateLoadingSkeleton />}>
+        <DisplayCandidate params={params} />
+      </Suspense>
+      <Suspense fallback={<FormLoadingFallback />}>
+        <DisplayCandidateDocuments params={params} />
+      </Suspense>
     </div>
   );
 };
@@ -64,7 +63,7 @@ const DisplayCandidateDocuments = async ({ params }: { params: Params }) => {
   const documents = await getDocumentsByCandidateId(uid);
 
   return (
-    <Card className="h-fit">
+    <Card className="h-fit mt-4 md:mt-6 lg:mt-8">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -156,21 +155,23 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
     "default" | "secondary" | "outline" | "destructive"
   > = {
     pending: "outline",
-    complete: "default",
+    move_forward: "default",
+    rejected: "destructive",
   } as const;
 
   const getInterviewStatusIcon = (status: string) => {
     switch (status) {
-      case "complete":
+      case "move_forward":
         return <CheckCircle2 className="h-3 w-3" />;
+      case "rejected":
+        return <XCircle className="h-3 w-3" />;
       default:
         return <Circle className="h-3 w-3" />;
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header Section - Full Width */}
+    <div>
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
@@ -204,75 +205,78 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
         </CardHeader>
       </Card>
 
-      <div className="">
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Contact Information</CardTitle>
-            </CardHeader>
-            <Separator />
-            <CardContent className="pt-6">
-              <div className="space-y-4 text-muted-foreground">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 mt-4 md:mt-6 lg:mt-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Contact Information</CardTitle>
+          </CardHeader>
+          <Separator />
+          <CardContent className="pt-6">
+            <div className="space-y-4 text-muted-foreground">
+              <div className="flex items-center gap-3">
+                <Mail className="h-4 w-4 shrink-0" />
+                <a
+                  href={`mailto:${candidate.email}`}
+                  className="hover:text-foreground transition-colors"
+                >
+                  {candidate.email}
+                </a>
+              </div>
+              {candidate.phone && (
                 <div className="flex items-center gap-3">
-                  <Mail className="h-4 w-4 shrink-0" />
+                  <Phone className="h-4 w-4 shrink-0" />
                   <a
-                    href={`mailto:${candidate.email}`}
+                    href={`tel:${candidate.phone}`}
                     className="hover:text-foreground transition-colors"
                   >
-                    {candidate.email}
+                    {candidate.phone}
                   </a>
                 </div>
-                {candidate.phone && (
-                  <div className="flex items-center gap-3">
-                    <Phone className="h-4 w-4 shrink-0" />
-                    <a
-                      href={`tel:${candidate.phone}`}
-                      className="hover:text-foreground transition-colors"
-                    >
-                      {candidate.phone}
-                    </a>
-                  </div>
-                )}
-                {candidate.location && (
-                  <div className="flex items-center gap-3">
-                    <MapPin className="h-4 w-4 shrink-0" />
-                    <span>{candidate.location}</span>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-            {candidate.note && (
-              <>
-                <Separator />
-                <CardContent className="pt-6">
-                  <div>
-                    <h3 className="text-sm font-semibold mb-3 text-foreground">
-                      Notes
-                    </h3>
-                    <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed text-sm">
-                      {candidate.note}
-                    </p>
-                  </div>
-                </CardContent>
-              </>
-            )}
-            <Separator />
-            <CardFooter className="pt-6">
-              <div className="text-xs text-muted-foreground w-full">
-                <span className="font-medium">ID:</span>{" "}
-                <span className="font-mono">{candidate.id}</span>
-              </div>
-            </CardFooter>
-          </Card>
-        </div>
+              )}
+              {candidate.location && (
+                <div className="flex items-center gap-3">
+                  <MapPin className="h-4 w-4 shrink-0" />
+                  <span>{candidate.location}</span>
+                </div>
+              )}
+              {candidate.source && (
+                <div className="flex items-center gap-3">
+                  <LinkIcon className="h-4 w-4 shrink-0" />
+                  <span>{candidate.source}</span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+          {candidate.note && (
+            <>
+              <Separator />
+              <CardContent className="pt-6">
+                <div>
+                  <h3 className="text-sm font-semibold mb-3 text-foreground">
+                    Notes
+                  </h3>
+                  <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed text-sm">
+                    {candidate.note}
+                  </p>
+                </div>
+              </CardContent>
+            </>
+          )}
+          <Separator />
+          <CardFooter className="pt-6">
+            <div className="text-xs text-muted-foreground w-full">
+              <span className="font-medium">ID:</span>{" "}
+              <span className="font-mono">{candidate.id}</span>
+            </div>
+          </CardFooter>
+        </Card>
 
-        {/* Right Column - Applications */}
         <Card className="h-fit">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Briefcase className="h-5 w-5" />
-                <CardTitle className="text-lg">Applications</CardTitle>
+                <CardTitle className="text-lg">Application</CardTitle>
               </div>
               <Badge variant="secondary">{candidate.applications.length}</Badge>
             </div>
@@ -386,7 +390,10 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
                                   }
                                   className="text-xs h-5"
                                 >
-                                  {interview.status}
+                                  {interview.status === "move_forward"
+                                    ? "Move Forward"
+                                    : interview.status.charAt(0).toUpperCase() +
+                                      interview.status.slice(1)}
                                 </Badge>
                                 <Button
                                   variant="ghost"

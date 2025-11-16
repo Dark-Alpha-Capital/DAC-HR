@@ -25,6 +25,9 @@ import {
   ArrowLeft,
   Plus,
   Edit,
+  Eye,
+  UserCheck,
+  UserX,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { auth } from "@/auth";
@@ -32,6 +35,7 @@ import { headers } from "next/headers";
 import RecordInterviewDialog from "@/components/record-interview-dialog";
 import InterviewDetailCard from "@/components/interview-detail-card";
 import ApplicationProgressTimeline from "@/components/application-progress-timeline";
+import ApplicationStatusDisplay from "@/components/application-status-display";
 
 type Params = Promise<{ id: string }>;
 type SearchParams = Promise<{ action?: string; interview?: string }>;
@@ -45,10 +49,6 @@ const ApplicationPage = async ({
 }) => {
   return (
     <div className="block-space-mini container mx-auto">
-      <Button asChild>
-        <Link href="/applications">Go Back</Link>
-      </Button>
-
       <Suspense fallback={<ApplicationLoadingSkeleton />}>
         <DisplayApplication params={params} searchParams={searchParams} />
       </Suspense>
@@ -102,12 +102,28 @@ const DisplayApplication = async ({
     withdrawn: "outline",
   } as const;
 
+  const applicationStatusIcons: Record<string, typeof Clock> = {
+    pending: Clock,
+    reviewed: Eye,
+    shortlisted: CheckCircle2,
+    interviewing: UserCheck,
+    hired: CheckCircle2,
+    rejected: XCircle,
+    withdrawn: UserX,
+  };
+
+  const getStatusIcon = (status: string) => {
+    const Icon = applicationStatusIcons[status] || Clock;
+    return <Icon className="h-4 w-4" />;
+  };
+
   const interviewStatusColors: Record<
     string,
     "default" | "secondary" | "outline" | "destructive"
   > = {
     pending: "outline",
-    complete: "default",
+    move_forward: "default",
+    rejected: "destructive",
   } as const;
 
   const currentUser = session?.user;
@@ -131,7 +147,9 @@ const DisplayApplication = async ({
                   variant={
                     applicationStatusColors[application.status] || "outline"
                   }
+                  className="flex items-center gap-1.5"
                 >
+                  {getStatusIcon(application.status)}
                   {application.status.charAt(0).toUpperCase() +
                     application.status.slice(1)}
                 </Badge>
@@ -151,7 +169,7 @@ const DisplayApplication = async ({
                   )}
               </div>
               <div className="pt-2">
-                <Button variant="outline" size="sm" asChild>
+                <Button size="sm" asChild>
                   <Link href={`/candidates/${application.candidateId}`}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     View Candidate
@@ -171,58 +189,67 @@ const DisplayApplication = async ({
         </CardHeader>
       </Card>
 
-      {/* Progress Timeline */}
-      <ApplicationProgressTimeline
-        rounds={application.rounds}
-        interviews={application.interviews}
-      />
-
-      {/* Interviews Section */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              <CardTitle className="text-lg">Interviews</CardTitle>
-            </div>
-            <Badge variant="secondary">
-              {application.interviews.length} recorded
-            </Badge>
-          </div>
+          <CardTitle className="text-lg">Application Status</CardTitle>
         </CardHeader>
         <Separator />
         <CardContent className="pt-6">
-          {application.interviews.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p className="text-sm mb-4">
-                No interviews recorded yet for this application.
-              </p>
-              {currentUser && (
-                <Button asChild>
-                  <Link href={`/applications/${id}?action=record`}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Record First Interview
-                  </Link>
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {application.interviews.map((interview) => (
-                <InterviewDetailCard
-                  key={interview.id}
-                  interview={interview}
-                  applicationId={id}
-                  isSelected={interview.id === interviewId}
-                />
-              ))}
-            </div>
-          )}
+          <ApplicationStatusDisplay application={application} />
         </CardContent>
       </Card>
 
-      {/* Record Interview Dialog */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <ApplicationProgressTimeline
+          rounds={application.rounds}
+          interviews={application.interviews}
+        />
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                <CardTitle className="text-lg">Interviews</CardTitle>
+              </div>
+              <Badge variant="secondary">
+                {application.interviews.length} recorded
+              </Badge>
+            </div>
+          </CardHeader>
+          <Separator />
+          <CardContent className="pt-6">
+            {application.interviews.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p className="text-sm mb-4">
+                  No interviews recorded yet for this application.
+                </p>
+                {currentUser && (
+                  <Button asChild>
+                    <Link href={`/applications/${id}?action=record`}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Record First Interview
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {application.interviews.map((interview) => (
+                  <InterviewDetailCard
+                    key={interview.id}
+                    interview={interview}
+                    applicationId={id}
+                    isSelected={interview.id === interviewId}
+                  />
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       {showRecordDialog && currentUser && (
         <RecordInterviewDialog
           applicationId={id}

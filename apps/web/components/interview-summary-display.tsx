@@ -4,11 +4,10 @@ import { useState, useEffect } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
 import { Separator } from "@workspace/ui/components/separator";
-import { Calendar, Edit, Star, FileText } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { Edit, Star, Plus } from "lucide-react";
 import InterviewSummaryForm from "./interview-summary-form";
 
-type InterviewStatus = "pending" | "complete";
+type InterviewStatus = "pending" | "move_forward" | "rejected";
 
 interface InterviewSummaryDisplayProps {
   interview: {
@@ -30,18 +29,19 @@ export default function InterviewSummaryDisplay({
   // Reset editing state when interview data changes (after successful save)
   useEffect(() => {
     setIsEditing(false);
-  }, [interview.id, interview.overallFeedback, interview.rating, interview.status, interview.scheduledAt]);
+  }, [interview.id, interview.overallFeedback, interview.rating, interview.status]);
 
-  const hasDetails =
+  const hasFeedback =
     interview.rating !== null ||
-    interview.scheduledAt !== null ||
     (interview.overallFeedback && interview.overallFeedback.trim() !== "");
 
   if (isEditing) {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Edit Interview Summary</h3>
+          <h3 className="text-lg font-semibold">
+            {hasFeedback ? "Edit Round Feedback" : "Add Round Feedback"}
+          </h3>
           <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
             Cancel
           </Button>
@@ -54,30 +54,22 @@ export default function InterviewSummaryDisplay({
     );
   }
 
-  if (!hasDetails) {
-    return (
-      <div className="text-center py-8 space-y-4">
-        <FileText className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
-        <div>
-          <p className="text-sm font-medium text-muted-foreground mb-2">
-            No interview summary recorded yet
-          </p>
-          <Button onClick={() => setIsEditing(true)}>
-            <Edit className="h-4 w-4 mr-2" />
-            Add Summary
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Interview Summary</h3>
+        <h3 className="text-lg font-semibold">Round Feedback</h3>
         <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-          <Edit className="h-4 w-4 mr-2" />
-          Edit
+          {hasFeedback ? (
+            <>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Feedback
+            </>
+          ) : (
+            <>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Feedback
+            </>
+          )}
         </Button>
       </div>
 
@@ -88,52 +80,54 @@ export default function InterviewSummaryDisplay({
             Status:
           </span>
           <Badge
-            variant={interview.status === "complete" ? "default" : "outline"}
+            variant={
+              interview.status === "move_forward"
+                ? "default"
+                : interview.status === "rejected"
+                  ? "destructive"
+                  : "outline"
+            }
           >
-            {interview.status.charAt(0).toUpperCase() +
-              interview.status.slice(1)}
+            {interview.status === "move_forward"
+              ? "Move Forward"
+              : interview.status.charAt(0).toUpperCase() +
+                interview.status.slice(1)}
           </Badge>
         </div>
 
         {/* Rating */}
-        {interview.rating !== null && (
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-muted-foreground min-w-[100px]">
-              Rating:
-            </span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium text-muted-foreground min-w-[100px]">
+            Rating:
+          </span>
+          {interview.rating !== null ? (
             <div className="flex items-center gap-2">
               <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
               <span className="font-medium">{interview.rating}/5</span>
             </div>
-          </div>
-        )}
-
-        {/* Interview Date */}
-        {interview.scheduledAt && (
-          <div className="flex items-center gap-3">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-muted-foreground min-w-[100px]">
-              Interview Date:
+          ) : (
+            <span className="text-sm text-muted-foreground italic">
+              Not set
             </span>
-            <span className="text-sm">{formatDate(interview.scheduledAt)}</span>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Overall Feedback */}
-        {interview.overallFeedback &&
-          interview.overallFeedback.trim() !== "" && (
-            <>
-              <Separator />
-              <div className="space-y-2">
-                <span className="text-sm font-medium text-muted-foreground">
-                  Overall Feedback:
-                </span>
-                <p className="text-sm whitespace-pre-wrap leading-relaxed bg-muted/50 p-4 rounded-md">
-                  {interview.overallFeedback}
-                </p>
-              </div>
-            </>
+        <div className="space-y-2">
+          <span className="text-sm font-medium text-muted-foreground">
+            Overall Feedback:
+          </span>
+          {interview.overallFeedback &&
+          interview.overallFeedback.trim() !== "" ? (
+            <p className="text-sm whitespace-pre-wrap leading-relaxed bg-muted/50 p-4 rounded-md">
+              {interview.overallFeedback}
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground italic bg-muted/30 p-4 rounded-md">
+              No feedback recorded yet
+            </p>
           )}
+        </div>
       </div>
     </div>
   );

@@ -10,7 +10,7 @@ import { getInterviewById } from "@workspace/db/queries";
 
 export interface UpdateInterviewInput {
   interviewId: string;
-  status?: "pending" | "complete";
+  status?: "pending" | "move_forward" | "rejected";
   scheduledAt?: Date | null;
   overallFeedback?: string;
   rating?: number; // Rating from 1 to 5

@@ -16,10 +16,11 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import { Checkbox } from "@workspace/ui/components/checkbox";
 import { deleteCandidate } from "@/lib/actions/delete-candidate";
+import { useRouter } from "next/navigation";
 
 export type Candidate = {
   id: string;
@@ -29,6 +30,45 @@ export type Candidate = {
   positionName: string;
   positionId: string;
 };
+
+function CandidateActions({ candidate }: { candidate: Candidate }) {
+  const router = useRouter();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="h-8 w-8 p-0">
+          <span className="sr-only">Open menu</span>
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+
+        <DropdownMenuItem
+          onSelect={() => {
+            router.push(`/candidates/${candidate.id}`);
+          }}
+        >
+          View candidate
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          variant={"destructive"}
+          onSelect={async () => {
+            const response = await deleteCandidate(candidate.id);
+            if (response?.error) {
+              toast.error(response.error);
+            }
+            if (response?.success) {
+              toast.success("Candidate deleted successfully");
+            }
+          }}
+        >
+          Delete candidate
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export const columns: ColumnDef<Candidate>[] = [
   {
@@ -82,45 +122,7 @@ export const columns: ColumnDef<Candidate>[] = [
   {
     id: "actions",
     cell: ({ row }) => {
-      const router = useRouter();
-      const candidate = row.original;
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-
-            <DropdownMenuItem
-              onSelect={() => {
-                router.push(`/candidates/${candidate.id}`);
-              }}
-            >
-              View candidate
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              variant={"destructive"}
-              onSelect={async () => {
-                const response = await deleteCandidate(candidate.id);
-                if (response?.error) {
-                  toast.error(response.error);
-                }
-                if (response?.success) {
-                  toast.success("Candidate deleted successfully");
-                }
-              }}
-            >
-              Delete candidate
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
+      return <CandidateActions candidate={row.original} />;
     },
   },
 ];

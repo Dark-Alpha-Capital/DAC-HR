@@ -96,6 +96,7 @@ export const candidate = pgTable("candidate", {
   email: text("email").notNull(),
   phone: text("phone"),
   location: text("location"),
+  source: text("source"),
   note: text("note"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
@@ -157,7 +158,6 @@ export const questionBank = pgTable("question_bank", {
     .primaryKey()
     .default(sql`gen_random_uuid()`),
   questionText: text("question_text").notNull(),
-  questionType: text("question_type").default("behavioral").notNull(), // e.g., 'behavioral', 'technical'
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -206,7 +206,8 @@ export const roundTemplateQuestions = pgTable("round_template_questions", {
 
 export const interviewStatusEnum = pgEnum("interview_status", [
   "pending",
-  "complete",
+  "move_forward",
+  "rejected",
 ]);
 
 export const applicationStatusEnum = pgEnum("application_status", [

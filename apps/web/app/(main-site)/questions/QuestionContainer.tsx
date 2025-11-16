@@ -6,7 +6,6 @@ import type { Question } from "./columns";
 type QuestionWithRounds = {
   id: string;
   questionText: string;
-  questionType: string | null;
   createdAt: Date;
   updatedAt: Date;
   rounds: Array<{ id: string; name: string }>;

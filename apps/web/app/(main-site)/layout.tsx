@@ -6,6 +6,7 @@ import Header from "@/components/header";
 import Footer from "@/components/footer";
 
 import { Toaster } from "@workspace/ui/components/sonner";
+import { Suspense } from "react";
 
 const fontSans = Geist({
   subsets: ["latin"],
@@ -28,7 +29,9 @@ export default function RootLayout({
         className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased flex flex-col min-h-screen`}
       >
         <Providers>
-          <Header />
+          <Suspense>
+            <Header />
+          </Suspense>
           <main className="flex-1">{children}</main>
           <Footer />
           <Toaster />

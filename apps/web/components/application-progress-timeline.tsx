@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Badge } from "@workspace/ui/components/badge";
-import { CheckCircle2, Circle } from "lucide-react";
+import { CheckCircle2, Circle, XCircle } from "lucide-react";
 import { Separator } from "@workspace/ui/components/separator";
 
 interface Round {
@@ -15,7 +15,7 @@ interface Round {
 interface Interview {
   id: string;
   positionRoundTemplateId: string;
-  status: "pending" | "complete";
+  status: "pending" | "move_forward" | "rejected";
   rating: number | null;
   roundTemplate: {
     id: string;
@@ -46,7 +46,8 @@ export default function ApplicationProgressTimeline({
         <div className="space-y-6">
           {rounds.map((round, index) => {
             const interview = getInterviewForRound(round.positionRoundTemplateId);
-            const isComplete = interview?.status === "complete";
+            const isComplete = interview?.status === "move_forward";
+            const isRejected = interview?.status === "rejected";
             const isLast = index === rounds.length - 1;
 
             return (
@@ -58,11 +59,15 @@ export default function ApplicationProgressTimeline({
                       className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
                         isComplete
                           ? "bg-primary border-primary text-primary-foreground"
-                          : "bg-muted border-muted-foreground/20 text-muted-foreground"
+                          : isRejected
+                            ? "bg-destructive border-destructive text-destructive-foreground"
+                            : "bg-muted border-muted-foreground/20 text-muted-foreground"
                       }`}
                     >
                       {isComplete ? (
                         <CheckCircle2 className="h-5 w-5" />
+                      ) : isRejected ? (
+                        <XCircle className="h-5 w-5" />
                       ) : (
                         <Circle className="h-5 w-5" />
                       )}
@@ -72,7 +77,9 @@ export default function ApplicationProgressTimeline({
                         className={`w-0.5 h-full min-h-12 mt-2 ${
                           isComplete
                             ? "bg-primary"
-                            : "bg-muted-foreground/20"
+                            : isRejected
+                              ? "bg-destructive"
+                              : "bg-muted-foreground/20"
                         }`}
                       />
                     )}
@@ -87,10 +94,20 @@ export default function ApplicationProgressTimeline({
                             {round.name}
                           </h3>
                           <Badge
-                            variant={isComplete ? "default" : "outline"}
+                            variant={
+                              isComplete
+                                ? "default"
+                                : isRejected
+                                  ? "destructive"
+                                  : "outline"
+                            }
                             className="text-xs"
                           >
-                            {isComplete ? "Complete" : "Pending"}
+                            {isComplete
+                              ? "Move Forward"
+                              : isRejected
+                                ? "Rejected"
+                                : "Pending"}
                           </Badge>
                           {interview?.rating && (
                             <Badge variant="secondary" className="text-xs">
@@ -107,13 +124,19 @@ export default function ApplicationProgressTimeline({
                           <div className="mt-2 flex gap-2 flex-wrap">
                             <Badge
                               variant={
-                                interview.status === "complete"
+                                interview.status === "move_forward"
                                   ? "default"
-                                  : "outline"
+                                  : interview.status === "rejected"
+                                    ? "destructive"
+                                    : "outline"
                               }
                               className="text-xs"
                             >
-                              {interview.status === "complete" ? "Complete" : "Pending"}
+                              {interview.status === "move_forward"
+                                ? "Move Forward"
+                                : interview.status === "rejected"
+                                  ? "Rejected"
+                                  : "Pending"}
                             </Badge>
                           </div>
                         )}
