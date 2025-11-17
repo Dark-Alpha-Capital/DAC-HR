@@ -141,7 +141,7 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
   }
 
   let onboardingData = null;
-
+  const isOnboarding = candidate.applications.some(app => app.status === "hired");
   if (candidate.onboarding) {
     const rawData = await getOrCreateCandidateOnboarding(candidate.id);
 
@@ -211,21 +211,6 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
               </div>
             </div>
             <div className="flex gap-2">
-              <form
-                action={async () => {
-                  "use server";
-                  await toggleCandidateOnboarding(candidate.id, candidate.onboarding);
-                }}
-              >
-                <Button type="submit" variant="outline" className="w-full flex items-center justify-between">
-                  <span>Onboarding Status</span>
-                  {candidate.onboarding ? (
-                    <span className="text-green-600 font-medium">Enabled</span>
-                  ) : (
-                    <span className="text-red-600 font-medium">Disabled</span>
-                  )}
-                </Button>
-              </form>
               <Button variant="outline" asChild>
                 <Link href={`/candidates/${candidate.id}/edit`}>
                   <Pencil className="h-4 w-4 mr-2" />
@@ -238,12 +223,12 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
         </CardHeader>
       </Card>
 
-      {candidate.onboarding && onboardingData ? (
+      {isOnboarding && onboardingData ? (
         <OnboardingCardWrapper
           candidateId={candidate.id}
           onboardingData={onboardingData}
         />
-      ) : candidate.onboarding === true ? (
+      ) : isOnboarding ? (
         <p className="text-sm text-muted-foreground mt-4">
           Onboarding enabled, but no data available
         </p>
