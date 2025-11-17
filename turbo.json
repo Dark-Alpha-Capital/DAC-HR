@@ -24,7 +24,10 @@
         "DATABASE_POSTGRES_URL_NO_SSL",
         "DATABASE_POSTGRES_HOST",
         "DATABASE_NEON_PROJECT_ID",
-        "GCLOUD_PROJECT_ID"
+        "GCLOUD_PROJECT_ID",
+        "GCS_CLIENT_EMAIL",
+        "GCS_PRIVATE_KEY",
+        "GCLOUD_BUCKET"
       ],
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
