@@ -1,6 +1,12 @@
 import DocumentUploadForm from "@/components/forms/document-upload-form";
 import React, { Suspense } from "react";
 import Link from "next/link";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "New Document",
+  description: "Create a new document",
+};
 
 const page = () => {
   return (

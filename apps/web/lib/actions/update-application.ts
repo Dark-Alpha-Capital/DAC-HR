@@ -40,8 +40,9 @@ export const updateApplication = async (data: UpdateApplicationInput) => {
       .where(eq(application.id, applicationId))
       .returning();
 
-    // Revalidate relevant paths
-    revalidatePath(`/candidates/${updatedApplication.candidateId}`);
+    if (updatedApplication?.candidateId) {
+      revalidatePath(`/candidates/${updatedApplication.candidateId}`);
+    }
     revalidatePath(`/applications/${applicationId}`);
 
     return { success: true, data: updatedApplication };
@@ -55,4 +56,3 @@ export const updateApplication = async (data: UpdateApplicationInput) => {
     return { error: "Failed to update application" };
   }
 };
-

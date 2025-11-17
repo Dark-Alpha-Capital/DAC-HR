@@ -6,6 +6,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  CardContent,
 } from "@workspace/ui/components/card";
 import { Separator } from "@workspace/ui/components/separator";
 import { Badge } from "@workspace/ui/components/badge";
@@ -111,4 +112,3 @@ const DisplayQuestion = async ({ params }: { params: Params }) => {
     </Card>
   );
 };
-
