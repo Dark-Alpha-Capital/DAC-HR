@@ -3,8 +3,29 @@
   "ui": "tui",
   "tasks": {
     "build": {
-      "env": ["DATABASE_URL", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "BETTER_AUTH_SECRET"],
-      
+      "env": [
+        "DATABASE_URL",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "BETTER_AUTH_SECRET",
+        "DATABASE_POSTGRES_URL",
+        "DATABASE_POSTGRES_PRISMA_URL",
+        "DATABASE_URL_UNPOOLED",
+        "DATABASE_POSTGRES_URL_NON_POOLING",
+        "DATABASE_PGHOST",
+        "DATABASE_POSTGRES_USER",
+        "DATABASE_STACK_SECRET_SERVER_KEY",
+        "DATABASE_POSTGRES_PASSWORD",
+        "DATABASE_POSTGRES_DATABASE",
+        "DATABASE_PGPASSWORD",
+        "DATABASE_PGDATABASE",
+        "DATABASE_PGHOST_UNPOOLED",
+        "DATABASE_PGUSER",
+        "DATABASE_POSTGRES_URL_NO_SSL",
+        "DATABASE_POSTGRES_HOST",
+        "DATABASE_NEON_PROJECT_ID",
+        "GCLOUD_PROJECT_ID"
+      ],
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**"]
