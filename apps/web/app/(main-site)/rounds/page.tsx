@@ -5,6 +5,12 @@ import { getPositions, getRoundsWithPositions } from "@workspace/db/queries";
 import RoundCard from "@/components/round-card";
 import FilterPositionType from "@/components/filter-position-type";
 import ClearParamsButton from "@/components/clear-params-button";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Rounds",
+  description: "Rounds list",
+};
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
