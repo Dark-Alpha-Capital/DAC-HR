@@ -27,6 +27,7 @@ const navLinks = [
   { href: "/rounds", label: "Rounds" },
   { href: "/documents", label: "Documents" },
   { href: "/questions", label: "Questions" },
+  { href: "/onboarding", label: "Onboarding" }
 ];
 
 const Header = () => {

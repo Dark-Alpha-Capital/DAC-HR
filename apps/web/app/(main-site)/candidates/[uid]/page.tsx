@@ -38,6 +38,7 @@ import { formatDate } from "@/lib/utils";
 import { CandidateLoadingSkeleton } from "@/components/skeletons/candidate-skeleton";
 import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";
 import CandidateDocumentCard from "@/components/candidate-document-card";
+import { toggleCandidateOnboarding } from "@/lib/actions/update-onboarding";
 
 type Params = Promise<{ uid: string }>;
 
@@ -193,6 +194,21 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
               </div>
             </div>
             <div className="flex gap-2">
+              <form
+                action={async () => {
+                  "use server";
+                  await toggleCandidateOnboarding(candidate.id, candidate.onboarding);
+                }}
+              >
+                <Button type="submit" variant="outline" className="w-full flex items-center justify-between">
+                  <span>Onboarding Status</span>
+                  {candidate.onboarding ? (
+                    <span className="text-green-600 font-medium">Enabled</span>
+                  ) : (
+                    <span className="text-red-600 font-medium">Disabled</span>
+                  )}
+                </Button>
+              </form>
               <Button variant="outline" asChild>
                 <Link href={`/candidates/${candidate.id}/edit`}>
                   <Pencil className="h-4 w-4 mr-2" />
