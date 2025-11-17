@@ -18,6 +18,7 @@ type OnboardingCardProps = {
     contractSigned: boolean;
     registrationEmailSent: boolean;
     packetSent: boolean;
+    companyEmailActivate: boolean;
   };
 };
 
@@ -32,6 +33,7 @@ const OnboardingCard: React.FC<OnboardingCardProps> = ({
     onboardingData.registrationEmailSent
   );
   const [packetSent, setPacketSent] = useState(onboardingData.packetSent);
+  const [companyEmailActivate, setCompanyEmailActivate] = useState(onboardingData.companyEmailActivate);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,6 +44,7 @@ const OnboardingCard: React.FC<OnboardingCardProps> = ({
         await toggleOnboardingTask(candidateId, "contractSigned", !!contractSigned);
         await toggleOnboardingTask(candidateId, "emailProvided", !!registrationEmailSent);
         await toggleOnboardingTask(candidateId, "onboardingPacketSent", !!packetSent);
+        await toggleOnboardingTask(candidateId, "companyEmailActivate", !!companyEmailActivate);
     } catch (err) {
       console.error("Error saving onboarding tasks", err);
     }
@@ -78,7 +81,7 @@ const OnboardingCard: React.FC<OnboardingCardProps> = ({
               id="registration-email-sent"
             />
             <label htmlFor="registration-email-sent" className="font-medium">
-              Registration Email Sent
+              Welcome Email Sent
             </label>
           </div>
 
@@ -91,6 +94,18 @@ const OnboardingCard: React.FC<OnboardingCardProps> = ({
             />
             <label htmlFor="packet-sent" className="font-medium">
               Onboarding Packet Sent
+            </label>
+          </div>
+
+          {/* Company Email Activate */}
+          <div className="flex items-center gap-2">
+            <Checkbox
+              checked={companyEmailActivate}
+              onCheckedChange={(checked) => setCompanyEmailActivate(!!checked)}
+              id="packet-sent"
+            />
+            <label htmlFor="packet-sent" className="font-medium">
+              Company Email Activate
             </label>
           </div>
 

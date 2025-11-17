@@ -98,7 +98,6 @@ export const candidate = pgTable("candidate", {
   location: text("location"),
   source: text("source"),
   note: text("note"),
-  onboarding: boolean("onboarding").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -326,6 +325,10 @@ export const candidateOnboarding = pgTable("candidate_onboarding", {
     .default(false)
     .notNull(),
   onboardingPacketSentAt: timestamp("onboarding_packet_sent_at"),
+  companyEmailActivate: boolean("company_email_activate")
+    .default(false)
+    .notNull(),
+  companyEmailActivateAt: timestamp("company_email_activate_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

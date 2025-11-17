@@ -142,7 +142,7 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
 
   let onboardingData = null;
   const isOnboarding = candidate.applications.some(app => app.status === "hired");
-  if (candidate.onboarding) {
+  if (isOnboarding) {
     const rawData = await getOrCreateCandidateOnboarding(candidate.id);
 
     if (rawData) {
@@ -150,6 +150,7 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
         contractSigned: rawData.contractSigned ?? false,
         registrationEmailSent: rawData.emailProvided ?? false,
         packetSent: rawData.onboardingPacketSent ?? false,
+        companyEmailActivate : rawData.companyEmailActivate ?? false
       };
     }
   }
