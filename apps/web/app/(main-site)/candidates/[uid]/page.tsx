@@ -39,6 +39,9 @@ import { CandidateLoadingSkeleton } from "@/components/skeletons/candidate-skele
 import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";
 import CandidateDocumentCard from "@/components/candidate-document-card";
 import { toggleCandidateOnboarding } from "@/lib/actions/update-onboarding";
+import OnboardingCardWrapper from "@/components/onboarding-card-wrapper";
+import { getOrCreateCandidateOnboarding } from "@workspace/db/queries";
+
 
 type Params = Promise<{ uid: string }>;
 
@@ -137,6 +140,20 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
     );
   }
 
+  let onboardingData = null;
+
+  if (candidate.onboarding) {
+    const rawData = await getOrCreateCandidateOnboarding(candidate.id);
+
+    if (rawData) {
+      onboardingData = {
+        contractSigned: rawData.contractSigned ?? false,
+        registrationEmailSent: rawData.emailProvided ?? false,
+        packetSent: rawData.onboardingPacketSent ?? false,
+      };
+    }
+  }
+
   const fullName = `${candidate.firstName} ${candidate.lastName}`;
   const applicationStatusColors: Record<
     string,
@@ -220,6 +237,18 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
           </div>
         </CardHeader>
       </Card>
+
+      {candidate.onboarding && onboardingData ? (
+        <OnboardingCardWrapper
+          candidateId={candidate.id}
+          onboardingData={onboardingData}
+        />
+      ) : candidate.onboarding === true ? (
+        <p className="text-sm text-muted-foreground mt-4">
+          Onboarding enabled, but no data available
+        </p>
+      ) : null}
+
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 mt-4 md:mt-6 lg:mt-8">
         <Card>

@@ -26,8 +26,7 @@ const navLinks = [
   { href: "/applications", label: "Applications" },
   { href: "/rounds", label: "Rounds" },
   { href: "/documents", label: "Documents" },
-  { href: "/questions", label: "Questions" },
-  { href: "/onboarding", label: "Onboarding" }
+  { href: "/questions", label: "Questions" }
 ];
 
 const Header = () => {

@@ -312,11 +312,15 @@ export const candidateOnboarding = pgTable("candidate_onboarding", {
   candidateId: text("candidate_id")
     .notNull()
     .references(() => candidate.id, { onDelete: "cascade" }),
-  contractSigned: boolean("contract_signed").default(false).notNull(),
+  contractSigned: boolean("contract_signed")
+    .default(false)
+    .notNull(),
   signedContractDocumentId: text("signed_contract_document_id")
     .references(() => candidateDocument.id, { onDelete: "set null" }),
   contractSignedAt: timestamp("contract_signed_at"),
-  emailProvided: text("email_provided"),
+  emailProvided: boolean("email_provided")
+    .default(false)
+    .notNull(),
   emailRegisteredAt: timestamp("email_registered_at"),
   onboardingPacketSent: boolean("onboarding_packet_sent")
     .default(false)

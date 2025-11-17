@@ -13,6 +13,7 @@ import {
   user,
   documents,
   candidateDocument,
+  candidateOnboarding
 } from "./schema";
 import { eq, asc, inArray, and } from "drizzle-orm";
 
@@ -899,3 +900,35 @@ export async function getDocumentsByCandidateId(candidateId: string) {
     return [];
   }
 }
+
+
+export async function getCandidateOnboarding(candidateId: string) {
+  const onboarding = await db
+    .select()
+    .from(candidateOnboarding)
+    .where(eq(candidateOnboarding.candidateId, candidateId))
+    .limit(1)
+    .execute();
+  return onboarding;
+}
+
+export const getOrCreateCandidateOnboarding = async (candidateId: string) => {
+  const [existingOnboarding] = await db
+    .select()
+    .from(candidateOnboarding)
+    .where(eq(candidateOnboarding.candidateId, candidateId))
+    .limit(1)
+    .execute();
+
+  if (existingOnboarding) {
+    return existingOnboarding;
+  }
+
+  const [newOnboarding] = await db
+    .insert(candidateOnboarding)
+    .values({ candidateId })
+    .returning()
+    .execute();
+
+  return newOnboarding;
+};
