@@ -80,6 +80,10 @@ export const position = pgTable("position", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description"),
+  onboardingTitle: text("onboarding_title"),
+  onboardingMessage: text("onboarding_message"),
+  onboardingInstructions: text("onboarding_instructions"),
+  onboardingDocumentIds: text("onboarding_document_ids").array(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
