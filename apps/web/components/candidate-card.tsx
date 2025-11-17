@@ -36,9 +36,6 @@ const CandidateCard = ({ candidate }: CandidateCardProps) => {
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-lg">{fullName}</CardTitle>
-          <Badge variant={statusColors[candidate.status]}>
-            {candidate.status}
-          </Badge>
         </div>
       </CardHeader>
       <CardContent>
@@ -79,4 +76,3 @@ const CandidateCard = ({ candidate }: CandidateCardProps) => {
 };
 
 export default CandidateCard;
-

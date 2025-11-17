@@ -3,6 +3,12 @@ import Link from "next/link";
 import React, { Suspense } from "react";
 import { getPositions } from "@workspace/db/queries";
 import PositionCard from "@/components/position-card";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Positions",
+  description: "Positions list",
+};
 
 const page = () => {
   return (
