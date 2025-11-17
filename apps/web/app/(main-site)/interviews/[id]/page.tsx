@@ -69,11 +69,6 @@ const DisplayInterview = async ({ params }: { params: Params }) => {
     ? await getCandidateById(application.candidateId)
     : null;
 
-  const applicationLink = application
-    ? `/applications/${application.id}`
-    : undefined;
-  const candidateLink = candidate ? `/candidates/${candidate.id}` : undefined;
-
   const interviewStatusColors: Record<
     string,
     "default" | "secondary" | "outline" | "destructive"
@@ -131,7 +126,7 @@ const DisplayInterview = async ({ params }: { params: Params }) => {
               <div className="flex flex-wrap gap-2 pt-2">
                 {candidate && (
                   <Button variant="outline" size="sm" asChild>
-                    <Link href={candidateLink!}>
+                    <Link href={`/candidates/${candidate.id}`}>
                       <Users className="h-4 w-4 mr-2" />
                       {candidate.firstName} {candidate.lastName}
                     </Link>
@@ -139,7 +134,7 @@ const DisplayInterview = async ({ params }: { params: Params }) => {
                 )}
                 {application && (
                   <Button variant="outline" size="sm" asChild>
-                    <Link href={applicationLink!}>
+                    <Link href={`/applications/${application.id}`}>
                       <ArrowLeft className="h-4 w-4 mr-2" />
                       View Application
                     </Link>

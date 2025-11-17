@@ -45,13 +45,6 @@ async function AuthContent() {
           </span>
           <div className="flex-1 h-px bg-border" />
         </div>
-        {/* Optionally add email/password signup form here in the future */}
-        <p className="text-xs text-muted-foreground text-center">
-          Already have an account?{" "}
-          <a href="/login" className="text-primary underline">
-            Log in
-          </a>
-        </p>
       </div>
     </div>
   );
