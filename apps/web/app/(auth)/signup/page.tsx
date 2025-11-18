@@ -22,7 +22,7 @@ async function AuthContent() {
   });
 
   if (session) {
-    return redirect("/");
+    return redirect("/dashboard");
   }
 
   return (

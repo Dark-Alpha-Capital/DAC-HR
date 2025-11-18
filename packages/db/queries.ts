@@ -14,7 +14,7 @@ import {
   documents,
   candidateDocument,
 } from "./schema";
-import { eq, asc, inArray, and } from "drizzle-orm";
+import { eq, asc, inArray, and, sql } from "drizzle-orm";
 
 /**
  *
@@ -848,6 +848,11 @@ export const getUsers = async () => {
   }
 };
 
+/**
+ * Fetches candidates by position ID
+ * @param positionId The ID of the position
+ * @returns Array of candidates
+ */
 export async function getCandidatesByPositionId(positionId: string) {
   try {
     const results = await db
@@ -873,7 +878,6 @@ export async function getCandidatesByPositionId(positionId: string) {
 }
 
 /**
- *
  * Fetches all documents from the database
  * @returns An array of documents
  */
@@ -887,6 +891,11 @@ export async function getDocuments() {
   }
 }
 
+/**
+ * Fetches documents by candidate ID
+ * @param candidateId The ID of the candidate
+ * @returns Array of candidate documents
+ */
 export async function getDocumentsByCandidateId(candidateId: string) {
   try {
     const results = await db
@@ -899,3 +908,270 @@ export async function getDocumentsByCandidateId(candidateId: string) {
     return [];
   }
 }
+
+/**
+ * Fetches dashboard statistics including total candidates, active candidates, interviews scheduled, and average time to hire
+ * @returns Dashboard statistics object
+ */
+export const getDashboardStats = async () => {
+  try {
+    // Total candidates count
+    const [totalCandidatesResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(candidate);
+    const totalCandidates = totalCandidatesResult?.count || 0;
+
+    // Active candidates count (candidates with applications in reviewed, shortlisted, or interviewing status)
+    const [activeCandidatesResult] = await db
+      .select({ count: sql<number>`count(DISTINCT ${application.candidateId})::int` })
+      .from(application)
+      .where(
+        sql`${application.status} IN ('reviewed', 'shortlisted', 'interviewing')`
+      );
+    const activeCandidates = activeCandidatesResult?.count || 0;
+
+    // Interviews scheduled count (interviews with status 'pending')
+    const [interviewsScheduledResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(interview)
+      .where(eq(interview.status, "pending"));
+    const interviewsScheduled = interviewsScheduledResult?.count || 0;
+
+    // Average time to hire (in days) - from application created to hired status
+    const [avgTimeToHireResult] = await db
+      .select({
+        avgDays: sql<number>`AVG(EXTRACT(EPOCH FROM (${application.updatedAt} - ${application.createdAt})) / 86400)::int`,
+      })
+      .from(application)
+      .where(eq(application.status, "hired"));
+    const avgTimeToHire = avgTimeToHireResult?.avgDays || 0;
+
+    return {
+      totalCandidates,
+      activeCandidates,
+      interviewsScheduled,
+      avgTimeToHire,
+    };
+  } catch (error) {
+    console.error("Error fetching dashboard stats", error);
+    return {
+      totalCandidates: 0,
+      activeCandidates: 0,
+      interviewsScheduled: 0,
+      avgTimeToHire: 0,
+    };
+  }
+};
+
+/**
+ * Fetches candidate distribution by application status
+ * @returns Array of status counts
+ */
+export const getCandidatesByStatus = async () => {
+  try {
+    const results = await db
+      .select({
+        status: application.status,
+        count: sql<number>`count(DISTINCT ${application.candidateId})::int`,
+      })
+      .from(application)
+      .groupBy(application.status);
+
+    return results;
+  } catch (error) {
+    console.error("Error fetching candidates by status", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches candidate count by position
+ * @returns Array of position names with candidate counts
+ */
+export const getCandidatesByPosition = async () => {
+  try {
+    const results = await db
+      .select({
+        positionName: position.name,
+        count: sql<number>`count(DISTINCT ${application.candidateId})::int`,
+      })
+      .from(application)
+      .innerJoin(position, eq(application.positionId, position.id))
+      .groupBy(position.name);
+
+    return results;
+  } catch (error) {
+    console.error("Error fetching candidates by position", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches upcoming pending interviews
+ * @param limit Optional limit for number of interviews to return
+ * @returns Array of pending interviews with candidate and position details
+ */
+export const getUpcomingInterviews = async (limit?: number) => {
+  try {
+    let query = db
+      .select({
+        interview: {
+          id: interview.id,
+          scheduledAt: interview.scheduledAt,
+          status: interview.status,
+        },
+        candidate: {
+          id: candidate.id,
+          firstName: candidate.firstName,
+          lastName: candidate.lastName,
+        },
+        position: {
+          id: position.id,
+          name: position.name,
+        },
+        roundTemplate: {
+          id: roundTemplate.id,
+          name: roundTemplate.name,
+        },
+        interviewer: {
+          id: user.id,
+          name: user.name,
+        },
+      })
+      .from(interview)
+      .innerJoin(application, eq(interview.applicationId, application.id))
+      .innerJoin(candidate, eq(application.candidateId, candidate.id))
+      .innerJoin(position, eq(application.positionId, position.id))
+      .innerJoin(
+        positionRoundTemplates,
+        eq(interview.positionRoundTemplateId, positionRoundTemplates.id)
+      )
+      .innerJoin(
+        roundTemplate,
+        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id)
+      )
+      .leftJoin(user, eq(interview.interviewerId, user.id))
+      .where(
+        and(
+          eq(interview.status, "pending"),
+          sql`${interview.scheduledAt} >= NOW()`
+        )
+      )
+      .orderBy(asc(interview.scheduledAt));
+
+    if (limit) {
+      query = query.limit(limit) as typeof query;
+    }
+
+    const results = await query;
+
+    return results.map((result) => ({
+      id: result.interview.id,
+      scheduledAt: result.interview.scheduledAt,
+      candidate: result.candidate,
+      position: result.position,
+      roundTemplate: result.roundTemplate,
+      interviewer: result.interviewer,
+    }));
+  } catch (error) {
+    console.error("Error fetching upcoming interviews", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches recent activity across all candidates (application status changes, interview scheduling, etc.)
+ * @param limit Optional limit for number of activities to return
+ * @returns Array of recent activities
+ */
+export const getRecentActivity = async (limit: number = 10) => {
+  try {
+    // Get recent applications
+    const recentApplications = await db
+      .select({
+        type: sql<string>`'application'`,
+        id: application.id,
+        timestamp: application.updatedAt,
+        candidateId: candidate.id,
+        candidateFirstName: candidate.firstName,
+        candidateLastName: candidate.lastName,
+        positionName: position.name,
+        status: application.status,
+        userId: sql<string>`NULL`,
+        userName: sql<string>`NULL`,
+      })
+      .from(application)
+      .innerJoin(candidate, eq(application.candidateId, candidate.id))
+      .innerJoin(position, eq(application.positionId, position.id))
+      .orderBy(sql`${application.updatedAt} DESC`)
+      .limit(limit);
+
+    // Get recent interviews
+    const recentInterviews = await db
+      .select({
+        type: sql<string>`'interview'`,
+        id: interview.id,
+        timestamp: interview.createdAt,
+        candidateId: candidate.id,
+        candidateFirstName: candidate.firstName,
+        candidateLastName: candidate.lastName,
+        positionName: position.name,
+        status: interview.status,
+        userId: user.id,
+        userName: user.name,
+        roundName: roundTemplate.name,
+      })
+      .from(interview)
+      .innerJoin(application, eq(interview.applicationId, application.id))
+      .innerJoin(candidate, eq(application.candidateId, candidate.id))
+      .innerJoin(position, eq(application.positionId, position.id))
+      .innerJoin(
+        positionRoundTemplates,
+        eq(interview.positionRoundTemplateId, positionRoundTemplates.id)
+      )
+      .innerJoin(
+        roundTemplate,
+        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id)
+      )
+      .leftJoin(user, eq(interview.interviewerId, user.id))
+      .orderBy(sql`${interview.createdAt} DESC`)
+      .limit(limit);
+
+    // Combine and sort all activities
+    const allActivities = [
+      ...recentApplications.map((a) => ({
+        type: 'application' as const,
+        id: a.id,
+        timestamp: a.timestamp,
+        candidate: {
+          id: a.candidateId,
+          firstName: a.candidateFirstName,
+          lastName: a.candidateLastName,
+        },
+        positionName: a.positionName,
+        status: a.status,
+        user: null,
+        roundName: null,
+      })),
+      ...recentInterviews.map((i) => ({
+        type: 'interview' as const,
+        id: i.id,
+        timestamp: i.timestamp,
+        candidate: {
+          id: i.candidateId,
+          firstName: i.candidateFirstName,
+          lastName: i.candidateLastName,
+        },
+        positionName: i.positionName,
+        status: i.status,
+        user: i.userId && i.userName ? { id: i.userId, name: i.userName } : null,
+        roundName: i.roundName,
+      })),
+    ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+    return allActivities.slice(0, limit);
+  } catch (error) {
+    console.error("Error fetching recent activity", error);
+    return [];
+  }
+};

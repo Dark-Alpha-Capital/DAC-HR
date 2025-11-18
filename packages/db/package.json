@@ -6,6 +6,7 @@
   "private": true,
   "devDependencies": {
     "@types/bun": "^1.3.1",
+    "dotenv": "^17.2.3",
     "drizzle-kit": "^0.31.6"
   },
   "exports": {
@@ -14,11 +15,11 @@
     "./schema": "./schema.ts",
     "./index": "./index.ts"
   },
-  
   "scripts": {
     "db:generate": "drizzle-kit generate",
     "db:migrate": "npx tsx migrate.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "bun seed.ts"
   },
   "peerDependencies": {
     "typescript": "^5.9.3"
