@@ -77,7 +77,9 @@ const Header = () => {
             return (
               <Link
                 key={link.href}
-                href={link.href}
+                href={{
+                  pathname: link.href,
+                }}
                 className={`text-sm font-medium transition-colors ${
                   isActive ? "text-primary font-semibold" : "hover:text-primary"
                 }`}

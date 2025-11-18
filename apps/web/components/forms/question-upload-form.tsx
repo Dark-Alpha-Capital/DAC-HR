@@ -75,9 +75,9 @@ const QuestionUploadForm = ({
               : "The question has been added to the question bank.",
             action: onSuccessRedirect
               ? {
-                  label: "View Round",
+                  label: "View Round Questions",
                   onClick: () => {
-                    router.push(onSuccessRedirect);
+                    router.push(`/rounds/${roundId}`);
                   },
                 }
               : {

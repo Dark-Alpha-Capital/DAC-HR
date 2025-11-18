@@ -154,12 +154,7 @@ const DocumentCard = ({ document }: DocumentCardProps) => {
             )}
             View
           </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link href={`/documents/${document.slug}/edit`}>
-              <Pencil className="h-4 w-4" />
-              Edit
-            </Link>
-          </Button>
+
           <DeleteDocumentButton documentId={document.id} />
         </div>
       </CardFooter>
