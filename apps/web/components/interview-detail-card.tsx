@@ -2,7 +2,6 @@
 
 import { Card, CardContent, CardHeader } from "@workspace/ui/components/card";
 import { Badge } from "@workspace/ui/components/badge";
-import { Button } from "@workspace/ui/components/button";
 import { Separator } from "@workspace/ui/components/separator";
 import {
   Calendar,
@@ -11,10 +10,8 @@ import {
   CheckCircle2,
   Circle,
   XCircle,
-  Eye,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import Link from "next/link";
 
 interface InterviewDetailCardProps {
   interview: {
@@ -94,12 +91,6 @@ export default function InterviewDetailCard({
               </p>
             )}
           </div>
-          <Button variant="outline" size="sm" asChild>
-            <Link href={`/interviews/${interview.id}`}>
-              <Eye className="h-4 w-4 mr-2" />
-              View Details
-            </Link>
-          </Button>
         </div>
       </CardHeader>
       <Separator />

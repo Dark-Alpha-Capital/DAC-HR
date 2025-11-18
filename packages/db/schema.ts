@@ -80,6 +80,10 @@ export const position = pgTable("position", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description"),
+  onboardingTitle: text("onboarding_title"),
+  onboardingMessage: text("onboarding_message"),
+  onboardingInstructions: text("onboarding_instructions"),
+  onboardingDocumentIds: text("onboarding_document_ids").array(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -258,6 +262,7 @@ export const interview = pgTable("interview", {
   rating: integer("rating"), // Rating from 1 to 5
   scheduledAt: timestamp("scheduled_at"),
   overallFeedback: text("overall_feedback"), // Interviewer's final summary
+  proceedToNextRound: boolean("proceed_to_next_round"), // Whether candidate should proceed to next round (for screening and technical rounds)
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

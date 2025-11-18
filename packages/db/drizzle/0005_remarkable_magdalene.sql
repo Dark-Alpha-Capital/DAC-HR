@@ -1,0 +1,1 @@
+ALTER TABLE "interview" ADD COLUMN "proceed_to_next_round" boolean;
