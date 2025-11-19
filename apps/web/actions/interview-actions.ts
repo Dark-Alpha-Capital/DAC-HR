@@ -2,7 +2,7 @@
 
 import { db } from "@workspace/db";
 import { interview, interviewFeedback } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export type InterviewRoundData = {
@@ -19,7 +19,9 @@ export type InterviewRoundData = {
 /**
  * Create or update an interview round
  */
-export async function saveInterviewRound(data: InterviewRoundData & { interviewId?: string }) {
+export async function saveInterviewRound(
+  data: InterviewRoundData & { interviewId?: string }
+) {
   try {
     let interviewId = data.interviewId;
 
@@ -32,13 +34,13 @@ export async function saveInterviewRound(data: InterviewRoundData & { interviewI
           positionRoundTemplateId: data.positionRoundTemplateId,
           interviewerId: data.interviewerId,
           scheduledAt: data.scheduledAt,
-          status: "completed",
+          status: "pending",
           overallFeedback: data.overallFeedback,
           proceedToNextRound: data.proceedToNextRound,
         })
         .returning();
 
-      interviewId = newInterview.id;
+      interviewId = newInterview?.id;
     } else {
       // Update existing interview
       await db
@@ -46,7 +48,7 @@ export async function saveInterviewRound(data: InterviewRoundData & { interviewI
         .set({
           overallFeedback: data.overallFeedback,
           proceedToNextRound: data.proceedToNextRound,
-          status: "completed",
+          status: "pending",
         })
         .where(eq(interview.id, interviewId));
     }
@@ -59,8 +61,12 @@ export async function saveInterviewRound(data: InterviewRoundData & { interviewI
         const existingFeedback = await db
           .select()
           .from(interviewFeedback)
-          .where(eq(interviewFeedback.interviewId, interviewId))
-          .where(eq(interviewFeedback.questionId, questionId))
+          .where(
+            and(
+              eq(interviewFeedback.interviewId, interviewId as string),
+              eq(interviewFeedback.questionId, questionId)
+            )
+          )
           .limit(1);
 
         if (existingFeedback.length > 0) {
@@ -68,11 +74,11 @@ export async function saveInterviewRound(data: InterviewRoundData & { interviewI
           await db
             .update(interviewFeedback)
             .set({ notes: response })
-            .where(eq(interviewFeedback.id, existingFeedback[0].id));
+            .where(eq(interviewFeedback.id, existingFeedback[0]?.id as string));
         } else {
           // Insert new feedback
           await db.insert(interviewFeedback).values({
-            interviewId,
+            interviewId: interviewId as string,
             questionId,
             notes: response,
           });
@@ -104,14 +110,14 @@ export async function startInterviewRound(data: {
         applicationId: data.applicationId,
         positionRoundTemplateId: data.positionRoundTemplateId,
         interviewerId: data.interviewerId,
-        status: "scheduled",
+        status: "pending",
         scheduledAt: new Date(),
       })
       .returning();
 
     revalidatePath(`/candidates/[slug]`, "page");
 
-    return { success: true, interviewId: newInterview.id };
+    return { success: true, interviewId: newInterview?.id };
   } catch (error) {
     console.error("Error starting interview round:", error);
     return { success: false, error: "Failed to start interview round" };
@@ -129,8 +135,12 @@ export async function getInterviewForRound(
     const [interviewData] = await db
       .select()
       .from(interview)
-      .where(eq(interview.applicationId, applicationId))
-      .where(eq(interview.positionRoundTemplateId, positionRoundTemplateId))
+      .where(
+        and(
+          eq(interview.applicationId, applicationId),
+          eq(interview.positionRoundTemplateId, positionRoundTemplateId)
+        )
+      )
       .limit(1);
 
     if (!interviewData) {

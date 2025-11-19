@@ -924,7 +924,9 @@ export const getDashboardStats = async () => {
 
     // Active candidates count (candidates with applications in reviewed, shortlisted, or interviewing status)
     const [activeCandidatesResult] = await db
-      .select({ count: sql<number>`count(DISTINCT ${application.candidateId})::int` })
+      .select({
+        count: sql<number>`count(DISTINCT ${application.candidateId})::int`,
+      })
       .from(application)
       .where(
         sql`${application.status} IN ('reviewed', 'shortlisted', 'interviewing')`
@@ -1141,7 +1143,7 @@ export const getRecentActivity = async (limit: number = 10) => {
     // Combine and sort all activities
     const allActivities = [
       ...recentApplications.map((a) => ({
-        type: 'application' as const,
+        type: "application" as const,
         id: a.id,
         timestamp: a.timestamp,
         candidate: {
@@ -1155,7 +1157,7 @@ export const getRecentActivity = async (limit: number = 10) => {
         roundName: null,
       })),
       ...recentInterviews.map((i) => ({
-        type: 'interview' as const,
+        type: "interview" as const,
         id: i.id,
         timestamp: i.timestamp,
         candidate: {
@@ -1165,7 +1167,8 @@ export const getRecentActivity = async (limit: number = 10) => {
         },
         positionName: i.positionName,
         status: i.status,
-        user: i.userId && i.userName ? { id: i.userId, name: i.userName } : null,
+        user:
+          i.userId && i.userName ? { id: i.userId, name: i.userName } : null,
         roundName: i.roundName,
       })),
     ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
