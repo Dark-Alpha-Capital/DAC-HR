@@ -30,14 +30,19 @@ import {
 } from "@/components/dashboard-charts";
 
 async function DashboardContent() {
-  const [stats, candidatesByStatus, candidatesByPosition, upcomingInterviews, recentActivity] =
-    await Promise.all([
-      getDashboardStats(),
-      getCandidatesByStatus(),
-      getCandidatesByPosition(),
-      getUpcomingInterviews(5),
-      getRecentActivity(10),
-    ]);
+  const [
+    stats,
+    candidatesByStatus,
+    candidatesByPosition,
+    upcomingInterviews,
+    recentActivity,
+  ] = await Promise.all([
+    getDashboardStats(),
+    getCandidatesByStatus(),
+    getCandidatesByPosition(),
+    getUpcomingInterviews(5),
+    getRecentActivity(10),
+  ]);
 
   // Calculate percentage changes (mock data for now - you'd calculate from historical data)
   const percentageChanges = {
@@ -74,7 +79,9 @@ async function DashboardContent() {
               <span className="text-xs font-medium text-green-600">
                 {percentageChanges.totalCandidates}%
               </span>
-              <span className="text-xs text-muted-foreground">from last month</span>
+              <span className="text-xs text-muted-foreground">
+                from last month
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -95,7 +102,9 @@ async function DashboardContent() {
               <span className="text-xs font-medium text-green-600">
                 {percentageChanges.activeCandidates}%
               </span>
-              <span className="text-xs text-muted-foreground">from last month</span>
+              <span className="text-xs text-muted-foreground">
+                from last month
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -109,7 +118,9 @@ async function DashboardContent() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{stats.interviewsScheduled}</div>
+            <div className="text-3xl font-bold">
+              {stats.interviewsScheduled}
+            </div>
             <p className="text-xs text-muted-foreground mt-1">Upcoming</p>
           </CardContent>
         </Card>
@@ -130,7 +141,9 @@ async function DashboardContent() {
               <span className="text-xs font-medium text-red-600">
                 {Math.abs(percentageChanges.avgTimeToHire)}%
               </span>
-              <span className="text-xs text-muted-foreground">from last month</span>
+              <span className="text-xs text-muted-foreground">
+                from last month
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -201,7 +214,8 @@ async function DashboardContent() {
                   >
                     <div className="space-y-1">
                       <p className="font-semibold">
-                        {interview.candidate.firstName} {interview.candidate.lastName}
+                        {interview.candidate.firstName}{" "}
+                        {interview.candidate.lastName}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         {interview.roundTemplate.name}
@@ -265,12 +279,13 @@ async function DashboardContent() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="space-y-1">
                         <p className="text-sm font-semibold">
-                          {activity.candidate.firstName} {activity.candidate.lastName}
+                          {activity.candidate.firstName}{" "}
+                          {activity.candidate.lastName}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {activity.type === "application"
                             ? `Status changed to ${activity.status}`
-                            : `${activity.roundName} ${activity.status === "scheduled" ? "scheduled" : activity.status}`}
+                            : `${activity.roundName} ${activity.status === "move_forward" ? "moved forward" : activity.status === "rejected" ? "rejected" : "pending"}`}
                         </p>
                         {activity.user && (
                           <p className="text-xs text-muted-foreground">
