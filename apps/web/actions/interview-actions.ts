@@ -19,7 +19,9 @@ export type InterviewRoundData = {
 /**
  * Create or update an interview round
  */
-export async function saveInterviewRound(data: InterviewRoundData & { interviewId?: string }) {
+export async function saveInterviewRound(
+  data: InterviewRoundData & { interviewId?: string }
+) {
   try {
     let interviewId = data.interviewId;
 
@@ -32,13 +34,13 @@ export async function saveInterviewRound(data: InterviewRoundData & { interviewI
           positionRoundTemplateId: data.positionRoundTemplateId,
           interviewerId: data.interviewerId,
           scheduledAt: data.scheduledAt,
-          status: "completed",
+          status: "pending",
           overallFeedback: data.overallFeedback,
           proceedToNextRound: data.proceedToNextRound,
         })
         .returning();
 
-      interviewId = newInterview.id;
+      interviewId = newInterview?.id;
     } else {
       // Update existing interview
       await db
