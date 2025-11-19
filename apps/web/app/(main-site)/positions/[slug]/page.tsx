@@ -166,12 +166,9 @@ const DisplayPosition = async ({ params }: { params: Params }) => {
               <p className="text-muted-foreground mb-4">
                 No rounds are currently linked to this position.
               </p>
-              <Button variant="outline" asChild>
-                <Link href="/rounds/new">Create a Round</Link>
-              </Button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 mb-6">
               {rounds.map((round) => (
                 <div
                   key={round.id}
@@ -201,8 +198,14 @@ const DisplayPosition = async ({ params }: { params: Params }) => {
               ))}
             </div>
           )}
+          <div className="flex justify-center pt-4">
+            <Button variant="outline" asChild>
+              <Link href="/rounds/new">Create a Round</Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
+
 
       {/* Candidates Section */}
       <Card>
