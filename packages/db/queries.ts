@@ -16,7 +16,7 @@ import {
   candidateOnboarding,
   employee,
 } from "./schema";
-import { eq, asc, inArray, and, sql } from "drizzle-orm";
+import { eq, asc, inArray, and, or, sql } from "drizzle-orm";
 
 /**
  *
@@ -161,6 +161,119 @@ export const getCandidatesWithPositions = async () => {
     }));
   } catch (error) {
     console.error("Error fetching candidates with positions", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches candidates with positions, optionally filtered by name, email, and position IDs
+ * @param nameSearch Optional search term for first name or last name
+ * @param emailSearch Optional search term for email
+ * @param positionIds Optional array of position IDs to filter by
+ * @returns An array of candidates with position information
+ */
+export const getCandidatesWithPositionsFiltered = async (
+  nameSearch?: string,
+  emailSearch?: string,
+  positionIds?: string[]
+) => {
+  try {
+    let query = db
+      .select({
+        candidate: {
+          id: candidate.id,
+          firstName: candidate.firstName,
+          lastName: candidate.lastName,
+          email: candidate.email,
+          phone: candidate.phone,
+          location: candidate.location,
+          source: candidate.source,
+          note: candidate.note,
+          createdAt: candidate.createdAt,
+          updatedAt: candidate.updatedAt,
+        },
+        position: {
+          id: position.id,
+          name: position.name,
+        },
+      })
+      .from(candidate)
+      .leftJoin(
+        candidatePosition,
+        eq(candidate.id, candidatePosition.candidateId)
+      )
+      .leftJoin(position, eq(candidatePosition.positionId, position.id));
+
+    // Build filter conditions
+    const conditions = [];
+
+    // Name search (first name or last name)
+    if (nameSearch && nameSearch.trim()) {
+      const searchTerm = `%${nameSearch.trim()}%`;
+      conditions.push(
+        or(
+          sql`${candidate.firstName} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`,
+          sql`${candidate.lastName} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`
+        )!
+      );
+    }
+
+    // Email search
+    if (emailSearch && emailSearch.trim()) {
+      const searchTerm = `%${emailSearch.trim()}%`;
+      conditions.push(
+        sql`${candidate.email} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`
+      );
+    }
+
+    // Position filter
+    if (positionIds && positionIds.length > 0) {
+      conditions.push(inArray(position.id, positionIds));
+    }
+
+    // Apply conditions if any
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as typeof query;
+    }
+
+    const results = await query.orderBy(asc(candidate.createdAt));
+
+    // Map results and handle duplicates (candidates can have multiple positions)
+    const candidateMap = new Map<
+      string,
+      {
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+        phone: string | null;
+        location: string | null;
+        source: string | null;
+        note: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        position: { id: string; name: string } | null;
+      }
+    >();
+
+    for (const result of results) {
+      const candidateId = result.candidate.id;
+      if (!candidateMap.has(candidateId)) {
+        candidateMap.set(candidateId, {
+          ...result.candidate,
+          position: result.position?.id
+            ? {
+                id: result.position.id,
+                name: result.position.name,
+              }
+            : null,
+        });
+      }
+    }
+
+    return Array.from(candidateMap.values());
+  } catch (error) {
+    console.error("Error fetching filtered candidates with positions", error);
     return [];
   }
 };
