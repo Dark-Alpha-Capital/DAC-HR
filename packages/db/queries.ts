@@ -13,11 +13,9 @@ import {
   user,
   documents,
   candidateDocument,
-  candidateOnboarding
+  candidateOnboarding,
 } from "./schema";
 import { eq, asc, inArray, and, sql } from "drizzle-orm";
-
-
 
 /**
  *
@@ -26,7 +24,14 @@ import { eq, asc, inArray, and, sql } from "drizzle-orm";
  */
 export const getPositions = async () => {
   try {
-    return await db.select().from(position);
+    return await db
+      .select({
+        id: position.id,
+        name: position.name,
+        slug: position.slug,
+        description: position.description,
+      })
+      .from(position);
   } catch (error) {
     console.error("Error fetching positions", error);
     return [];

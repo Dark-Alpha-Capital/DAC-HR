@@ -4,13 +4,14 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { Metadata } from "next";
 import GoogleSignInButton from "@/components/google-signin-button";
+import React from "react";
 
 export const metadata: Metadata = {
-  title: "DAC HR - Login",
+  title: "DAC HR",
   description: "HR Automation Platform",
 };
 
-export default function Page() {
+export default async function Page() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <UserContent />
@@ -23,9 +24,11 @@ async function UserContent() {
     headers: await headers(),
   });
 
-  if (session) {
-    redirect("/dashboard");
+  console.log("session", session);
+
+  if (!session) {
+    redirect("/login");
   }
 
-  return <div></div>;
+  return <div>User Content</div>;
 }

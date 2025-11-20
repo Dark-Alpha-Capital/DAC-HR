@@ -38,13 +38,6 @@ async function AuthContent() {
         <div className="flex flex-col space-y-4">
           <GoogleSignInButton />
         </div>
-        <div className="flex items-center my-4">
-          <div className="flex-1 h-px bg-border" />
-          <span className="mx-3 text-xs text-muted-foreground uppercase">
-            or
-          </span>
-          <div className="flex-1 h-px bg-border" />
-        </div>
       </div>
     </div>
   );

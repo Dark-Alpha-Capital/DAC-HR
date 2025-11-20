@@ -212,7 +212,7 @@ export const interviewStatusEnum = pgEnum("interview_status", [
   "pending",
   "move_forward",
   "rejected",
-  "scheduled"
+  "scheduled",
 ]);
 
 export const applicationStatusEnum = pgEnum("application_status", [
@@ -308,7 +308,6 @@ export const documents = pgTable("documents", {
 
 export type Document = InferSelectModel<typeof documents>;
 
-
 export const candidateOnboarding = pgTable("candidate_onboarding", {
   id: text("id")
     .primaryKey()
@@ -316,15 +315,13 @@ export const candidateOnboarding = pgTable("candidate_onboarding", {
   candidateId: text("candidate_id")
     .notNull()
     .references(() => candidate.id, { onDelete: "cascade" }),
-  contractSigned: boolean("contract_signed")
-    .default(false)
-    .notNull(),
-  signedContractDocumentId: text("signed_contract_document_id")
-    .references(() => candidateDocument.id, { onDelete: "set null" }),
+  contractSigned: boolean("contract_signed").default(false).notNull(),
+  signedContractDocumentId: text("signed_contract_document_id").references(
+    () => candidateDocument.id,
+    { onDelete: "set null" }
+  ),
   contractSignedAt: timestamp("contract_signed_at"),
-  emailProvided: boolean("email_provided")
-    .default(false)
-    .notNull(),
+  emailProvided: boolean("email_provided").default(false).notNull(),
   emailRegisteredAt: timestamp("email_registered_at"),
   onboardingPacketSent: boolean("onboarding_packet_sent")
     .default(false)

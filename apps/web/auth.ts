@@ -29,6 +29,12 @@ const isAdminEmail = (email: string): boolean => {
 };
 
 export const auth = betterAuth({
+  // Explicitly set secret - Better Auth requires this for session encryption
+  secret: process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET,
+
+  // Set baseURL for proper cookie handling (Better Auth will use BETTER_AUTH_URL env var if not set)
+  baseURL: process.env.BETTER_AUTH_URL,
+
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {

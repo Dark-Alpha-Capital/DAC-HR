@@ -61,7 +61,7 @@ const PositionUploadForm = () => {
           });
           form.reset();
         } else {
-          toast("Failed to upload position", {
+          toast((result.error as string) || "Failed to upload position", {
             position: "bottom-right",
           });
         }
