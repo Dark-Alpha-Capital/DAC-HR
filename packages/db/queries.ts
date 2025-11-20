@@ -16,6 +16,8 @@ import {
 } from "./schema";
 import { eq, asc, inArray, and, sql } from "drizzle-orm";
 
+
+
 /**
  *
  * Fetches all positions from the database

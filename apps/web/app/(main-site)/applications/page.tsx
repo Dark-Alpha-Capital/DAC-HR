@@ -4,14 +4,14 @@ import React, { Suspense } from "react";
 import { getAllApplications } from "@workspace/db/queries";
 import ApplicationCard from "@/components/application-card";
 import { Metadata } from "next";
-import { Briefcase } from "lucide-react";
+import { Briefcase, CloudCog } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Applications",
   description: "All job applications",
 };
 
-const page = () => {
+const page = async () => {
   return (
     <div className="container mx-auto py-8 space-y-6">
       <div className="flex items-center justify-between">
