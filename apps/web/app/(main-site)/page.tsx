@@ -34,9 +34,21 @@ export const metadata: Metadata = {
 
 export default async function Page() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <UserContent />
-    </Suspense>
+    <div>
+      <Suspense fallback={<div>Loading...</div>}>
+        <UserContent />
+      </Suspense>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Suspense fallback={<StatsCardSkeleton />}>
+          <HomeStatsCards />
+        </Suspense>
+        <Suspense fallback={<StatsCardSkeleton />}>
+          <HomeEmployeeStat />
+        </Suspense>
+      </div>
+    </div>
   );
 }
 
@@ -127,16 +139,6 @@ async function UserContent() {
         <p className="text-lg text-muted-foreground">
           Streamline your hiring process and manage your workforce efficiently
         </p>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Suspense fallback={<StatsCardSkeleton />}>
-          <HomeStatsCards />
-        </Suspense>
-        <Suspense fallback={<StatsCardSkeleton />}>
-          <HomeEmployeeStat />
-        </Suspense>
       </div>
 
       {/* Features Grid */}

@@ -920,7 +920,7 @@ export async function getDocumentsByCandidateId(candidateId: string) {
 
 /**
  * Fetches dashboard statistics including total candidates, active candidates, interviews scheduled, and average time to hire
- * @returns Dashboard statistics object
+ * @returns Dashboard statistics object with percentage changes
  */
 export const getDashboardStats = async () => {
   try {
@@ -929,6 +929,22 @@ export const getDashboardStats = async () => {
       .select({ count: sql<number>`count(*)::int` })
       .from(candidate);
     const totalCandidates = totalCandidatesResult?.count || 0;
+
+    // Total candidates last month (30-60 days ago)
+    const [totalCandidatesLastMonthResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(candidate)
+      .where(
+        sql`${candidate.createdAt} >= NOW() - INTERVAL '60 days' AND ${candidate.createdAt} < NOW() - INTERVAL '30 days'`
+      );
+    const totalCandidatesLastMonth = totalCandidatesLastMonthResult?.count || 0;
+
+    // Total candidates this month
+    const [totalCandidatesThisMonthResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(candidate)
+      .where(sql`${candidate.createdAt} >= NOW() - INTERVAL '30 days'`);
+    const totalCandidatesThisMonth = totalCandidatesThisMonthResult?.count || 0;
 
     // Active candidates count (candidates with applications in reviewed, shortlisted, or interviewing status)
     const [activeCandidatesResult] = await db
@@ -940,6 +956,18 @@ export const getDashboardStats = async () => {
         sql`${application.status} IN ('reviewed', 'shortlisted', 'interviewing')`
       );
     const activeCandidates = activeCandidatesResult?.count || 0;
+
+    // Active candidates last month
+    const [activeCandidatesLastMonthResult] = await db
+      .select({
+        count: sql<number>`count(DISTINCT ${application.candidateId})::int`,
+      })
+      .from(application)
+      .where(
+        sql`${application.status} IN ('reviewed', 'shortlisted', 'interviewing') AND ${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`
+      );
+    const activeCandidatesLastMonth =
+      activeCandidatesLastMonthResult?.count || 0;
 
     // Interviews scheduled count (interviews with status 'pending')
     const [interviewsScheduledResult] = await db
@@ -957,19 +985,157 @@ export const getDashboardStats = async () => {
       .where(eq(application.status, "hired"));
     const avgTimeToHire = avgTimeToHireResult?.avgDays || 0;
 
+    // Average time to hire last month
+    const [avgTimeToHireLastMonthResult] = await db
+      .select({
+        avgDays: sql<number>`AVG(EXTRACT(EPOCH FROM (${application.updatedAt} - ${application.createdAt})) / 86400)::int`,
+      })
+      .from(application)
+      .where(
+        sql`${application.status} = 'hired' AND ${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`
+      );
+    const avgTimeToHireLastMonth = avgTimeToHireLastMonthResult?.avgDays || 0;
+
+    // Total employees count
+    const [totalEmployeesResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(employee);
+    const totalEmployees = totalEmployeesResult?.count || 0;
+
+    // Total positions count
+    const [totalPositionsResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(position);
+    const totalPositions = totalPositionsResult?.count || 0;
+
+    // Applications this month
+    const [applicationsThisMonthResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(application)
+      .where(sql`${application.createdAt} >= NOW() - INTERVAL '30 days'`);
+    const applicationsThisMonth = applicationsThisMonthResult?.count || 0;
+
+    // Applications last month
+    const [applicationsLastMonthResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(application)
+      .where(
+        sql`${application.createdAt} >= NOW() - INTERVAL '60 days' AND ${application.createdAt} < NOW() - INTERVAL '30 days'`
+      );
+    const applicationsLastMonth = applicationsLastMonthResult?.count || 0;
+
+    // Hired this month
+    const [hiredThisMonthResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(application)
+      .where(
+        sql`${application.status} = 'hired' AND ${application.updatedAt} >= NOW() - INTERVAL '30 days'`
+      );
+    const hiredThisMonth = hiredThisMonthResult?.count || 0;
+
+    // Hired last month
+    const [hiredLastMonthResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(application)
+      .where(
+        sql`${application.status} = 'hired' AND ${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`
+      );
+    const hiredLastMonth = hiredLastMonthResult?.count || 0;
+
+    // Total interviews count
+    const [totalInterviewsResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(interview);
+    const totalInterviews = totalInterviewsResult?.count || 0;
+
+    // Completed interviews (not pending)
+    const [completedInterviewsResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(interview)
+      .where(sql`${interview.status} != 'pending'`);
+    const completedInterviews = completedInterviewsResult?.count || 0;
+
+    // Average interview rating
+    const [avgInterviewRatingResult] = await db
+      .select({
+        avgRating: sql<number>`AVG(${interview.rating})::numeric`,
+      })
+      .from(interview)
+      .where(sql`${interview.rating} IS NOT NULL`);
+    const avgInterviewRating =
+      avgInterviewRatingResult && avgInterviewRatingResult.avgRating !== null
+        ? Number(avgInterviewRatingResult.avgRating)
+        : 0;
+
+    // Calculate percentage changes
+    const calculatePercentageChange = (
+      current: number,
+      previous: number
+    ): number => {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      return Math.round(((current - previous) / previous) * 100);
+    };
+
     return {
       totalCandidates,
+      totalCandidatesThisMonth,
+      totalCandidatesChange: calculatePercentageChange(
+        totalCandidatesThisMonth,
+        totalCandidatesLastMonth
+      ),
       activeCandidates,
+      activeCandidatesChange: calculatePercentageChange(
+        activeCandidates,
+        activeCandidatesLastMonth
+      ),
       interviewsScheduled,
       avgTimeToHire,
+      avgTimeToHireChange: calculatePercentageChange(
+        avgTimeToHireLastMonth,
+        avgTimeToHire
+      ), // Inverted because lower is better
+      totalEmployees,
+      totalPositions,
+      applicationsThisMonth,
+      applicationsLastMonth,
+      applicationsChange: calculatePercentageChange(
+        applicationsThisMonth,
+        applicationsLastMonth
+      ),
+      hiredThisMonth,
+      hiredLastMonth,
+      hiredChange: calculatePercentageChange(hiredThisMonth, hiredLastMonth),
+      totalInterviews,
+      completedInterviews,
+      interviewCompletionRate:
+        totalInterviews > 0
+          ? Math.round((completedInterviews / totalInterviews) * 100)
+          : 0,
+      avgInterviewRating: Math.round(avgInterviewRating * 10) / 10,
     };
   } catch (error) {
     console.error("Error fetching dashboard stats", error);
     return {
       totalCandidates: 0,
+      totalCandidatesThisMonth: 0,
+      totalCandidatesChange: 0,
       activeCandidates: 0,
+      activeCandidatesChange: 0,
       interviewsScheduled: 0,
       avgTimeToHire: 0,
+      avgTimeToHireChange: 0,
+      totalEmployees: 0,
+      totalPositions: 0,
+      applicationsThisMonth: 0,
+      applicationsLastMonth: 0,
+      applicationsChange: 0,
+      hiredThisMonth: 0,
+      hiredLastMonth: 0,
+      hiredChange: 0,
+      totalInterviews: 0,
+      completedInterviews: 0,
+      interviewCompletionRate: 0,
+      avgInterviewRating: 0,
     };
   }
 };
@@ -1329,5 +1495,102 @@ export const getEmployeeById = async (id: string) => {
   } catch (error) {
     console.error("Error fetching employee by id", error);
     return null;
+  }
+};
+
+/**
+ * Fetches applications over time (last 6 months)
+ * @returns Array of monthly application counts
+ */
+export const getApplicationsOverTime = async () => {
+  try {
+    const results = await db
+      .select({
+        month: sql<string>`TO_CHAR(${application.createdAt}, 'YYYY-MM')`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(application)
+      .where(sql`${application.createdAt} >= NOW() - INTERVAL '6 months'`)
+      .groupBy(sql`TO_CHAR(${application.createdAt}, 'YYYY-MM')`)
+      .orderBy(sql`TO_CHAR(${application.createdAt}, 'YYYY-MM')`);
+
+    return results.map((r) => ({
+      month: r.month,
+      count: r.count,
+    }));
+  } catch (error) {
+    console.error("Error fetching applications over time", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches employee distribution by department
+ * @returns Array of department counts
+ */
+export const getEmployeesByDepartment = async () => {
+  try {
+    const results = await db
+      .select({
+        department: employee.department,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(employee)
+      .groupBy(employee.department);
+
+    return results.map((r) => ({
+      department: r.department,
+      count: r.count,
+    }));
+  } catch (error) {
+    console.error("Error fetching employees by department", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches interview ratings distribution
+ * @returns Array of rating counts
+ */
+export const getInterviewRatingsDistribution = async () => {
+  try {
+    const results = await db
+      .select({
+        rating: interview.rating,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(interview)
+      .where(sql`${interview.rating} IS NOT NULL`)
+      .groupBy(interview.rating)
+      .orderBy(interview.rating);
+
+    return results.map((r) => ({
+      rating: r.rating || 0,
+      count: r.count,
+    }));
+  } catch (error) {
+    console.error("Error fetching interview ratings distribution", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches interview status distribution
+ * @returns Array of interview status counts
+ */
+export const getInterviewStatusDistribution = async () => {
+  try {
+    const results = await db
+      .select({
+        status: interview.status,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(interview)
+      .groupBy(interview.status);
+
+    return results;
+  } catch (error) {
+    console.error("Error fetching interview status distribution", error);
+    return [];
   }
 };

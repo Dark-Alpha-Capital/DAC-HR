@@ -39,7 +39,6 @@ const navLinks = [
   { href: "/applications", label: "Applications" },
   { href: "/rounds", label: "Rounds" },
   { href: "/documents", label: "Documents" },
-  { href: "/questions", label: "Questions" },
 ] as const;
 
 const Header = () => {
@@ -90,7 +89,17 @@ const Header = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-4 lg:gap-6">
-          {/* Recruiting dropdown */}
+          {session?.user?.role === "admin" && (
+            <Link
+              href={{
+                pathname: "/admin",
+              }}
+              className="text-sm font-medium hover:text-primary transition-colors"
+            >
+              Admin
+            </Link>
+          )}
+
           <div
             onMouseEnter={() => setOpenRecruiting(true)}
             onMouseLeave={() => setOpenRecruiting(false)}
