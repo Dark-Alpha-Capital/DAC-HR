@@ -38,7 +38,10 @@ import { formatDate } from "@/lib/utils";
 import { CandidateLoadingSkeleton } from "@/components/skeletons/candidate-skeleton";
 import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";
 import CandidateDocumentCard from "@/components/candidate-document-card";
-import CandidateOnboardingSection from "@/components/candidate-onboarding-section";
+import { toggleCandidateOnboarding } from "@/lib/actions/update-onboarding";
+import OnboardingCardWrapper from "@/components/onboarding-card-wrapper";
+import { getOrCreateCandidateOnboarding } from "@workspace/db/queries";
+
 
 type Params = Promise<{ uid: string }>;
 
@@ -140,6 +143,21 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
     );
   }
 
+  let onboardingData = null;
+  const isOnboarding = candidate.applications.some(app => app.status === "hired");
+  if (isOnboarding) {
+    const rawData = await getOrCreateCandidateOnboarding(candidate.id);
+
+    if (rawData) {
+      onboardingData = {
+        contractSigned: rawData.contractSigned ?? false,
+        registrationEmailSent: rawData.emailProvided ?? false,
+        packetSent: rawData.onboardingPacketSent ?? false,
+        companyEmailActivate : rawData.companyEmailActivate ?? false
+      };
+    }
+  }
+
   const fullName = `${candidate.firstName} ${candidate.lastName}`;
   const applicationStatusColors: Record<
     string,
@@ -208,6 +226,18 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
           </div>
         </CardHeader>
       </Card>
+
+      {isOnboarding && onboardingData ? (
+        <OnboardingCardWrapper
+          candidateId={candidate.id}
+          onboardingData={onboardingData}
+        />
+      ) : isOnboarding ? (
+        <p className="text-sm text-muted-foreground mt-4">
+          Onboarding enabled, but no data available
+        </p>
+      ) : null}
+
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 mt-4 md:mt-6 lg:mt-8">
         <Card>

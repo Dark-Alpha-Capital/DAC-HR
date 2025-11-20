@@ -208,7 +208,7 @@ export const interviewStatusEnum = pgEnum("interview_status", [
   "pending",
   "move_forward",
   "rejected",
-  "scheduled",
+  "scheduled"
 ]);
 
 export const applicationStatusEnum = pgEnum("application_status", [
@@ -304,6 +304,7 @@ export const documents = pgTable("documents", {
 
 export type Document = InferSelectModel<typeof documents>;
 
+
 export const candidateOnboarding = pgTable("candidate_onboarding", {
   id: text("id")
     .primaryKey()
@@ -311,13 +312,15 @@ export const candidateOnboarding = pgTable("candidate_onboarding", {
   candidateId: text("candidate_id")
     .notNull()
     .references(() => candidate.id, { onDelete: "cascade" }),
-  contractSigned: boolean("contract_signed").default(false).notNull(),
-  signedContractDocumentId: text("signed_contract_document_id").references(
-    () => candidateDocument.id,
-    { onDelete: "set null" }
-  ),
+  contractSigned: boolean("contract_signed")
+    .default(false)
+    .notNull(),
+  signedContractDocumentId: text("signed_contract_document_id")
+    .references(() => candidateDocument.id, { onDelete: "set null" }),
   contractSignedAt: timestamp("contract_signed_at"),
-  emailProvided: boolean("email_provided").default(false).notNull(),
+  emailProvided: boolean("email_provided")
+    .default(false)
+    .notNull(),
   emailRegisteredAt: timestamp("email_registered_at"),
   onboardingPacketSent: boolean("onboarding_packet_sent")
     .default(false)
@@ -333,36 +336,3 @@ export const candidateOnboarding = pgTable("candidate_onboarding", {
     .$onUpdate(() => new Date())
     .notNull(),
 });
-
-export const departmentEnum = pgEnum("department", [
-  "engineering",
-  "product",
-  "sales",
-  "marketing",
-  "hr",
-  "finance",
-  "operations",
-  "legal",
-  "customer-support",
-  "other",
-]);
-
-export const employee = pgTable("employee", {
-  id: text("id")
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  firstName: text("first_name").notNull(),
-  lastName: text("last_name").notNull(),
-  department: departmentEnum("department").notNull(),
-  positionId: text("position_id").references(() => position.id, {
-    onDelete: "set null",
-  }),
-  profileImage: text("profile_image"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
-});
-
-export type Employee = InferSelectModel<typeof employee>;
