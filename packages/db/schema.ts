@@ -212,6 +212,7 @@ export const interviewStatusEnum = pgEnum("interview_status", [
   "pending",
   "move_forward",
   "rejected",
+  "scheduled"
 ]);
 
 export const applicationStatusEnum = pgEnum("application_status", [
@@ -306,3 +307,36 @@ export const documents = pgTable("documents", {
 });
 
 export type Document = InferSelectModel<typeof documents>;
+
+
+export const candidateOnboarding = pgTable("candidate_onboarding", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  candidateId: text("candidate_id")
+    .notNull()
+    .references(() => candidate.id, { onDelete: "cascade" }),
+  contractSigned: boolean("contract_signed")
+    .default(false)
+    .notNull(),
+  signedContractDocumentId: text("signed_contract_document_id")
+    .references(() => candidateDocument.id, { onDelete: "set null" }),
+  contractSignedAt: timestamp("contract_signed_at"),
+  emailProvided: boolean("email_provided")
+    .default(false)
+    .notNull(),
+  emailRegisteredAt: timestamp("email_registered_at"),
+  onboardingPacketSent: boolean("onboarding_packet_sent")
+    .default(false)
+    .notNull(),
+  onboardingPacketSentAt: timestamp("onboarding_packet_sent_at"),
+  companyEmailActivate: boolean("company_email_activate")
+    .default(false)
+    .notNull(),
+  companyEmailActivateAt: timestamp("company_email_activate_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});

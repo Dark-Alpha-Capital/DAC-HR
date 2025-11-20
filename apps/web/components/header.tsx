@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { authClient } from "@/auth-client";
+
 import {
   Avatar,
   AvatarImage,
@@ -27,14 +28,17 @@ const navLinks = [
   { href: "/applications", label: "Applications" },
   { href: "/rounds", label: "Rounds" },
   { href: "/documents", label: "Documents" },
-  { href: "/questions", label: "Questions" },
+  { href: "/questions", label: "Questions" }
 ];
 
 const Header = () => {
   const pathname = usePathname();
+  const router = useRouter();
 
   const { data: session, isPending } = authClient.useSession();
-  const router = useRouter();
+
+  const [openRecruiting, setOpenRecruiting] = React.useState(false);
+  const [openManagement, setOpenManagement] = React.useState(false);
 
   const handleLogout = async () => {
     await authClient.signOut({
@@ -64,30 +68,73 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
+
         <Link
           href="/"
           className="text-xl font-bold hover:opacity-80 transition-opacity"
         >
           dac-hr
         </Link>
+
         <nav className="flex items-center gap-6">
-          {navLinks.map((link) => {
-            const isActive =
-              pathname === link.href || pathname.startsWith(`${link.href}/`);
-            return (
-              <Link
-                key={link.href}
-                href={{
-                  pathname: link.href,
-                }}
-                className={`text-sm font-medium transition-colors ${
-                  isActive ? "text-primary font-semibold" : "hover:text-primary"
-                }`}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
+
+          {/* Recruiting dropdown */}
+          <div
+            onMouseEnter={() => setOpenRecruiting(true)}
+            onMouseLeave={() => setOpenRecruiting(false)}
+          >
+            <DropdownMenu open={openRecruiting} onOpenChange={setOpenRecruiting}>
+              <DropdownMenuTrigger className="text-sm font-medium hover:text-primary transition-colors">
+                Recruiting
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuLabel>Recruiting</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+
+                {navLinks.map((link) => {
+                  const isActive =
+                    pathname === link.href ||
+                    pathname.startsWith(`${link.href}/`);
+
+                  return (
+                    <DropdownMenuItem key={link.href} asChild>
+                      <Link
+                        href={link.href}
+                        className={`cursor-pointer ${
+                          isActive ? "text-primary font-semibold" : ""
+                        }`}
+                      >
+                        {link.label}
+                      </Link>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Management dropdown (empty for now) */}
+          <div
+            onMouseEnter={() => setOpenManagement(true)}
+            onMouseLeave={() => setOpenManagement(false)}
+          >
+            <DropdownMenu open={openManagement} onOpenChange={setOpenManagement}>
+              <DropdownMenuTrigger className="text-sm font-medium hover:text-primary transition-colors">
+                Management
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuLabel>Management</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="px-3 py-2 text-xs text-muted-foreground">
+                  No links yet
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* User dropdown */}
           {isPending ? (
             <Spinner className="size-6 animate-spin" />
           ) : session?.user ? (
@@ -107,6 +154,7 @@ const Header = () => {
                   </Avatar>
                 </button>
               </DropdownMenuTrigger>
+
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
@@ -120,14 +168,18 @@ const Header = () => {
                     )}
                   </div>
                 </DropdownMenuLabel>
+
                 <DropdownMenuSeparator />
+
                 <DropdownMenuItem asChild>
                   <Link href="/profile" className="cursor-pointer">
                     <User className="mr-2 size-4" />
                     Profile
                   </Link>
                 </DropdownMenuItem>
+
                 <DropdownMenuSeparator />
+
                 <DropdownMenuItem
                   onClick={handleLogout}
                   variant="destructive"
@@ -139,6 +191,7 @@ const Header = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : null}
+
         </nav>
       </div>
     </header>
