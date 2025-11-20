@@ -46,7 +46,13 @@ const PositionsList = async () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {positions.map((position) => (
-        <PositionCard key={position.id} position={position} />
+        <PositionCard
+          key={position.id}
+          positionId={position.id}
+          positionName={position.name}
+          positionDescription={position.description || ""}
+          positionSlug={position.slug}
+        />
       ))}
     </div>
   );

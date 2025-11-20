@@ -7,7 +7,7 @@ import { Separator } from "@workspace/ui/components/separator";
 import { Edit, Star, Plus } from "lucide-react";
 import InterviewSummaryForm from "./interview-summary-form";
 
-type InterviewStatus = "pending" | "move_forward" | "rejected";
+type InterviewStatus = "pending" | "move_forward" | "rejected" | "scheduled";
 
 interface InterviewSummaryDisplayProps {
   interview: {
@@ -29,7 +29,12 @@ export default function InterviewSummaryDisplay({
   // Reset editing state when interview data changes (after successful save)
   useEffect(() => {
     setIsEditing(false);
-  }, [interview.id, interview.overallFeedback, interview.rating, interview.status]);
+  }, [
+    interview.id,
+    interview.overallFeedback,
+    interview.rating,
+    interview.status,
+  ]);
 
   const hasFeedback =
     interview.rating !== null ||
@@ -132,4 +137,3 @@ export default function InterviewSummaryDisplay({
     </div>
   );
 }
-

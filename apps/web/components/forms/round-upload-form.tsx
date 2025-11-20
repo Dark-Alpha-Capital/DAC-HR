@@ -42,11 +42,13 @@ import { createRound } from "@/lib/actions/create-round";
 
 const RoundUploadForm = ({
   positions,
+  preSelectedPositionId,
 }: {
   positions: {
     id: string;
     name: string;
   }[];
+  preSelectedPositionId: string;
 }) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -55,7 +57,7 @@ const RoundUploadForm = ({
     defaultValues: {
       name: "",
       description: "",
-      positionId: "",
+      positionId: preSelectedPositionId,
     },
     validators: {
       onSubmit: roundFormSchema,

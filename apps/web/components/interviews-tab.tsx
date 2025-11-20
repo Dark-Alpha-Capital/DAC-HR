@@ -12,17 +12,19 @@ import {
 import { Button } from "@workspace/ui/components/button";
 import { Label } from "@workspace/ui/components/label";
 import { Textarea } from "@workspace/ui/components/textarea";
-import { RadioGroup, RadioGroupItem } from "@workspace/ui/components/radio-group";
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@workspace/ui/components/radio-group";
 import { Badge } from "@workspace/ui/components/badge";
 import { Separator } from "@workspace/ui/components/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs";
 import {
-  CheckCircle2,
-  Circle,
-  ChevronRight,
-  Save,
-  Clock
-} from "lucide-react";
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@workspace/ui/components/tabs";
+import { CheckCircle2, Circle, ChevronRight, Save, Clock } from "lucide-react";
 
 type Candidate = {
   id: string;
@@ -109,9 +111,7 @@ export default function InterviewsTab({ candidate }: { candidate: Candidate }) {
 
       setRounds((prev) =>
         prev.map((r) =>
-          r.id === currentRound.id
-            ? { ...r, status: "completed" as const }
-            : r
+          r.id === currentRound.id ? { ...r, status: "completed" as const } : r
         )
       );
 
@@ -151,11 +151,7 @@ export default function InterviewsTab({ candidate }: { candidate: Candidate }) {
 
   const handleFeedbackChange = (value: string) => {
     setRounds((prev) =>
-      prev.map((r) =>
-        r.id === activeRound
-          ? { ...r, feedback: value }
-          : r
-      )
+      prev.map((r) => (r.id === activeRound ? { ...r, feedback: value } : r))
     );
   };
 
@@ -163,9 +159,7 @@ export default function InterviewsTab({ candidate }: { candidate: Candidate }) {
     const proceed = value === "yes" ? true : value === "no" ? false : null;
     setRounds((prev) =>
       prev.map((r) =>
-        r.id === activeRound
-          ? { ...r, proceedToNextRound: proceed }
-          : r
+        r.id === activeRound ? { ...r, proceedToNextRound: proceed } : r
       )
     );
   };
@@ -193,7 +187,9 @@ export default function InterviewsTab({ candidate }: { candidate: Candidate }) {
   };
 
   // Check if we should show "proceed to next round" field
-  const showProceedField = currentRound && (currentRound.id === "screening" || currentRound.id === "technical");
+  const showProceedField =
+    currentRound &&
+    (currentRound.id === "screening" || currentRound.id === "technical");
 
   return (
     <div className="space-y-6 mt-6">
@@ -201,7 +197,8 @@ export default function InterviewsTab({ candidate }: { candidate: Candidate }) {
         <CardHeader>
           <CardTitle>Interview Rounds</CardTitle>
           <p className="text-sm text-muted-foreground mt-2">
-            Manage candidate interviews across three stages: Screening, Technical, and Final Executive
+            Manage candidate interviews across three stages: Screening,
+            Technical, and Final Executive
           </p>
         </CardHeader>
         <CardContent>
@@ -216,8 +213,8 @@ export default function InterviewsTab({ candidate }: { candidate: Candidate }) {
                     {round.status === "not-started"
                       ? "Not Started"
                       : round.status === "in-progress"
-                      ? "In Progress"
-                      : "Completed"}
+                        ? "In Progress"
+                        : "Completed"}
                   </Badge>
                 </div>
                 {index < rounds.length - 1 && (
@@ -238,7 +235,11 @@ export default function InterviewsTab({ candidate }: { candidate: Candidate }) {
             </TabsList>
 
             {rounds.map((round) => (
-              <TabsContent key={round.id} value={round.id} className="mt-6 space-y-6">
+              <TabsContent
+                key={round.id}
+                value={round.id}
+                className="mt-6 space-y-6"
+              >
                 {round.status === "not-started" ? (
                   <Card className="border-dashed">
                     <CardContent className="pt-6 text-center py-12">
@@ -259,7 +260,9 @@ export default function InterviewsTab({ candidate }: { candidate: Candidate }) {
                     {/* Interview Questions */}
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-lg">Interview Questions & Responses</CardTitle>
+                        <CardTitle className="text-lg">
+                          Interview Questions & Responses
+                        </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-6">
                         {round.questions.map((question, index) => (
@@ -270,7 +273,9 @@ export default function InterviewsTab({ candidate }: { candidate: Candidate }) {
                             <Textarea
                               placeholder="Enter candidate's response and your assessment..."
                               value={round.responses[index] || ""}
-                              onChange={(e) => handleResponseChange(index, e.target.value)}
+                              onChange={(e) =>
+                                handleResponseChange(index, e.target.value)
+                              }
                               rows={4}
                               className="resize-none"
                             />
@@ -282,7 +287,9 @@ export default function InterviewsTab({ candidate }: { candidate: Candidate }) {
                     {/* Overall Feedback */}
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-lg">Overall Feedback</CardTitle>
+                        <CardTitle className="text-lg">
+                          Overall Feedback
+                        </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <Textarea
@@ -310,20 +317,32 @@ export default function InterviewsTab({ candidate }: { candidate: Candidate }) {
                               round.proceedToNextRound === true
                                 ? "yes"
                                 : round.proceedToNextRound === false
-                                ? "no"
-                                : ""
+                                  ? "no"
+                                  : ""
                             }
                             onValueChange={handleProceedChange}
                           >
                             <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="yes" id={`${round.id}-yes`} />
-                              <Label htmlFor={`${round.id}-yes`} className="cursor-pointer">
+                              <RadioGroupItem
+                                value="yes"
+                                id={`${round.id}-yes`}
+                              />
+                              <Label
+                                htmlFor={`${round.id}-yes`}
+                                className="cursor-pointer"
+                              >
                                 Yes - Proceed to next round
                               </Label>
                             </div>
                             <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="no" id={`${round.id}-no`} />
-                              <Label htmlFor={`${round.id}-no`} className="cursor-pointer">
+                              <RadioGroupItem
+                                value="no"
+                                id={`${round.id}-no`}
+                              />
+                              <Label
+                                htmlFor={`${round.id}-no`}
+                                className="cursor-pointer"
+                              >
                                 No - Do not proceed
                               </Label>
                             </div>

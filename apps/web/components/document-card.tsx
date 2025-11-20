@@ -11,10 +11,10 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import { Badge } from "@workspace/ui/components/badge";
-import { Eye, Pencil, FileText, Loader2 } from "lucide-react";
+import { Eye, Pencil, FileText } from "lucide-react";
 import type { Document } from "@workspace/db/schema";
 import DeleteDocumentButton from "./delete-document-button";
-import { toast } from "sonner";
+import DocumentPreviewDialog from "./document-preview-dialog";
 
 interface DocumentCardProps {
   document: Document;
@@ -37,7 +37,7 @@ const categoryLabels = {
 } as const;
 
 const DocumentCard = ({ document }: DocumentCardProps) => {
-  const [isLoadingViewUrl, setIsLoadingViewUrl] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const categoryColor =
     categoryColors[document.category] || categoryColors.other;
@@ -50,49 +50,6 @@ const DocumentCard = ({ document }: DocumentCardProps) => {
       month: "short",
       day: "numeric",
     });
-  };
-
-  const handleViewDocument = async () => {
-    setIsLoadingViewUrl(true);
-    try {
-      // Check if URL is already a public URL (not GCS)
-      const isPublicUrl =
-        !document.url.includes("storage.googleapis.com") &&
-        !document.url.startsWith("gs://");
-
-      console.log("isPublicUrl", isPublicUrl);
-
-      if (isPublicUrl) {
-        // If it's already a public URL, open it directly
-        window.open(document.url, "_blank", "noopener,noreferrer");
-        setIsLoadingViewUrl(false);
-        return;
-      }
-
-      // For GCS URLs, get a signed URL
-      const response = await fetch(
-        `/api/documents/view?url=${encodeURIComponent(document.url)}`
-      );
-
-      console.log("response", response);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to generate access URL");
-      }
-
-      const { url: signedUrl } = await response.json();
-      window.open(signedUrl, "_blank", "noopener,noreferrer");
-    } catch (error) {
-      console.error("Error viewing document:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to open document. Please try again."
-      );
-    } finally {
-      setIsLoadingViewUrl(false);
-    }
   };
 
   return (
@@ -144,20 +101,21 @@ const DocumentCard = ({ document }: DocumentCardProps) => {
           <Button
             variant="outline"
             size="sm"
-            onClick={handleViewDocument}
-            disabled={isLoadingViewUrl}
+            onClick={() => setIsPreviewOpen(true)}
           >
-            {isLoadingViewUrl ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Eye className="h-4 w-4" />
-            )}
-            View
+            <Eye className="h-4 w-4" />
+            Preview
           </Button>
 
           <DeleteDocumentButton documentId={document.id} />
         </div>
       </CardFooter>
+
+      <DocumentPreviewDialog
+        document={document}
+        open={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
+      />
     </Card>
   );
 };

@@ -54,6 +54,9 @@ const CandidatePage = async ({ params }: { params: Params }) => {
         <DisplayCandidate params={params} />
       </Suspense>
       <Suspense fallback={<FormLoadingFallback />}>
+        <CandidateOnboardingSection params={params} />
+      </Suspense>
+      <Suspense fallback={<FormLoadingFallback />}>
         <DisplayCandidateDocuments params={params} />
       </Suspense>
     </div>

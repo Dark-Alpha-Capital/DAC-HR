@@ -5,7 +5,8 @@ import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import { getPositions } from "@workspace/db/queries";
 
-const page = () => {
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
+const page = async ({ searchParams }: { searchParams: SearchParams }) => {
   return (
     <div className="block-space narrow-container mx-auto">
       <Button>
@@ -13,7 +14,7 @@ const page = () => {
       </Button>
 
       <Suspense fallback={<FormLoadingFallback />}>
-        <DisplayRoundUploadForm />
+        <DisplayRoundUploadForm searchParams={searchParams} />
       </Suspense>
     </div>
   );
@@ -21,7 +22,22 @@ const page = () => {
 
 export default page;
 
-async function DisplayRoundUploadForm() {
+async function DisplayRoundUploadForm({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const { position } = await searchParams;
   const positions = await getPositions();
-  return <RoundUploadForm positions={positions} />;
+  const preSelectedPositionId = position
+    ? Array.isArray(position)
+      ? position[0]
+      : position
+    : "";
+  return (
+    <RoundUploadForm
+      positions={positions}
+      preSelectedPositionId={preSelectedPositionId || ""}
+    />
+  );
 }

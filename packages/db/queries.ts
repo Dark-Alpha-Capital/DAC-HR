@@ -15,7 +15,7 @@ import {
   candidateDocument,
   candidateOnboarding
 } from "./schema";
-import { eq, asc, inArray, and, sql } from "drizzle-orm";
+import { eq, asc, inArray, and, or, sql } from "drizzle-orm";
 
 /**
  *
@@ -24,7 +24,14 @@ import { eq, asc, inArray, and, sql } from "drizzle-orm";
  */
 export const getPositions = async () => {
   try {
-    return await db.select().from(position);
+    return await db
+      .select({
+        id: position.id,
+        name: position.name,
+        slug: position.slug,
+        description: position.description,
+      })
+      .from(position);
   } catch (error) {
     console.error("Error fetching positions", error);
     return [];
@@ -153,6 +160,119 @@ export const getCandidatesWithPositions = async () => {
     }));
   } catch (error) {
     console.error("Error fetching candidates with positions", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches candidates with positions, optionally filtered by name, email, and position IDs
+ * @param nameSearch Optional search term for first name or last name
+ * @param emailSearch Optional search term for email
+ * @param positionIds Optional array of position IDs to filter by
+ * @returns An array of candidates with position information
+ */
+export const getCandidatesWithPositionsFiltered = async (
+  nameSearch?: string,
+  emailSearch?: string,
+  positionIds?: string[]
+) => {
+  try {
+    let query = db
+      .select({
+        candidate: {
+          id: candidate.id,
+          firstName: candidate.firstName,
+          lastName: candidate.lastName,
+          email: candidate.email,
+          phone: candidate.phone,
+          location: candidate.location,
+          source: candidate.source,
+          note: candidate.note,
+          createdAt: candidate.createdAt,
+          updatedAt: candidate.updatedAt,
+        },
+        position: {
+          id: position.id,
+          name: position.name,
+        },
+      })
+      .from(candidate)
+      .leftJoin(
+        candidatePosition,
+        eq(candidate.id, candidatePosition.candidateId)
+      )
+      .leftJoin(position, eq(candidatePosition.positionId, position.id));
+
+    // Build filter conditions
+    const conditions = [];
+
+    // Name search (first name or last name)
+    if (nameSearch && nameSearch.trim()) {
+      const searchTerm = `%${nameSearch.trim()}%`;
+      conditions.push(
+        or(
+          sql`${candidate.firstName} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`,
+          sql`${candidate.lastName} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`
+        )!
+      );
+    }
+
+    // Email search
+    if (emailSearch && emailSearch.trim()) {
+      const searchTerm = `%${emailSearch.trim()}%`;
+      conditions.push(
+        sql`${candidate.email} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`
+      );
+    }
+
+    // Position filter
+    if (positionIds && positionIds.length > 0) {
+      conditions.push(inArray(position.id, positionIds));
+    }
+
+    // Apply conditions if any
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as typeof query;
+    }
+
+    const results = await query.orderBy(asc(candidate.createdAt));
+
+    // Map results and handle duplicates (candidates can have multiple positions)
+    const candidateMap = new Map<
+      string,
+      {
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+        phone: string | null;
+        location: string | null;
+        source: string | null;
+        note: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        position: { id: string; name: string } | null;
+      }
+    >();
+
+    for (const result of results) {
+      const candidateId = result.candidate.id;
+      if (!candidateMap.has(candidateId)) {
+        candidateMap.set(candidateId, {
+          ...result.candidate,
+          position: result.position?.id
+            ? {
+                id: result.position.id,
+                name: result.position.name,
+              }
+            : null,
+        });
+      }
+    }
+
+    return Array.from(candidateMap.values());
+  } catch (error) {
+    console.error("Error fetching filtered candidates with positions", error);
     return [];
   }
 };
@@ -912,7 +1032,7 @@ export async function getDocumentsByCandidateId(candidateId: string) {
 
 /**
  * Fetches dashboard statistics including total candidates, active candidates, interviews scheduled, and average time to hire
- * @returns Dashboard statistics object
+ * @returns Dashboard statistics object with percentage changes
  */
 export const getDashboardStats = async () => {
   try {
@@ -921,6 +1041,22 @@ export const getDashboardStats = async () => {
       .select({ count: sql<number>`count(*)::int` })
       .from(candidate);
     const totalCandidates = totalCandidatesResult?.count || 0;
+
+    // Total candidates last month (30-60 days ago)
+    const [totalCandidatesLastMonthResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(candidate)
+      .where(
+        sql`${candidate.createdAt} >= NOW() - INTERVAL '60 days' AND ${candidate.createdAt} < NOW() - INTERVAL '30 days'`
+      );
+    const totalCandidatesLastMonth = totalCandidatesLastMonthResult?.count || 0;
+
+    // Total candidates this month
+    const [totalCandidatesThisMonthResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(candidate)
+      .where(sql`${candidate.createdAt} >= NOW() - INTERVAL '30 days'`);
+    const totalCandidatesThisMonth = totalCandidatesThisMonthResult?.count || 0;
 
     // Active candidates count (candidates with applications in reviewed, shortlisted, or interviewing status)
     const [activeCandidatesResult] = await db
@@ -932,6 +1068,18 @@ export const getDashboardStats = async () => {
         sql`${application.status} IN ('reviewed', 'shortlisted', 'interviewing')`
       );
     const activeCandidates = activeCandidatesResult?.count || 0;
+
+    // Active candidates last month
+    const [activeCandidatesLastMonthResult] = await db
+      .select({
+        count: sql<number>`count(DISTINCT ${application.candidateId})::int`,
+      })
+      .from(application)
+      .where(
+        sql`${application.status} IN ('reviewed', 'shortlisted', 'interviewing') AND ${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`
+      );
+    const activeCandidatesLastMonth =
+      activeCandidatesLastMonthResult?.count || 0;
 
     // Interviews scheduled count (interviews with status 'pending')
     const [interviewsScheduledResult] = await db
@@ -949,19 +1097,157 @@ export const getDashboardStats = async () => {
       .where(eq(application.status, "hired"));
     const avgTimeToHire = avgTimeToHireResult?.avgDays || 0;
 
+    // Average time to hire last month
+    const [avgTimeToHireLastMonthResult] = await db
+      .select({
+        avgDays: sql<number>`AVG(EXTRACT(EPOCH FROM (${application.updatedAt} - ${application.createdAt})) / 86400)::int`,
+      })
+      .from(application)
+      .where(
+        sql`${application.status} = 'hired' AND ${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`
+      );
+    const avgTimeToHireLastMonth = avgTimeToHireLastMonthResult?.avgDays || 0;
+
+    // Total employees count
+    const [totalEmployeesResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(employee);
+    const totalEmployees = totalEmployeesResult?.count || 0;
+
+    // Total positions count
+    const [totalPositionsResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(position);
+    const totalPositions = totalPositionsResult?.count || 0;
+
+    // Applications this month
+    const [applicationsThisMonthResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(application)
+      .where(sql`${application.createdAt} >= NOW() - INTERVAL '30 days'`);
+    const applicationsThisMonth = applicationsThisMonthResult?.count || 0;
+
+    // Applications last month
+    const [applicationsLastMonthResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(application)
+      .where(
+        sql`${application.createdAt} >= NOW() - INTERVAL '60 days' AND ${application.createdAt} < NOW() - INTERVAL '30 days'`
+      );
+    const applicationsLastMonth = applicationsLastMonthResult?.count || 0;
+
+    // Hired this month
+    const [hiredThisMonthResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(application)
+      .where(
+        sql`${application.status} = 'hired' AND ${application.updatedAt} >= NOW() - INTERVAL '30 days'`
+      );
+    const hiredThisMonth = hiredThisMonthResult?.count || 0;
+
+    // Hired last month
+    const [hiredLastMonthResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(application)
+      .where(
+        sql`${application.status} = 'hired' AND ${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`
+      );
+    const hiredLastMonth = hiredLastMonthResult?.count || 0;
+
+    // Total interviews count
+    const [totalInterviewsResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(interview);
+    const totalInterviews = totalInterviewsResult?.count || 0;
+
+    // Completed interviews (not pending)
+    const [completedInterviewsResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(interview)
+      .where(sql`${interview.status} != 'pending'`);
+    const completedInterviews = completedInterviewsResult?.count || 0;
+
+    // Average interview rating
+    const [avgInterviewRatingResult] = await db
+      .select({
+        avgRating: sql<number>`AVG(${interview.rating})::numeric`,
+      })
+      .from(interview)
+      .where(sql`${interview.rating} IS NOT NULL`);
+    const avgInterviewRating =
+      avgInterviewRatingResult && avgInterviewRatingResult.avgRating !== null
+        ? Number(avgInterviewRatingResult.avgRating)
+        : 0;
+
+    // Calculate percentage changes
+    const calculatePercentageChange = (
+      current: number,
+      previous: number
+    ): number => {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      return Math.round(((current - previous) / previous) * 100);
+    };
+
     return {
       totalCandidates,
+      totalCandidatesThisMonth,
+      totalCandidatesChange: calculatePercentageChange(
+        totalCandidatesThisMonth,
+        totalCandidatesLastMonth
+      ),
       activeCandidates,
+      activeCandidatesChange: calculatePercentageChange(
+        activeCandidates,
+        activeCandidatesLastMonth
+      ),
       interviewsScheduled,
       avgTimeToHire,
+      avgTimeToHireChange: calculatePercentageChange(
+        avgTimeToHireLastMonth,
+        avgTimeToHire
+      ), // Inverted because lower is better
+      totalEmployees,
+      totalPositions,
+      applicationsThisMonth,
+      applicationsLastMonth,
+      applicationsChange: calculatePercentageChange(
+        applicationsThisMonth,
+        applicationsLastMonth
+      ),
+      hiredThisMonth,
+      hiredLastMonth,
+      hiredChange: calculatePercentageChange(hiredThisMonth, hiredLastMonth),
+      totalInterviews,
+      completedInterviews,
+      interviewCompletionRate:
+        totalInterviews > 0
+          ? Math.round((completedInterviews / totalInterviews) * 100)
+          : 0,
+      avgInterviewRating: Math.round(avgInterviewRating * 10) / 10,
     };
   } catch (error) {
     console.error("Error fetching dashboard stats", error);
     return {
       totalCandidates: 0,
+      totalCandidatesThisMonth: 0,
+      totalCandidatesChange: 0,
       activeCandidates: 0,
+      activeCandidatesChange: 0,
       interviewsScheduled: 0,
       avgTimeToHire: 0,
+      avgTimeToHireChange: 0,
+      totalEmployees: 0,
+      totalPositions: 0,
+      applicationsThisMonth: 0,
+      applicationsLastMonth: 0,
+      applicationsChange: 0,
+      hiredThisMonth: 0,
+      hiredLastMonth: 0,
+      hiredChange: 0,
+      totalInterviews: 0,
+      completedInterviews: 0,
+      interviewCompletionRate: 0,
+      avgInterviewRating: 0,
     };
   }
 };

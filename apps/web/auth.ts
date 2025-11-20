@@ -17,18 +17,25 @@ config({
   path: ".env",
 });
 
-// List of admin email addresses
 const ADMIN_EMAILS: string[] = [
   "rahulguptax14@gmail.com",
   "rahul@darkalphacapital.com",
+  "gaurav@darkalphacapital.com",
+  "andres@darkalphacapital.com",
+  "da@darkalphacapital.com",
 ];
 
-// Check if an email is an admin email
 const isAdminEmail = (email: string): boolean => {
   return ADMIN_EMAILS.includes(email.toLowerCase());
 };
 
 export const auth = betterAuth({
+  // Explicitly set secret - Better Auth requires this for session encryption
+  secret: process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET,
+
+  // Set baseURL for proper cookie handling (Better Auth will use BETTER_AUTH_URL env var if not set)
+  baseURL: process.env.BETTER_AUTH_URL,
+
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {
