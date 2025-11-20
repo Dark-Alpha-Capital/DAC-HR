@@ -333,3 +333,36 @@ export const candidateOnboarding = pgTable("candidate_onboarding", {
     .$onUpdate(() => new Date())
     .notNull(),
 });
+
+export const departmentEnum = pgEnum("department", [
+  "engineering",
+  "product",
+  "sales",
+  "marketing",
+  "hr",
+  "finance",
+  "operations",
+  "legal",
+  "customer-support",
+  "other",
+]);
+
+export const employee = pgTable("employee", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  department: departmentEnum("department").notNull(),
+  positionId: text("position_id").references(() => position.id, {
+    onDelete: "set null",
+  }),
+  profileImage: text("profile_image"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+export type Employee = InferSelectModel<typeof employee>;

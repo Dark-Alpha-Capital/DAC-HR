@@ -14,6 +14,7 @@ import {
   documents,
   candidateDocument,
   candidateOnboarding,
+  employee,
 } from "./schema";
 import { eq, asc, inArray, and, sql } from "drizzle-orm";
 
@@ -1216,4 +1217,85 @@ export const getOrCreateCandidateOnboarding = async (candidateId: string) => {
     .execute();
 
   return newOnboarding;
+};
+
+/**
+ * Fetches all employees from the database with position information
+ * @returns An array of employees with position data
+ */
+export const getEmployees = async () => {
+  try {
+    const results = await db
+      .select({
+        employee: {
+          id: employee.id,
+          firstName: employee.firstName,
+          lastName: employee.lastName,
+          department: employee.department,
+          positionId: employee.positionId,
+          profileImage: employee.profileImage,
+          createdAt: employee.createdAt,
+          updatedAt: employee.updatedAt,
+        },
+        position: {
+          id: position.id,
+          name: position.name,
+          slug: position.slug,
+        },
+      })
+      .from(employee)
+      .leftJoin(position, eq(employee.positionId, position.id))
+      .orderBy(asc(employee.createdAt));
+
+    return results.map((result) => ({
+      ...result.employee,
+      position: result.position,
+    }));
+  } catch (error) {
+    console.error("Error fetching employees", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches an employee by its ID with position information
+ * @param id The ID of the employee to fetch
+ * @returns The employee with position data or null if not found
+ */
+export const getEmployeeById = async (id: string) => {
+  try {
+    const [result] = await db
+      .select({
+        employee: {
+          id: employee.id,
+          firstName: employee.firstName,
+          lastName: employee.lastName,
+          department: employee.department,
+          positionId: employee.positionId,
+          profileImage: employee.profileImage,
+          createdAt: employee.createdAt,
+          updatedAt: employee.updatedAt,
+        },
+        position: {
+          id: position.id,
+          name: position.name,
+          slug: position.slug,
+        },
+      })
+      .from(employee)
+      .leftJoin(position, eq(employee.positionId, position.id))
+      .where(eq(employee.id, id));
+
+    if (!result) {
+      return null;
+    }
+
+    return {
+      ...result.employee,
+      position: result.position,
+    };
+  } catch (error) {
+    console.error("Error fetching employee by id", error);
+    return null;
+  }
 };
