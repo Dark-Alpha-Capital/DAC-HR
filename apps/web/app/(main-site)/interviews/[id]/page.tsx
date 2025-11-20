@@ -174,41 +174,6 @@ const DisplayInterview = async ({ params }: { params: Params }) => {
           />
         </CardContent>
       </Card>
-
-      {/* Question Feedback */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Pencil className="h-5 w-5" />
-              <CardTitle className="text-lg">Question Feedback</CardTitle>
-            </div>
-            <Badge variant="secondary">
-              {interview.questions.length} questions
-            </Badge>
-          </div>
-        </CardHeader>
-        <Separator />
-        <CardContent className="pt-6 space-y-4">
-          {interview.questions.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Pencil className="h-10 w-10 mx-auto mb-3 opacity-50" />
-              <p className="text-sm">
-                No questions are linked to this interview.
-              </p>
-            </div>
-          ) : (
-            interview.questions.map((question, index) => (
-              <InterviewQuestionFeedbackDisplay
-                key={question.id}
-                interviewId={interview.id}
-                question={question}
-                index={index}
-              />
-            ))
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 };

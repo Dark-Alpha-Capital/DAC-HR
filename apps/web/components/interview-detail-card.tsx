@@ -12,6 +12,8 @@ import {
   XCircle,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import Link from "next/link";
+import { Button } from "@workspace/ui/components/button";
 
 interface InterviewDetailCardProps {
   interview: {
@@ -129,6 +131,11 @@ export default function InterviewDetailCard({
               </div>
             </div>
           )}
+        </div>
+        <div className="mt-4 md:mt-6">
+          <Button size="sm" asChild>
+            <Link href={`/interviews/${interview.id}`}>View</Link>
+          </Button>
         </div>
       </CardContent>
     </Card>
