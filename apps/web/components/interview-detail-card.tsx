@@ -16,7 +16,7 @@ import { formatDate } from "@/lib/utils";
 interface InterviewDetailCardProps {
   interview: {
     id: string;
-    status: "pending" | "move_forward" | "rejected";
+    status: "pending" | "move_forward" | "rejected" | "scheduled";
     rating: number | null;
     scheduledAt: Date | null;
     overallFeedback: string | null;

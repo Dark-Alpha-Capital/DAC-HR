@@ -5,20 +5,6 @@ import { candidate, candidateOnboarding } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-type OnboardingTaskKey = "contractSigned" | "emailProvided" | "onboardingPacketSent";
-
-
-export async function toggleCandidateOnboarding(id: string, current: boolean) {
-  await db
-    .update(candidate)
-    .set({ onboarding: !current })
-    .where(eq(candidate.id, id));
-
-  revalidatePath(`/candidates/${id}`);
-
-  return { success: true };
-}
-
 export async function toggleOnboardingTask(
   candidateId: string,
   taskKey: keyof typeof candidateOnboarding,
@@ -85,7 +71,7 @@ export async function updateOnboardingTasks(
         })
         .returning()
         .execute();
-      
+
       revalidatePath(`/candidates/${candidateId}`);
       return { success: true, data: inserted };
     }
@@ -110,5 +96,3 @@ export async function updateOnboardingTasks(
     return { success: false, error: "Failed to update onboarding tasks" };
   }
 }
-
-

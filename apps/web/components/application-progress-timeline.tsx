@@ -1,6 +1,11 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
 import { Badge } from "@workspace/ui/components/badge";
 import { CheckCircle2, Circle, XCircle } from "lucide-react";
 import { Separator } from "@workspace/ui/components/separator";
@@ -15,7 +20,7 @@ interface Round {
 interface Interview {
   id: string;
   positionRoundTemplateId: string;
-  status: "pending" | "move_forward" | "rejected";
+  status: "pending" | "move_forward" | "rejected" | "scheduled";
   rating: number | null;
   roundTemplate: {
     id: string;
@@ -33,7 +38,9 @@ export default function ApplicationProgressTimeline({
   interviews,
 }: ApplicationProgressTimelineProps) {
   const getInterviewForRound = (positionRoundTemplateId: string) => {
-    return interviews.find((i) => i.positionRoundTemplateId === positionRoundTemplateId);
+    return interviews.find(
+      (i) => i.positionRoundTemplateId === positionRoundTemplateId
+    );
   };
 
   return (
@@ -45,7 +52,9 @@ export default function ApplicationProgressTimeline({
       <CardContent className="pt-6">
         <div className="space-y-6">
           {rounds.map((round, index) => {
-            const interview = getInterviewForRound(round.positionRoundTemplateId);
+            const interview = getInterviewForRound(
+              round.positionRoundTemplateId
+            );
             const isComplete = interview?.status === "move_forward";
             const isRejected = interview?.status === "rejected";
             const isLast = index === rounds.length - 1;
@@ -152,4 +161,3 @@ export default function ApplicationProgressTimeline({
     </Card>
   );
 }
-

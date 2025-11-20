@@ -30,6 +30,8 @@ import { Spinner } from "@workspace/ui/components/spinner";
 import { useIsMobile } from "@workspace/ui/hooks/use-mobile";
 import { User, LogOut, Menu } from "lucide-react";
 
+const managementLinks = [{ href: "/employees", label: "Employees" }] as const;
+
 const navLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/candidates", label: "Candidates" },
@@ -153,9 +155,22 @@ const Header = () => {
               >
                 <DropdownMenuLabel>Management</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <div className="px-3 py-2 text-xs text-muted-foreground">
-                  No links yet
-                </div>
+                {managementLinks.map((link) => {
+                  const isActive =
+                    pathname === link.href ||
+                    pathname.startsWith(`${link.href}/`);
+
+                  return (
+                    <DropdownMenuItem key={link.href} asChild>
+                      <Link
+                        href={link.href}
+                        className={`cursor-pointer ${isActive ? "text-primary font-semibold" : ""}`}
+                      >
+                        {link.label}
+                      </Link>
+                    </DropdownMenuItem>
+                  );
+                })}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -330,9 +345,22 @@ const Header = () => {
                   <h3 className="text-sm font-semibold text-muted-foreground px-2">
                     Management
                   </h3>
-                  <div className="px-3 py-2 text-sm text-muted-foreground">
-                    No links yet
-                  </div>
+                  {managementLinks.map((link) => {
+                    const isActive =
+                      pathname === link.href ||
+                      pathname.startsWith(`${link.href}/`);
+
+                    return (
+                      <DropdownMenuItem key={link.href} asChild>
+                        <Link
+                          href={link.href}
+                          className={`cursor-pointer ${isActive ? "text-primary font-semibold" : ""}`}
+                        >
+                          {link.label}
+                        </Link>
+                      </DropdownMenuItem>
+                    );
+                  })}
                 </div>
 
                 {/* User Profile Section (if logged in) */}
