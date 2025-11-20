@@ -19,6 +19,7 @@ import {
 } from "@workspace/ui/components/dropdown-menu";
 import { Spinner } from "@workspace/ui/components/spinner";
 import { User, LogOut } from "lucide-react";
+import { ModeToggle } from "./mode-toggle";
 
 const navLinks = [
   { href: "/dashboard", label: "Dashboard" },
@@ -139,6 +140,7 @@ const Header = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : null}
+          <ModeToggle />
         </nav>
       </div>
     </header>
