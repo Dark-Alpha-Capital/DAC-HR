@@ -58,7 +58,7 @@ const EmployeeUploadForm = ({
       profileImage: "",
     },
     validators: {
-      onSubmit: employeeFormSchema,
+      onSubmit: employeeFormSchema as any,
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
@@ -87,8 +87,8 @@ const EmployeeUploadForm = ({
           // Create the employee with the final image URL
           const result = await createEmployee({
             ...value,
-            positionId: value.positionId || undefined,
-            profileImage: finalImageUrl || undefined,
+            positionId: value.positionId || null,
+            profileImage: finalImageUrl || null,
           });
 
           if (result.error) {
@@ -417,4 +417,3 @@ const EmployeeUploadForm = ({
 };
 
 export default EmployeeUploadForm;
-

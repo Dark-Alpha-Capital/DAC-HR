@@ -64,8 +64,8 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
       firstName: employee.firstName,
       lastName: employee.lastName,
       department: employee.department as z.infer<typeof departmentEnum>,
-      positionId: employee.positionId || "",
-      profileImage: employee.profileImage || "",
+      positionId: employee.positionId,
+      profileImage: employee.profileImage,
     },
     validators: {
       onSubmit: employeeFormSchema,
@@ -97,8 +97,8 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
           // Update the employee with the final image URL
           const result = await updateEmployee(employee.id, {
             ...value,
-            positionId: value.positionId || undefined,
-            profileImage: finalImageUrl || undefined,
+            positionId: value.positionId || null,
+            profileImage: finalImageUrl || null,
           });
 
           if (result.error) {
@@ -172,9 +172,7 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
     <Card className="w-full">
       <CardHeader>
         <CardTitle>Edit Employee</CardTitle>
-        <CardDescription>
-          Update the employee details below.
-        </CardDescription>
+        <CardDescription>Update the employee details below.</CardDescription>
       </CardHeader>
       <CardContent>
         <form
@@ -367,7 +365,7 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
                       <Input
                         id={field.name}
                         name={field.name}
-                        value={field.state.value}
+                        value={field.state.value || ""}
                         onBlur={field.handleBlur}
                         onChange={(e) => handleUrlChange(e.target.value)}
                         aria-invalid={isInvalid}
@@ -421,4 +419,3 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
 };
 
 export default EmployeeEditForm;
-

@@ -1221,11 +1221,16 @@ export const getOrCreateCandidateOnboarding = async (candidateId: string) => {
 
 /**
  * Fetches all employees from the database with position information
+ * @param positionIds Optional array of position IDs to filter by
+ * @param departments Optional array of department values to filter by
  * @returns An array of employees with position data
  */
-export const getEmployees = async () => {
+export const getEmployees = async (
+  positionIds?: string[],
+  departments?: string[]
+) => {
   try {
-    const results = await db
+    let query = db
       .select({
         employee: {
           id: employee.id,
@@ -1244,8 +1249,35 @@ export const getEmployees = async () => {
         },
       })
       .from(employee)
-      .leftJoin(position, eq(employee.positionId, position.id))
-      .orderBy(asc(employee.createdAt));
+      .leftJoin(position, eq(employee.positionId, position.id));
+
+    // Apply filters
+    const conditions = [];
+    if (positionIds && positionIds.length > 0) {
+      conditions.push(inArray(employee.positionId, positionIds));
+    }
+    if (departments && departments.length > 0) {
+      // Cast departments to the enum type for type safety
+      const validDepartments = departments as Array<
+        | "engineering"
+        | "product"
+        | "sales"
+        | "marketing"
+        | "hr"
+        | "finance"
+        | "operations"
+        | "legal"
+        | "customer-support"
+        | "other"
+      >;
+      conditions.push(inArray(employee.department, validDepartments));
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as typeof query;
+    }
+
+    const results = await query.orderBy(asc(employee.createdAt));
 
     return results.map((result) => ({
       ...result.employee,

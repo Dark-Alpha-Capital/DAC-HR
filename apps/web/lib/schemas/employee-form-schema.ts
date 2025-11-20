@@ -23,9 +23,8 @@ export const employeeFormSchema = z.object({
     .min(1, "Last name is required.")
     .max(50, "Last name must be at most 50 characters."),
   department: departmentEnum,
-  positionId: z.string().optional(),
-  profileImage: z.string().optional(),
+  positionId: z.string().nullable(),
+  profileImage: z.string().nullable(),
 });
 
 export type EmployeeFormSchema = z.infer<typeof employeeFormSchema>;
-
