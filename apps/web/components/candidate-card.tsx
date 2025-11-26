@@ -35,7 +35,7 @@ const CandidateCard = ({ candidate }: CandidateCardProps) => {
     <Card>
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-lg">{fullName}</CardTitle>
+          <CardTitle className="">{fullName}</CardTitle>
         </div>
       </CardHeader>
       <CardContent>

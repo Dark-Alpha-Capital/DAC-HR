@@ -7,11 +7,7 @@ import { deleteCandidate } from "@/lib/actions/delete-candidate";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-const DeleteCandidateButton = ({
-  candidateId,
-}: {
-  candidateId: string;
-}) => {
+const DeleteCandidateButton = ({ candidateId }: { candidateId: string }) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -27,17 +23,16 @@ const DeleteCandidateButton = ({
           }
           if (response?.success) {
             toast.success("Candidate deleted successfully");
-            router.push("/candidates");
+            router.refresh();
           }
         });
       }}
       disabled={isPending}
     >
       <Trash2 className="h-4 w-4" />
-      {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
+      {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
     </Button>
   );
 };
 
 export default DeleteCandidateButton;
-

@@ -5,11 +5,12 @@ import {
   getCandidatesWithPositionsFiltered,
   getPositions,
 } from "@workspace/db/queries";
-import CandidateCard from "@/components/candidate-card";
 import FilterCandidateName from "@/components/filter-candidate-name";
 import FilterCandidateEmail from "@/components/filter-candidate-email";
 import FilterCandidatePosition from "@/components/filter-candidate-position";
 import ClearCandidateFiltersButton from "@/components/clear-candidate-filters-button";
+import CandidateContainer from "./candidate-container";
+import { CandidatesListSkeleton } from "@/components/skeletons/candidates-list-skeleton";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -33,7 +34,7 @@ const page = async ({ searchParams }: { searchParams: SearchParams }) => {
         <PresentFilters />
       </Suspense>
 
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<CandidatesListSkeleton />}>
         <CandidatesList searchParams={searchParams} />
       </Suspense>
     </div>
@@ -106,11 +107,5 @@ const CandidatesList = async ({
     );
   }
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {candidates.map((candidate) => (
-        <CandidateCard key={candidate.id} candidate={candidate} />
-      ))}
-    </div>
-  );
+  return <CandidateContainer candidates={candidates} />;
 };
