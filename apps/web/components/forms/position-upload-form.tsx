@@ -7,14 +7,6 @@ import { toast } from "sonner";
 import * as z from "zod";
 import { Button } from "@workspace/ui/components/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
-import {
   Field,
   FieldDescription,
   FieldError,
@@ -70,22 +62,22 @@ const PositionUploadForm = () => {
   });
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Add New Position</CardTitle>
-        <CardDescription>
+    <div className="w-full space-y-6">
+      <div className="space-y-2">
+        <h2 className="text-2xl font-semibold tracking-tight">Add New Position</h2>
+        <p className="text-sm text-muted-foreground">
           Enter the position details below to add it to the system.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form
-          id="position-upload-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            form.handleSubmit();
-          }}
-        >
-          <FieldGroup>
+        </p>
+      </div>
+      <form
+        id="position-upload-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          form.handleSubmit();
+        }}
+        className="space-y-6"
+      >
+        <FieldGroup>
             <form.Field
               name="name"
               children={(field) => {
@@ -151,14 +143,11 @@ const PositionUploadForm = () => {
             />
           </FieldGroup>
         </form>
-      </CardContent>
-      <CardFooter>
-        <Field orientation="horizontal">
+        <div className="flex items-center justify-end gap-3 pt-4 border-t">
           <Button
             type="button"
             variant="outline"
             onClick={() => form.reset()}
-            className="cursor-pointer"
             disabled={isPending}
           >
             Reset
@@ -166,7 +155,6 @@ const PositionUploadForm = () => {
           <Button
             type="submit"
             form="position-upload-form"
-            className="cursor-pointer"
             disabled={isPending}
           >
             {isPending ? (
@@ -178,9 +166,8 @@ const PositionUploadForm = () => {
               "Submit"
             )}
           </Button>
-        </Field>
-      </CardFooter>
-    </Card>
+        </div>
+    </div>
   );
 };
 

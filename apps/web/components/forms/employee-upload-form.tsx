@@ -6,14 +6,6 @@ import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
-import {
   Field,
   FieldDescription,
   FieldError,
@@ -168,251 +160,236 @@ const EmployeeUploadForm = ({
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Add New Employee</CardTitle>
-        <CardDescription>
+    <div className="w-full space-y-6">
+      <div className="space-y-2">
+        <h2 className="text-2xl font-semibold tracking-tight">
+          Add New Employee
+        </h2>
+        <p className="text-sm text-muted-foreground">
           Enter the employee details below to add them to the system.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form
-          id="employee-upload-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            form.handleSubmit();
-          }}
-        >
-          <FieldGroup>
-            <form.Field
-              name="firstName"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
-                  <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>First Name</FieldLabel>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      aria-invalid={isInvalid}
-                      placeholder="Enter the first name"
-                      autoComplete="off"
-                    />
-                    {isInvalid && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
-                  </Field>
-                );
-              }}
-            />
+        </p>
+      </div>
+      <form
+        id="employee-upload-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          form.handleSubmit();
+        }}
+        className="space-y-6"
+      >
+        <FieldGroup>
+          <form.Field
+            name="firstName"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>First Name</FieldLabel>
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    aria-invalid={isInvalid}
+                    placeholder="Enter the first name"
+                    autoComplete="off"
+                  />
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
+            }}
+          />
 
-            <form.Field
-              name="lastName"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
-                  <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>Last Name</FieldLabel>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      aria-invalid={isInvalid}
-                      placeholder="Enter the last name"
-                      autoComplete="off"
-                    />
-                    {isInvalid && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
-                  </Field>
-                );
-              }}
-            />
+          <form.Field
+            name="lastName"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>Last Name</FieldLabel>
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    aria-invalid={isInvalid}
+                    placeholder="Enter the last name"
+                    autoComplete="off"
+                  />
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
+            }}
+          />
 
-            <form.Field
-              name="department"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
-                  <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>Department</FieldLabel>
-                    <Select
-                      value={field.state.value || ""}
-                      onValueChange={(value) => {
-                        field.handleChange(value as typeof field.state.value);
-                      }}
+          <form.Field
+            name="department"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>Department</FieldLabel>
+                  <Select
+                    value={field.state.value || ""}
+                    onValueChange={(value) => {
+                      field.handleChange(value as typeof field.state.value);
+                    }}
+                  >
+                    <SelectTrigger
+                      id={field.name}
+                      aria-invalid={isInvalid}
+                      className="w-full"
                     >
-                      <SelectTrigger
-                        id={field.name}
-                        aria-invalid={isInvalid}
-                        className="w-full"
-                      >
-                        <SelectValue placeholder="Select a department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {departmentEnum.options.map((dept) => (
-                          <SelectItem key={dept} value={dept}>
-                            {dept.charAt(0).toUpperCase() +
-                              dept.slice(1).replace("-", " ")}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {isInvalid && (
-                      <FieldError errors={field.state.meta.errors} />
+                      <SelectValue placeholder="Select a department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departmentEnum.options.map((dept) => (
+                        <SelectItem key={dept} value={dept}>
+                          {dept.charAt(0).toUpperCase() +
+                            dept.slice(1).replace("-", " ")}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
+            }}
+          />
+
+          <form.Field
+            name="positionId"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>
+                    Position (Optional)
+                  </FieldLabel>
+                  <Select
+                    value={field.state.value || ""}
+                    onValueChange={(value) => {
+                      field.handleChange(value);
+                    }}
+                  >
+                    <SelectTrigger
+                      id={field.name}
+                      aria-invalid={isInvalid}
+                      className="w-full"
+                    >
+                      <SelectValue placeholder="Select a position (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {positions.map((position) => (
+                        <SelectItem key={position.id} value={position.id}>
+                          {position.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FieldDescription>
+                    Link this employee to a position
+                  </FieldDescription>
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
+            }}
+          />
+
+          <form.Field
+            name="profileImage"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <>
+                  <Field>
+                    <FieldLabel htmlFor="image-upload">
+                      Profile Image (Optional)
+                    </FieldLabel>
+                    <Input
+                      id="image-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="cursor-pointer"
+                    />
+                    <FieldDescription>
+                      Upload a profile image (max 500MB)
+                    </FieldDescription>
+                    {file && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Selected: {file.name} (
+                        {file.size > 1024 * 1024
+                          ? `${(file.size / (1024 * 1024)).toFixed(2)} MB`
+                          : `${(file.size / 1024).toFixed(2)} KB`}
+                        )
+                      </p>
                     )}
                   </Field>
-                );
-              }}
-            />
-
-            <form.Field
-              name="positionId"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
                   <Field data-invalid={isInvalid}>
                     <FieldLabel htmlFor={field.name}>
-                      Position (Optional)
+                      Or provide image URL
                     </FieldLabel>
-                    <Select
-                      value={field.state.value || ""}
-                      onValueChange={(value) => {
-                        field.handleChange(value);
-                      }}
-                    >
-                      <SelectTrigger
-                        id={field.name}
-                        aria-invalid={isInvalid}
-                        className="w-full"
-                      >
-                        <SelectValue placeholder="Select a position (optional)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {positions.map((position) => (
-                          <SelectItem key={position.id} value={position.id}>
-                            {position.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      id={field.name}
+                      name={field.name}
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => handleUrlChange(e.target.value)}
+                      aria-invalid={isInvalid}
+                      placeholder="Enter image URL (optional)"
+                      autoComplete="off"
+                    />
                     <FieldDescription>
-                      Link this employee to a position
+                      Provide an image URL instead of uploading a file
                     </FieldDescription>
                     {isInvalid && (
                       <FieldError errors={field.state.meta.errors} />
                     )}
                   </Field>
-                );
-              }}
-            />
-
-            <form.Field
-              name="profileImage"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
-                  <>
-                    <Field>
-                      <FieldLabel htmlFor="image-upload">
-                        Profile Image (Optional)
-                      </FieldLabel>
-                      <Input
-                        id="image-upload"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        className="cursor-pointer"
-                      />
-                      <FieldDescription>
-                        Upload a profile image (max 500MB)
-                      </FieldDescription>
-                      {file && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Selected: {file.name} (
-                          {file.size > 1024 * 1024
-                            ? `${(file.size / (1024 * 1024)).toFixed(2)} MB`
-                            : `${(file.size / 1024).toFixed(2)} KB`}
-                          )
-                        </p>
-                      )}
-                    </Field>
-                    <Field data-invalid={isInvalid}>
-                      <FieldLabel htmlFor={field.name}>
-                        Or provide image URL
-                      </FieldLabel>
-                      <Input
-                        id={field.name}
-                        name={field.name}
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => handleUrlChange(e.target.value)}
-                        aria-invalid={isInvalid}
-                        placeholder="Enter image URL (optional)"
-                        autoComplete="off"
-                      />
-                      <FieldDescription>
-                        Provide an image URL instead of uploading a file
-                      </FieldDescription>
-                      {isInvalid && (
-                        <FieldError errors={field.state.meta.errors} />
-                      )}
-                    </Field>
-                  </>
-                );
-              }}
-            />
-          </FieldGroup>
-        </form>
-      </CardContent>
-      <CardFooter>
-        <Field orientation="horizontal">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              form.reset();
-              setFile(null);
-              const fileInput = document.getElementById(
-                "image-upload"
-              ) as HTMLInputElement;
-              if (fileInput) {
-                fileInput.value = "";
-              }
+                </>
+              );
             }}
-            className="cursor-pointer"
-            disabled={isPending}
-          >
-            Reset
-          </Button>
-          <Button
-            type="submit"
-            form="employee-upload-form"
-            className="cursor-pointer"
-            disabled={isPending}
-          >
-            {isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              "Submit"
-            )}
-          </Button>
-        </Field>
-      </CardFooter>
-    </Card>
+          />
+        </FieldGroup>
+      </form>
+      <div className="flex items-center justify-end gap-3 pt-4 border-t">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            form.reset();
+            setFile(null);
+            const fileInput = document.getElementById(
+              "image-upload"
+            ) as HTMLInputElement;
+            if (fileInput) {
+              fileInput.value = "";
+            }
+          }}
+          disabled={isPending}
+        >
+          Reset
+        </Button>
+        <Button type="submit" form="employee-upload-form" disabled={isPending}>
+          {isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Submitting...
+            </>
+          ) : (
+            "Submit"
+          )}
+        </Button>
+      </div>
+    </div>
   );
 };
 

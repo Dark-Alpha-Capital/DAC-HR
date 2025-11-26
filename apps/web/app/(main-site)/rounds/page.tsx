@@ -2,7 +2,7 @@ import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import React, { Suspense } from "react";
 import { getPositions, getRoundsWithPositions } from "@workspace/db/queries";
-import RoundCard from "@/components/round-card";
+import RoundContainer from "./round-container";
 import FilterPositionType from "@/components/filter-position-type";
 import ClearParamsButton from "@/components/clear-params-button";
 import { Metadata } from "next";
@@ -76,11 +76,5 @@ const RoundsList = async ({ searchParams }: { searchParams: SearchParams }) => {
     );
   }
 
-  return (
-    <div className="grid group-has-data-pending:animate-pulse grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {rounds.map((round) => (
-        <RoundCard key={round.id} round={round} />
-      ))}
-    </div>
-  );
+  return <RoundContainer rounds={rounds} />;
 };

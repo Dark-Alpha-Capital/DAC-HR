@@ -6,14 +6,6 @@ import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
-import {
   Field,
   FieldDescription,
   FieldError,
@@ -203,23 +195,22 @@ const CandidateDocumentUploadForm = ({
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Upload Candidate Document</CardTitle>
-        <CardDescription>
-          Upload a file or provide a document URL, then fill in the details
-          below.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form
-          id="candidate-document-upload-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            form.handleSubmit();
-          }}
-        >
-          <FieldGroup>
+    <div className="w-full space-y-6">
+      <div className="space-y-2">
+        <h2 className="text-2xl font-semibold tracking-tight">Upload Candidate Document</h2>
+        <p className="text-sm text-muted-foreground">
+          Upload a file or provide a document URL, then fill in the details below.
+        </p>
+      </div>
+      <form
+        id="candidate-document-upload-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          form.handleSubmit();
+        }}
+        className="space-y-6"
+      >
+        <FieldGroup>
             <form.Field
               name="url"
               children={(field) => {
@@ -428,9 +419,7 @@ const CandidateDocumentUploadForm = ({
             />
           </FieldGroup>
         </form>
-      </CardContent>
-      <CardFooter>
-        <Field orientation="horizontal">
+        <div className="flex items-center justify-end gap-3 pt-4 border-t">
           <Button
             type="button"
             variant="outline"
@@ -446,7 +435,6 @@ const CandidateDocumentUploadForm = ({
                 fileInput.value = "";
               }
             }}
-            className="cursor-pointer"
             disabled={isPending}
           >
             Reset
@@ -454,7 +442,6 @@ const CandidateDocumentUploadForm = ({
           <Button
             type="submit"
             form="candidate-document-upload-form"
-            className="cursor-pointer"
             disabled={isPending}
           >
             {isPending ? (
@@ -466,9 +453,8 @@ const CandidateDocumentUploadForm = ({
               "Submit"
             )}
           </Button>
-        </Field>
-      </CardFooter>
-    </Card>
+        </div>
+    </div>
   );
 };
 

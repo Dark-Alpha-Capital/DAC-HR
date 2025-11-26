@@ -43,6 +43,7 @@ const managementLinks = [{ href: "/employees", label: "Employees" }] as const;
 const navLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/candidates", label: "Candidates" },
+  { href: "/questions", label: "Questions" },
   { href: "/positions", label: "Positions" },
   { href: "/applications", label: "Applications" },
   { href: "/rounds", label: "Rounds" },

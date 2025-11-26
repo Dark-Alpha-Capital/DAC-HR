@@ -3,7 +3,7 @@ import { Metadata } from "next";
 import { getDocuments } from "@workspace/db/queries";
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
-import DocumentCard from "@/components/document-card";
+import DocumentContainer from "./document-container";
 
 export const metadata: Metadata = {
   title: "Documents",
@@ -12,8 +12,8 @@ export const metadata: Metadata = {
 
 const DocumentsPage = () => {
   return (
-    <div className="block-space-mini container mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="container mx-auto py-8 space-y-6">
+      <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Documents</h1>
         <Button asChild>
           <Link href="/documents/new">New Document</Link>
@@ -35,18 +35,15 @@ async function PresentDocuments() {
   if (documents.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground text-lg">
+        <p className="text-muted-foreground">
           No documents found. Create your first document to get started.
         </p>
+        <Button asChild className="mt-4">
+          <Link href="/documents/new">Add your first document</Link>
+        </Button>
       </div>
     );
   }
 
-  return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-      {documents.map((document) => (
-        <DocumentCard key={document.id} document={document} />
-      ))}
-    </div>
-  );
+  return <DocumentContainer documents={documents} />;
 }
