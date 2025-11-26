@@ -1,8 +1,6 @@
 "use client";
 
-import { Card, CardContent, CardHeader } from "@workspace/ui/components/card";
 import { Badge } from "@workspace/ui/components/badge";
-import { Separator } from "@workspace/ui/components/separator";
 import {
   Calendar,
   User,
@@ -10,6 +8,7 @@ import {
   CheckCircle2,
   Circle,
   XCircle,
+  Eye,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
@@ -63,81 +62,79 @@ export default function InterviewDetailCard({
   };
 
   return (
-    <Card className={isSelected ? "ring-2 ring-primary" : ""}>
-      <CardHeader>
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              {getStatusIcon()}
-              <h3 className="font-semibold text-base">
-                {interview.roundTemplate.name}
-              </h3>
-              <Badge
-                variant={statusColors[interview.status] || "outline"}
-                className="text-xs"
-              >
-                {interview.status === "move_forward"
-                  ? "Move Forward"
-                  : interview.status.charAt(0).toUpperCase() +
-                    interview.status.slice(1)}
-              </Badge>
-              {interview.rating && (
-                <Badge variant="secondary" className="text-xs">
-                  {interview.rating}/5 ⭐
-                </Badge>
-              )}
-            </div>
-            {interview.roundTemplate.description && (
-              <p className="text-sm text-muted-foreground">
-                {interview.roundTemplate.description}
-              </p>
-            )}
+    <div
+      className={`border rounded-md p-4 space-y-3 ${
+        isSelected ? "ring-2 ring-primary" : ""
+      } hover:bg-accent/50 transition-colors`}
+    >
+      <div className="flex items-center gap-2 flex-wrap">
+        {getStatusIcon()}
+        <h3 className="font-semibold text-sm">
+          {interview.roundTemplate.name}
+        </h3>
+        <Badge
+          variant={statusColors[interview.status] || "outline"}
+          className="text-xs"
+        >
+          {interview.status === "move_forward"
+            ? "Move Forward"
+            : interview.status.charAt(0).toUpperCase() +
+              interview.status.slice(1)}
+        </Badge>
+        {interview.rating && (
+          <Badge variant="secondary" className="text-xs">
+            {interview.rating}/5 ⭐
+          </Badge>
+        )}
+      </div>
+      {interview.roundTemplate.description && (
+        <p className="text-xs text-muted-foreground">
+          {interview.roundTemplate.description}
+        </p>
+      )}
+      <div className="space-y-2 text-xs">
+        {interview.scheduledAt && (
+          <div className="flex items-center gap-2">
+            <Calendar className="h-3 w-3 text-muted-foreground shrink-0" />
+            <span className="text-muted-foreground">Date:</span>
+            <span className="font-medium">
+              {formatDate(interview.scheduledAt)}
+            </span>
           </div>
-        </div>
-      </CardHeader>
-      <Separator />
-      <CardContent className="pt-6">
-        <div className="space-y-3">
-          {interview.scheduledAt && (
-            <div className="flex items-center gap-3 text-sm">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Interview Date:</span>
-              <span className="font-medium">
-                {formatDate(interview.scheduledAt)}
-              </span>
-            </div>
-          )}
-          {interview.interviewer && (
-            <div className="flex items-center gap-3 text-sm">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Interviewer:</span>
-              <span className="font-medium">
-                {interview.interviewer.name || interview.interviewer.email}
-              </span>
-            </div>
-          )}
-          {interview.overallFeedback && (
-            <div className="pt-2">
-              <div className="flex items-start gap-3 text-sm">
-                <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
-                <div className="flex-1">
-                  <span className="text-muted-foreground block mb-1">
-                    Overall Feedback:
-                  </span>
-                  <p className="text-foreground whitespace-pre-wrap">
-                    {interview.overallFeedback}
-                  </p>
-                </div>
+        )}
+        {interview.interviewer && (
+          <div className="flex items-center gap-2">
+            <User className="h-3 w-3 text-muted-foreground shrink-0" />
+            <span className="text-muted-foreground">Interviewer:</span>
+            <span className="font-medium">
+              {interview.interviewer.name || interview.interviewer.email}
+            </span>
+          </div>
+        )}
+        {interview.overallFeedback && (
+          <div className="pt-2 border-t">
+            <div className="flex items-start gap-2">
+              <FileText className="h-3 w-3 text-muted-foreground mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <span className="text-muted-foreground block mb-1 text-xs">
+                  Feedback:
+                </span>
+                <p className="text-foreground whitespace-pre-wrap text-xs">
+                  {interview.overallFeedback}
+                </p>
               </div>
             </div>
-          )}
-        </div>
-        <div className="mt-4 md:mt-6">
-          <Button size="sm" asChild>
-            <Link href={`/interviews/${interview.id}`}>View</Link>
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+        )}
+      </div>
+      <div className="pt-2 border-t">
+        <Button size="sm" variant="outline" asChild>
+          <Link href={`/interviews/${interview.id}`}>
+            <Eye className="h-3 w-3 mr-2" />
+            View Interview
+          </Link>
+        </Button>
+      </div>
+    </div>
   );
 }

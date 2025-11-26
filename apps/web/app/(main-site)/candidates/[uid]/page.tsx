@@ -300,16 +300,6 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
                           View
                         </Link>
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2"
-                        asChild
-                      >
-                        <Link href={`/positions/${app.position.slug}`}>
-                          <ArrowRight className="h-3 w-3" />
-                        </Link>
-                      </Button>
                     </div>
                   </div>
                   <div className="pt-3 border-t space-y-2">
@@ -318,17 +308,6 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
                         <Users className="h-3 w-3" />
                         <span>Interviews ({app.interviews?.length || 0})</span>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-6 text-xs"
-                        asChild
-                      >
-                        <Link href={`/applications/${app.id}?action=record`}>
-                          <Plus className="h-3 w-3 mr-1" />
-                          Record
-                        </Link>
-                      </Button>
                     </div>
                     {app.interviews && app.interviews.length > 0 && (
                       <div className="space-y-1.5">
@@ -361,18 +340,6 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
                                   : interview.status.charAt(0).toUpperCase() +
                                     interview.status.slice(1)}
                               </Badge>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-5 px-2"
-                                asChild
-                              >
-                                <Link
-                                  href={`/applications/${app.id}?interview=${interview.id}`}
-                                >
-                                  <Eye className="h-3 w-3" />
-                                </Link>
-                              </Button>
                             </div>
                           </div>
                         ))}

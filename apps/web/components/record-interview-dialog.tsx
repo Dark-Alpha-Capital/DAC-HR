@@ -39,6 +39,8 @@ interface RecordInterviewDialogProps {
     email: string;
   }>;
   currentUserId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 export default function RecordInterviewDialog({
@@ -46,9 +48,10 @@ export default function RecordInterviewDialog({
   application,
   users,
   currentUserId,
+  open,
+  onOpenChange,
 }: RecordInterviewDialogProps) {
   const router = useRouter();
-  const [open, setOpen] = useState(true);
   const [loading, setLoading] = useState(false);
   const [interviewerId, setInterviewerId] = useState(currentUserId);
   const [positionRoundTemplateId, setPositionRoundTemplateId] = useState(
@@ -58,7 +61,7 @@ export default function RecordInterviewDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!positionRoundTemplateId) {
       toast.error("Please select a round");
       return;
@@ -82,7 +85,7 @@ export default function RecordInterviewDialog({
         );
       } else {
         toast.success("Interview recorded successfully");
-        router.push(`/applications/${applicationId}`);
+        onOpenChange(false);
         router.refresh();
       }
     } catch (error) {
@@ -92,13 +95,8 @@ export default function RecordInterviewDialog({
     }
   };
 
-  const handleClose = () => {
-    setOpen(false);
-    router.push(`/applications/${applicationId}`);
-  };
-
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Record Interview</DialogTitle>
@@ -120,7 +118,10 @@ export default function RecordInterviewDialog({
                 </SelectTrigger>
                 <SelectContent>
                   {application.rounds.map((round) => (
-                    <SelectItem key={round.positionRoundTemplateId} value={round.positionRoundTemplateId}>
+                    <SelectItem
+                      key={round.positionRoundTemplateId}
+                      value={round.positionRoundTemplateId}
+                    >
                       {round.name}
                     </SelectItem>
                   ))}
@@ -166,7 +167,11 @@ export default function RecordInterviewDialog({
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleClose}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
@@ -178,4 +183,3 @@ export default function RecordInterviewDialog({
     </Dialog>
   );
 }
-

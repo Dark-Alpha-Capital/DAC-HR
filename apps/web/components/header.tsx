@@ -127,6 +127,7 @@ const Header = () => {
                         return (
                           <NavigationMenuLink
                             key={link.href}
+                            asChild
                             className={isActive ? "bg-accent/50" : ""}
                           >
                             <Link
@@ -164,6 +165,7 @@ const Header = () => {
                         return (
                           <NavigationMenuLink
                             key={link.href}
+                            asChild
                             className={isActive ? "bg-accent/50" : ""}
                           >
                             <Link
