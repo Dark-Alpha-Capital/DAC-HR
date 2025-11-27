@@ -26,8 +26,6 @@ interface Position {
   name: string;
   slug: string;
   description: string | null;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 interface PositionContainerProps {
@@ -61,19 +59,9 @@ const PositionContainer = ({ positions }: PositionContainerProps) => {
       })
       .map(([letter, positions]) => ({
         letter,
-        positions: positions.sort((a, b) =>
-          a.name.localeCompare(b.name)
-        ),
+        positions: positions.sort((a, b) => a.name.localeCompare(b.name)),
       }));
   }, [positions]);
-
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
 
   return (
     <div className="space-y-4">
@@ -136,9 +124,6 @@ const PositionContainer = ({ positions }: PositionContainerProps) => {
                   <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
                     {position.slug}
                   </code>
-                </TableCell>
-                <TableCell className="py-1.5 px-2 text-sm">
-                  {formatDate(position.createdAt)}
                 </TableCell>
                 <TableCell className="text-right py-1.5 px-2">
                   <div className="flex items-center justify-end gap-1">
@@ -205,9 +190,6 @@ const PositionContainer = ({ positions }: PositionContainerProps) => {
                               {position.slug}
                             </code>
                           </div>
-                          <div className="text-xs text-muted-foreground leading-tight">
-                            {formatDate(position.createdAt)}
-                          </div>
                           <div className="flex items-center gap-1 pt-1.5 border-t">
                             <Button
                               variant="ghost"
@@ -248,4 +230,3 @@ const PositionContainer = ({ positions }: PositionContainerProps) => {
 };
 
 export default PositionContainer;
-
