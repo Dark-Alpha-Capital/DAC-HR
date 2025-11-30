@@ -41,6 +41,7 @@ interface RecordInterviewDialogProps {
   currentUserId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialPositionRoundTemplateId?: string;
 }
 
 export default function RecordInterviewDialog({
@@ -50,14 +51,24 @@ export default function RecordInterviewDialog({
   currentUserId,
   open,
   onOpenChange,
+  initialPositionRoundTemplateId,
 }: RecordInterviewDialogProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [interviewerId, setInterviewerId] = useState(currentUserId);
   const [positionRoundTemplateId, setPositionRoundTemplateId] = useState(
-    application.rounds[0]?.positionRoundTemplateId || ""
+    initialPositionRoundTemplateId ||
+      application.rounds[0]?.positionRoundTemplateId ||
+      ""
   );
   const [scheduledAt, setScheduledAt] = useState("");
+
+  // Update positionRoundTemplateId when initialPositionRoundTemplateId changes
+  useEffect(() => {
+    if (initialPositionRoundTemplateId) {
+      setPositionRoundTemplateId(initialPositionRoundTemplateId);
+    }
+  }, [initialPositionRoundTemplateId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

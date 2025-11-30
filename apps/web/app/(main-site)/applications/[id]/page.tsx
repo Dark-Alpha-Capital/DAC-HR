@@ -7,12 +7,9 @@ import BackButton from "@/components/back-button";
 import {
   Calendar,
   Clock,
-  Users,
   CheckCircle2,
-  Circle,
   XCircle,
   ArrowLeft,
-  Plus,
   Eye,
   UserCheck,
   UserX,
@@ -21,7 +18,6 @@ import { formatDate } from "@/lib/utils";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import RecordInterviewDialogWrapper from "@/components/record-interview-dialog-wrapper";
-import InterviewDetailCard from "@/components/interview-detail-card";
 import ApplicationProgressTimeline from "@/components/application-progress-timeline";
 import ApplicationStatusDisplay from "@/components/application-status-display";
 import { ApplicationDetailSkeleton } from "@/components/skeletons/application-detail-skeleton";
@@ -105,15 +101,6 @@ const DisplayApplication = async ({
     return <Icon className="h-4 w-4" />;
   };
 
-  const interviewStatusColors: Record<
-    string,
-    "default" | "secondary" | "outline" | "destructive"
-  > = {
-    pending: "outline",
-    move_forward: "default",
-    rejected: "destructive",
-  } as const;
-
   const currentUser = session?.user;
 
   return (
@@ -172,62 +159,21 @@ const DisplayApplication = async ({
       </div>
 
       {/* Application Status */}
-      {/* <div className="space-y-3">
+      <div className="space-y-3">
         <ApplicationStatusDisplay application={application} />
-      </div> */}
+      </div>
 
-      {/* Progress Timeline */}
+      {/* Progress Timeline with Interview Details */}
       <div className="space-y-3">
         <ApplicationProgressTimeline
           rounds={application.rounds}
           interviews={application.interviews}
+          applicationId={id}
+          selectedInterviewId={interviewId}
+          currentUser={currentUser}
+          users={users}
+          application={application}
         />
-      </div>
-
-      {/* Interviews */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            <h2 className="text-base font-semibold">Interviews</h2>
-          </div>
-          <Badge variant="secondary" className="text-xs">
-            {application.interviews.length} recorded
-          </Badge>
-        </div>
-        {application.interviews.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground border rounded-md">
-            <Users className="h-6 w-6 mx-auto mb-2 opacity-50" />
-            <p className="text-xs mb-3">
-              No interviews recorded yet for this application.
-            </p>
-            {currentUser && (
-              <RecordInterviewDialogWrapper
-                applicationId={id}
-                application={application}
-                users={users}
-                currentUserId={currentUser.id}
-                trigger={
-                  <Button size="sm">
-                    <Plus className="h-3 w-3 mr-2" />
-                    Record First Interview
-                  </Button>
-                }
-              />
-            )}
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {application.interviews.map((interview) => (
-              <InterviewDetailCard
-                key={interview.id}
-                interview={interview}
-                applicationId={id}
-                isSelected={interview.id === interviewId}
-              />
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );

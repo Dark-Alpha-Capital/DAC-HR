@@ -60,7 +60,7 @@ async function AuthContent() {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-6 lg:p-12">
         <div className="w-full max-w-md space-y-8">
           <div className="space-y-2 text-center">
-            <h1 className="text-3xl sm:text-4xl font-bold">lOGIN TO DAC-HR</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold">LOGIN TO DAC-HR</h1>
             <p className="text-muted-foreground">
               Sign in to your account to continue
             </p>

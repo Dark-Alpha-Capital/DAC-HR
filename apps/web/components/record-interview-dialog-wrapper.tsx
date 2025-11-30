@@ -21,6 +21,7 @@ interface RecordInterviewDialogWrapperProps {
   }>;
   currentUserId: string;
   trigger?: React.ReactNode;
+  positionRoundTemplateId?: string;
 }
 
 export default function RecordInterviewDialogWrapper({
@@ -29,6 +30,7 @@ export default function RecordInterviewDialogWrapper({
   users,
   currentUserId,
   trigger,
+  positionRoundTemplateId,
 }: RecordInterviewDialogWrapperProps) {
   const [open, setOpen] = useState(false);
 
@@ -51,6 +53,7 @@ export default function RecordInterviewDialogWrapper({
         currentUserId={currentUserId}
         open={open}
         onOpenChange={setOpen}
+        initialPositionRoundTemplateId={positionRoundTemplateId}
       />
     </>
   );

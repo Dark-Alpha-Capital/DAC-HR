@@ -1,8 +1,26 @@
 "use client";
 
+import { useState } from "react";
 import { Badge } from "@workspace/ui/components/badge";
-import { CheckCircle2, Circle, XCircle, Clock, Star } from "lucide-react";
+import { Button } from "@workspace/ui/components/button";
+import {
+  CheckCircle2,
+  Circle,
+  XCircle,
+  Clock,
+  Star,
+  Eye,
+  ChevronDown,
+  ChevronUp,
+  Calendar,
+  User,
+  FileText,
+  Plus,
+} from "lucide-react";
 import { cn } from "@workspace/ui/lib/utils";
+import Link from "next/link";
+import { formatDate } from "@/lib/utils";
+import RecordInterviewDialogWrapper from "./record-interview-dialog-wrapper";
 
 interface Round {
   id: string;
@@ -16,21 +34,66 @@ interface Interview {
   positionRoundTemplateId: string;
   status: "pending" | "move_forward" | "rejected" | "scheduled";
   rating: number | null;
+  scheduledAt: Date | null;
+  overallFeedback: string | null;
+  createdAt: Date;
   roundTemplate: {
     id: string;
     name: string;
+    description: string | null;
   };
+  interviewer: {
+    id: string;
+    name: string | null;
+    email: string;
+  } | null;
 }
 
 interface ApplicationProgressTimelineProps {
   rounds: Round[];
   interviews: Interview[];
+  applicationId?: string;
+  selectedInterviewId?: string;
+  currentUser?: {
+    id: string;
+  } | null;
+  users?: Array<{
+    id: string;
+    name: string | null;
+    email: string;
+  }>;
+  application?: {
+    id: string;
+    candidateId: string;
+    positionId: string;
+  };
 }
 
 export default function ApplicationProgressTimeline({
   rounds,
   interviews,
+  applicationId,
+  selectedInterviewId,
+  currentUser,
+  users = [],
+  application,
 }: ApplicationProgressTimelineProps) {
+  const [expandedInterviews, setExpandedInterviews] = useState<Set<string>>(
+    new Set(selectedInterviewId ? [selectedInterviewId] : [])
+  );
+
+  const toggleInterview = (interviewId: string) => {
+    setExpandedInterviews((prev) => {
+      const next = new Set(prev);
+      if (next.has(interviewId)) {
+        next.delete(interviewId);
+      } else {
+        next.add(interviewId);
+      }
+      return next;
+    });
+  };
+
   const getInterviewForRound = (positionRoundTemplateId: string) => {
     return interviews.find(
       (i) => i.positionRoundTemplateId === positionRoundTemplateId
@@ -96,155 +159,311 @@ export default function ApplicationProgressTimeline({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-6">
-        <div className="h-1 w-8 bg-linear-to-r from-primary to-primary/50 rounded-full" />
-        <h2 className="text-xl font-semibold tracking-tight">
-          Application Progress
-        </h2>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <div className="h-1 w-8 bg-linear-to-r from-primary to-primary/50 rounded-full" />
+          <h2 className="text-xl font-semibold tracking-tight">
+            Application Progress
+          </h2>
+        </div>
+        {interviews.length > 0 && (
+          <Badge variant="secondary" className="text-xs">
+            {interviews.length} interview{interviews.length !== 1 ? "s" : ""}{" "}
+            recorded
+          </Badge>
+        )}
       </div>
 
-      <div className="relative">
-        {rounds.map((round, index) => {
-          const interview = getInterviewForRound(round.positionRoundTemplateId);
-          const statusConfig = getStatusConfig(interview?.status);
-          const isLast = index === rounds.length - 1;
-          const Icon = statusConfig.icon;
-          const hasInterview = !!interview;
-          const isPending = !hasInterview;
+      {rounds.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground border rounded-md">
+          <Clock className="h-8 w-8 mx-auto mb-3 opacity-50" />
+          <p className="text-sm mb-4">No interview rounds configured.</p>
+          {currentUser && application && (
+            <RecordInterviewDialogWrapper
+              applicationId={application.id}
+              application={application as any}
+              users={users}
+              currentUserId={currentUser.id}
+              trigger={
+                <Button size="sm">
+                  <Plus className="h-3 w-3 mr-2" />
+                  Record Interview
+                </Button>
+              }
+            />
+          )}
+        </div>
+      ) : (
+        <div className="relative">
+          {rounds.map((round, index) => {
+            const interview = getInterviewForRound(
+              round.positionRoundTemplateId
+            );
+            const statusConfig = getStatusConfig(interview?.status);
+            const isLast = index === rounds.length - 1;
+            const Icon = statusConfig.icon;
+            const hasInterview = !!interview;
+            const isPending = !hasInterview;
+            const isExpanded = interview
+              ? expandedInterviews.has(interview.id)
+              : false;
+            const isSelected = interview?.id === selectedInterviewId;
 
-          return (
-            <div key={round.id} className="relative">
-              <div className="flex items-start gap-4 group">
-                {/* Timeline Connector & Icon */}
-                <div className="flex flex-col items-center relative z-10">
-                  {/* Status Icon with enhanced styling */}
-                  <div
-                    className={cn(
-                      "relative flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-300",
-                      "shadow-sm group-hover:shadow-md group-hover:scale-105",
-                      statusConfig.bgColor,
-                      statusConfig.borderColor,
-                      statusConfig.ringColor,
-                      "ring-4 ring-offset-2 ring-offset-background"
-                    )}
-                  >
-                    <Icon
+            return (
+              <div key={round.id} className="relative">
+                <div className="flex items-start gap-4 group">
+                  {/* Timeline Connector & Icon */}
+                  <div className="flex flex-col items-center relative z-10">
+                    {/* Status Icon with enhanced styling */}
+                    <div
                       className={cn(
-                        "h-6 w-6 transition-all duration-300",
-                        statusConfig.iconColor
+                        "relative flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-300",
+                        "shadow-sm group-hover:shadow-md group-hover:scale-105",
+                        statusConfig.bgColor,
+                        statusConfig.borderColor,
+                        statusConfig.ringColor,
+                        "ring-4 ring-offset-2 ring-offset-background",
+                        isSelected && "ring-primary ring-4"
                       )}
-                    />
-                    {/* Pulse animation for completed/rejected */}
-                    {(interview?.status === "move_forward" ||
-                      interview?.status === "rejected") && (
-                      <span
+                    >
+                      <Icon
                         className={cn(
-                          "absolute inset-0 rounded-full animate-ping opacity-20",
-                          interview?.status === "move_forward"
-                            ? "bg-emerald-500"
-                            : "bg-red-500"
+                          "h-6 w-6 transition-all duration-300",
+                          statusConfig.iconColor
+                        )}
+                      />
+                      {/* Pulse animation for completed/rejected */}
+                      {(interview?.status === "move_forward" ||
+                        interview?.status === "rejected") && (
+                        <span
+                          className={cn(
+                            "absolute inset-0 rounded-full animate-ping opacity-20",
+                            interview?.status === "move_forward"
+                              ? "bg-emerald-500"
+                              : "bg-red-500"
+                          )}
+                        />
+                      )}
+                    </div>
+
+                    {/* Connector Line */}
+                    {!isLast && (
+                      <div
+                        className={cn(
+                          "w-0.5 min-h-16 mt-2 transition-colors duration-300",
+                          hasInterview
+                            ? statusConfig.connectorColor
+                            : "bg-linear-to-b from-muted-foreground/20 via-muted-foreground/10 to-muted-foreground/20"
                         )}
                       />
                     )}
                   </div>
 
-                  {/* Connector Line */}
-                  {!isLast && (
+                  {/* Round Content Card */}
+                  <div className="flex-1 pb-8">
                     <div
                       className={cn(
-                        "w-0.5 min-h-16 mt-2 transition-colors duration-300",
-                        hasInterview
-                          ? statusConfig.connectorColor
-                          : "bg-linear-to-b from-muted-foreground/20 via-muted-foreground/10 to-muted-foreground/20"
+                        "relative rounded-lg border p-4 transition-all duration-300",
+                        "hover:shadow-md hover:border-opacity-60",
+                        statusConfig.bgColor,
+                        statusConfig.borderColor,
+                        "border-opacity-50",
+                        isPending && "opacity-75",
+                        isSelected && "ring-2 ring-primary"
                       )}
-                    />
-                  )}
-                </div>
-
-                {/* Round Content Card */}
-                <div className="flex-1 pb-8">
-                  <div
-                    className={cn(
-                      "relative rounded-lg border p-4 transition-all duration-300",
-                      "hover:shadow-md hover:border-opacity-60",
-                      statusConfig.bgColor,
-                      statusConfig.borderColor,
-                      "border-opacity-50",
-                      isPending && "opacity-75"
-                    )}
-                  >
-                    {/* Content */}
-                    <div className="space-y-3">
-                      {/* Header */}
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 space-y-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="font-semibold text-base text-foreground">
-                              {round.name}
-                            </h3>
-                            <Badge
-                              variant={statusConfig.badgeVariant}
-                              className={cn(
-                                "text-xs font-medium px-2 py-0.5",
-                                statusConfig.badgeClass
-                              )}
-                            >
-                              {statusConfig.label}
-                            </Badge>
-                            {interview?.rating && (
+                    >
+                      {/* Content */}
+                      <div className="space-y-3">
+                        {/* Header */}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-semibold text-base text-foreground">
+                                {round.name}
+                              </h3>
                               <Badge
-                                variant="secondary"
-                                className="text-xs font-medium px-2 py-0.5 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 flex items-center gap-1"
+                                variant={statusConfig.badgeVariant}
+                                className={cn(
+                                  "text-xs font-medium px-2 py-0.5",
+                                  statusConfig.badgeClass
+                                )}
                               >
-                                <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
-                                {interview.rating}/5
+                                {statusConfig.label}
                               </Badge>
+                              {interview?.rating && (
+                                <Badge
+                                  variant="secondary"
+                                  className="text-xs font-medium px-2 py-0.5 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 flex items-center gap-1"
+                                >
+                                  <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+                                  {interview.rating}/5
+                                </Badge>
+                              )}
+                            </div>
+                            {round.description && (
+                              <p className="text-sm text-muted-foreground leading-relaxed">
+                                {round.description}
+                              </p>
                             )}
                           </div>
-                          {round.description && (
-                            <p className="text-sm text-muted-foreground leading-relaxed">
-                              {round.description}
-                            </p>
-                          )}
                         </div>
+
+                        {/* Interview Summary */}
+                        {hasInterview && (
+                          <div className="pt-2 border-t border-border/50">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                                <span className="font-medium">
+                                  Interview recorded
+                                </span>
+                                {interview.scheduledAt && (
+                                  <>
+                                    <span>•</span>
+                                    <div className="flex items-center gap-1">
+                                      <Calendar className="h-3 w-3" />
+                                      <span>
+                                        {formatDate(interview.scheduledAt)}
+                                      </span>
+                                    </div>
+                                  </>
+                                )}
+                                {interview.interviewer && (
+                                  <>
+                                    <span>•</span>
+                                    <div className="flex items-center gap-1">
+                                      <User className="h-3 w-3" />
+                                      <span>
+                                        {interview.interviewer.name ||
+                                          interview.interviewer.email}
+                                      </span>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() =>
+                                  interview && toggleInterview(interview.id)
+                                }
+                                className="h-7"
+                              >
+                                {isExpanded ? (
+                                  <>
+                                    <ChevronUp className="h-3 w-3 mr-1" />
+                                    Hide Details
+                                  </>
+                                ) : (
+                                  <>
+                                    <ChevronDown className="h-3 w-3 mr-1" />
+                                    Show Details
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Expanded Interview Details */}
+                        {hasInterview && isExpanded && interview && (
+                          <div className="pt-3 border-t border-border/50 space-y-3">
+                            {/* Full Interview Details */}
+                            <div className="space-y-2 text-sm">
+                              {interview.scheduledAt && (
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                                  <span className="text-muted-foreground">
+                                    Scheduled:
+                                  </span>
+                                  <span className="font-medium">
+                                    {formatDate(interview.scheduledAt)}
+                                  </span>
+                                </div>
+                              )}
+                              {interview.interviewer && (
+                                <div className="flex items-center gap-2">
+                                  <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                                  <span className="text-muted-foreground">
+                                    Interviewer:
+                                  </span>
+                                  <span className="font-medium">
+                                    {interview.interviewer.name ||
+                                      interview.interviewer.email}
+                                  </span>
+                                </div>
+                              )}
+                              {interview.overallFeedback && (
+                                <div className="pt-2 border-t">
+                                  <div className="flex items-start gap-2">
+                                    <FileText className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                                    <div className="flex-1">
+                                      <span className="text-muted-foreground block mb-1 text-xs font-medium">
+                                        Feedback:
+                                      </span>
+                                      <p className="text-foreground whitespace-pre-wrap text-sm">
+                                        {interview.overallFeedback}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex items-center gap-2 pt-2 border-t">
+                              {applicationId && (
+                                <Button size="sm" variant="outline" asChild>
+                                  <Link href={`/interviews/${interview.id}`}>
+                                    <Eye className="h-3 w-3 mr-2" />
+                                    View Full Interview
+                                  </Link>
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* No Interview - Show Record Button */}
+                        {!hasInterview && currentUser && application && (
+                          <div className="pt-2 border-t border-border/50">
+                            <RecordInterviewDialogWrapper
+                              applicationId={application.id}
+                              application={application as any}
+                              users={users}
+                              currentUserId={currentUser.id}
+                              positionRoundTemplateId={
+                                round.positionRoundTemplateId
+                              }
+                              trigger={
+                                <Button size="sm" variant="outline">
+                                  <Plus className="h-3 w-3 mr-2" />
+                                  Record Interview
+                                </Button>
+                              }
+                            />
+                          </div>
+                        )}
                       </div>
 
-                      {/* Additional Info */}
-                      {hasInterview && (
-                        <div className="pt-2 border-t border-border/50">
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span className="font-medium">
-                              Interview recorded
-                            </span>
-                            {interview.rating && (
-                              <>
-                                <span>•</span>
-                                <span>Rating: {interview.rating}/5</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                      {/* Decorative corner accent */}
+                      <div
+                        className={cn(
+                          "absolute top-0 right-0 w-20 h-20 opacity-5 rounded-bl-full transition-opacity duration-300",
+                          interview?.status === "move_forward"
+                            ? "bg-emerald-500"
+                            : interview?.status === "rejected"
+                              ? "bg-red-500"
+                              : "bg-muted-foreground"
+                        )}
+                      />
                     </div>
-
-                    {/* Decorative corner accent */}
-                    <div
-                      className={cn(
-                        "absolute top-0 right-0 w-20 h-20 opacity-5 rounded-bl-full transition-opacity duration-300",
-                        interview?.status === "move_forward"
-                          ? "bg-emerald-500"
-                          : interview?.status === "rejected"
-                            ? "bg-red-500"
-                            : "bg-muted-foreground"
-                      )}
-                    />
                   </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,9 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
-import { Edit, Plus } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@workspace/ui/components/dialog";
+import { Edit } from "lucide-react";
 import ApplicationStatusForm from "./application-status-form";
 import {
   Clock,
@@ -12,7 +19,6 @@ import {
   XCircle,
   UserCheck,
   UserX,
-  FileSearch,
 } from "lucide-react";
 
 type ApplicationStatus =
@@ -67,50 +73,48 @@ const statusColors: Record<
 export default function ApplicationStatusDisplay({
   application,
 }: ApplicationStatusDisplayProps) {
-  const [isEditing, setIsEditing] = useState(false);
-
-  // Reset editing state when application data changes (after successful save)
-  useEffect(() => {
-    setIsEditing(false);
-  }, [application.id, application.status]);
-
+  const [isOpen, setIsOpen] = useState(false);
   const StatusIcon = statusIcons[application.status];
 
-  if (isEditing) {
-    return (
+  return (
+    <>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Application Status</h3>
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            onClick={() => setIsEditing(false)}
+            onClick={() => setIsOpen(true)}
           >
-            Cancel
+            <Edit className="h-4 w-4 mr-2" />
+            Edit Status
           </Button>
         </div>
-        <ApplicationStatusForm application={application} />
-      </div>
-    );
-  }
 
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Application Status</h3>
-        <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-          <Edit className="h-4 w-4 mr-2" />
-          Edit Status
-        </Button>
+        <div className="flex items-center gap-3">
+          <StatusIcon className="h-5 w-5 text-muted-foreground" />
+          <Badge variant={statusColors[application.status]} className="text-sm">
+            {statusLabels[application.status]}
+          </Badge>
+        </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <StatusIcon className="h-5 w-5 text-muted-foreground" />
-        <Badge variant={statusColors[application.status]} className="text-sm">
-          {statusLabels[application.status]}
-        </Badge>
-      </div>
-    </div>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Application Status</DialogTitle>
+            <DialogDescription>
+              Change the current status of this application. The status will be
+              updated immediately.
+            </DialogDescription>
+          </DialogHeader>
+          <ApplicationStatusForm
+            application={application}
+            onSuccess={() => setIsOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
