@@ -34,7 +34,9 @@ export default function RootLayout({
       >
         <Providers>
           <SidebarProvider>
-            <AppSidebar />
+            <Suspense fallback={null}>
+              <AppSidebar />
+            </Suspense>
 
             <SidebarInset className="flex-1">
               <main className="flex-1 p-4">

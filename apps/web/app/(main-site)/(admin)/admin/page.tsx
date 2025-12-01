@@ -24,6 +24,14 @@ const page = () => {
       <Suspense>
         <UserIsAdmin />
       </Suspense>
+      <div>
+        <h1 className="text-4xl font-bold tracking-tight">Admin Dashboard</h1>
+        <p className="text-muted-foreground mt-2">
+          Manage positions, questions, and interview rounds for your
+          organization
+        </p>
+      </div>
+
       <div className="border-t pt-8 mt-4">
         <AdminUsersSection />
       </div>
@@ -67,15 +75,6 @@ async function AdminContent() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-4xl font-bold tracking-tight">Admin Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage positions, questions, and interview rounds for your
-          organization
-        </p>
-      </div>
-
       {/* Admin Links Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {adminLinks.map((link) => {

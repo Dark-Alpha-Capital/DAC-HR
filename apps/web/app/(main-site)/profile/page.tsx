@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Metadata } from "next";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
@@ -11,6 +11,16 @@ export const metadata: Metadata = {
 };
 
 const page = async () => {
+  return (
+    <Suspense>
+      <ProfileContent />
+    </Suspense>
+  );
+};
+
+export default page;
+
+async function ProfileContent() {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -20,6 +30,4 @@ const page = async () => {
   }
 
   return redirect(`/profile/${session.user.id}` as Route);
-};
-
-export default page;
+}
