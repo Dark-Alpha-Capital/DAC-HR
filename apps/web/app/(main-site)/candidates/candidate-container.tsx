@@ -20,11 +20,26 @@ import Link from "next/link";
 import { Eye, Pencil } from "lucide-react";
 import DeleteCandidateButton from "@/components/delete-candidate-button";
 import { Card, CardContent } from "@workspace/ui/components/card";
+import { Badge } from "@workspace/ui/components/badge";
 import type { InferSelectModel } from "drizzle-orm";
 import type { candidate } from "@workspace/db/schema";
 
+const applicationStatusColors: Record<
+  string,
+  "default" | "secondary" | "outline" | "destructive"
+> = {
+  pending: "outline",
+  reviewed: "secondary",
+  shortlisted: "default",
+  interviewing: "default",
+  hired: "default",
+  rejected: "destructive",
+  withdrawn: "outline",
+} as const;
+
 type Candidate = InferSelectModel<typeof candidate> & {
   position: { id: string; name: string } | null;
+  applicationStatus?: string | null;
 };
 
 interface CandidateContainerProps {
@@ -95,6 +110,7 @@ const CandidateContainer = ({ candidates }: CandidateContainerProps) => {
               <TableHead className="py-1.5 px-2 text-xs">Phone</TableHead>
               <TableHead className="py-1.5 px-2 text-xs">Location</TableHead>
               <TableHead className="py-1.5 px-2 text-xs">Position</TableHead>
+              <TableHead className="py-1.5 px-2 text-xs">Status</TableHead>
               <TableHead className="text-right py-1.5 px-2 text-xs">
                 Actions
               </TableHead>
@@ -119,6 +135,19 @@ const CandidateContainer = ({ candidates }: CandidateContainerProps) => {
                   </TableCell>
                   <TableCell className="py-1.5 px-2 text-sm">
                     {candidate.position?.name || "-"}
+                  </TableCell>
+                  <TableCell className="py-1.5 px-2 text-sm">
+                    {candidate.applicationStatus ? (
+                      <Badge
+                        variant={applicationStatusColors[candidate.applicationStatus] || "outline"}
+                        className="text-xs"
+                      >
+                        {candidate.applicationStatus.charAt(0).toUpperCase() +
+                          candidate.applicationStatus.slice(1)}
+                      </Badge>
+                    ) : (
+                      "-"
+                    )}
                   </TableCell>
                   <TableCell className="text-right py-1.5 px-2">
                     <div className="flex items-center justify-end gap-1">
@@ -174,9 +203,20 @@ const CandidateContainer = ({ candidates }: CandidateContainerProps) => {
                         <CardContent className="p-2">
                           <div className="space-y-1.5">
                             <div>
-                              <h4 className="font-medium leading-tight">
-                                {fullName}
-                              </h4>
+                              <div className="flex items-start justify-between gap-2 mb-1">
+                                <h4 className="font-medium leading-tight">
+                                  {fullName}
+                                </h4>
+                                {candidate.applicationStatus && (
+                                  <Badge
+                                    variant={applicationStatusColors[candidate.applicationStatus] || "outline"}
+                                    className="shrink-0 text-xs"
+                                  >
+                                    {candidate.applicationStatus.charAt(0).toUpperCase() +
+                                      candidate.applicationStatus.slice(1)}
+                                  </Badge>
+                                )}
+                              </div>
                               <p className="text-xs text-muted-foreground leading-tight">
                                 {candidate.email}
                               </p>

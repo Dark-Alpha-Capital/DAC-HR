@@ -101,6 +101,7 @@ const CandidateUploadForm = ({
             },
           });
           form.reset();
+          router.push(`/candidates`);
         }
       });
     },

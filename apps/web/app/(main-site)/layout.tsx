@@ -1,8 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "@workspace/ui/globals.css";
 import { Providers } from "@/components/providers";
-import Header from "@/components/header";
-import Footer from "@/components/footer";
 import { Toaster } from "@workspace/ui/components/sonner";
 import { Suspense } from "react";
 import {

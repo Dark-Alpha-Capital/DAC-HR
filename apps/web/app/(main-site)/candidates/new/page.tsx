@@ -9,8 +9,8 @@ type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
 const page = async ({ searchParams }: { searchParams: SearchParams }) => {
   return (
-    <div className="block-space-mini narrow-container mx-auto">
-      <Button>
+    <div className="container mx-auto py-6 space-y-8">
+      <Button asChild>
         <Link href="/candidates">Back to Candidates</Link>
       </Button>
 

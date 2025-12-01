@@ -14,18 +14,25 @@ import type { InferSelectModel } from "drizzle-orm";
 import type { candidate } from "@workspace/db/schema";
 import DeleteCandidateButton from "./delete-candidate-button";
 
-type Candidate = InferSelectModel<typeof candidate>;
+type Candidate = InferSelectModel<typeof candidate> & {
+  applicationStatus?: string | null;
+};
 
 interface CandidateCardProps {
   candidate: Candidate;
 }
 
-const statusColors = {
-  applied: "default",
-  screening: "secondary",
-  interviewing: "outline",
+const applicationStatusColors: Record<
+  string,
+  "default" | "secondary" | "outline" | "destructive"
+> = {
+  pending: "outline",
+  reviewed: "secondary",
+  shortlisted: "default",
+  interviewing: "default",
   hired: "default",
   rejected: "destructive",
+  withdrawn: "outline",
 } as const;
 
 const CandidateCard = ({ candidate }: CandidateCardProps) => {
@@ -36,6 +43,15 @@ const CandidateCard = ({ candidate }: CandidateCardProps) => {
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="">{fullName}</CardTitle>
+          {candidate.applicationStatus && (
+            <Badge
+              variant={applicationStatusColors[candidate.applicationStatus] || "outline"}
+              className="shrink-0 text-xs"
+            >
+              {candidate.applicationStatus.charAt(0).toUpperCase() +
+                candidate.applicationStatus.slice(1)}
+            </Badge>
+          )}
         </div>
       </CardHeader>
       <CardContent>

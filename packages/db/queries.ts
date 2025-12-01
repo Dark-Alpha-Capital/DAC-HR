@@ -16,7 +16,7 @@ import {
   candidateOnboarding,
   employee,
 } from "./schema";
-import { eq, asc, inArray, and, or, sql } from "drizzle-orm";
+import { eq, asc, desc, inArray, and, or, sql } from "drizzle-orm";
 
 /**
  *
@@ -170,13 +170,33 @@ export const getCandidatesWithPositions = async () => {
  * @param nameSearch Optional search term for first name or last name
  * @param emailSearch Optional search term for email
  * @param positionIds Optional array of position IDs to filter by
- * @returns An array of candidates with position information
+ * @param page Optional page number (1-indexed) for pagination
+ * @param limit Optional number of candidates per page (default: 50)
+ * @returns An object with candidates array and total count
  */
 export const getCandidatesWithPositionsFiltered = async (
   nameSearch?: string,
   emailSearch?: string,
-  positionIds?: string[]
-) => {
+  positionIds?: string[],
+  page: number = 1,
+  limit: number = 50
+): Promise<{
+  candidates: Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string | null;
+    location: string | null;
+    source: string | null;
+    note: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    position: { id: string; name: string } | null;
+    applicationStatus: string | null;
+  }>;
+  total: number;
+}> => {
   try {
     let query = db
       .select({
@@ -236,7 +256,7 @@ export const getCandidatesWithPositionsFiltered = async (
       query = query.where(and(...conditions)) as typeof query;
     }
 
-    const results = await query.orderBy(asc(candidate.createdAt));
+    const results = await query.orderBy(desc(candidate.createdAt));
 
     // Map results and handle duplicates (candidates can have multiple positions)
     const candidateMap = new Map<
@@ -271,10 +291,48 @@ export const getCandidatesWithPositionsFiltered = async (
       }
     }
 
-    return Array.from(candidateMap.values());
+    // Convert to array and sort by createdAt descending (already sorted from query)
+    const allCandidates = Array.from(candidateMap.values()).sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+    );
+
+    // Get total count
+    const total = allCandidates.length;
+
+    // Apply pagination
+    const offset = (page - 1) * limit;
+    const paginatedCandidates = allCandidates.slice(offset, offset + limit);
+
+    // Fetch the most recent application status for each paginated candidate
+    const candidateIds = paginatedCandidates.map((c) => c.id);
+    const applications = await db
+      .select({
+        candidateId: application.candidateId,
+        status: application.status,
+        updatedAt: application.updatedAt,
+      })
+      .from(application)
+      .where(inArray(application.candidateId, candidateIds))
+      .orderBy(desc(application.updatedAt));
+
+    // Group applications by candidateId and get the most recent one
+    const applicationStatusMap = new Map<string, string>();
+    for (const app of applications) {
+      if (!applicationStatusMap.has(app.candidateId)) {
+        applicationStatusMap.set(app.candidateId, app.status);
+      }
+    }
+
+    // Add application status to candidates
+    const candidatesWithStatus = paginatedCandidates.map((candidate) => ({
+      ...candidate,
+      applicationStatus: applicationStatusMap.get(candidate.id) || null,
+    }));
+
+    return { candidates: candidatesWithStatus, total };
   } catch (error) {
     console.error("Error fetching filtered candidates with positions", error);
-    return [];
+    return { candidates: [], total: 0 };
   }
 };
 

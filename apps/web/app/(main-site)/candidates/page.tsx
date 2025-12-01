@@ -13,6 +13,7 @@ import CandidateContainer from "./candidate-container";
 import { CandidatesListSkeleton } from "@/components/skeletons/candidates-list-skeleton";
 import { Metadata } from "next";
 import { UserAuthenticated } from "@/components/auth-checks";
+import CandidatesPaginationControls from "@/components/candidates-pagination-controls";
 
 export const metadata: Metadata = {
   title: "Candidates",
@@ -70,7 +71,7 @@ const CandidatesList = async ({
 }: {
   searchParams: SearchParams;
 }) => {
-  const { name, email, position } = await searchParams;
+  const { name, email, position, page: pageParam } = await searchParams;
 
   // Extract search terms
   const nameSearch = name
@@ -91,11 +92,28 @@ const CandidatesList = async ({
       : [position]
     : undefined;
 
-  const candidates = await getCandidatesWithPositionsFiltered(
+  // Extract page number (default to 1)
+  const page = pageParam
+    ? typeof pageParam === "string"
+      ? parseInt(pageParam, 10)
+      : Array.isArray(pageParam) && pageParam[0]
+        ? parseInt(pageParam[0], 10)
+        : 1
+    : 1;
+  const currentPage = isNaN(page) || page < 1 ? 1 : page;
+  const limit = 50;
+
+  const { candidates, total } = await getCandidatesWithPositionsFiltered(
     nameSearch,
     emailSearch,
-    positionIds
+    positionIds,
+    currentPage,
+    limit
   );
+
+  const totalPages = Math.ceil(total / limit);
+  const hasNextPage = currentPage < totalPages;
+  const hasPreviousPage = currentPage > 1;
 
   if (candidates.length === 0) {
     return (
@@ -112,5 +130,17 @@ const CandidatesList = async ({
     );
   }
 
-  return <CandidateContainer candidates={candidates} />;
+  return (
+    <div className="space-y-6">
+      <CandidateContainer candidates={candidates} />
+      {totalPages > 1 && (
+        <CandidatesPaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          hasNextPage={hasNextPage}
+          hasPreviousPage={hasPreviousPage}
+        />
+      )}
+    </div>
+  );
 };
