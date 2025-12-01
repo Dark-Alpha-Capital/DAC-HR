@@ -1,17 +1,23 @@
 import React, { Suspense } from "react";
 import { getCandidateById, getPositions } from "@workspace/db/queries";
-import BackButton from "@/components/back-button";
 import CandidateEditForm from "@/components/forms/candidate-edit-form";
 import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
+import { UserAuthenticated } from "@/components/auth-checks";
 
 type Params = Promise<{ uid: string }>;
 
 const EditCandidatePage = async ({ params }: { params: Params }) => {
   return (
-    <div className="block-space narrow-container mx-auto">
-      <BackButton />
+    <div className="container mx-auto py-8 space-y-6">
+      <Button asChild>
+        <Link href="/candidates">Back to Candidates</Link>
+      </Button>
+
+      <Suspense>
+        <UserAuthenticated />
+      </Suspense>
 
       <Suspense fallback={<FormLoadingFallback />}>
         <EditCandidateForm params={params} />

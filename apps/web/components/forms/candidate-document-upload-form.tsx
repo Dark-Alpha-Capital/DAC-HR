@@ -195,11 +195,14 @@ const CandidateDocumentUploadForm = ({
   };
 
   return (
-    <div className="w-full space-y-6">
+    <div className="space-y-6">
       <div className="space-y-2">
-        <h2 className="text-2xl font-semibold tracking-tight">Upload Candidate Document</h2>
+        <h2 className="text-2xl font-semibold tracking-tight">
+          Upload Candidate Document
+        </h2>
         <p className="text-sm text-muted-foreground">
-          Upload a file or provide a document URL, then fill in the details below.
+          Upload a file or provide a document URL, then fill in the details
+          below.
         </p>
       </div>
       <form
@@ -211,26 +214,27 @@ const CandidateDocumentUploadForm = ({
         className="space-y-6"
       >
         <FieldGroup>
-            <form.Field
-              name="url"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
-                  <>
-                    <Field>
-                      <FieldLabel htmlFor="file-upload">Upload File</FieldLabel>
+          <form.Field
+            name="url"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor="file-upload">Document Source</FieldLabel>
+                  <div className="rounded-lg border p-4">
+                    <div className="space-y-2.5">
                       <Input
                         id="file-upload"
                         type="file"
                         onChange={handleFileChange}
                         className="cursor-pointer"
                       />
-                      <FieldDescription>
+                      <p className="text-xs text-muted-foreground">
                         All file types accepted except videos (max 500MB)
-                      </FieldDescription>
+                      </p>
                       {file && (
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-sm text-muted-foreground">
                           Selected: {file.name} (
                           {file.size > 1024 * 1024
                             ? `${(file.size / (1024 * 1024)).toFixed(2)} MB`
@@ -238,21 +242,20 @@ const CandidateDocumentUploadForm = ({
                           )
                         </p>
                       )}
-                    </Field>
-                    <div className="relative my-4">
+                    </div>
+
+                    <div className="relative my-3">
                       <div className="absolute inset-0 flex items-center">
                         <span className="w-full border-t" />
                       </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">
+                      <div className="relative flex justify-center text-xs">
+                        <span className="bg-muted/30 px-2 text-muted-foreground">
                           Or
                         </span>
                       </div>
                     </div>
-                    <Field data-invalid={isInvalid}>
-                      <FieldLabel htmlFor="document-url">
-                        Document URL
-                      </FieldLabel>
+
+                    <div className="space-y-2">
                       <Input
                         id="document-url"
                         name={field.name}
@@ -265,195 +268,187 @@ const CandidateDocumentUploadForm = ({
                         autoComplete="off"
                         disabled={!!file}
                       />
-                      <FieldDescription>
+                      <p className="text-xs text-muted-foreground">
                         Enter a direct URL to the document (file upload will be
                         cleared)
-                      </FieldDescription>
+                      </p>
                       {isInvalid && (
                         <FieldError errors={field.state.meta.errors} />
                       )}
-                    </Field>
-                  </>
-                );
-              }}
-            />
+                    </div>
+                  </div>
+                </Field>
+              );
+            }}
+          />
+          <form.Field
+            name="name"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>Document Name</FieldLabel>
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    aria-invalid={isInvalid}
+                    placeholder="Enter document name"
+                    autoComplete="off"
+                  />
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
+            }}
+          />
 
-            <form.Field
-              name="name"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
-                  <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>Document Name</FieldLabel>
-                    <Input
+          <form.Field
+            name="description"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>Description</FieldLabel>
+                  <InputGroup>
+                    <InputGroupTextarea
                       id={field.name}
                       name={field.name}
                       value={field.state.value}
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="Enter document description (optional)"
+                      rows={4}
+                      className="min-h-20 resize-none"
                       aria-invalid={isInvalid}
-                      placeholder="Enter document name"
-                      autoComplete="off"
                     />
-                    {isInvalid && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
-                  </Field>
-                );
-              }}
-            />
-
-            <form.Field
-              name="description"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
-                  <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>Description</FieldLabel>
-                    <InputGroup>
-                      <InputGroupTextarea
-                        id={field.name}
-                        name={field.name}
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder="Enter document description (optional)"
-                        rows={4}
-                        className="min-h-20 resize-none"
-                        aria-invalid={isInvalid}
-                      />
-                      <InputGroupAddon align="block-end">
-                        <InputGroupText className="tabular-nums">
-                          {field.state.value.length}/1000 characters
-                        </InputGroupText>
-                      </InputGroupAddon>
-                    </InputGroup>
-                    {isInvalid && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
-                  </Field>
-                );
-              }}
-            />
-
-            <form.Field
-              name="category"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
-                  <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>Category</FieldLabel>
-                    <Select
-                      value={field.state.value}
-                      onValueChange={(value) =>
-                        field.handleChange(
-                          value as
-                            | "resume"
-                            | "cover-letter"
-                            | "portfolio"
-                            | "other"
-                        )
-                      }
-                      aria-invalid={isInvalid}
-                    >
-                      <SelectTrigger
-                        id={field.name}
-                        aria-invalid={isInvalid}
-                        className="w-full"
-                      >
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectSeparator />
-                        <SelectItem value="resume">Resume</SelectItem>
-                        <SelectItem value="cover-letter">
-                          Cover Letter
-                        </SelectItem>
-                        <SelectItem value="portfolio">Portfolio</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {isInvalid && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
-                  </Field>
-                );
-              }}
-            />
-
-            <form.Field
-              name="tags"
-              children={(field) => {
-                return (
-                  <Field>
-                    <FieldLabel htmlFor="tags-input">Tags</FieldLabel>
-                    <Input
-                      id="tags-input"
-                      value={tagsInput}
-                      onChange={(e) => handleTagsChange(e.target.value)}
-                      onBlur={handleTagsBlur}
-                      placeholder="Enter tags separated by commas (e.g., important, resume, 2024)"
-                      autoComplete="off"
-                    />
-                    <FieldDescription>
-                      Separate multiple tags with commas
-                    </FieldDescription>
-                    {field.state.value.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {field.state.value.map((tag, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center rounded-md bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </Field>
-                );
-              }}
-            />
-          </FieldGroup>
-        </form>
-        <div className="flex items-center justify-end gap-3 pt-4 border-t">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              form.reset();
-              setFile(null);
-              setTagsInput("");
-              // Clear file input
-              const fileInput = document.getElementById(
-                "file-upload"
-              ) as HTMLInputElement;
-              if (fileInput) {
-                fileInput.value = "";
-              }
+                    <InputGroupAddon align="block-end">
+                      <InputGroupText className="tabular-nums">
+                        {field.state.value.length}/1000 characters
+                      </InputGroupText>
+                    </InputGroupAddon>
+                  </InputGroup>
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
             }}
-            disabled={isPending}
-          >
-            Reset
-          </Button>
-          <Button
-            type="submit"
-            form="candidate-document-upload-form"
-            disabled={isPending}
-          >
-            {isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              "Submit"
-            )}
-          </Button>
-        </div>
+          />
+
+          <form.Field
+            name="category"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>Category</FieldLabel>
+                  <Select
+                    value={field.state.value}
+                    onValueChange={(value) =>
+                      field.handleChange(
+                        value as
+                          | "resume"
+                          | "cover-letter"
+                          | "portfolio"
+                          | "other"
+                      )
+                    }
+                    aria-invalid={isInvalid}
+                  >
+                    <SelectTrigger
+                      id={field.name}
+                      aria-invalid={isInvalid}
+                      className="w-full"
+                    >
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectSeparator />
+                      <SelectItem value="resume">Resume</SelectItem>
+                      <SelectItem value="cover-letter">Cover Letter</SelectItem>
+                      <SelectItem value="portfolio">Portfolio</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
+            }}
+          />
+
+          <form.Field
+            name="tags"
+            children={(field) => {
+              return (
+                <Field>
+                  <FieldLabel htmlFor="tags-input">Tags</FieldLabel>
+                  <Input
+                    id="tags-input"
+                    value={tagsInput}
+                    onChange={(e) => handleTagsChange(e.target.value)}
+                    onBlur={handleTagsBlur}
+                    placeholder="Enter tags separated by commas (e.g., important, resume, 2024)"
+                    autoComplete="off"
+                  />
+                  <FieldDescription>
+                    Separate multiple tags with commas
+                  </FieldDescription>
+                  {field.state.value.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {field.state.value.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center rounded-md bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </Field>
+              );
+            }}
+          />
+        </FieldGroup>
+      </form>
+      <div className="flex items-center justify-end gap-3 pt-4 border-t">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            form.reset();
+            setFile(null);
+            setTagsInput("");
+            // Clear file input
+            const fileInput = document.getElementById(
+              "file-upload"
+            ) as HTMLInputElement;
+            if (fileInput) {
+              fileInput.value = "";
+            }
+          }}
+          disabled={isPending}
+        >
+          Reset
+        </Button>
+        <Button
+          type="submit"
+          form="candidate-document-upload-form"
+          disabled={isPending}
+        >
+          {isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Submitting...
+            </>
+          ) : (
+            "Submit"
+          )}
+        </Button>
+      </div>
     </div>
   );
 };

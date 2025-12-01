@@ -30,6 +30,7 @@ import { formatDate } from "@/lib/utils";
 import { CandidateDetailSkeleton } from "@/components/skeletons/candidate-detail-skeleton";
 import { SectionSkeleton } from "@/components/skeletons/section-skeleton";
 import CandidateDocumentCard from "@/components/candidate-document-card";
+import CandidateDocumentTable from "@/components/candidate-document-table";
 import CandidateOnboardingSection from "@/components/candidate-onboarding-section";
 import { UserAuthenticated } from "@/components/auth-checks";
 
@@ -71,6 +72,9 @@ const DisplayCandidateDocuments = async ({ params }: { params: Params }) => {
         <div className="flex items-center gap-2">
           <FileText className="h-4 w-4" />
           <h2 className="text-lg font-semibold">Documents</h2>
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/candidates/${uid}/add-document`}>Add Document</Link>
+          </Button>
         </div>
         <Badge variant="secondary">{documents.length}</Badge>
       </div>
@@ -87,23 +91,7 @@ const DisplayCandidateDocuments = async ({ params }: { params: Params }) => {
           </Button>
         </div>
       ) : (
-        <div className="space-y-3">
-          {documents.map((document) => (
-            <CandidateDocumentCard
-              key={document.id}
-              document={document}
-              candidateId={uid}
-            />
-          ))}
-          <div className="pt-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link href={`/candidates/${uid}/add-document`}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Document
-              </Link>
-            </Button>
-          </div>
-        </div>
+        <CandidateDocumentTable documents={documents} candidateId={uid} />
       )}
     </div>
   );
