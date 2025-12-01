@@ -4,16 +4,22 @@ import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleto
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import { getPositions } from "@workspace/db/queries";
+import { UserIsAdmin } from "@/components/auth-checks";
 
-const page = () => {
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
+const page = async ({ searchParams }: { searchParams: SearchParams }) => {
   return (
-    <div className="block-space narrow-container mx-auto">
+    <div className="container mx-auto py-8 space-y-6">
+      <Suspense>
+        <UserIsAdmin />
+      </Suspense>
+
       <Button>
         <Link href="/rounds">Back to Rounds</Link>
       </Button>
 
       <Suspense fallback={<FormLoadingFallback />}>
-        <DisplayRoundUploadForm />
+        <DisplayRoundUploadForm searchParams={searchParams} />
       </Suspense>
     </div>
   );
@@ -21,7 +27,22 @@ const page = () => {
 
 export default page;
 
-async function DisplayRoundUploadForm() {
+async function DisplayRoundUploadForm({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const { position } = await searchParams;
   const positions = await getPositions();
-  return <RoundUploadForm positions={positions} />;
+  const preSelectedPositionId = position
+    ? Array.isArray(position)
+      ? position[0]
+      : position
+    : "";
+  return (
+    <RoundUploadForm
+      positions={positions}
+      preSelectedPositionId={preSelectedPositionId || ""}
+    />
+  );
 }

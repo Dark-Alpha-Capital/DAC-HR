@@ -13,22 +13,28 @@ import type { InferSelectModel } from "drizzle-orm";
 import type { position } from "@workspace/db/schema";
 import DeletePositionButton from "./delete-position-button";
 
-type Position = InferSelectModel<typeof position>;
-
 interface PositionCardProps {
-  position: Position;
+  positionId: string;
+  positionName: string;
+  positionDescription: string;
+  positionSlug: string;
 }
 
-const PositionCard = ({ position }: PositionCardProps) => {
+const PositionCard = ({
+  positionId,
+  positionName,
+  positionDescription,
+  positionSlug,
+}: PositionCardProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{position.name}</CardTitle>
+        <CardTitle>{positionName}</CardTitle>
       </CardHeader>
       <CardContent>
-        {position.description ? (
+        {positionDescription ? (
           <p className="text-sm text-muted-foreground line-clamp-3">
-            {position.description}
+            {positionDescription}
           </p>
         ) : (
           <p className="text-sm text-muted-foreground italic">
@@ -39,18 +45,18 @@ const PositionCard = ({ position }: PositionCardProps) => {
       <CardFooter className="border-t">
         <div className="flex gap-2 w-full">
           <Button variant="outline" size="sm" asChild>
-            <Link href={`/positions/${position.slug}`}>
+            <Link href={`/positions/${positionSlug}`}>
               <Eye className="h-4 w-4" />
-              View
+              <span className="sr-only">View</span>
             </Link>
           </Button>
           <Button variant="outline" size="sm" asChild>
-            <Link href={`/positions/${position.slug}/edit`}>
+            <Link href={`/positions/${positionSlug}/edit`}>
               <Pencil className="h-4 w-4" />
-              Edit
+              <span className="sr-only">Edit</span>
             </Link>
           </Button>
-          <DeletePositionButton positionId={position.id} />
+          <DeletePositionButton positionId={positionId} />
         </div>
       </CardFooter>
     </Card>

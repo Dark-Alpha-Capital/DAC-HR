@@ -1,5 +1,5 @@
 {
-  "id": "9feb98a7-24ad-4c0e-a884-59ac2fd2b46c",
+  "id": "84e376da-2a8e-40ab-b321-2be6c1320a8f",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -232,6 +232,24 @@
           "primaryKey": false,
           "notNull": false
         },
+        "resume_url": {
+          "name": "resume_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cover_letter_url": {
+          "name": "cover_letter_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "portfolio_url": {
+          "name": "portfolio_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "source": {
           "name": "source",
           "type": "text",
@@ -344,6 +362,131 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.candidate_onboarding": {
+      "name": "candidate_onboarding",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "candidate_id": {
+          "name": "candidate_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contract_signed": {
+          "name": "contract_signed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "signed_contract_document_id": {
+          "name": "signed_contract_document_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contract_signed_at": {
+          "name": "contract_signed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email_provided": {
+          "name": "email_provided",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "email_registered_at": {
+          "name": "email_registered_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "onboarding_packet_sent": {
+          "name": "onboarding_packet_sent",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "onboarding_packet_sent_at": {
+          "name": "onboarding_packet_sent_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "company_email_activate": {
+          "name": "company_email_activate",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "company_email_activate_at": {
+          "name": "company_email_activate_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "candidate_onboarding_candidate_id_candidate_id_fk": {
+          "name": "candidate_onboarding_candidate_id_candidate_id_fk",
+          "tableFrom": "candidate_onboarding",
+          "tableTo": "candidate",
+          "columnsFrom": [
+            "candidate_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "candidate_onboarding_signed_contract_document_id_candidate_document_id_fk": {
+          "name": "candidate_onboarding_signed_contract_document_id_candidate_document_id_fk",
+          "tableFrom": "candidate_onboarding",
+          "tableTo": "candidate_document",
+          "columnsFrom": [
+            "signed_contract_document_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
@@ -506,6 +649,85 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.employee": {
+      "name": "employee",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "first_name": {
+          "name": "first_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_name": {
+          "name": "last_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "department": {
+          "name": "department",
+          "type": "department",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position_id": {
+          "name": "position_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "profile_image": {
+          "name": "profile_image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "employee_position_id_position_id_fk": {
+          "name": "employee_position_id_position_id_fk",
+          "tableFrom": "employee",
+          "tableTo": "position",
+          "columnsFrom": [
+            "position_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.interview": {
       "name": "interview",
       "schema": "",
@@ -558,6 +780,12 @@
         "overall_feedback": {
           "name": "overall_feedback",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "proceed_to_next_round": {
+          "name": "proceed_to_next_round",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": false
         },
@@ -1217,6 +1445,22 @@
         "other"
       ]
     },
+    "public.department": {
+      "name": "department",
+      "schema": "public",
+      "values": [
+        "engineering",
+        "product",
+        "sales",
+        "marketing",
+        "hr",
+        "finance",
+        "operations",
+        "legal",
+        "customer-support",
+        "other"
+      ]
+    },
     "public.document_category": {
       "name": "document_category",
       "schema": "public",
@@ -1234,7 +1478,8 @@
       "values": [
         "pending",
         "move_forward",
-        "rejected"
+        "rejected",
+        "scheduled"
       ]
     }
   },

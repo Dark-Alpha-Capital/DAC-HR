@@ -13,11 +13,10 @@ import {
   user,
   documents,
   candidateDocument,
-  candidateOnboarding
+  candidateOnboarding,
+  employee,
 } from "./schema";
-import { eq, asc, inArray, and, sql } from "drizzle-orm";
-
-
+import { eq, asc, desc, inArray, and, or, sql } from "drizzle-orm";
 
 /**
  *
@@ -26,7 +25,14 @@ import { eq, asc, inArray, and, sql } from "drizzle-orm";
  */
 export const getPositions = async () => {
   try {
-    return await db.select().from(position);
+    return await db
+      .select({
+        id: position.id,
+        name: position.name,
+        slug: position.slug,
+        description: position.description,
+      })
+      .from(position);
   } catch (error) {
     console.error("Error fetching positions", error);
     return [];
@@ -160,6 +166,177 @@ export const getCandidatesWithPositions = async () => {
 };
 
 /**
+ * Fetches candidates with positions, optionally filtered by name, email, and position IDs
+ * @param nameSearch Optional search term for first name or last name
+ * @param emailSearch Optional search term for email
+ * @param positionIds Optional array of position IDs to filter by
+ * @param page Optional page number (1-indexed) for pagination
+ * @param limit Optional number of candidates per page (default: 50)
+ * @returns An object with candidates array and total count
+ */
+export const getCandidatesWithPositionsFiltered = async (
+  nameSearch?: string,
+  emailSearch?: string,
+  positionIds?: string[],
+  page: number = 1,
+  limit: number = 50
+): Promise<{
+  candidates: Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string | null;
+    location: string | null;
+    source: string | null;
+    note: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    position: { id: string; name: string } | null;
+    applicationStatus: string | null;
+  }>;
+  total: number;
+}> => {
+  try {
+    let query = db
+      .select({
+        candidate: {
+          id: candidate.id,
+          firstName: candidate.firstName,
+          lastName: candidate.lastName,
+          email: candidate.email,
+          phone: candidate.phone,
+          location: candidate.location,
+          source: candidate.source,
+          note: candidate.note,
+          createdAt: candidate.createdAt,
+          updatedAt: candidate.updatedAt,
+        },
+        position: {
+          id: position.id,
+          name: position.name,
+        },
+      })
+      .from(candidate)
+      .leftJoin(
+        candidatePosition,
+        eq(candidate.id, candidatePosition.candidateId)
+      )
+      .leftJoin(position, eq(candidatePosition.positionId, position.id));
+
+    // Build filter conditions
+    const conditions = [];
+
+    // Name search (first name or last name)
+    if (nameSearch && nameSearch.trim()) {
+      const searchTerm = `%${nameSearch.trim()}%`;
+      conditions.push(
+        or(
+          sql`${candidate.firstName} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`,
+          sql`${candidate.lastName} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`
+        )!
+      );
+    }
+
+    // Email search
+    if (emailSearch && emailSearch.trim()) {
+      const searchTerm = `%${emailSearch.trim()}%`;
+      conditions.push(
+        sql`${candidate.email} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`
+      );
+    }
+
+    // Position filter
+    if (positionIds && positionIds.length > 0) {
+      conditions.push(inArray(position.id, positionIds));
+    }
+
+    // Apply conditions if any
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as typeof query;
+    }
+
+    const results = await query.orderBy(desc(candidate.createdAt));
+
+    // Map results and handle duplicates (candidates can have multiple positions)
+    const candidateMap = new Map<
+      string,
+      {
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+        phone: string | null;
+        location: string | null;
+        source: string | null;
+        note: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        position: { id: string; name: string } | null;
+      }
+    >();
+
+    for (const result of results) {
+      const candidateId = result.candidate.id;
+      if (!candidateMap.has(candidateId)) {
+        candidateMap.set(candidateId, {
+          ...result.candidate,
+          position: result.position?.id
+            ? {
+                id: result.position.id,
+                name: result.position.name,
+              }
+            : null,
+        });
+      }
+    }
+
+    // Convert to array and sort by createdAt descending (already sorted from query)
+    const allCandidates = Array.from(candidateMap.values()).sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+    );
+
+    // Get total count
+    const total = allCandidates.length;
+
+    // Apply pagination
+    const offset = (page - 1) * limit;
+    const paginatedCandidates = allCandidates.slice(offset, offset + limit);
+
+    // Fetch the most recent application status for each paginated candidate
+    const candidateIds = paginatedCandidates.map((c) => c.id);
+    const applications = await db
+      .select({
+        candidateId: application.candidateId,
+        status: application.status,
+        updatedAt: application.updatedAt,
+      })
+      .from(application)
+      .where(inArray(application.candidateId, candidateIds))
+      .orderBy(desc(application.updatedAt));
+
+    // Group applications by candidateId and get the most recent one
+    const applicationStatusMap = new Map<string, string>();
+    for (const app of applications) {
+      if (!applicationStatusMap.has(app.candidateId)) {
+        applicationStatusMap.set(app.candidateId, app.status);
+      }
+    }
+
+    // Add application status to candidates
+    const candidatesWithStatus = paginatedCandidates.map((candidate) => ({
+      ...candidate,
+      applicationStatus: applicationStatusMap.get(candidate.id) || null,
+    }));
+
+    return { candidates: candidatesWithStatus, total };
+  } catch (error) {
+    console.error("Error fetching filtered candidates with positions", error);
+    return { candidates: [], total: 0 };
+  }
+};
+
+/**
  *
  * Fetches a candidate by its ID
  * @param id The ID of the candidate to fetch
@@ -266,8 +443,12 @@ export const getQuestions = async () => {
 
 /**
  *
- * Fetches all questions with their associated rounds and positions from the database
- * @returns An array of questions with round and position information
+ * Fetches all questions with their associated rounds and positions from the database.
+ *
+ * Shape:
+ * - Each question has:
+ *   - rounds: [{ id, name, positions: [{ id, name }] }]
+ *   - positions: de-duplicated flat list of all linked positions
  */
 export const getQuestionsWithRounds = async () => {
   try {
@@ -305,7 +486,11 @@ export const getQuestionsWithRounds = async () => {
         questionText: string;
         createdAt: Date;
         updatedAt: Date;
-        rounds: Array<{ id: string; name: string }>;
+        rounds: Array<{
+          id: string;
+          name: string;
+          positions: Array<{ id: string; name: string }>;
+        }>;
         positions: Array<{ id: string; name: string }>;
       }
     >();
@@ -325,16 +510,30 @@ export const getQuestionsWithRounds = async () => {
 
       const question = questionsMap.get(questionId)!;
       if (result.roundId) {
-        // Check if round already added (avoid duplicates)
-        if (!question.rounds.some((r) => r.id === result.roundId)) {
-          question.rounds.push({
+        // Find or create the round entry for this question
+        let round = question.rounds.find((r) => r.id === result.roundId);
+        if (!round) {
+          round = {
             id: result.roundId,
             name: result.roundName || "",
-          });
+            positions: [],
+          };
+          question.rounds.push(round);
+        }
+
+        // Attach position to this specific round (if present)
+        if (result.positionId) {
+          if (!round.positions.some((p) => p.id === result.positionId)) {
+            round.positions.push({
+              id: result.positionId,
+              name: result.positionName || "",
+            });
+          }
         }
       }
+
+      // Maintain a de-duplicated flat list of positions at the question level
       if (result.positionId) {
-        // Check if position already added (avoid duplicates)
         if (!question.positions.some((p) => p.id === result.positionId)) {
           question.positions.push({
             id: result.positionId,
@@ -914,7 +1113,7 @@ export async function getDocumentsByCandidateId(candidateId: string) {
 
 /**
  * Fetches dashboard statistics including total candidates, active candidates, interviews scheduled, and average time to hire
- * @returns Dashboard statistics object
+ * @returns Dashboard statistics object with percentage changes
  */
 export const getDashboardStats = async () => {
   try {
@@ -923,6 +1122,22 @@ export const getDashboardStats = async () => {
       .select({ count: sql<number>`count(*)::int` })
       .from(candidate);
     const totalCandidates = totalCandidatesResult?.count || 0;
+
+    // Total candidates last month (30-60 days ago)
+    const [totalCandidatesLastMonthResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(candidate)
+      .where(
+        sql`${candidate.createdAt} >= NOW() - INTERVAL '60 days' AND ${candidate.createdAt} < NOW() - INTERVAL '30 days'`
+      );
+    const totalCandidatesLastMonth = totalCandidatesLastMonthResult?.count || 0;
+
+    // Total candidates this month
+    const [totalCandidatesThisMonthResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(candidate)
+      .where(sql`${candidate.createdAt} >= NOW() - INTERVAL '30 days'`);
+    const totalCandidatesThisMonth = totalCandidatesThisMonthResult?.count || 0;
 
     // Active candidates count (candidates with applications in reviewed, shortlisted, or interviewing status)
     const [activeCandidatesResult] = await db
@@ -934,6 +1149,18 @@ export const getDashboardStats = async () => {
         sql`${application.status} IN ('reviewed', 'shortlisted', 'interviewing')`
       );
     const activeCandidates = activeCandidatesResult?.count || 0;
+
+    // Active candidates last month
+    const [activeCandidatesLastMonthResult] = await db
+      .select({
+        count: sql<number>`count(DISTINCT ${application.candidateId})::int`,
+      })
+      .from(application)
+      .where(
+        sql`${application.status} IN ('reviewed', 'shortlisted', 'interviewing') AND ${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`
+      );
+    const activeCandidatesLastMonth =
+      activeCandidatesLastMonthResult?.count || 0;
 
     // Interviews scheduled count (interviews with status 'pending')
     const [interviewsScheduledResult] = await db
@@ -951,19 +1178,157 @@ export const getDashboardStats = async () => {
       .where(eq(application.status, "hired"));
     const avgTimeToHire = avgTimeToHireResult?.avgDays || 0;
 
+    // Average time to hire last month
+    const [avgTimeToHireLastMonthResult] = await db
+      .select({
+        avgDays: sql<number>`AVG(EXTRACT(EPOCH FROM (${application.updatedAt} - ${application.createdAt})) / 86400)::int`,
+      })
+      .from(application)
+      .where(
+        sql`${application.status} = 'hired' AND ${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`
+      );
+    const avgTimeToHireLastMonth = avgTimeToHireLastMonthResult?.avgDays || 0;
+
+    // Total employees count
+    const [totalEmployeesResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(employee);
+    const totalEmployees = totalEmployeesResult?.count || 0;
+
+    // Total positions count
+    const [totalPositionsResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(position);
+    const totalPositions = totalPositionsResult?.count || 0;
+
+    // Applications this month
+    const [applicationsThisMonthResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(application)
+      .where(sql`${application.createdAt} >= NOW() - INTERVAL '30 days'`);
+    const applicationsThisMonth = applicationsThisMonthResult?.count || 0;
+
+    // Applications last month
+    const [applicationsLastMonthResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(application)
+      .where(
+        sql`${application.createdAt} >= NOW() - INTERVAL '60 days' AND ${application.createdAt} < NOW() - INTERVAL '30 days'`
+      );
+    const applicationsLastMonth = applicationsLastMonthResult?.count || 0;
+
+    // Hired this month
+    const [hiredThisMonthResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(application)
+      .where(
+        sql`${application.status} = 'hired' AND ${application.updatedAt} >= NOW() - INTERVAL '30 days'`
+      );
+    const hiredThisMonth = hiredThisMonthResult?.count || 0;
+
+    // Hired last month
+    const [hiredLastMonthResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(application)
+      .where(
+        sql`${application.status} = 'hired' AND ${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`
+      );
+    const hiredLastMonth = hiredLastMonthResult?.count || 0;
+
+    // Total interviews count
+    const [totalInterviewsResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(interview);
+    const totalInterviews = totalInterviewsResult?.count || 0;
+
+    // Completed interviews (not pending)
+    const [completedInterviewsResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(interview)
+      .where(sql`${interview.status} != 'pending'`);
+    const completedInterviews = completedInterviewsResult?.count || 0;
+
+    // Average interview rating
+    const [avgInterviewRatingResult] = await db
+      .select({
+        avgRating: sql<number>`AVG(${interview.rating})::numeric`,
+      })
+      .from(interview)
+      .where(sql`${interview.rating} IS NOT NULL`);
+    const avgInterviewRating =
+      avgInterviewRatingResult && avgInterviewRatingResult.avgRating !== null
+        ? Number(avgInterviewRatingResult.avgRating)
+        : 0;
+
+    // Calculate percentage changes
+    const calculatePercentageChange = (
+      current: number,
+      previous: number
+    ): number => {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      return Math.round(((current - previous) / previous) * 100);
+    };
+
     return {
       totalCandidates,
+      totalCandidatesThisMonth,
+      totalCandidatesChange: calculatePercentageChange(
+        totalCandidatesThisMonth,
+        totalCandidatesLastMonth
+      ),
       activeCandidates,
+      activeCandidatesChange: calculatePercentageChange(
+        activeCandidates,
+        activeCandidatesLastMonth
+      ),
       interviewsScheduled,
       avgTimeToHire,
+      avgTimeToHireChange: calculatePercentageChange(
+        avgTimeToHireLastMonth,
+        avgTimeToHire
+      ), // Inverted because lower is better
+      totalEmployees,
+      totalPositions,
+      applicationsThisMonth,
+      applicationsLastMonth,
+      applicationsChange: calculatePercentageChange(
+        applicationsThisMonth,
+        applicationsLastMonth
+      ),
+      hiredThisMonth,
+      hiredLastMonth,
+      hiredChange: calculatePercentageChange(hiredThisMonth, hiredLastMonth),
+      totalInterviews,
+      completedInterviews,
+      interviewCompletionRate:
+        totalInterviews > 0
+          ? Math.round((completedInterviews / totalInterviews) * 100)
+          : 0,
+      avgInterviewRating: Math.round(avgInterviewRating * 10) / 10,
     };
   } catch (error) {
     console.error("Error fetching dashboard stats", error);
     return {
       totalCandidates: 0,
+      totalCandidatesThisMonth: 0,
+      totalCandidatesChange: 0,
       activeCandidates: 0,
+      activeCandidatesChange: 0,
       interviewsScheduled: 0,
       avgTimeToHire: 0,
+      avgTimeToHireChange: 0,
+      totalEmployees: 0,
+      totalPositions: 0,
+      applicationsThisMonth: 0,
+      applicationsLastMonth: 0,
+      applicationsChange: 0,
+      hiredThisMonth: 0,
+      hiredLastMonth: 0,
+      hiredChange: 0,
+      totalInterviews: 0,
+      completedInterviews: 0,
+      interviewCompletionRate: 0,
+      avgInterviewRating: 0,
     };
   }
 };
@@ -1211,4 +1576,214 @@ export const getOrCreateCandidateOnboarding = async (candidateId: string) => {
     .execute();
 
   return newOnboarding;
+};
+
+/**
+ * Fetches all employees from the database with position information
+ * @param positionIds Optional array of position IDs to filter by
+ * @param departments Optional array of department values to filter by
+ * @returns An array of employees with position data
+ */
+export const getEmployees = async (
+  positionIds?: string[],
+  departments?: string[]
+) => {
+  try {
+    let query = db
+      .select({
+        employee: {
+          id: employee.id,
+          firstName: employee.firstName,
+          lastName: employee.lastName,
+          department: employee.department,
+          positionId: employee.positionId,
+          profileImage: employee.profileImage,
+          createdAt: employee.createdAt,
+          updatedAt: employee.updatedAt,
+        },
+        position: {
+          id: position.id,
+          name: position.name,
+          slug: position.slug,
+        },
+      })
+      .from(employee)
+      .leftJoin(position, eq(employee.positionId, position.id));
+
+    // Apply filters
+    const conditions = [];
+    if (positionIds && positionIds.length > 0) {
+      conditions.push(inArray(employee.positionId, positionIds));
+    }
+    if (departments && departments.length > 0) {
+      // Cast departments to the enum type for type safety
+      const validDepartments = departments as Array<
+        | "engineering"
+        | "product"
+        | "sales"
+        | "marketing"
+        | "hr"
+        | "finance"
+        | "operations"
+        | "legal"
+        | "customer-support"
+        | "other"
+      >;
+      conditions.push(inArray(employee.department, validDepartments));
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as typeof query;
+    }
+
+    const results = await query.orderBy(asc(employee.createdAt));
+
+    return results.map((result) => ({
+      ...result.employee,
+      position: result.position,
+    }));
+  } catch (error) {
+    console.error("Error fetching employees", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches an employee by its ID with position information
+ * @param id The ID of the employee to fetch
+ * @returns The employee with position data or null if not found
+ */
+export const getEmployeeById = async (id: string) => {
+  try {
+    const [result] = await db
+      .select({
+        employee: {
+          id: employee.id,
+          firstName: employee.firstName,
+          lastName: employee.lastName,
+          department: employee.department,
+          positionId: employee.positionId,
+          profileImage: employee.profileImage,
+          createdAt: employee.createdAt,
+          updatedAt: employee.updatedAt,
+        },
+        position: {
+          id: position.id,
+          name: position.name,
+          slug: position.slug,
+        },
+      })
+      .from(employee)
+      .leftJoin(position, eq(employee.positionId, position.id))
+      .where(eq(employee.id, id));
+
+    if (!result) {
+      return null;
+    }
+
+    return {
+      ...result.employee,
+      position: result.position,
+    };
+  } catch (error) {
+    console.error("Error fetching employee by id", error);
+    return null;
+  }
+};
+
+/**
+ * Fetches applications over time (last 6 months)
+ * @returns Array of monthly application counts
+ */
+export const getApplicationsOverTime = async () => {
+  try {
+    const results = await db
+      .select({
+        month: sql<string>`TO_CHAR(${application.createdAt}, 'YYYY-MM')`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(application)
+      .where(sql`${application.createdAt} >= NOW() - INTERVAL '6 months'`)
+      .groupBy(sql`TO_CHAR(${application.createdAt}, 'YYYY-MM')`)
+      .orderBy(sql`TO_CHAR(${application.createdAt}, 'YYYY-MM')`);
+
+    return results.map((r) => ({
+      month: r.month,
+      count: r.count,
+    }));
+  } catch (error) {
+    console.error("Error fetching applications over time", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches employee distribution by department
+ * @returns Array of department counts
+ */
+export const getEmployeesByDepartment = async () => {
+  try {
+    const results = await db
+      .select({
+        department: employee.department,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(employee)
+      .groupBy(employee.department);
+
+    return results.map((r) => ({
+      department: r.department,
+      count: r.count,
+    }));
+  } catch (error) {
+    console.error("Error fetching employees by department", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches interview ratings distribution
+ * @returns Array of rating counts
+ */
+export const getInterviewRatingsDistribution = async () => {
+  try {
+    const results = await db
+      .select({
+        rating: interview.rating,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(interview)
+      .where(sql`${interview.rating} IS NOT NULL`)
+      .groupBy(interview.rating)
+      .orderBy(interview.rating);
+
+    return results.map((r) => ({
+      rating: r.rating || 0,
+      count: r.count,
+    }));
+  } catch (error) {
+    console.error("Error fetching interview ratings distribution", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches interview status distribution
+ * @returns Array of interview status counts
+ */
+export const getInterviewStatusDistribution = async () => {
+  try {
+    const results = await db
+      .select({
+        status: interview.status,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(interview)
+      .groupBy(interview.status);
+
+    return results;
+  } catch (error) {
+    console.error("Error fetching interview status distribution", error);
+    return [];
+  }
 };

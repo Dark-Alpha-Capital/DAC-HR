@@ -6,14 +6,6 @@ import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
-import {
   Field,
   FieldDescription,
   FieldError,
@@ -76,120 +68,109 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
   });
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Edit Position</CardTitle>
-        <CardDescription>Update the position details below.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form
-          id="position-edit-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            form.handleSubmit();
-          }}
-        >
-          <FieldGroup>
-            <form.Field
-              name="name"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
-                  <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>Position Name</FieldLabel>
-                    <Input
+    <div className="w-full space-y-6">
+      <div className="space-y-2">
+        <h2 className="text-2xl font-semibold tracking-tight">Edit Position</h2>
+        <p className="text-sm text-muted-foreground">
+          Update the position details below.
+        </p>
+      </div>
+      <form
+        id="position-edit-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          form.handleSubmit();
+        }}
+        className="space-y-6"
+      >
+        <FieldGroup>
+          <form.Field
+            name="name"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>Position Name</FieldLabel>
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    aria-invalid={isInvalid}
+                    placeholder="Enter the position name"
+                    autoComplete="off"
+                  />
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
+            }}
+          />
+          <form.Field
+            name="description"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>
+                    Position Description
+                  </FieldLabel>
+                  <InputGroup>
+                    <InputGroupTextarea
                       id={field.name}
                       name={field.name}
                       value={field.state.value}
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="Describe the position in detail."
+                      rows={6}
+                      className="min-h-24 resize-none"
                       aria-invalid={isInvalid}
-                      placeholder="Enter the position name"
-                      autoComplete="off"
                     />
-                    {isInvalid && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
-                  </Field>
-                );
-              }}
-            />
-            <form.Field
-              name="description"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
-                  <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>
-                      Position Description
-                    </FieldLabel>
-                    <InputGroup>
-                      <InputGroupTextarea
-                        id={field.name}
-                        name={field.name}
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder="Describe the position in detail."
-                        rows={6}
-                        className="min-h-24 resize-none"
-                        aria-invalid={isInvalid}
-                      />
-                      <InputGroupAddon align="block-end">
-                        <InputGroupText className="tabular-nums">
-                          {field.state.value.length}/1000 characters
-                        </InputGroupText>
-                      </InputGroupAddon>
-                    </InputGroup>
-                    <FieldDescription>
-                      Describe the position in detail.
-                    </FieldDescription>
-                    {isInvalid && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
-                  </Field>
-                );
-              }}
-            />
-          </FieldGroup>
-        </form>
-      </CardContent>
-      <CardFooter>
-        <Field orientation="horizontal">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              form.reset({
-                name: position.name,
-                description: position.description || "",
-              });
+                    <InputGroupAddon align="block-end">
+                      <InputGroupText className="tabular-nums">
+                        {field.state.value.length}/1000 characters
+                      </InputGroupText>
+                    </InputGroupAddon>
+                  </InputGroup>
+                  <FieldDescription>
+                    Describe the position in detail.
+                  </FieldDescription>
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
             }}
-            className="cursor-pointer"
-            disabled={isPending}
-          >
-            Reset
-          </Button>
-          <Button
-            type="submit"
-            form="position-edit-form"
-            className="cursor-pointer"
-            disabled={isPending}
-          >
-            {isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Updating...
-              </>
-            ) : (
-              "Update"
-            )}
-          </Button>
-        </Field>
-      </CardFooter>
-    </Card>
+          />
+        </FieldGroup>
+      </form>
+      <div className="flex items-center justify-end gap-3 pt-4 border-t">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            form.reset({
+              name: position.name,
+              description: position.description || "",
+            });
+          }}
+          disabled={isPending}
+        >
+          Reset
+        </Button>
+        <Button type="submit" form="position-edit-form" disabled={isPending}>
+          {isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Updating...
+            </>
+          ) : (
+            "Update"
+          )}
+        </Button>
+      </div>
+    </div>
   );
 };
 

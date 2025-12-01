@@ -30,10 +30,13 @@ const DeleteRoundButton = ({ roundId }: { roundId: string }) => {
       disabled={isPending}
     >
       <Trash2 className="h-4 w-4" />
-      {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
+      {isPending ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <span className="sr-only">Delete</span>
+      )}
     </Button>
   );
 };
 
 export default DeleteRoundButton;
-

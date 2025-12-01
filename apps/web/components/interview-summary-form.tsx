@@ -4,12 +4,18 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@workspace/ui/components/button";
 import { Label } from "@workspace/ui/components/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@workspace/ui/components/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { updateInterview } from "@/lib/actions/update-interview";
 import { toast } from "sonner";
 
-type InterviewStatus = "pending" | "move_forward" | "rejected";
+type InterviewStatus = "pending" | "move_forward" | "rejected" | "scheduled";
 
 interface InterviewSummaryFormProps {
   interview: {
@@ -26,12 +32,14 @@ const statusLabels: Record<InterviewStatus, string> = {
   pending: "Pending",
   move_forward: "Move Forward",
   rejected: "Rejected",
+  scheduled: "Scheduled",
 };
 
 const statusDescriptions: Record<InterviewStatus, string> = {
   pending: "Interview is pending or in progress",
   move_forward: "Candidate should move forward to next round",
   rejected: "Candidate has been rejected",
+  scheduled: "Interview has been scheduled",
 };
 
 export default function InterviewSummaryForm({
@@ -52,11 +60,12 @@ export default function InterviewSummaryForm({
     event.preventDefault();
 
     startTransition(async () => {
-      const parsedRating = rating && rating !== "none" ? parseInt(rating, 10) : undefined;
+      const parsedRating =
+        rating && rating !== "none" ? parseInt(rating, 10) : undefined;
 
       const result = await updateInterview({
         interviewId: interview.id,
-        status,
+        status: status as "pending" | "move_forward" | "rejected",
         rating: parsedRating,
         overallFeedback: overallFeedback.trim() || undefined,
       });
@@ -77,14 +86,14 @@ export default function InterviewSummaryForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
           <Select
             value={status}
             onValueChange={(value: InterviewStatus) => setStatus(value)}
           >
-            <SelectTrigger id="status">
+            <SelectTrigger id="status" className="w-full">
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
             <SelectContent>
@@ -104,11 +113,8 @@ export default function InterviewSummaryForm({
 
         <div className="space-y-2">
           <Label htmlFor="rating">Rating (1-5)</Label>
-          <Select
-            value={rating}
-            onValueChange={setRating}
-          >
-            <SelectTrigger id="rating">
+          <Select value={rating} onValueChange={setRating}>
+            <SelectTrigger id="rating" className="w-full">
               <SelectValue placeholder="Select rating" />
             </SelectTrigger>
             <SelectContent>

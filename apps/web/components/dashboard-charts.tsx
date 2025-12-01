@@ -6,11 +6,14 @@ import {
   Cell,
   BarChart,
   Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Legend,
 } from "recharts";
 
 // Client component for Pie Chart
@@ -93,6 +96,9 @@ export function CandidatesByPositionChart({
           dataKey="name"
           className="text-xs"
           tick={{ fill: "currentColor" }}
+          angle={-45}
+          textAnchor="end"
+          height={80}
         />
         <YAxis className="text-xs" tick={{ fill: "currentColor" }} />
         <Tooltip
@@ -103,6 +109,138 @@ export function CandidatesByPositionChart({
           }}
         />
         <Bar dataKey="candidates" fill="#6366F1" radius={[4, 4, 0, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+// Client component for Line Chart - Applications Over Time
+export function ApplicationsOverTimeChart({
+  data,
+}: {
+  data: { month: string; count: number }[];
+}) {
+  const chartData = data.map((item) => ({
+    month: new Date(item.month + "-01").toLocaleDateString("en-US", {
+      month: "short",
+      year: "numeric",
+    }),
+    applications: item.count,
+  }));
+
+  return (
+    <ResponsiveContainer width="100%" height={300}>
+      <LineChart data={chartData}>
+        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+        <XAxis
+          dataKey="month"
+          className="text-xs"
+          tick={{ fill: "currentColor" }}
+        />
+        <YAxis className="text-xs" tick={{ fill: "currentColor" }} />
+        <Tooltip
+          contentStyle={{
+            backgroundColor: "hsl(var(--card))",
+            border: "1px solid hsl(var(--border))",
+            borderRadius: "0.5rem",
+          }}
+        />
+        <Line
+          type="monotone"
+          dataKey="applications"
+          stroke="#6366F1"
+          strokeWidth={2}
+          dot={{ fill: "#6366F1", r: 4 }}
+          activeDot={{ r: 6 }}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+}
+
+// Client component for Employees by Department Chart
+export function EmployeesByDepartmentChart({
+  data,
+}: {
+  data: { department: string; count: number }[];
+}) {
+  const COLORS = [
+    "#6366F1",
+    "#8B5CF6",
+    "#EC4899",
+    "#F43F5E",
+    "#EF4444",
+    "#F59E0B",
+    "#10B981",
+    "#3B82F6",
+    "#06B6D4",
+    "#6B7280",
+  ];
+
+  const chartData = data.map((item, index) => ({
+    name:
+      item.department.charAt(0).toUpperCase() +
+      item.department.slice(1).replace("-", " "),
+    employees: item.count,
+    color: COLORS[index % COLORS.length],
+  }));
+
+  return (
+    <div className="space-y-4">
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart data={chartData} layout="vertical">
+          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+          <XAxis type="number" className="text-xs" tick={{ fill: "currentColor" }} />
+          <YAxis
+            type="category"
+            dataKey="name"
+            className="text-xs"
+            tick={{ fill: "currentColor" }}
+            width={120}
+          />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: "hsl(var(--card))",
+              border: "1px solid hsl(var(--border))",
+              borderRadius: "0.5rem",
+            }}
+          />
+          <Bar dataKey="employees" fill="#6366F1" radius={[0, 4, 4, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// Client component for Interview Ratings Distribution
+export function InterviewRatingsChart({
+  data,
+}: {
+  data: { rating: number; count: number }[];
+}) {
+  const chartData = data.map((item) => ({
+    rating: `${item.rating}⭐`,
+    count: item.count,
+  }));
+
+  return (
+    <ResponsiveContainer width="100%" height={300}>
+      <BarChart data={chartData}>
+        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+        <XAxis
+          dataKey="rating"
+          className="text-xs"
+          tick={{ fill: "currentColor" }}
+        />
+        <YAxis className="text-xs" tick={{ fill: "currentColor" }} />
+        <Tooltip
+          contentStyle={{
+            backgroundColor: "hsl(var(--card))",
+            border: "1px solid hsl(var(--border))",
+            borderRadius: "0.5rem",
+          }}
+        />
+        <Bar dataKey="count" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

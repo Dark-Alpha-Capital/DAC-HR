@@ -3,11 +3,12 @@ import GoogleSignInButton from "@/components/google-signin-button";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 const page = async () => {
   return (
-    <div>
-      <Suspense fallback={<div>Loading auth content...</div>}>
+    <div className="min-h-screen">
+      <Suspense fallback={<AuthLoadingSkeleton />}>
         <AuthContent />
       </Suspense>
     </div>
@@ -26,24 +27,75 @@ async function AuthContent() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] py-8 px-4">
-      <div className="w-full max-w-md bg-card border border-border rounded-xl shadow-lg p-8 space-y-6">
-        <h1 className="text-3xl font-bold text-center mb-2">
-          Create your account
-        </h1>
-        <p className="text-muted-foreground text-center mb-6">
-          Sign up to access your account, save progress, and enjoy more
-          features.
-        </p>
-        <div className="flex flex-col space-y-4">
-          <GoogleSignInButton />
+    <div className="min-h-screen flex">
+      {/* Left Side - Image Placeholder */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary/10 via-primary/5 to-background relative overflow-hidden">
+        <div className="absolute inset-0 flex items-center justify-center p-12">
+          <div className="w-full h-full bg-muted/30 rounded-lg flex items-center justify-center border-2 border-dashed border-muted-foreground/20">
+            <div className="text-center space-y-4 p-8">
+              <div className="w-24 h-24 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+                <svg
+                  className="w-12 h-12 text-primary/40"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                  />
+                </svg>
+              </div>
+              <p className="text-muted-foreground text-sm">
+                Signup Image Placeholder
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center my-4">
-          <div className="flex-1 h-px bg-border" />
-          <span className="mx-3 text-xs text-muted-foreground uppercase">
-            or
-          </span>
-          <div className="flex-1 h-px bg-border" />
+      </div>
+
+      {/* Right Side - Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-6 lg:p-12">
+        <div className="w-full max-w-md space-y-8">
+          <div className="space-y-2 text-center md:space-y-4">
+            <h1 className="text-3xl sm:text-4xl font-bold">SIGNUP TO DAC-HR</h1>
+            <p className="text-muted-foreground">
+              Create your account to access your account, save progress, and
+              enjoy more features.
+            </p>
+            <GoogleSignInButton />
+          </div>
+
+          <div className="space-y-6">
+            <div className="text-center text-sm text-muted-foreground">
+              Already have an account?{" "}
+              <Link
+                href="/login"
+                className="font-medium text-primary hover:underline"
+              >
+                Sign in
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AuthLoadingSkeleton() {
+  return (
+    <div className="min-h-screen flex">
+      <div className="hidden lg:flex lg:w-1/2 bg-muted/30 animate-pulse" />
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-6 lg:p-12">
+        <div className="w-full max-w-md space-y-8">
+          <div className="space-y-2">
+            <div className="h-10 w-56 bg-muted animate-pulse rounded" />
+            <div className="h-5 w-72 bg-muted animate-pulse rounded" />
+          </div>
+          <div className="h-10 w-full bg-muted animate-pulse rounded" />
         </div>
       </div>
     </div>

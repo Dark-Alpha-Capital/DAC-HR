@@ -9,14 +9,16 @@ type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
 const page = async ({ searchParams }: { searchParams: SearchParams }) => {
   return (
-    <div className="block-space narrow-container mx-auto">
-      <Button>
+    <div className="container mx-auto py-6 space-y-8">
+      <Button asChild>
         <Link href="/candidates">Back to Candidates</Link>
       </Button>
 
-      <Suspense fallback={<FormLoadingFallback />}>
-        <DisplayCandidateUploadForm />
-      </Suspense>
+      <div className="mt-4 md:mt-6 lg:mt-8">
+        <Suspense fallback={<FormLoadingFallback />}>
+          <DisplayCandidateUploadForm />
+        </Suspense>
+      </div>
     </div>
   );
 };

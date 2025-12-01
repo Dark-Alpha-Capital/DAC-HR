@@ -28,6 +28,7 @@ interface ApplicationStatusFormProps {
     id: string;
     status: ApplicationStatus;
   };
+  onSuccess?: () => void;
 }
 
 const statusLabels: Record<ApplicationStatus, string> = {
@@ -52,6 +53,7 @@ const statusDescriptions: Record<ApplicationStatus, string> = {
 
 export default function ApplicationStatusForm({
   application,
+  onSuccess,
 }: ApplicationStatusFormProps) {
   const router = useRouter();
   const [status, setStatus] = useState<ApplicationStatus>(application.status);
@@ -77,6 +79,7 @@ export default function ApplicationStatusForm({
 
       toast.success("Application status updated");
       router.refresh();
+      onSuccess?.();
     });
   };
 
@@ -106,8 +109,16 @@ export default function ApplicationStatusForm({
         </Select>
       </div>
 
-      <div className="flex items-center justify-end gap-2">
-        <Button type="submit" disabled={isPending} size="sm">
+      <div className="flex items-center justify-end gap-2 pt-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onSuccess?.()}
+          disabled={isPending}
+        >
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isPending}>
           {isPending ? "Saving..." : "Save Status"}
         </Button>
       </div>
