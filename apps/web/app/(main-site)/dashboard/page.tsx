@@ -39,6 +39,7 @@ import {
   EmployeesByDepartmentChart,
   InterviewRatingsChart,
 } from "@/components/dashboard-charts";
+import { Chatbot } from "@/components/chatbot";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -630,9 +631,12 @@ function DashboardContent() {
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<DashboardSkeleton />}>
-      <DashboardContent />
-    </Suspense>
+    <>
+      <Suspense fallback={<DashboardSkeleton />}>
+        <DashboardContent />
+      </Suspense>
+      <Chatbot />
+    </>
   );
 }
 
