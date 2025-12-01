@@ -18,7 +18,9 @@ export const metadata: Metadata = {
   description: "Admin dashboard and management",
 };
 
-const page = () => {
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
+
+const page = async ({ searchParams }: { searchParams: SearchParams }) => {
   return (
     <div className="container mx-auto py-8 space-y-6">
       <Suspense>
@@ -33,10 +35,10 @@ const page = () => {
       </div>
 
       <div className="border-t pt-8 mt-4">
-        <AdminUsersSection />
+        <AdminUsersSection searchParams={searchParams} />
       </div>
 
-      <AdminContent />
+      {/* <AdminContent /> */}
     </div>
   );
 };

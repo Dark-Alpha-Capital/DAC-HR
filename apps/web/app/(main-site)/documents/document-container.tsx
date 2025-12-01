@@ -5,7 +5,13 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@workspace/ui/components/toggle-group";
-import { LayoutGrid, Table as TableIcon, Columns } from "lucide-react";
+import {
+  LayoutGrid,
+  Table as TableIcon,
+  Columns,
+  Download,
+  Loader2,
+} from "lucide-react";
 import DocumentCard from "@/components/document-card";
 import {
   Table,
@@ -20,6 +26,12 @@ import { Eye } from "lucide-react";
 import DeleteDocumentButton from "@/components/delete-document-button";
 import { Card, CardContent } from "@workspace/ui/components/card";
 import DocumentPreviewDialog from "@/components/document-preview-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@workspace/ui/components/tooltip";
+import { toast } from "sonner";
 import type { Document } from "@workspace/db/schema";
 
 interface DocumentContainerProps {
@@ -39,6 +51,7 @@ const categoryLabels = {
 const DocumentContainer = ({ documents }: DocumentContainerProps) => {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [previewDocument, setPreviewDocument] = useState<Document | null>(null);
+  const [downloadingDocId, setDownloadingDocId] = useState<string | null>(null);
 
   // Group documents by category for kanban view
   const documentsByCategory = useMemo(() => {
@@ -65,6 +78,56 @@ const DocumentContainer = ({ documents }: DocumentContainerProps) => {
       month: "short",
       day: "numeric",
     });
+  };
+
+  const handleDownloadDocument = async (document: Document) => {
+    setDownloadingDocId(document.id);
+    try {
+      const isPublicUrl =
+        !document.url.includes("storage.googleapis.com") &&
+        !document.url.startsWith("gs://");
+
+      let accessUrl = document.url;
+
+      if (!isPublicUrl) {
+        const response = await fetch(
+          `/api/documents/view?url=${encodeURIComponent(document.url)}`
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to generate access URL");
+        }
+
+        const { url: signedUrl } = await response.json();
+        accessUrl = signedUrl;
+      }
+
+      const response = await fetch(accessUrl);
+      if (!response.ok) {
+        throw new Error("Failed to download document");
+      }
+
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const anchor = window.document.createElement("a");
+      anchor.href = blobUrl;
+      anchor.download = document.name || "document";
+      window.document.body.appendChild(anchor);
+      anchor.click();
+      window.URL.revokeObjectURL(blobUrl);
+      window.document.body.removeChild(anchor);
+      toast.success("Document downloaded successfully");
+    } catch (error) {
+      console.error("Error downloading document:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to download document. Please try again."
+      );
+    } finally {
+      setDownloadingDocId(null);
+    }
   };
 
   return (
@@ -137,14 +200,37 @@ const DocumentContainer = ({ documents }: DocumentContainerProps) => {
                   </TableCell>
                   <TableCell className="text-right py-1.5 px-2">
                     <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                        onClick={() => setPreviewDocument(document)}
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => setPreviewDocument(document)}
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Preview</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => handleDownloadDocument(document)}
+                            disabled={downloadingDocId === document.id}
+                          >
+                            {downloadingDocId === document.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Download className="h-3.5 w-3.5" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Download</TooltipContent>
+                      </Tooltip>
                       <DeleteDocumentButton documentId={document.id} />
                     </div>
                   </TableCell>
@@ -208,14 +294,39 @@ const DocumentContainer = ({ documents }: DocumentContainerProps) => {
                             {formatDate(document.createdAt)}
                           </div>
                           <div className="flex items-center gap-1 pt-1.5 border-t">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              onClick={() => setPreviewDocument(document)}
-                            >
-                              <Eye className="h-3 w-3" />
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => setPreviewDocument(document)}
+                                >
+                                  <Eye className="h-3 w-3" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Preview</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() =>
+                                    handleDownloadDocument(document)
+                                  }
+                                  disabled={downloadingDocId === document.id}
+                                >
+                                  {downloadingDocId === document.id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <Download className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Download</TooltipContent>
+                            </Tooltip>
                             <div className="ml-auto">
                               <DeleteDocumentButton documentId={document.id} />
                             </div>
@@ -243,4 +354,3 @@ const DocumentContainer = ({ documents }: DocumentContainerProps) => {
 };
 
 export default DocumentContainer;
-

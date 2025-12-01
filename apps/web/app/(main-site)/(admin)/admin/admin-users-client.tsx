@@ -27,17 +27,29 @@ import {
   TabsTrigger,
 } from "@workspace/ui/components/tabs";
 import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from "@workspace/ui/components/avatar";
+import {
   AlertCircle,
   Ban,
   CheckCircle2,
   Loader2,
   RefreshCcw,
+  Search,
+  Mail,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+import { Input } from "@workspace/ui/components/input";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export type AdminUser = {
   id: string;
   name: string | null;
   email: string;
+  image: string | null;
   role: string | null;
   banned: boolean;
   banReason: string | null;
@@ -47,6 +59,11 @@ export type AdminUser = {
 
 type Props = {
   users: AdminUser[];
+  total: number;
+  currentPage: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 };
 
 type ActionState = {
@@ -56,7 +73,187 @@ type ActionState = {
   error: string | null;
 };
 
-export function AdminUsersClient({ users }: Props) {
+function getUserInitials(name: string | null, email: string): string {
+  if (name) {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      const firstChar = parts[0]?.[0] || "";
+      const lastChar = parts[parts.length - 1]?.[0] || "";
+      return (firstChar + lastChar).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  }
+  return email.substring(0, 2).toUpperCase();
+}
+
+function FilterAdminUserName() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [isPending, startTransition] = React.useTransition();
+  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  const handleSearch = (value: string) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    timeoutRef.current = setTimeout(() => {
+      startTransition(() => {
+        const params = new URLSearchParams(searchParams);
+        params.delete("page"); // Reset to page 1 when filtering
+        if (value.trim()) {
+          params.set("name", value.trim());
+        } else {
+          params.delete("name");
+        }
+        router.push(`?${params.toString()}`, {
+          scroll: false,
+        });
+      });
+    }, 300);
+  };
+
+  React.useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <div
+      className="relative flex-1 max-w-sm"
+      data-pending={isPending ? "" : undefined}
+    >
+      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Input
+        type="text"
+        placeholder="Search by name..."
+        defaultValue={searchParams.get("name") || ""}
+        onChange={(e) => handleSearch(e.target.value)}
+        className="pl-9"
+      />
+    </div>
+  );
+}
+
+function FilterAdminUserEmail() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [isPending, startTransition] = React.useTransition();
+  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  const handleSearch = (value: string) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    timeoutRef.current = setTimeout(() => {
+      startTransition(() => {
+        const params = new URLSearchParams(searchParams);
+        params.delete("page"); // Reset to page 1 when filtering
+        if (value.trim()) {
+          params.set("email", value.trim());
+        } else {
+          params.delete("email");
+        }
+        router.push(`?${params.toString()}`, {
+          scroll: false,
+        });
+      });
+    }, 300);
+  };
+
+  React.useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <div
+      className="relative flex-1 max-w-sm"
+      data-pending={isPending ? "" : undefined}
+    >
+      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Input
+        type="email"
+        placeholder="Search by email..."
+        defaultValue={searchParams.get("email") || ""}
+        onChange={(e) => handleSearch(e.target.value)}
+        className="pl-9"
+      />
+    </div>
+  );
+}
+
+function AdminUsersPaginationControls({
+  currentPage,
+  totalPages,
+  hasNextPage,
+  hasPreviousPage,
+}: {
+  currentPage: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const navigateToPage = (page: number) => {
+    const params = new URLSearchParams(searchParams);
+
+    // Remove page param if going to page 1
+    if (page === 1) {
+      params.delete("page");
+    } else {
+      params.set("page", page.toString());
+    }
+
+    router.push(`?${params.toString()}`);
+  };
+
+  return (
+    <div className="flex items-center justify-between border-t pt-4">
+      <div className="text-sm text-muted-foreground">
+        Showing page {currentPage} of {totalPages}
+      </div>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigateToPage(currentPage - 1)}
+          disabled={!hasPreviousPage}
+        >
+          <ChevronLeft className="h-4 w-4 mr-1" />
+          Previous
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigateToPage(currentPage + 1)}
+          disabled={!hasNextPage}
+        >
+          Next
+          <ChevronRight className="h-4 w-4 ml-1" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export function AdminUsersClient({
+  users,
+  total,
+  currentPage,
+  totalPages,
+  hasNextPage,
+  hasPreviousPage,
+}: Props) {
   const [view, setView] = React.useState<"cards" | "table">("cards");
   const [userStates, setUserStates] = React.useState<
     Record<string, ActionState>
@@ -227,6 +424,11 @@ export function AdminUsersClient({ users }: Props) {
         </Tabs>
       </div>
 
+      <div className="flex items-center gap-4 flex-wrap">
+        <FilterAdminUserName />
+        <FilterAdminUserEmail />
+      </div>
+
       <Tabs value={view}>
         <TabsContent value="cards" className="mt-0">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -234,9 +436,22 @@ export function AdminUsersClient({ users }: Props) {
               <Card key={user.id} className="flex flex-col">
                 <CardHeader>
                   <div className="flex items-center justify-between gap-2">
-                    <CardTitle className="text-base truncate">
-                      {user.name || user.email}
-                    </CardTitle>
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <Avatar className="h-10 w-10 shrink-0">
+                        {user.image && (
+                          <AvatarImage
+                            src={user.image}
+                            alt={user.name || user.email}
+                          />
+                        )}
+                        <AvatarFallback>
+                          {getUserInitials(user.name, user.email)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <CardTitle className="text-base truncate">
+                        {user.name || user.email}
+                      </CardTitle>
+                    </div>
                     {renderStatusBadge(user)}
                   </div>
                   <CardDescription className="truncate">
@@ -300,8 +515,21 @@ export function AdminUsersClient({ users }: Props) {
               <TableBody>
                 {users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium">
-                      {user.name || "-"}
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8 shrink-0">
+                          {user.image && (
+                            <AvatarImage
+                              src={user.image}
+                              alt={user.name || user.email}
+                            />
+                          )}
+                          <AvatarFallback>
+                            {getUserInitials(user.name, user.email)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium">{user.name || "-"}</span>
+                      </div>
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{renderStatusBadge(user)}</TableCell>
@@ -335,6 +563,15 @@ export function AdminUsersClient({ users }: Props) {
           </div>
         </TabsContent>
       </Tabs>
+
+      {totalPages > 1 && (
+        <AdminUsersPaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          hasNextPage={hasNextPage}
+          hasPreviousPage={hasPreviousPage}
+        />
+      )}
     </section>
   );
 }
