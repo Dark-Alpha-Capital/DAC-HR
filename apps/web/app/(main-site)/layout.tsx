@@ -5,6 +5,12 @@ import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { Toaster } from "@workspace/ui/components/sonner";
 import { Suspense } from "react";
+import {
+  SidebarProvider,
+  SidebarTrigger,
+  SidebarInset,
+} from "@workspace/ui/components/sidebar";
+import { AppSidebar } from "@/components/sidebars/app-sidebar";
 
 const fontSans = Geist({
   subsets: ["latin"],
@@ -27,11 +33,16 @@ export default function RootLayout({
         className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased flex flex-col min-h-screen`}
       >
         <Providers>
-          <Suspense>
-            <Header />
-          </Suspense>
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <SidebarProvider>
+            <AppSidebar />
+
+            <SidebarInset className="flex-1">
+              <main className="flex-1 p-4">
+                <SidebarTrigger />
+                {children}
+              </main>
+            </SidebarInset>
+          </SidebarProvider>
           <Toaster />
         </Providers>
       </body>
