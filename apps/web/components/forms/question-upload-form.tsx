@@ -6,14 +6,6 @@ import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
-import {
   Field,
   FieldError,
   FieldGroup,
@@ -94,22 +86,22 @@ const QuestionUploadForm = ({
   });
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Add New Question</CardTitle>
-        <CardDescription>
+    <div className="w-full space-y-6">
+      <div className="space-y-2">
+        <h2 className="text-2xl font-semibold tracking-tight">Add New Question</h2>
+        <p className="text-sm text-muted-foreground">
           Enter the question details below to add it to the question bank.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form
-          id="question-upload-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            form.handleSubmit();
-          }}
-        >
-          <FieldGroup>
+        </p>
+      </div>
+      <form
+        id="question-upload-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          form.handleSubmit();
+        }}
+        className="space-y-6"
+      >
+        <FieldGroup>
             <form.Field
               name="questionText"
               children={(field) => {
@@ -145,14 +137,11 @@ const QuestionUploadForm = ({
             />
           </FieldGroup>
         </form>
-      </CardContent>
-      <CardFooter>
-        <Field orientation="horizontal">
+        <div className="flex items-center justify-end gap-3 pt-4 border-t">
           <Button
             type="button"
             variant="outline"
             onClick={() => form.reset()}
-            className="cursor-pointer"
             disabled={isPending}
           >
             Reset
@@ -160,7 +149,6 @@ const QuestionUploadForm = ({
           <Button
             type="submit"
             form="question-upload-form"
-            className="cursor-pointer"
             disabled={isPending}
           >
             {isPending ? (
@@ -172,9 +160,8 @@ const QuestionUploadForm = ({
               "Submit"
             )}
           </Button>
-        </Field>
-      </CardFooter>
-    </Card>
+        </div>
+    </div>
   );
 };
 

@@ -17,6 +17,10 @@ export const deleteRound = async (id: string) => {
     return { error: "Unauthorized" };
   }
 
+  if (session.user.role !== "admin") {
+    return { error: "Only admins are allowed to delete rounds" };
+  }
+
   try {
     await db.delete(roundTemplate).where(eq(roundTemplate.id, id));
 
@@ -33,4 +37,3 @@ export const deleteRound = async (id: string) => {
     return { error: "Failed to delete round" };
   }
 };
-

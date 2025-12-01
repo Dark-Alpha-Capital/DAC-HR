@@ -119,7 +119,6 @@ export const candidateDocument = pgTable("candidate_document", {
   candidateId: text("candidate_id")
     .notNull()
     .references(() => candidate.id, { onDelete: "cascade" }),
-
   name: text("name").notNull(),
   description: text("description"),
   category: candidateDocumentCategoryEnum("category")

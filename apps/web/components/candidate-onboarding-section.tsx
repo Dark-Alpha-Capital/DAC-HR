@@ -35,22 +35,7 @@ const CandidateOnboardingSection = async ({
 
   // If not hired, show message
   if (!isHired) {
-    return (
-      <Card className="mt-4 md:mt-6 lg:mt-8">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Briefcase className="h-5 w-5" />
-            <CardTitle className="text-lg">Onboarding</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <p className="text-sm text-muted-foreground">
-            This candidate has not been hired yet, so there is no onboarding
-            process to manage.
-          </p>
-        </CardContent>
-      </Card>
-    );
+    return <div></div>;
   }
 
   // If hired, fetch and display onboarding data

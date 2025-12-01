@@ -22,6 +22,10 @@ export const createPosition = async (data: PositionFormSchema) => {
     return { error: "Unauthorized" };
   }
 
+  if (session.user.role !== "admin") {
+    return { error: "Only admins are allowed to create positions" };
+  }
+
   const result = positionFormSchema.safeParse(data);
   console.log("result", result);
 

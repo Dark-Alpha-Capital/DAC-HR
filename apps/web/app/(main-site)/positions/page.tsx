@@ -2,8 +2,9 @@ import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import React, { Suspense } from "react";
 import { getPositions } from "@workspace/db/queries";
-import PositionCard from "@/components/position-card";
+import PositionContainer from "./position-container";
 import { Metadata } from "next";
+import { UserIsAdmin } from "@/components/auth-checks";
 
 export const metadata: Metadata = {
   title: "Positions",
@@ -13,6 +14,10 @@ export const metadata: Metadata = {
 const page = () => {
   return (
     <div className="container mx-auto py-8 space-y-6">
+      <Suspense>
+        <UserIsAdmin />
+      </Suspense>
+
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Positions</h1>
         <Button asChild>
@@ -43,17 +48,5 @@ const PositionsList = async () => {
     );
   }
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {positions.map((position) => (
-        <PositionCard
-          key={position.id}
-          positionId={position.id}
-          positionName={position.name}
-          positionDescription={position.description || ""}
-          positionSlug={position.slug}
-        />
-      ))}
-    </div>
-  );
+  return <PositionContainer positions={positions} />;
 };

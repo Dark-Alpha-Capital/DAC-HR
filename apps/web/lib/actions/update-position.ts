@@ -24,6 +24,10 @@ export const updatePosition = async (
     return { error: "Unauthorized" };
   }
 
+  if (session.user.role !== "admin") {
+    return { error: "Only admins are allowed to update positions" };
+  }
+
   const result = positionFormSchema.safeParse(data);
   if (!result.success) {
     return { error: result.error.flatten().fieldErrors };
@@ -62,4 +66,3 @@ export const updatePosition = async (
     return { error: "Failed to update position" };
   }
 };
-

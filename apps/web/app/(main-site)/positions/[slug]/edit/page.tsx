@@ -1,17 +1,23 @@
 import React, { Suspense } from "react";
 import { getPositionBySlug } from "@workspace/db/queries";
-import BackButton from "@/components/back-button";
 import PositionEditForm from "@/components/forms/position-edit-form";
 import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
+import { UserIsAdmin } from "@/components/auth-checks";
 
 type Params = Promise<{ slug: string }>;
 
 const EditPositionPage = async ({ params }: { params: Params }) => {
   return (
-    <div className="block-space narrow-container mx-auto">
-      <BackButton />
+    <div className="container mx-auto py-8 space-y-6">
+      <Suspense>
+        <UserIsAdmin />
+      </Suspense>
+
+      <Button asChild>
+        <Link href="/positions">Back to Positions</Link>
+      </Button>
 
       <Suspense fallback={<FormLoadingFallback />}>
         <EditPositionForm params={params} />

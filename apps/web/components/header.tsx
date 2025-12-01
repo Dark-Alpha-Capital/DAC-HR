@@ -19,6 +19,14 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
 import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@workspace/ui/components/navigation-menu";
+import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -35,6 +43,7 @@ const managementLinks = [{ href: "/employees", label: "Employees" }] as const;
 const navLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/candidates", label: "Candidates" },
+  { href: "/questions", label: "Questions" },
   { href: "/positions", label: "Positions" },
   { href: "/applications", label: "Applications" },
   { href: "/rounds", label: "Rounds" },
@@ -49,8 +58,8 @@ const Header = () => {
 
   const { data: session, isPending } = authClient.useSession();
 
-  const [openRecruiting, setOpenRecruiting] = React.useState(false);
-  const [openManagement, setOpenManagement] = React.useState(false);
+  console.log(session);
+
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   const handleLogout = async () => {
@@ -79,7 +88,7 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link
           href="/"
@@ -101,89 +110,85 @@ const Header = () => {
             </Link>
           )}
 
-          <div
-            onMouseEnter={() => setOpenRecruiting(true)}
-            onMouseLeave={() => setOpenRecruiting(false)}
-          >
-            <DropdownMenu
-              open={openRecruiting}
-              onOpenChange={setOpenRecruiting}
-            >
-              <DropdownMenuTrigger className="text-sm font-medium hover:text-primary transition-colors">
-                Recruiting
-              </DropdownMenuTrigger>
+          <NavigationMenu viewport={false}>
+            <NavigationMenuList>
+              {/* Recruiting Menu */}
+              <NavigationMenuItem>
+                <NavigationMenuTrigger className="text-sm font-medium">
+                  Recruiting
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <div className="w-48 p-2">
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase">
+                      Recruiting
+                    </div>
+                    <div className="space-y-1">
+                      {navLinks.map((link) => {
+                        const isActive =
+                          pathname === link.href ||
+                          pathname.startsWith(`${link.href}/`);
 
-              <DropdownMenuContent
-                align="start"
-                className="w-48"
-                onMouseEnter={() => setOpenRecruiting(true)}
-                onMouseLeave={() => setOpenRecruiting(false)}
-              >
-                <DropdownMenuLabel>Recruiting</DropdownMenuLabel>
-                <DropdownMenuSeparator />
+                        return (
+                          <NavigationMenuLink
+                            key={link.href}
+                            asChild
+                            className={isActive ? "bg-accent/50" : ""}
+                          >
+                            <Link
+                              href={link.href}
+                              className={`w-full ${
+                                isActive ? "font-semibold text-primary" : ""
+                              }`}
+                            >
+                              {link.label}
+                            </Link>
+                          </NavigationMenuLink>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
 
-                {navLinks.map((link) => {
-                  const isActive =
-                    pathname === link.href ||
-                    pathname.startsWith(`${link.href}/`);
+              {/* Management Menu */}
+              <NavigationMenuItem>
+                <NavigationMenuTrigger className="text-sm font-medium">
+                  Management
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <div className="w-48 p-2">
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase">
+                      Management
+                    </div>
+                    <div className="space-y-1">
+                      {managementLinks.map((link) => {
+                        const isActive =
+                          pathname === link.href ||
+                          pathname.startsWith(`${link.href}/`);
 
-                  return (
-                    <DropdownMenuItem key={link.href} asChild>
-                      <Link
-                        href={link.href}
-                        className={`cursor-pointer ${
-                          isActive ? "text-primary font-semibold" : ""
-                        }`}
-                      >
-                        {link.label}
-                      </Link>
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          {/* Management dropdown (empty for now) */}
-          <div
-            onMouseEnter={() => setOpenManagement(true)}
-            onMouseLeave={() => setOpenManagement(false)}
-          >
-            <DropdownMenu
-              open={openManagement}
-              onOpenChange={setOpenManagement}
-            >
-              <DropdownMenuTrigger className="text-sm font-medium hover:text-primary transition-colors">
-                Management
-              </DropdownMenuTrigger>
-
-              <DropdownMenuContent
-                align="start"
-                className="w-48"
-                onMouseEnter={() => setOpenManagement(true)}
-                onMouseLeave={() => setOpenManagement(false)}
-              >
-                <DropdownMenuLabel>Management</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {managementLinks.map((link) => {
-                  const isActive =
-                    pathname === link.href ||
-                    pathname.startsWith(`${link.href}/`);
-
-                  return (
-                    <DropdownMenuItem key={link.href} asChild>
-                      <Link
-                        href={link.href}
-                        className={`cursor-pointer ${isActive ? "text-primary font-semibold" : ""}`}
-                      >
-                        {link.label}
-                      </Link>
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+                        return (
+                          <NavigationMenuLink
+                            key={link.href}
+                            asChild
+                            className={isActive ? "bg-accent/50" : ""}
+                          >
+                            <Link
+                              href={link.href}
+                              className={`w-full ${
+                                isActive ? "font-semibold text-primary" : ""
+                              }`}
+                            >
+                              {link.label}
+                            </Link>
+                          </NavigationMenuLink>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
 
           {/* User dropdown or Login button */}
           {isPending ? (

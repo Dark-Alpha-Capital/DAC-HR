@@ -28,8 +28,16 @@ export const createCandidate = async (data: CandidateFormSchema) => {
     return { error: result.error.flatten().fieldErrors };
   }
 
-  const { firstName, lastName, email, phone, location, source, note, positionId } =
-    result.data;
+  const {
+    firstName,
+    lastName,
+    email,
+    phone,
+    location,
+    source,
+    note,
+    positionId,
+  } = result.data;
 
   try {
     const [newCandidate] = await db
@@ -38,10 +46,10 @@ export const createCandidate = async (data: CandidateFormSchema) => {
         firstName,
         lastName,
         email,
-        phone,
-        location,
-        source: source || null,
-        note,
+        phone: phone?.trim() || null,
+        location: location?.trim() || null,
+        source: source?.trim() || null,
+        note: note?.trim() || null,
       })
       .returning();
 

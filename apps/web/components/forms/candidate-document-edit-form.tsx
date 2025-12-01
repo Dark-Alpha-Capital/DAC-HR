@@ -6,14 +6,6 @@ import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
-import {
   Field,
   FieldDescription,
   FieldError,
@@ -205,23 +197,22 @@ const CandidateDocumentEditForm = ({
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Edit Candidate Document</CardTitle>
-        <CardDescription>
-          Update the document details below. You can upload a new file or update
-          the URL.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form
-          id="candidate-document-edit-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            form.handleSubmit();
-          }}
-        >
-          <FieldGroup>
+    <div className="w-full space-y-6">
+      <div className="space-y-2">
+        <h2 className="text-2xl font-semibold tracking-tight">Edit Candidate Document</h2>
+        <p className="text-sm text-muted-foreground">
+          Update the document details below. You can upload a new file or update the URL.
+        </p>
+      </div>
+      <form
+        id="candidate-document-edit-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          form.handleSubmit();
+        }}
+        className="space-y-6"
+      >
+        <FieldGroup>
             <form.Field
               name="url"
               children={(field) => {
@@ -429,16 +420,13 @@ const CandidateDocumentEditForm = ({
             />
           </FieldGroup>
         </form>
-      </CardContent>
-      <CardFooter>
-        <Field orientation="horizontal">
+        <div className="flex items-center justify-end gap-3 pt-4 border-t">
           <Button
             type="button"
             variant="outline"
             onClick={() => {
               router.push(`/candidates/${candidateId}`);
             }}
-            className="cursor-pointer"
             disabled={isPending}
           >
             Cancel
@@ -446,7 +434,6 @@ const CandidateDocumentEditForm = ({
           <Button
             type="submit"
             form="candidate-document-edit-form"
-            className="cursor-pointer"
             disabled={isPending}
           >
             {isPending ? (
@@ -458,9 +445,8 @@ const CandidateDocumentEditForm = ({
               "Update"
             )}
           </Button>
-        </Field>
-      </CardFooter>
-    </Card>
+        </div>
+    </div>
   );
 };
 

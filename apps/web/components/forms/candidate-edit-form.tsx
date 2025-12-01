@@ -7,14 +7,6 @@ import { toast } from "sonner";
 import * as z from "zod";
 import { Button } from "@workspace/ui/components/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
-import {
   Field,
   FieldDescription,
   FieldError,
@@ -106,20 +98,22 @@ const CandidateEditForm = ({
   });
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Edit Candidate</CardTitle>
-        <CardDescription>Update the candidate details below.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form
-          id="candidate-edit-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            form.handleSubmit();
-          }}
-        >
-          <FieldGroup>
+    <div className="w-full space-y-6">
+      <div className="space-y-2">
+        <h2 className="text-2xl font-semibold tracking-tight">Edit Candidate</h2>
+        <p className="text-sm text-muted-foreground">
+          Update the candidate details below.
+        </p>
+      </div>
+      <form
+        id="candidate-edit-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          form.handleSubmit();
+        }}
+        className="space-y-6"
+      >
+        <FieldGroup>
             <form.Field
               name="firstName"
               children={(field) => {
@@ -352,14 +346,11 @@ const CandidateEditForm = ({
             />
           </FieldGroup>
         </form>
-      </CardContent>
-      <CardFooter>
-        <Field orientation="horizontal">
+        <div className="flex items-center justify-end gap-3 pt-4 border-t">
           <Button
             type="button"
             variant="outline"
             onClick={() => form.reset()}
-            className="cursor-pointer"
             disabled={isPending}
           >
             Reset
@@ -367,7 +358,6 @@ const CandidateEditForm = ({
           <Button
             type="submit"
             form="candidate-edit-form"
-            className="cursor-pointer"
             disabled={isPending}
           >
             {isPending ? (
@@ -379,9 +369,8 @@ const CandidateEditForm = ({
               "Update"
             )}
           </Button>
-        </Field>
-      </CardFooter>
-    </Card>
+        </div>
+    </div>
   );
 };
 

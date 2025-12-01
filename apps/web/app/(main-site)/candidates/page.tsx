@@ -5,12 +5,15 @@ import {
   getCandidatesWithPositionsFiltered,
   getPositions,
 } from "@workspace/db/queries";
-import CandidateCard from "@/components/candidate-card";
 import FilterCandidateName from "@/components/filter-candidate-name";
 import FilterCandidateEmail from "@/components/filter-candidate-email";
 import FilterCandidatePosition from "@/components/filter-candidate-position";
 import ClearCandidateFiltersButton from "@/components/clear-candidate-filters-button";
+import CandidateContainer from "./candidate-container";
+import { CandidatesListSkeleton } from "@/components/skeletons/candidates-list-skeleton";
 import { Metadata } from "next";
+import { UserAuthenticated } from "@/components/auth-checks";
+import CandidatesPaginationControls from "@/components/candidates-pagination-controls";
 
 export const metadata: Metadata = {
   title: "Candidates",
@@ -22,6 +25,10 @@ type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 const page = async ({ searchParams }: { searchParams: SearchParams }) => {
   return (
     <div className="container mx-auto py-8 space-y-6">
+      <Suspense>
+        <UserAuthenticated />
+      </Suspense>
+
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Candidates</h1>
         <Button asChild>
@@ -33,7 +40,7 @@ const page = async ({ searchParams }: { searchParams: SearchParams }) => {
         <PresentFilters />
       </Suspense>
 
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<CandidatesListSkeleton />}>
         <CandidatesList searchParams={searchParams} />
       </Suspense>
     </div>
@@ -64,7 +71,7 @@ const CandidatesList = async ({
 }: {
   searchParams: SearchParams;
 }) => {
-  const { name, email, position } = await searchParams;
+  const { name, email, position, page: pageParam } = await searchParams;
 
   // Extract search terms
   const nameSearch = name
@@ -85,11 +92,28 @@ const CandidatesList = async ({
       : [position]
     : undefined;
 
-  const candidates = await getCandidatesWithPositionsFiltered(
+  // Extract page number (default to 1)
+  const page = pageParam
+    ? typeof pageParam === "string"
+      ? parseInt(pageParam, 10)
+      : Array.isArray(pageParam) && pageParam[0]
+        ? parseInt(pageParam[0], 10)
+        : 1
+    : 1;
+  const currentPage = isNaN(page) || page < 1 ? 1 : page;
+  const limit = 50;
+
+  const { candidates, total } = await getCandidatesWithPositionsFiltered(
     nameSearch,
     emailSearch,
-    positionIds
+    positionIds,
+    currentPage,
+    limit
   );
+
+  const totalPages = Math.ceil(total / limit);
+  const hasNextPage = currentPage < totalPages;
+  const hasPreviousPage = currentPage > 1;
 
   if (candidates.length === 0) {
     return (
@@ -107,10 +131,16 @@ const CandidatesList = async ({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {candidates.map((candidate) => (
-        <CandidateCard key={candidate.id} candidate={candidate} />
-      ))}
+    <div className="space-y-6">
+      <CandidateContainer candidates={candidates} />
+      {totalPages > 1 && (
+        <CandidatesPaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          hasNextPage={hasNextPage}
+          hasPreviousPage={hasPreviousPage}
+        />
+      )}
     </div>
   );
 };

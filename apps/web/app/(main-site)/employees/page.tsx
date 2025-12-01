@@ -2,10 +2,11 @@ import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import React, { Suspense } from "react";
 import { getEmployees, getPositions } from "@workspace/db/queries";
-import EmployeeCard from "@/components/employee-card";
 import FilterEmployeePosition from "@/components/filter-employee-position";
 import FilterEmployeeDepartment from "@/components/filter-employee-department";
 import ClearEmployeeFiltersButton from "@/components/clear-employee-filters-button";
+import EmployeeContainer from "./employee-container";
+import { EmployeesListSkeleton } from "@/components/skeletons/employees-list-skeleton";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -35,7 +36,7 @@ const page = async ({ searchParams }: { searchParams: SearchParams }) => {
         <PresentFilters />
       </Suspense>
 
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<EmployeesListSkeleton />}>
         <EmployeesList searchParams={searchParams} />
       </Suspense>
     </div>
@@ -52,7 +53,7 @@ const PresentFilters = async () => {
   }));
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <FilterEmployeePosition positions={positionTypes} />
       <FilterEmployeeDepartment />
       <ClearEmployeeFiltersButton />
@@ -104,11 +105,5 @@ const EmployeesList = async ({
     );
   }
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {employees.map((employee) => (
-        <EmployeeCard key={employee.id} employee={employee} />
-      ))}
-    </div>
-  );
+  return <EmployeeContainer employees={employees} />;
 };
