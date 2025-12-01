@@ -245,102 +245,41 @@ const DisplayInterview = async ({ params }: { params: Params }) => {
         {/* Left Column - Questions Overview */}
         {totalQuestions > 0 && (
           <div className="lg:col-span-2 space-y-6">
-            {/* Progress Header */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold">Question Progress</h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {answeredQuestions} of {totalQuestions} questions answered
-                  </p>
+            {/* Progress Header + Inline Questions */}
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold">Question Progress</h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {answeredQuestions} of {totalQuestions} questions answered
+                    </p>
+                  </div>
+                  <Badge variant="secondary" className="text-sm font-medium">
+                    {progressPercentage}%
+                  </Badge>
                 </div>
-                <Badge variant="secondary" className="text-sm font-medium">
-                  {progressPercentage}%
-                </Badge>
-              </div>
 
-              {/* Progress Bar */}
-              <div className="space-y-2">
-                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className={cn(
-                      "h-full transition-all duration-500 rounded-full",
-                      interview.status === "move_forward"
-                        ? "bg-emerald-500"
-                        : interview.status === "rejected"
-                          ? "bg-red-500"
-                          : "bg-primary"
-                    )}
-                    style={{ width: `${progressPercentage}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Questions List */}
-              <div className="space-y-3 pt-2">
-                {interview.questions.map((question, index) => {
-                  const hasFeedback =
-                    question.feedback &&
-                    question.feedback.notes &&
-                    question.feedback.notes.trim() !== "";
-                  const hasRating = question.feedback?.rating !== null;
-
-                  return (
+                {/* Progress Bar */}
+                <div className="space-y-2">
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                     <div
-                      key={question.id}
                       className={cn(
-                        "group relative p-4 rounded-lg border transition-all",
-                        hasFeedback
-                          ? "border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20"
-                          : "border-border bg-muted/30 hover:bg-muted/50"
+                        "h-full transition-all duration-500 rounded-full",
+                        interview.status === "move_forward"
+                          ? "bg-emerald-500"
+                          : interview.status === "rejected"
+                            ? "bg-red-500"
+                            : "bg-primary"
                       )}
-                    >
-                      <div className="flex items-start gap-3">
-                        {/* Question Number */}
-                        <div
-                          className={cn(
-                            "shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all",
-                            hasFeedback
-                              ? "bg-emerald-500 text-white"
-                              : "bg-muted-foreground/20 text-muted-foreground"
-                          )}
-                        >
-                          {hasFeedback ? (
-                            <CheckCircle className="h-4 w-4" />
-                          ) : (
-                            index + 1
-                          )}
-                        </div>
-
-                        <div className="flex-1 min-w-0 space-y-2">
-                          {hasFeedback ? (
-                            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                              {question.feedback?.notes}
-                            </p>
-                          ) : (
-                            <p className="text-xs text-muted-foreground italic">
-                              No response recorded
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                      style={{ width: `${progressPercentage}%` }}
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
 
-            {/* Detailed Question Feedback */}
-            <div className="space-y-6 pt-6 border-t">
-              <div>
-                <h2 className="text-xl font-semibold mb-1">
-                  Question Responses
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Detailed feedback for each question
-                </p>
-              </div>
-              <div className="space-y-6">
+              {/* Inline editable questions */}
+              <div className="space-y-4 pt-2">
                 {interview.questions.map((question, index) => (
                   <InterviewQuestionFeedbackDisplay
                     key={question.id}
