@@ -3,10 +3,15 @@ import React, { Suspense } from "react";
 import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
+import { UserIsAdmin } from "@/components/auth-checks";
 
 const page = () => {
   return (
-    <div className="block-space narrow-container mx-auto">
+    <div className="container mx-auto py-8 space-y-6">
+      <Suspense>
+        <UserIsAdmin />
+      </Suspense>
+
       <Button>
         <Link href="/questions">Back to Questions</Link>
       </Button>

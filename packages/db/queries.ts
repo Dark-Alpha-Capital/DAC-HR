@@ -385,8 +385,12 @@ export const getQuestions = async () => {
 
 /**
  *
- * Fetches all questions with their associated rounds and positions from the database
- * @returns An array of questions with round and position information
+ * Fetches all questions with their associated rounds and positions from the database.
+ *
+ * Shape:
+ * - Each question has:
+ *   - rounds: [{ id, name, positions: [{ id, name }] }]
+ *   - positions: de-duplicated flat list of all linked positions
  */
 export const getQuestionsWithRounds = async () => {
   try {
@@ -424,7 +428,11 @@ export const getQuestionsWithRounds = async () => {
         questionText: string;
         createdAt: Date;
         updatedAt: Date;
-        rounds: Array<{ id: string; name: string }>;
+        rounds: Array<{
+          id: string;
+          name: string;
+          positions: Array<{ id: string; name: string }>;
+        }>;
         positions: Array<{ id: string; name: string }>;
       }
     >();
@@ -444,16 +452,30 @@ export const getQuestionsWithRounds = async () => {
 
       const question = questionsMap.get(questionId)!;
       if (result.roundId) {
-        // Check if round already added (avoid duplicates)
-        if (!question.rounds.some((r) => r.id === result.roundId)) {
-          question.rounds.push({
+        // Find or create the round entry for this question
+        let round = question.rounds.find((r) => r.id === result.roundId);
+        if (!round) {
+          round = {
             id: result.roundId,
             name: result.roundName || "",
-          });
+            positions: [],
+          };
+          question.rounds.push(round);
+        }
+
+        // Attach position to this specific round (if present)
+        if (result.positionId) {
+          if (!round.positions.some((p) => p.id === result.positionId)) {
+            round.positions.push({
+              id: result.positionId,
+              name: result.positionName || "",
+            });
+          }
         }
       }
+
+      // Maintain a de-duplicated flat list of positions at the question level
       if (result.positionId) {
-        // Check if position already added (avoid duplicates)
         if (!question.positions.some((p) => p.id === result.positionId)) {
           question.positions.push({
             id: result.positionId,

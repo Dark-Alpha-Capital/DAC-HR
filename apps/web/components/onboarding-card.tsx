@@ -179,7 +179,7 @@ const OnboardingCard: React.FC<OnboardingCardProps> = ({
                   "flex items-center gap-3 p-3 rounded-lg border transition-colors",
                   isChecked
                     ? "bg-primary/5 border-primary/20"
-                    : "bg-background border-border hover:bg-accent/50"
+                    : "bg-background border-border "
                 )}
               >
                 <Checkbox

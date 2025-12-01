@@ -415,7 +415,7 @@ export default function ApplicationProgressTimeline({
                                 <Button size="sm" variant="outline" asChild>
                                   <Link href={`/interviews/${interview.id}`}>
                                     <Eye className="h-3 w-3 mr-2" />
-                                    View Full Interview
+                                    View
                                   </Link>
                                 </Button>
                               )}

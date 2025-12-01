@@ -16,6 +16,10 @@ export const createRound = async (data: RoundFormSchema) => {
     return { error: "Unauthorized" };
   }
 
+  if (session.user.role !== "admin") {
+    return { error: "Only admins are allowed to create rounds" };
+  }
+
   const result = roundFormSchema.safeParse(data);
   if (!result.success) {
     return { error: result.error.flatten().fieldErrors };

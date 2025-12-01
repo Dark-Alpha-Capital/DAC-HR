@@ -12,6 +12,7 @@ import ClearCandidateFiltersButton from "@/components/clear-candidate-filters-bu
 import CandidateContainer from "./candidate-container";
 import { CandidatesListSkeleton } from "@/components/skeletons/candidates-list-skeleton";
 import { Metadata } from "next";
+import { UserAuthenticated } from "@/components/auth-checks";
 
 export const metadata: Metadata = {
   title: "Candidates",
@@ -23,6 +24,10 @@ type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 const page = async ({ searchParams }: { searchParams: SearchParams }) => {
   return (
     <div className="container mx-auto py-8 space-y-6">
+      <Suspense>
+        <UserAuthenticated />
+      </Suspense>
+
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Candidates</h1>
         <Button asChild>

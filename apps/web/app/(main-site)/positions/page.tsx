@@ -4,6 +4,7 @@ import React, { Suspense } from "react";
 import { getPositions } from "@workspace/db/queries";
 import PositionContainer from "./position-container";
 import { Metadata } from "next";
+import { UserIsAdmin } from "@/components/auth-checks";
 
 export const metadata: Metadata = {
   title: "Positions",
@@ -13,6 +14,10 @@ export const metadata: Metadata = {
 const page = () => {
   return (
     <div className="container mx-auto py-8 space-y-6">
+      <Suspense>
+        <UserIsAdmin />
+      </Suspense>
+
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Positions</h1>
         <Button asChild>

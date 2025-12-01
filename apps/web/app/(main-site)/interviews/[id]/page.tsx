@@ -26,13 +26,17 @@ import { formatDate } from "@/lib/utils";
 import InterviewQuestionFeedbackDisplay from "@/components/interview-question-feedback-display";
 import InterviewSummaryDisplay from "@/components/interview-summary-display";
 import { cn } from "@workspace/ui/lib/utils";
+import { UserAuthenticated } from "@/components/auth-checks";
 
 type Params = Promise<{ id: string }>;
 
 const InterviewPage = async ({ params }: { params: Params }) => {
   return (
-    <div className="block-space-mini container mx-auto">
-      <BackButton />
+    <div className="container mx-auto py-6 space-y-8">
+      <Suspense>
+        <UserAuthenticated />
+      </Suspense>
+
       <Suspense fallback={<InterviewLoadingSkeleton />}>
         <DisplayInterview params={params} />
       </Suspense>
@@ -308,23 +312,7 @@ const DisplayInterview = async ({ params }: { params: Params }) => {
                           )}
                         </div>
 
-                        {/* Question Content */}
                         <div className="flex-1 min-w-0 space-y-2">
-                          <div className="flex items-start justify-between gap-3">
-                            <p className="text-sm font-medium text-foreground leading-relaxed">
-                              {question.questionText}
-                            </p>
-                            {hasRating && (
-                              <Badge
-                                variant="secondary"
-                                className="text-xs flex items-center gap-1 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 shrink-0"
-                              >
-                                <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
-                                {question.feedback?.rating}/5
-                              </Badge>
-                            )}
-                          </div>
-
                           {hasFeedback ? (
                             <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
                               {question.feedback?.notes}

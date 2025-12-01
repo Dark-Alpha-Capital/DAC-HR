@@ -86,14 +86,14 @@ export default function InterviewSummaryForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
           <Select
             value={status}
             onValueChange={(value: InterviewStatus) => setStatus(value)}
           >
-            <SelectTrigger id="status">
+            <SelectTrigger id="status" className="w-full">
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
             <SelectContent>
@@ -114,7 +114,7 @@ export default function InterviewSummaryForm({
         <div className="space-y-2">
           <Label htmlFor="rating">Rating (1-5)</Label>
           <Select value={rating} onValueChange={setRating}>
-            <SelectTrigger id="rating">
+            <SelectTrigger id="rating" className="w-full">
               <SelectValue placeholder="Select rating" />
             </SelectTrigger>
             <SelectContent>

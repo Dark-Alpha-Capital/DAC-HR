@@ -31,13 +31,20 @@ import { CandidateDetailSkeleton } from "@/components/skeletons/candidate-detail
 import { SectionSkeleton } from "@/components/skeletons/section-skeleton";
 import CandidateDocumentCard from "@/components/candidate-document-card";
 import CandidateOnboardingSection from "@/components/candidate-onboarding-section";
+import { UserAuthenticated } from "@/components/auth-checks";
 
 type Params = Promise<{ uid: string }>;
 
 const CandidatePage = async ({ params }: { params: Params }) => {
   return (
     <div className="container mx-auto py-6 space-y-8">
-      <BackButton />
+      <Suspense>
+        <UserAuthenticated />
+      </Suspense>
+
+      <Button asChild>
+        <Link href="/candidates">Back to Candidates</Link>
+      </Button>
 
       <Suspense fallback={<CandidateDetailSkeleton />}>
         <DisplayCandidate params={params} />
@@ -266,7 +273,7 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
               {candidate.applications.map((app) => (
                 <div
                   key={app.id}
-                  className="border rounded-md p-4 hover:bg-accent/50 transition-colors"
+                  className="border rounded-md p-4 transition-colors"
                 >
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="flex-1 min-w-0">

@@ -4,6 +4,7 @@ import { getDocuments } from "@workspace/db/queries";
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import DocumentContainer from "./document-container";
+import { UserAuthenticated } from "@/components/auth-checks";
 
 export const metadata: Metadata = {
   title: "Documents",
@@ -13,6 +14,10 @@ export const metadata: Metadata = {
 const DocumentsPage = () => {
   return (
     <div className="container mx-auto py-8 space-y-6">
+      <Suspense>
+        <UserAuthenticated />
+      </Suspense>
+
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Documents</h1>
         <Button asChild>

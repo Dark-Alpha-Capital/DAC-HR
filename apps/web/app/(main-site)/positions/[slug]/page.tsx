@@ -5,38 +5,58 @@ import {
   getCandidatesByPositionId,
 } from "@workspace/db/queries";
 import { Button } from "@workspace/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
 import { Separator } from "@workspace/ui/components/separator";
 import { Badge } from "@workspace/ui/components/badge";
 import Link from "next/link";
-import BackButton from "@/components/back-button";
 import { Pencil, Calendar, Clock, Eye, Users, User } from "lucide-react";
 import DeletePositionButton from "@/components/delete-position-button";
 import { formatDate } from "@/lib/utils";
+import { UserIsAdmin } from "@/components/auth-checks";
 
 type Params = Promise<{ slug: string }>;
 
 const PositionPage = async ({ params }: { params: Params }) => {
   return (
-    <div className="block-space-mini container mx-auto">
-      <BackButton />
-      <div className="mt-4 md:mt-6 lg:mt-8">
-        <Suspense fallback={<PositionLoadingSkeleton />}>
-          <DisplayPosition params={params} />
-        </Suspense>
-        <Suspense fallback={<RoundsLoadingSkeleton />}>
-          <RoundsSection params={params} />
-        </Suspense>
+    <div className="container mx-auto py-8 space-y-8">
+      <Suspense>
+        <UserIsAdmin />
+      </Suspense>
 
-        <Suspense fallback={<CandidatesLoadingSkeleton />}>
-          <CandidatesSection params={params} />
-        </Suspense>
+      <div className="flex items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Position details
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Review the position, associated rounds and candidates in a clear,
+            linear layout.
+          </p>
+        </div>
+        <Button variant="outline" asChild>
+          <Link href="/positions">Back to positions</Link>
+        </Button>
+      </div>
+
+      <Separator />
+
+      <div className="space-y-10">
+        <section>
+          <Suspense fallback={<PositionLoadingSkeleton />}>
+            <DisplayPosition params={params} />
+          </Suspense>
+        </section>
+
+        <section>
+          <Suspense fallback={<RoundsLoadingSkeleton />}>
+            <RoundsSection params={params} />
+          </Suspense>
+        </section>
+
+        <section>
+          <Suspense fallback={<CandidatesLoadingSkeleton />}>
+            <CandidatesSection params={params} />
+          </Suspense>
+        </section>
       </div>
     </div>
   );
@@ -46,17 +66,13 @@ export default PositionPage;
 
 const PositionLoadingSkeleton = () => {
   return (
-    <Card>
-      <CardHeader>
-        <div className="h-8 w-64 bg-muted animate-pulse rounded" />
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
-          <div className="h-4 w-full bg-muted animate-pulse rounded" />
-          <div className="h-4 w-3/4 bg-muted animate-pulse rounded" />
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <div className="h-7 w-64 bg-muted animate-pulse rounded" />
+      <div className="space-y-2">
+        <div className="h-4 w-full bg-muted animate-pulse rounded" />
+        <div className="h-4 w-3/4 bg-muted animate-pulse rounded" />
+      </div>
+    </div>
   );
 };
 
@@ -66,81 +82,70 @@ const DisplayPosition = async ({ params }: { params: Params }) => {
 
   if (!position) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Position not found</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            The position you're looking for doesn't exist or has been removed.
-          </p>
-        </CardContent>
-        <CardFooter>
-          <Button asChild>
-            <Link href="/positions">Back to Positions</Link>
-          </Button>
-        </CardFooter>
-      </Card>
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold">Position not found</h2>
+        <p className="text-sm text-muted-foreground">
+          The position you&apos;re looking for doesn&apos;t exist or has been
+          removed.
+        </p>
+        <Button size="sm" variant="outline" asChild>
+          <Link href="/positions">Back to positions</Link>
+        </Button>
+      </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-2 flex-1">
-              <CardTitle className="text-3xl">{position.name}</CardTitle>
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="outline" className="gap-1.5">
-                  <Calendar className="h-3 w-3" />
-                  Created {formatDate(position.createdAt)}
-                </Badge>
-                {position.updatedAt &&
-                  position.updatedAt.getTime() !==
-                    position.createdAt.getTime() && (
-                    <Badge variant="outline" className="gap-1.5">
-                      <Clock className="h-3 w-3" />
-                      Updated {formatDate(position.updatedAt)}
-                    </Badge>
-                  )}
-              </div>
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold tracking-tight">
+              {position.name}
+            </h2>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <Badge variant="outline" className="gap-1.5 text-[0.7rem]">
+                <Calendar className="h-3 w-3" />
+                Created {formatDate(position.createdAt)}
+              </Badge>
+              {position.updatedAt &&
+                position.updatedAt.getTime() !==
+                  position.createdAt.getTime() && (
+                  <Badge variant="outline" className="gap-1.5 text-[0.7rem]">
+                    <Clock className="h-3 w-3" />
+                    Updated {formatDate(position.updatedAt)}
+                  </Badge>
+                )}
             </div>
           </div>
-        </CardHeader>
-        <Separator />
-        <CardContent className="pt-6">
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-sm font-semibold mb-2">Description</h3>
-              {position.description ? (
-                <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                  {position.description}
-                </p>
-              ) : (
-                <p className="text-muted-foreground italic">
-                  No description provided for this position.
-                </p>
-              )}
-            </div>
-          </div>
-        </CardContent>
-        <Separator />
-        <CardFooter className="flex items-center justify-between gap-4 pt-6">
-          <div className="text-sm text-muted-foreground">
-            <span className="font-medium">Slug:</span> {position.slug}
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" asChild>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" asChild>
               <Link href={`/positions/${position.slug}/edit`}>
-                <Pencil className="h-4 w-4" />
+                <Pencil className="h-3 w-3 mr-1" />
                 Edit
               </Link>
             </Button>
             <DeletePositionButton positionId={position.id} />
           </div>
-        </CardFooter>
-      </Card>
+        </div>
+
+        <p className="text-xs text-muted-foreground">
+          <span className="font-medium">Slug:</span> {position.slug}
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="text-sm font-medium">Description</h3>
+        {position.description ? (
+          <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+            {position.description}
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground italic">
+            No description provided for this position.
+          </p>
+        )}
+      </div>
     </div>
   );
 };
@@ -157,56 +162,54 @@ const RoundsSection = async ({ params }: { params: Params }) => {
   const rounds = await getRoundsByPositionId(position.id);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Associated Rounds</CardTitle>
-      </CardHeader>
-      <Separator />
-      <CardContent className="pt-6">
-        {rounds.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground mb-4">
-              No rounds are currently linked to this position.
-            </p>
-            <Button variant="outline" asChild>
-              <Link href={`/rounds/new?position=${position.id}`}>
-                Create a Round
-              </Link>
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {rounds.map((round) => (
-              <div
-                key={round.id}
-                className="flex items-start justify-between gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-semibold">{round.name}</h4>
-                  </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-sm font-medium">Associated rounds</h2>
+        <Badge variant="secondary" className="text-[0.7rem]">
+          {rounds.length}
+        </Badge>
+      </div>
+      {rounds.length === 0 ? (
+        <div className="space-y-3 text-sm">
+          <p className="text-muted-foreground">
+            No rounds are currently linked to this position.
+          </p>
+          <Button size="sm" variant="outline" asChild>
+            <Link href={`/rounds/new?position=${position.id}`}>
+              Create a round
+            </Link>
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {rounds.map((round, index) => (
+            <div key={round.id} className="space-y-1">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 space-y-1">
+                  <h3 className="text-sm font-medium">{round.name}</h3>
                   {round.description ? (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
+                    <p className="text-xs text-muted-foreground line-clamp-2">
                       {round.description}
                     </p>
                   ) : (
-                    <p className="text-sm text-muted-foreground italic">
-                      No description provided
+                    <p className="text-xs text-muted-foreground italic">
+                      No description provided.
                     </p>
                   )}
                 </div>
                 <Button variant="outline" size="sm" asChild>
                   <Link href={`/rounds/${round.id}`}>
-                    <Eye className="h-4 w-4" />
+                    <Eye className="h-3 w-3 mr-1" />
                     View
                   </Link>
                 </Button>
               </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+              {index !== rounds.length - 1 && <Separator className="my-2" />}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -222,119 +225,96 @@ const CandidatesSection = async ({ params }: { params: Params }) => {
   const candidates = await getCandidatesByPositionId(position.id);
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            <CardTitle>Candidates</CardTitle>
-          </div>
-          <Badge variant="secondary">{candidates.length}</Badge>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Users className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-sm font-medium">Candidates</h2>
         </div>
-      </CardHeader>
-      <Separator />
-      <CardContent className="pt-6">
-        {candidates.length === 0 ? (
-          <div className="text-center py-8">
-            <Users className="h-12 w-12 mx-auto mb-3 opacity-50 text-muted-foreground" />
-            <p className="text-muted-foreground mb-4">
-              No candidates have applied for this position yet.
-            </p>
-            <Button variant="outline" asChild>
-              <Link href={`/candidates/new?position=${position.id}`}>
-                Add a Candidate
-              </Link>
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {candidates.map((candidateData) => (
-              <div
-                key={candidateData.id}
-                className="flex items-center justify-between gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-3">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <h4 className="font-semibold">
+        <Badge variant="secondary" className="text-[0.7rem]">
+          {candidates.length}
+        </Badge>
+      </div>
+
+      {candidates.length === 0 ? (
+        <div className="space-y-3 text-sm">
+          <p className="text-muted-foreground">
+            No candidates have applied for this position yet.
+          </p>
+          <Button size="sm" variant="outline" asChild>
+            <Link href={`/candidates/new?position=${position.id}`}>
+              Add a candidate
+            </Link>
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {candidates.map((candidateData, index) => (
+            <div key={candidateData.id} className="space-y-1">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <User className="h-3 w-3 text-muted-foreground" />
+                    <h3 className="text-sm font-medium">
                       {candidateData.firstName} {candidateData.lastName}
-                    </h4>
+                    </h3>
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span>{candidateData.email}</span>
-                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {candidateData.email}
+                  </p>
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href={`/candidates/${candidateData.id}`}>
-                      <Eye className="h-4 w-4" />
-                      View
-                    </Link>
-                  </Button>
-                </div>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/candidates/${candidateData.id}`}>
+                    <Eye className="h-3 w-3 mr-1" />
+                    View
+                  </Link>
+                </Button>
               </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+              {index !== candidates.length - 1 && (
+                <Separator className="my-2" />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
 
 // Loading Skeletons
 const RoundsLoadingSkeleton = () => {
   return (
-    <Card>
-      <CardHeader>
-        <div className="h-6 w-48 bg-muted animate-pulse rounded" />
-      </CardHeader>
-      <Separator />
-      <CardContent className="pt-6">
-        <div className="space-y-4">
-          {[1, 2].map((i) => (
-            <div
-              key={i}
-              className="flex items-start justify-between gap-4 p-4 border rounded-lg"
-            >
-              <div className="flex-1 space-y-2">
-                <div className="h-5 w-32 bg-muted animate-pulse rounded" />
-                <div className="h-4 w-full bg-muted animate-pulse rounded" />
-              </div>
-              <div className="h-9 w-20 bg-muted animate-pulse rounded" />
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-3">
+      <div className="h-5 w-40 bg-muted animate-pulse rounded" />
+      <div className="space-y-3">
+        {[1, 2].map((i) => (
+          <div key={i} className="space-y-2">
+            <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+            <div className="h-3 w-full bg-muted animate-pulse rounded" />
+            {i === 1 && <Separator className="my-2" />}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 
 const CandidatesLoadingSkeleton = () => {
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="h-6 w-32 bg-muted animate-pulse rounded" />
-          <div className="h-6 w-8 bg-muted animate-pulse rounded" />
-        </div>
-      </CardHeader>
-      <Separator />
-      <CardContent className="pt-6">
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="flex items-center justify-between gap-4 p-4 border rounded-lg"
-            >
-              <div className="flex-1 space-y-2">
-                <div className="h-5 w-40 bg-muted animate-pulse rounded" />
-                <div className="h-4 w-48 bg-muted animate-pulse rounded" />
-              </div>
-              <div className="h-9 w-20 bg-muted animate-pulse rounded" />
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="h-5 w-32 bg-muted animate-pulse rounded" />
+        <div className="h-5 w-8 bg-muted animate-pulse rounded" />
+      </div>
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="space-y-2">
+            <div className="h-4 w-40 bg-muted animate-pulse rounded" />
+            <div className="h-3 w-48 bg-muted animate-pulse rounded" />
+            {i !== 3 && <Separator className="my-2" />}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };

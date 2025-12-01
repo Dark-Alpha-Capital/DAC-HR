@@ -21,6 +21,7 @@ import RecordInterviewDialogWrapper from "@/components/record-interview-dialog-w
 import ApplicationProgressTimeline from "@/components/application-progress-timeline";
 import ApplicationStatusDisplay from "@/components/application-status-display";
 import { ApplicationDetailSkeleton } from "@/components/skeletons/application-detail-skeleton";
+import { UserAuthenticated } from "@/components/auth-checks";
 
 type Params = Promise<{ id: string }>;
 type SearchParams = Promise<{ interview?: string }>;
@@ -34,7 +35,16 @@ const ApplicationPage = async ({
 }) => {
   return (
     <div className="container mx-auto py-6 space-y-8">
-      <BackButton />
+      <Suspense>
+        <UserAuthenticated />
+      </Suspense>
+
+      <div>
+        <Button asChild variant="outline">
+          <Link href="/applications">Back to Applications</Link>
+        </Button>
+      </div>
+
       <Suspense fallback={<ApplicationDetailSkeleton />}>
         <DisplayApplication params={params} searchParams={searchParams} />
       </Suspense>
@@ -113,16 +123,6 @@ const DisplayApplication = async ({
               <h1 className="text-2xl font-bold">
                 {application.position.name}
               </h1>
-              <Badge
-                variant={
-                  applicationStatusColors[application.status] || "outline"
-                }
-                className="flex items-center gap-1.5 text-xs"
-              >
-                {getStatusIcon(application.status)}
-                {application.status.charAt(0).toUpperCase() +
-                  application.status.slice(1)}
-              </Badge>
             </div>
             <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
               <div className="flex items-center gap-1.5">
@@ -142,7 +142,6 @@ const DisplayApplication = async ({
           <div className="flex gap-2 shrink-0">
             <Button size="sm" variant="outline" asChild>
               <Link href={`/candidates/${application.candidateId}`}>
-                <ArrowLeft className="h-3 w-3 mr-2" />
                 Candidate
               </Link>
             </Button>
@@ -158,7 +157,6 @@ const DisplayApplication = async ({
         </div>
       </div>
 
-      {/* Application Status */}
       <div className="space-y-3">
         <ApplicationStatusDisplay application={application} />
       </div>

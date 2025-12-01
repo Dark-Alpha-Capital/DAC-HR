@@ -26,6 +26,10 @@ export const updateRound = async (
     return { error: "Unauthorized" };
   }
 
+  if (session.user.role !== "admin") {
+    return { error: "Only admins are allowed to update rounds" };
+  }
+
   // Use edit schema for validation since we only update name and description
   const result = roundEditFormSchema.safeParse({
     name: data.name,

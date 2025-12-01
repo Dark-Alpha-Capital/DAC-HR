@@ -2,6 +2,7 @@ import DocumentUploadForm from "@/components/forms/document-upload-form";
 import React, { Suspense } from "react";
 import Link from "next/link";
 import { Metadata } from "next";
+import { UserAuthenticated } from "@/components/auth-checks";
 
 export const metadata: Metadata = {
   title: "New Document",
@@ -10,7 +11,11 @@ export const metadata: Metadata = {
 
 const page = () => {
   return (
-    <div className="block-space-mini narrow-container mx-auto">
+    <div className="container mx-auto py-8 space-y-6">
+      <Suspense>
+        <UserAuthenticated />
+      </Suspense>
+
       <div>
         <Link href="/documents">Back to Documents</Link>
       </div>

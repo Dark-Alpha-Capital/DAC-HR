@@ -147,7 +147,11 @@ const RoundContainer = ({ rounds }: RoundContainerProps) => {
                   {round.positions.length > 0 ? (
                     <div className="flex flex-wrap gap-1">
                       {round.positions.map((position) => (
-                        <Badge key={position.id} variant="secondary" className="text-xs">
+                        <Badge
+                          key={position.id}
+                          variant="secondary"
+                          className="text-xs"
+                        >
                           {position.name}
                         </Badge>
                       ))}
@@ -233,10 +237,14 @@ const RoundContainer = ({ rounds }: RoundContainerProps) => {
                                     {pos.name}
                                   </Badge>
                                 ))}
-                              {round.positions.filter((p) => p.id !== position.id)
-                                .length > 2 && (
+                              {round.positions.filter(
+                                (p) => p.id !== position.id
+                              ).length > 2 && (
                                 <span className="text-xs text-muted-foreground">
-                                  +{round.positions.filter((p) => p.id !== position.id).length - 2}
+                                  +
+                                  {round.positions.filter(
+                                    (p) => p.id !== position.id
+                                  ).length - 2}
                                 </span>
                               )}
                             </div>
@@ -284,4 +292,3 @@ const RoundContainer = ({ rounds }: RoundContainerProps) => {
 };
 
 export default RoundContainer;
-

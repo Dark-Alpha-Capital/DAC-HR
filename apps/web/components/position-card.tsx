@@ -47,13 +47,13 @@ const PositionCard = ({
           <Button variant="outline" size="sm" asChild>
             <Link href={`/positions/${positionSlug}`}>
               <Eye className="h-4 w-4" />
-              View
+              <span className="sr-only">View</span>
             </Link>
           </Button>
           <Button variant="outline" size="sm" asChild>
             <Link href={`/positions/${positionSlug}/edit`}>
               <Pencil className="h-4 w-4" />
-              Edit
+              <span className="sr-only">Edit</span>
             </Link>
           </Button>
           <DeletePositionButton positionId={positionId} />
