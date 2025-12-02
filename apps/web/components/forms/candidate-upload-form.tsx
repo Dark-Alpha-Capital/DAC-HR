@@ -37,6 +37,7 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 import { createCandidate } from "@/lib/actions/create-candidate";
+import LocationInputField from "@/components/location-input-field";
 
 const CandidateUploadForm = ({
   positions,
@@ -200,6 +201,21 @@ const CandidateUploadForm = ({
 
           <form.Field
             name="phone"
+            validators={{
+              onChange: ({ value }) => {
+                if (!value || value.trim() === "") return undefined; // Allow empty phone numbers
+                // Remove common formatting characters
+                const cleaned = value.replace(/[\s\-\(\)\+\.]/g, "");
+                // Check if it's all digits and has reasonable length (7-15 digits)
+                if (!/^\d{7,15}$/.test(cleaned)) {
+                  return "Please enter a valid phone number (7-15 digits). Format: +1 (555) 123-4567 or 5551234567";
+                }
+                if (value.length > 20) {
+                  return "Phone number must be at most 20 characters.";
+                }
+                return undefined;
+              },
+            }}
             children={(field) => {
               const isInvalid =
                 field.state.meta.isTouched && !field.state.meta.isValid;
@@ -213,8 +229,8 @@ const CandidateUploadForm = ({
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
                     aria-invalid={isInvalid}
-                    placeholder="Enter the phone number"
-                    autoComplete="off"
+                    placeholder="Enter the phone number (e.g., +1 (555) 123-4567)"
+                    autoComplete="tel"
                   />
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>
@@ -230,16 +246,20 @@ const CandidateUploadForm = ({
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Location</FieldLabel>
-                  <Input
+                  <LocationInputField
                     id={field.name}
-                    name={field.name}
                     value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    aria-invalid={isInvalid}
-                    placeholder="Enter the location (e.g., New York, NY)"
-                    autoComplete="off"
+                    onChange={(value) => {
+                      field.handleChange(value);
+                      field.handleBlur();
+                    }}
+                    placeholder="Enter city, state, or country"
+                    className="w-full"
                   />
+                  <FieldDescription>
+                    Start typing to see autocomplete suggestions with city, state,
+                    and country
+                  </FieldDescription>
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>
               );
