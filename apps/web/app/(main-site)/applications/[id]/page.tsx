@@ -40,9 +40,7 @@ const ApplicationPage = async ({
       </Suspense>
 
       <div>
-        <Button asChild variant="outline">
-          <Link href="/applications">Back to Applications</Link>
-        </Button>
+        <BackButton />
       </div>
 
       <Suspense fallback={<ApplicationDetailSkeleton />}>

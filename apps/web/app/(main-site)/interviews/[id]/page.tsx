@@ -131,7 +131,10 @@ const DisplayInterview = async ({ params }: { params: Params }) => {
       <div className="space-y-6 pb-6 border-b">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
           <div className="flex-1 space-y-4">
-            {/* Title and Status */}
+            <div className="flex flex-wrap gap-2 pt-2">
+              <BackButton />
+            </div>
+
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-3xl font-bold tracking-tight">
                 {interview.roundTemplate.name}
@@ -178,6 +181,14 @@ const DisplayInterview = async ({ params }: { params: Params }) => {
                   {formatDate(interview.createdAt)}
                 </span>
               </div>
+              <div>
+                <Button variant="link" size="sm" asChild>
+                  <Link href={`/candidates/${candidate?.id}`}>
+                    View Candidate
+                  </Link>
+                </Button>
+              </div>
+
               {interview.interviewer && (
                 <div className="flex items-center gap-2">
                   <User className="h-4 w-4 text-muted-foreground" />
@@ -199,24 +210,6 @@ const DisplayInterview = async ({ params }: { params: Params }) => {
             </div>
 
             {/* Quick Actions */}
-            <div className="flex flex-wrap gap-2 pt-2">
-              {candidate && (
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href={`/candidates/${candidate.id}`}>
-                    <Users className="h-4 w-4 mr-2" />
-                    {candidate.firstName} {candidate.lastName}
-                  </Link>
-                </Button>
-              )}
-              {application && (
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href={`/applications/${application.id}`}>
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    View Application
-                  </Link>
-                </Button>
-              )}
-            </div>
           </div>
 
           {/* Position Info */}
