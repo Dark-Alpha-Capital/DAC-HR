@@ -49,7 +49,7 @@ interface CandidateContainerProps {
 type ViewMode = "grid" | "table" | "kanban";
 
 const CandidateContainer = ({ candidates }: CandidateContainerProps) => {
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [viewMode, setViewMode] = useState<ViewMode>("kanban");
 
   // Group candidates by position for kanban view
   const candidatesByPosition = useMemo(() => {

@@ -138,9 +138,9 @@ const DisplayApplication = async ({
             </div>
           </div>
           <div className="flex gap-2 shrink-0">
-            <Button size="sm" variant="outline" asChild>
+            <Button size="sm" variant="link" asChild>
               <Link href={`/candidates/${application.candidateId}`}>
-                Candidate
+                View Candidate
               </Link>
             </Button>
             {currentUser && (
