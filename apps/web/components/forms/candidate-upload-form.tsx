@@ -232,7 +232,11 @@ const CandidateUploadForm = ({
                     placeholder="Enter the phone number (e.g., +1 (555) 123-4567)"
                     autoComplete="tel"
                   />
-                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                  {isInvalid && (
+                    <FieldError
+                      errors={field.state.meta.errors as { message?: string }[]}
+                    />
+                  )}
                 </Field>
               );
             }}
@@ -257,8 +261,8 @@ const CandidateUploadForm = ({
                     className="w-full"
                   />
                   <FieldDescription>
-                    Start typing to see autocomplete suggestions with city, state,
-                    and country
+                    Start typing to see autocomplete suggestions with city,
+                    state, and country
                   </FieldDescription>
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>
