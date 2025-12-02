@@ -25,6 +25,16 @@ export function SidebarUserNav() {
   const { data: session, isPending } = authClient.useSession();
   const user = session?.user;
 
+  const handleLogout = async () => {
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push("/");
+        },
+      },
+    });
+  };
+
   // Loading state - session is being streamed
   if (isPending) {
     return (
@@ -140,7 +150,9 @@ export function SidebarUserNav() {
               Toggle Theme
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Logout</DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer" onClick={handleLogout}>
+              Logout
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>

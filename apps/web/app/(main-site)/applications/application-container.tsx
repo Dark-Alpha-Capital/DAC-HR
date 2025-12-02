@@ -49,36 +49,37 @@ interface ApplicationContainerProps {
 type ViewMode = "grid" | "table" | "kanban";
 
 const ApplicationContainer = ({ applications }: ApplicationContainerProps) => {
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [viewMode, setViewMode] = useState<ViewMode>("kanban");
 
-  // Group applications by status for kanban view
-  const applicationsByStatus = useMemo(() => {
+  // Group applications by position for kanban view
+  const applicationsByPosition = useMemo(() => {
     const grouped = new Map<string, Application[]>();
 
     applications.forEach((application) => {
-      const statusKey = application.status || "pending";
+      const positionId = application.position.id;
 
-      if (!grouped.has(statusKey)) {
-        grouped.set(statusKey, []);
+      if (!grouped.has(positionId)) {
+        grouped.set(positionId, []);
       }
-      grouped.get(statusKey)!.push(application);
+      grouped.get(positionId)!.push(application);
     });
 
-    const statusOrder = [
-      "pending",
-      "reviewed",
-      "shortlisted",
-      "interviewing",
-      "hired",
-      "rejected",
-      "withdrawn",
-    ];
+    // Get unique positions in the order they appear in applications
+    const positionMap = new Map<string, { id: string; name: string }>();
+    applications.forEach((application) => {
+      if (!positionMap.has(application.position.id)) {
+        positionMap.set(application.position.id, {
+          id: application.position.id,
+          name: application.position.name,
+        });
+      }
+    });
 
-    return statusOrder
-      .map((status) => ({
-        id: status,
-        name: status.charAt(0).toUpperCase() + status.slice(1),
-        applications: grouped.get(status) ?? [],
+    return Array.from(positionMap.values())
+      .map((position) => ({
+        id: position.id,
+        name: position.name,
+        applications: grouped.get(position.id) ?? [],
       }))
       .filter((column) => column.applications.length > 0);
   }, [applications]);
@@ -174,21 +175,21 @@ const ApplicationContainer = ({ applications }: ApplicationContainerProps) => {
       ) : (
         <div className="overflow-x-auto pb-4">
           <div className="flex gap-2 min-w-max">
-            {applicationsByStatus.map((statusColumn) => (
+            {applicationsByPosition.map((positionColumn) => (
               <div
-                key={statusColumn.id}
+                key={positionColumn.id}
                 className="shrink-0 w-72 flex flex-col"
               >
                 <div className="mb-2 px-1">
                   <h3 className="font-semibold text-xs text-muted-foreground">
-                    {statusColumn.name}
+                    {positionColumn.name}
                   </h3>
                   <span className="text-xs text-muted-foreground">
-                    {statusColumn.applications.length}
+                    {positionColumn.applications.length}
                   </span>
                 </div>
                 <div className="flex-1 space-y-1.5 overflow-y-auto max-h-[calc(100vh-300px)]">
-                  {statusColumn.applications.map((application) => {
+                  {positionColumn.applications.map((application) => {
                     const fullName = `${application.candidate.firstName} ${application.candidate.lastName}`;
                     return (
                       <Card
@@ -202,7 +203,7 @@ const ApplicationContainer = ({ applications }: ApplicationContainerProps) => {
                                 {fullName}
                               </h4>
                               <p className="text-xs text-muted-foreground leading-tight">
-                                {application.position.name}
+                                {application.candidate.email}
                               </p>
                             </div>
                             <div className="flex items-center gap-1 pt-1.5 border-t">
@@ -236,5 +237,8 @@ const ApplicationContainer = ({ applications }: ApplicationContainerProps) => {
 };
 
 export default ApplicationContainer;
+
+
+
 
 

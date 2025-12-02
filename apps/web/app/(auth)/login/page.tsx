@@ -4,6 +4,12 @@ import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Login - DAC-HR",
+  description: "Login to your account to continue",
+};
 
 const page = async () => {
   return (

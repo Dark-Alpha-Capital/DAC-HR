@@ -47,9 +47,9 @@ const CandidatePage = async ({ params }: { params: Params }) => {
         <UserAuthenticated />
       </Suspense>
 
-      <Button asChild>
-        <Link href="/candidates">Back to Candidates</Link>
-      </Button>
+      <div>
+        <BackButton />
+      </div>
 
       <Suspense fallback={<CandidateDetailSkeleton />}>
         <DisplayCandidate params={params} />
@@ -193,7 +193,7 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
           <Button variant="outline" size="sm" asChild>
             <Link href={`/candidates/${candidate.id}/edit`}>
               <Pencil className="h-4 w-4 mr-2" />
-              Edit
+              Edit Candidate
             </Link>
           </Button>
           <DeleteCandidateButton candidateId={candidate.id} />
@@ -297,12 +297,9 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
                         </p>
                       )}
                     </div>
-                    <Badge
-                      variant={applicationStatusColors[app.status] || "outline"}
-                      className="shrink-0 text-xs"
-                    >
-                      {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
-                    </Badge>
+                    <InlineApplicationStatusEditor
+                      application={{ id: app.id, status: app.status }}
+                    />
                   </div>
                   <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
                     <span>{formatDate(app.createdAt)}</span>
