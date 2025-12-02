@@ -48,7 +48,8 @@ const navLinks = [
   { href: "/applications", label: "Applications" },
   { href: "/rounds", label: "Rounds" },
   { href: "/documents", label: "Documents" },
-] as const;
+  { href: "/questions", label: "Questions" }
+];
 
 const Header = () => {
   const pathname = usePathname();

@@ -33,7 +33,10 @@ import CandidateDocumentCard from "@/components/candidate-document-card";
 import CandidateDocumentTable from "@/components/candidate-document-table";
 import CandidateOnboardingSection from "@/components/candidate-onboarding-section";
 import { UserAuthenticated } from "@/components/auth-checks";
-import InlineApplicationStatusEditor from "@/components/inline-application-status-editor";
+import { toggleCandidateOnboarding } from "@/lib/actions/update-onboarding";
+import OnboardingCardWrapper from "@/components/onboarding-card-wrapper";
+import { getOrCreateCandidateOnboarding } from "@workspace/db/queries";
+
 
 type Params = Promise<{ uid: string }>;
 
@@ -116,6 +119,21 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
     );
   }
 
+  let onboardingData = null;
+  const isOnboarding = candidate.applications.some(app => app.status === "hired");
+  if (isOnboarding) {
+    const rawData = await getOrCreateCandidateOnboarding(candidate.id);
+
+    if (rawData) {
+      onboardingData = {
+        contractSigned: rawData.contractSigned ?? false,
+        registrationEmailSent: rawData.emailProvided ?? false,
+        packetSent: rawData.onboardingPacketSent ?? false,
+        companyEmailActivate : rawData.companyEmailActivate ?? false
+      };
+    }
+  }
+
   const fullName = `${candidate.firstName} ${candidate.lastName}`;
   const applicationStatusColors: Record<
     string,
@@ -182,22 +200,26 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
         </div>
       </div>
 
-      {/* Content Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Contact Information */}
-        <div className="space-y-6">
-          <h2 className="text-lg font-semibold">Contact Information</h2>
-          <div className="space-y-3 text-sm">
-            <div className="flex items-center gap-3">
-              <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <a
-                href={`mailto:${candidate.email}`}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {candidate.email}
-              </a>
-            </div>
-            {candidate.phone && (
+      {isOnboarding && onboardingData ? (
+        <OnboardingCardWrapper
+          candidateId={candidate.id}
+          onboardingData={onboardingData}
+        />
+      ) : isOnboarding ? (
+        <p className="text-sm text-muted-foreground mt-4">
+          Onboarding enabled, but no data available
+        </p>
+      ) : null}
+
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 mt-4 md:mt-6 lg:mt-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Contact Information</CardTitle>
+          </CardHeader>
+          <Separator />
+          <CardContent className="pt-6">
+            <div className="space-y-4 text-muted-foreground">
               <div className="flex items-center gap-3">
                 <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <a
