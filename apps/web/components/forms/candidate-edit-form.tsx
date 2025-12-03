@@ -33,6 +33,7 @@ import {
 import { updateCandidate } from "@/lib/actions/update-candidate";
 import type { InferSelectModel } from "drizzle-orm";
 import type { candidate } from "@workspace/db/schema";
+import { logUserChange } from "@/lib/actions/log-user-actions";
 
 type Candidate = InferSelectModel<typeof candidate>;
 
@@ -42,11 +43,13 @@ interface CandidateEditFormProps {
     id: string;
     name: string;
   }[];
+  user?: { name: string; email: string; id: string; role: string } | null;
 }
 
 const CandidateEditForm = ({
   candidate,
   positions,
+  user
 }: CandidateEditFormProps) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -63,7 +66,13 @@ const CandidateEditForm = ({
       positionId: candidate.positionId || positions[0]?.id || "",
     },
     validators: {
-      onSubmit: candidateFormSchema,
+      onSubmit: (values) => {
+        const result = candidateFormSchema.safeParse(values);
+        if (!result.success) {
+          return result.error.format();
+        }
+        return undefined;
+      }
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
@@ -81,6 +90,16 @@ const CandidateEditForm = ({
             }
           );
         } else {
+           logUserChange({
+            username: user?.name ?? "Unknown",
+            email: user?.email ?? "Unknown",
+            changeType: "candidate_updated",
+            metadata: {
+              candidateId: candidate.id,
+              changes: value,
+            },
+          });
+
           toast.success("Candidate updated successfully", {
             position: "bottom-right",
             description: "The candidate has been updated successfully.",

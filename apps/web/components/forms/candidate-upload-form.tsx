@@ -38,14 +38,18 @@ import {
 } from "@workspace/ui/components/select";
 import { createCandidate } from "@/lib/actions/create-candidate";
 import LocationInputField from "@/components/location-input-field";
+import { logUserChange } from "@/lib/actions/log-user-actions";
+
 
 const CandidateUploadForm = ({
   positions,
+  user
 }: {
   positions: {
     id: string;
     name: string;
   }[];
+  user?: { name: string; email: string; id: string; role: string } | null;
 }) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -73,7 +77,13 @@ const CandidateUploadForm = ({
       positionId: defaultPositionId, // Use the pre-selected or default position
     },
     validators: {
-      onSubmit: candidateFormSchema,
+       onSubmit: (values) => {
+        const result = candidateFormSchema.safeParse(values);
+        if (!result.success) {
+          return result.error.format();
+        }
+        return undefined;
+      }
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
@@ -91,6 +101,19 @@ const CandidateUploadForm = ({
             }
           );
         } else {
+
+          logUserChange({
+            username: user?.name ?? "Unknown",
+            email: user?.email ?? "Unknown",
+            changeType: "candidate_created",
+            metadata: {
+              candidateId: result.data?.id,
+              firstName: value.firstName,
+              lastName: value.lastName,
+              positionId: value.positionId,
+            },
+          });
+
           toast.success("Candidate created successfully", {
             position: "bottom-right",
             description: "The candidate has been created successfully.",
@@ -234,7 +257,9 @@ const CandidateUploadForm = ({
                   />
                   {isInvalid && (
                     <FieldError
-                      errors={field.state.meta.errors as { message?: string }[]}
+                      errors={field.state.meta.errors?.map(err =>
+                        typeof err === 'string' ? { message: err } : err
+                      ) ?? []}
                     />
                   )}
                 </Field>

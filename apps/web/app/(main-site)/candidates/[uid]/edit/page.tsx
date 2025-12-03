@@ -6,10 +6,14 @@ import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import { UserAuthenticated } from "@/components/auth-checks";
 import { ArrowLeft } from "lucide-react";
+import { auth } from "@/auth";
+import { headers } from "next/headers";
 
 type Params = Promise<{ uid: string }>;
 
 const EditCandidatePage = async ({ params }: { params: Params }) => {
+  const session = await auth.api.getSession({ headers: await headers() });
+  const user = session?.user ?? null;
   return (
     <div className="container mx-auto py-8 space-y-6">
       <Suspense>
@@ -17,7 +21,7 @@ const EditCandidatePage = async ({ params }: { params: Params }) => {
       </Suspense>
 
       <Suspense fallback={<FormLoadingFallback />}>
-        <EditCandidateForm params={params} />
+        <EditCandidateForm params={params} user={user}/>
       </Suspense>
     </div>
   );
@@ -25,7 +29,18 @@ const EditCandidatePage = async ({ params }: { params: Params }) => {
 
 export default EditCandidatePage;
 
-const EditCandidateForm = async ({ params }: { params: Params }) => {
+const EditCandidateForm = async ({ params, user }: { params: Params;
+   user: { 
+    id: string;
+    role: string;
+    email: string;
+    name: string;
+    createdAt: Date;
+    updatedAt: Date;
+    emailVerified: boolean;
+    image?: string | null;
+  } | null;
+ }) => {
   const { uid } = await params;
   const [candidate, positions] = await Promise.all([
     getCandidateById(uid),
@@ -62,6 +77,7 @@ const EditCandidateForm = async ({ params }: { params: Params }) => {
             positionId: candidate.positionId || undefined,
           }}
           positions={positions.map((p) => ({ id: p.id, name: p.name }))}
+          user={user}
         />
       </div>
     </div>

@@ -4,6 +4,8 @@ import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleto
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import { getPositions } from "@workspace/db/queries";
+import { auth } from "@/auth";
+import { headers } from "next/headers";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
@@ -31,5 +33,8 @@ async function DisplayCandidateUploadForm() {
     id: position.id,
     name: position.name,
   }));
-  return <CandidateUploadForm positions={cleanedPositions} />;
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  return <CandidateUploadForm positions={cleanedPositions} user={session?.user} />;
 }
