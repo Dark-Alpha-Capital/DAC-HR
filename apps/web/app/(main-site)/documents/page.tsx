@@ -5,13 +5,19 @@ import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import DocumentContainer from "./document-container";
 import { UserAuthenticated } from "@/components/auth-checks";
+import FilterDocumentCategory from "@/components/filter-document-category";
+import FilterDocumentName from "@/components/filter-document-name";
+import FilterDocumentTags from "@/components/filter-document-tags";
+import ClearDocumentFiltersButton from "@/components/clear-document-filters-button";
 
 export const metadata: Metadata = {
   title: "Documents",
   description: "Documents list",
 };
 
-const DocumentsPage = () => {
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
+
+const DocumentsPage = async ({ searchParams }: { searchParams: SearchParams }) => {
   return (
     <div className="container mx-auto py-8 space-y-6">
       <Suspense>
@@ -25,8 +31,12 @@ const DocumentsPage = () => {
         </Button>
       </div>
 
+      <Suspense>
+        <PresentFilters />
+      </Suspense>
+
       <Suspense fallback={<div>Loading...</div>}>
-        <PresentDocuments />
+        <PresentDocuments searchParams={searchParams} />
       </Suspense>
     </div>
   );
@@ -34,14 +44,47 @@ const DocumentsPage = () => {
 
 export default DocumentsPage;
 
-async function PresentDocuments() {
-  const documents = await getDocuments();
+const PresentFilters = () => {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <FilterDocumentName />
+      <FilterDocumentCategory />
+      <FilterDocumentTags />
+      <ClearDocumentFiltersButton />
+    </div>
+  );
+};
+
+async function PresentDocuments({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const params = await searchParams;
+  const { category, name, tags } = params;
+
+  // Extract category filters from the category parameter
+  const categoryFilters = category
+    ? Array.isArray(category)
+      ? category
+      : [category]
+    : undefined;
+
+  // Extract name search
+  const nameSearch = typeof name === "string" ? name : undefined;
+
+  // Extract tags search
+  const tagsSearch = typeof tags === "string" ? tags : undefined;
+
+  const documents = await getDocuments(categoryFilters, nameSearch, tagsSearch);
 
   if (documents.length === 0) {
     return (
       <div className="text-center py-12">
         <p className="text-muted-foreground">
-          No documents found. Create your first document to get started.
+          {categoryFilters || nameSearch || tagsSearch
+            ? "No documents found matching the selected filters."
+            : "No documents found. Create your first document to get started."}
         </p>
         <Button asChild className="mt-4">
           <Link href="/documents/new">Add your first document</Link>

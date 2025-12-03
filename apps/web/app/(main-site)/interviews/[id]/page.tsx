@@ -131,10 +131,6 @@ const DisplayInterview = async ({ params }: { params: Params }) => {
       <div className="space-y-6 pb-6 border-b">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
           <div className="flex-1 space-y-4">
-            <div className="flex flex-wrap gap-2 pt-2">
-              <BackButton />
-            </div>
-
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-3xl font-bold tracking-tight">
                 {interview.roundTemplate.name}

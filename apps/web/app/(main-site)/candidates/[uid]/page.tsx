@@ -44,10 +44,6 @@ const CandidatePage = async ({ params }: { params: Params }) => {
         <UserAuthenticated />
       </Suspense>
 
-      <div>
-        <BackButton />
-      </div>
-
       <Suspense fallback={<CandidateDetailSkeleton />}>
         <DisplayCandidate params={params} />
       </Suspense>
@@ -241,7 +237,6 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
           </div>
         </div>
 
-        {/* Applications */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">

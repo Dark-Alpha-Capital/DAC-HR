@@ -1083,9 +1083,69 @@ export async function getCandidatesByPositionId(positionId: string) {
  * Fetches all documents from the database
  * @returns An array of documents
  */
-export async function getDocuments() {
+export async function getDocuments(
+  categoryFilters?: string[],
+  nameSearch?: string,
+  tagsSearch?: string
+) {
   try {
-    const results = await db.select().from(documents);
+    let query = db.select().from(documents);
+
+    // Build filter conditions
+    const conditions = [];
+
+    // Category filter
+    if (categoryFilters && categoryFilters.length > 0) {
+      // Validate and cast to enum type
+      const validCategories = categoryFilters.filter(
+        (
+          cat
+        ): cat is
+          | "job-description"
+          | "onboarding"
+          | "policy"
+          | "hr-form"
+          | "other" =>
+          [
+            "job-description",
+            "onboarding",
+            "policy",
+            "hr-form",
+            "other",
+          ].includes(cat)
+      );
+      if (validCategories.length > 0) {
+        conditions.push(inArray(documents.category, validCategories));
+      }
+    }
+
+    // Name search
+    if (nameSearch && nameSearch.trim()) {
+      const searchTerm = `%${nameSearch.trim()}%`;
+      conditions.push(
+        sql`${documents.name} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`
+      );
+    }
+
+    // Tags search - search in the tags array
+    if (tagsSearch && tagsSearch.trim()) {
+      const searchTerm = tagsSearch.trim().toLowerCase();
+      // Use array overlap operator (&&) or array contains check
+      // PostgreSQL array contains: ANY(array) = value
+      conditions.push(
+        sql`EXISTS (
+          SELECT 1 FROM unnest(${documents.tags}) AS tag 
+          WHERE LOWER(tag) LIKE ${sql.raw(`'%${searchTerm.replace(/'/g, "''")}%'`)}
+        )`
+      );
+    }
+
+    // Apply conditions if any
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as typeof query;
+    }
+
+    const results = await query.orderBy(desc(documents.createdAt));
     return results;
   } catch (error) {
     console.error("Error fetching documents", error);

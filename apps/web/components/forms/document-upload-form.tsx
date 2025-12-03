@@ -120,6 +120,8 @@ const DocumentUploadForm = () => {
             if (fileInput) {
               fileInput.value = "";
             }
+
+            router.push("/documents");
           } else {
             toast.error(
               typeof result.error === "string"
@@ -195,14 +197,51 @@ const DocumentUploadForm = () => {
 
   return (
     <div className="w-full space-y-6">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-semibold tracking-tight">
-          Upload Document
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          Upload a file or provide a document URL, then fill in the details
-          below.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-2">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Upload Document
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Upload a file or provide a document URL, then fill in the details
+            below.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              form.reset();
+              setFile(null);
+              setTagsInput("");
+              // Clear file input
+              const fileInput = document.getElementById(
+                "file-upload"
+              ) as HTMLInputElement;
+              if (fileInput) {
+                fileInput.value = "";
+              }
+            }}
+            disabled={isPending}
+          >
+            Reset
+          </Button>
+          <Button
+            type="submit"
+            form="document-upload-form"
+            disabled={isPending}
+          >
+            {isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              "Submit"
+            )}
+          </Button>
+        </div>
       </div>
       <form
         id="document-upload-form"
@@ -415,37 +454,6 @@ const DocumentUploadForm = () => {
           />
         </FieldGroup>
       </form>
-      <div className="flex items-center justify-end gap-3 pt-4 border-t">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => {
-            form.reset();
-            setFile(null);
-            setTagsInput("");
-            // Clear file input
-            const fileInput = document.getElementById(
-              "file-upload"
-            ) as HTMLInputElement;
-            if (fileInput) {
-              fileInput.value = "";
-            }
-          }}
-          disabled={isPending}
-        >
-          Reset
-        </Button>
-        <Button type="submit" form="document-upload-form" disabled={isPending}>
-          {isPending ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Submitting...
-            </>
-          ) : (
-            "Submit"
-          )}
-        </Button>
-      </div>
     </div>
   );
 };

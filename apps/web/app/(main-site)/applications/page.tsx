@@ -7,6 +7,8 @@ import { UserAuthenticated } from "@/components/auth-checks";
 import ApplicationContainer from "./application-container";
 import FilterCandidatePosition from "@/components/filter-candidate-position";
 import FilterApplicationStatus from "@/components/filter-application-status";
+import FilterCandidateName from "@/components/filter-candidate-name";
+import FilterCandidateEmail from "@/components/filter-candidate-email";
 import ClearApplicationFiltersButton from "@/components/clear-application-filters-button";
 
 export const metadata: Metadata = {
@@ -47,6 +49,8 @@ const PresentFilters = async () => {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
+      <FilterCandidateName />
+      <FilterCandidateEmail />
       <FilterCandidatePosition positions={positionTypes} />
       <FilterApplicationStatus />
       <ClearApplicationFiltersButton />
@@ -59,7 +63,19 @@ const ApplicationsList = async ({
 }: {
   searchParams: SearchParams;
 }) => {
-  const { position, status } = await searchParams;
+  const { name, email, position, status } = await searchParams;
+
+  // Extract search terms
+  const nameSearch = name
+    ? typeof name === "string"
+      ? name
+      : name[0]
+    : undefined;
+  const emailSearch = email
+    ? typeof email === "string"
+      ? email
+      : email[0]
+    : undefined;
 
   const positionIds = position
     ? Array.isArray(position)
@@ -76,13 +92,33 @@ const ApplicationsList = async ({
   const applications = await getAllApplications();
 
   const filteredApplications = applications.filter((application) => {
+    // Name filter (searches first name and last name)
+    const matchesName = !nameSearch
+      ? true
+      : `${application.candidate.firstName} ${application.candidate.lastName}`
+          .toLowerCase()
+          .includes(nameSearch.toLowerCase()) ||
+        application.candidate.firstName
+          .toLowerCase()
+          .includes(nameSearch.toLowerCase()) ||
+        application.candidate.lastName
+          .toLowerCase()
+          .includes(nameSearch.toLowerCase());
+
+    // Email filter
+    const matchesEmail = !emailSearch
+      ? true
+      : application.candidate.email
+          .toLowerCase()
+          .includes(emailSearch.toLowerCase());
+
     const matchesPosition =
       !positionIds || positionIds.includes(application.position.id);
 
     const matchesStatus =
       !statuses || statuses.includes(application.status as string);
 
-    return matchesPosition && matchesStatus;
+    return matchesName && matchesEmail && matchesPosition && matchesStatus;
   });
 
   if (filteredApplications.length === 0) {
@@ -91,7 +127,7 @@ const ApplicationsList = async ({
         <Briefcase className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
         <p className="text-muted-foreground mb-1">No applications found.</p>
         <p className="text-sm text-muted-foreground">
-          {positionIds || statuses
+          {nameSearch || emailSearch || positionIds || statuses
             ? "Try adjusting or clearing the filters to see more applications."
             : "Applications will appear here when candidates apply for positions."}
         </p>

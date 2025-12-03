@@ -99,11 +99,37 @@ const CandidateEditForm = ({
 
   return (
     <div className="w-full space-y-6">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-semibold tracking-tight">Edit Candidate</h2>
-        <p className="text-sm text-muted-foreground">
-          Update the candidate details below.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-2">
+          <h2 className="text-2xl font-semibold tracking-tight">Edit Candidate</h2>
+          <p className="text-sm text-muted-foreground">
+            Update the candidate details below.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => form.reset()}
+            disabled={isPending}
+          >
+            Reset
+          </Button>
+          <Button
+            type="submit"
+            form="candidate-edit-form"
+            disabled={isPending}
+          >
+            {isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Updating...
+              </>
+            ) : (
+              "Update"
+            )}
+          </Button>
+        </div>
       </div>
       <form
         id="candidate-edit-form"
@@ -346,30 +372,6 @@ const CandidateEditForm = ({
             />
           </FieldGroup>
         </form>
-        <div className="flex items-center justify-end gap-3 pt-4 border-t">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => form.reset()}
-            disabled={isPending}
-          >
-            Reset
-          </Button>
-          <Button
-            type="submit"
-            form="candidate-edit-form"
-            disabled={isPending}
-          >
-            {isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Updating...
-              </>
-            ) : (
-              "Update"
-            )}
-          </Button>
-        </div>
     </div>
   );
 };

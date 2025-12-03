@@ -1,11 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@workspace/ui/components/button";
-import { Badge } from "@workspace/ui/components/badge";
-import { Separator } from "@workspace/ui/components/separator";
-import { Edit, Plus } from "lucide-react";
-import InterviewQuestionFeedbackForm from "./interview-question-feedback-form";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@workspace/ui/components/collapsible";
+import { Edit, Plus, ChevronDown, MessageSquare } from "lucide-react";
+import { cn } from "@workspace/ui/lib/utils";
+import EditQuestionFeedbackDialog from "./dialogs/edit-question-feedback-dialog";
 
 interface QuestionFeedback {
   id: string;
@@ -28,97 +32,117 @@ export default function InterviewQuestionFeedbackDisplay({
   question,
   index,
 }: InterviewQuestionFeedbackDisplayProps) {
-  const [isEditing, setIsEditing] = useState(false);
-
-  // Reset editing state when feedback data changes (after successful save)
-  useEffect(() => {
-    setIsEditing(false);
-  }, [question.feedback?.id, question.feedback?.notes]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   const hasFeedback =
     question.feedback &&
     question.feedback.notes &&
     question.feedback.notes.trim() !== "";
 
-  if (isEditing) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h4 className="text-sm font-semibold">Question {index + 1}</h4>
-          <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
-            Cancel
-          </Button>
-        </div>
-        <InterviewQuestionFeedbackForm
-          interviewId={interviewId}
-          question={question}
-          index={index}
-        />
-      </div>
-    );
-  }
-
-  if (!hasFeedback) {
-    return (
-      <div className="rounded-lg border p-4 space-y-4">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold">
-                Question {index + 1}
-              </span>
+  return (
+    <>
+      <Collapsible
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        className="rounded-lg border"
+      >
+        <div className="p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <CollapsibleTrigger asChild>
+                <button className="w-full text-left focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-md group hover:bg-muted/50 transition-colors p-2 -m-2">
+                  <div className="flex items-center gap-2 flex-wrap mb-2">
+                    <span className="text-sm font-semibold">
+                      Question {index + 1}
+                    </span>
+                    <ChevronDown
+                      className={cn(
+                        "h-4 w-4 text-muted-foreground transition-all duration-200",
+                        isOpen && "transform rotate-180"
+                      )}
+                    />
+                    {hasFeedback && (
+                      <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
+                        <MessageSquare className="h-3 w-3" />
+                        Has feedback
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {question.questionText}
+                  </p>
+                  {!isOpen && (
+                    <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                      <ChevronDown className="h-3.5 w-3.5" />
+                      <span>Click to {hasFeedback ? "view notes" : "view more"}</span>
+                    </div>
+                  )}
+                  {isOpen && (
+                    <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                      <ChevronDown className="h-3.5 w-3.5 rotate-180" />
+                      <span>Click to collapse</span>
+                    </div>
+                  )}
+                </button>
+              </CollapsibleTrigger>
             </div>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setIsEditing(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsDialogOpen(true);
+              }}
+              type="button"
+              className="shrink-0"
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Feedback
+              {hasFeedback ? (
+                <>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Feedback
+                </>
+              )}
             </Button>
           </div>
-          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-            {question.questionText}
-          </p>
         </div>
-        <div className="text-center py-4 text-sm text-muted-foreground">
-          No feedback recorded for this question yet
-        </div>
-      </div>
-    );
-  }
 
-  return (
-    <div className="rounded-lg border p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold">Question {index + 1}</span>
-          </div>
-          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-            {question.questionText}
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-          <Edit className="h-4 w-4 mr-2" />
-          Edit
-        </Button>
-      </div>
-
-      <Separator />
-
-      <div className="space-y-3">
-        {question.feedback?.notes && question.feedback.notes.trim() !== "" && (
-          <div className="space-y-2">
-            <span className="text-sm font-medium text-muted-foreground">
-              Notes:
-            </span>
-            <p className="text-sm whitespace-pre-wrap leading-relaxed bg-muted/50 p-3 rounded-md">
-              {question.feedback.notes}
-            </p>
-          </div>
+        {hasFeedback && (
+          <CollapsibleContent className="px-4 pb-4">
+            <div className="space-y-2 pt-2 border-t">
+              <span className="text-sm font-medium text-muted-foreground">
+                Notes:
+              </span>
+              <p className="text-sm whitespace-pre-wrap leading-relaxed bg-muted/50 p-3 rounded-md">
+                {question.feedback?.notes}
+              </p>
+            </div>
+          </CollapsibleContent>
         )}
-      </div>
-    </div>
+
+        {!hasFeedback && (
+          <CollapsibleContent className="px-4 pb-4">
+            <div className="pt-2 border-t">
+              <div className="text-center py-4 text-sm text-muted-foreground">
+                No feedback recorded for this question yet
+              </div>
+            </div>
+          </CollapsibleContent>
+        )}
+      </Collapsible>
+
+      <EditQuestionFeedbackDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        interviewId={interviewId}
+        question={question}
+        index={index}
+      />
+    </>
   );
 }

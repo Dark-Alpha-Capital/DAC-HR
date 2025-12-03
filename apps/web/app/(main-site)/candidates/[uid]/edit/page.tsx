@@ -11,7 +11,7 @@ type Params = Promise<{ uid: string }>;
 
 const EditCandidatePage = async ({ params }: { params: Params }) => {
   return (
-    <div className="container mx-auto py-8 space-y-6">
+    <div className="narrow-container mx-auto py-8 space-y-6">
       <Suspense>
         <UserAuthenticated />
       </Suspense>

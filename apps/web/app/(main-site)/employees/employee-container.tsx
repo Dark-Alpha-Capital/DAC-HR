@@ -183,10 +183,10 @@ const EmployeeContainer = ({ employees }: EmployeeContainerProps) => {
           </TableBody>
         </Table>
       ) : (
-        <div className="overflow-x-auto pb-4">
-          <div className="flex gap-2 min-w-max">
+        <div className="w-full overflow-x-auto pb-4">
+          <div className="flex gap-3 md:gap-4 min-w-max pr-4">
             {employeesByDepartment.map((department) => (
-              <div key={department.id} className="shrink-0 w-72 flex flex-col">
+              <div key={department.id} className="shrink-0 w-64 sm:w-72 md:w-80 flex flex-col">
                 <div className="mb-2 px-1">
                   <h3 className="font-semibold text-xs text-muted-foreground">
                     {department.name}

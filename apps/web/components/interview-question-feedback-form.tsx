@@ -22,12 +22,16 @@ interface InterviewQuestionFeedbackFormProps {
   interviewId: string;
   question: QuestionFeedback;
   index: number;
+  onSuccess?: () => void;
+  hideWrapper?: boolean;
 }
 
 export default function InterviewQuestionFeedbackForm({
   interviewId,
   question,
   index,
+  onSuccess,
+  hideWrapper = false,
 }: InterviewQuestionFeedbackFormProps) {
   const router = useRouter();
   const [notes, setNotes] = useState(question.feedback?.notes ?? "");
@@ -54,21 +58,24 @@ export default function InterviewQuestionFeedbackForm({
 
       toast.success("Feedback saved");
       router.refresh();
+      onSuccess?.();
     });
   };
 
-  return (
-    <div className="rounded-lg border p-4 shadow-sm space-y-4">
-      <div className="space-y-1">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-sm font-semibold text-foreground">
-            Question {index + 1}
+  const content = (
+    <>
+      {!hideWrapper && (
+        <div className="space-y-1 mb-4">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-foreground">
+              Question {index + 1}
+            </p>
+          </div>
+          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+            {question.questionText}
           </p>
         </div>
-        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-          {question.questionText}
-        </p>
-      </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
@@ -79,6 +86,7 @@ export default function InterviewQuestionFeedbackForm({
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
             minLength={0}
+            rows={8}
           />
         </div>
 
@@ -88,6 +96,16 @@ export default function InterviewQuestionFeedbackForm({
           </Button>
         </div>
       </form>
+    </>
+  );
+
+  if (hideWrapper) {
+    return content;
+  }
+
+  return (
+    <div className="rounded-lg border p-4 shadow-sm space-y-4">
+      {content}
     </div>
   );
 }

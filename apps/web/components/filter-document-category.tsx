@@ -13,35 +13,33 @@ import {
 import { Button } from "@workspace/ui/components/button";
 import { Filter } from "lucide-react";
 
-const statuses = [
-  { value: "pending", label: "Pending" },
-  { value: "reviewed", label: "Reviewed" },
-  { value: "shortlisted", label: "Shortlisted" },
-  { value: "interviewing", label: "Interviewing" },
-  { value: "hired", label: "Hired" },
-  { value: "rejected", label: "Rejected" },
-  { value: "withdrawn", label: "Withdrawn" },
+const categories = [
+  { value: "job-description", label: "Job Description" },
+  { value: "onboarding", label: "Onboarding" },
+  { value: "policy", label: "Policy" },
+  { value: "hr-form", label: "HR Form" },
+  { value: "other", label: "Other" },
 ];
 
-const FilterApplicationStatus = () => {
+const FilterDocumentCategory = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [selectedStatuses, setSelectedStatuses] = useOptimistic(
-    searchParams.getAll("status")
+  const [selectedCategories, setSelectedCategories] = useOptimistic(
+    searchParams.getAll("category")
   );
 
   const handleCheckedChange = (value: string, checked: boolean) => {
     startTransition(() => {
       const params = new URLSearchParams(searchParams);
-      params.delete("status");
+      params.delete("category");
 
       const newSelected = checked
-        ? [...selectedStatuses, value]
-        : selectedStatuses.filter((status) => status !== value);
+        ? [...selectedCategories, value]
+        : selectedCategories.filter((cat) => cat !== value);
 
-      newSelected.forEach((status) => params.append("status", status));
-      setSelectedStatuses(newSelected);
+      newSelected.forEach((cat) => params.append("category", cat));
+      setSelectedCategories(newSelected);
 
       router.push(`?${params.toString()}`, {
         scroll: false,
@@ -58,26 +56,26 @@ const FilterApplicationStatus = () => {
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm">
             <Filter className="mr-2 h-4 w-4" />
-            Status
-            {selectedStatuses.length > 0 && (
+            Category
+            {selectedCategories.length > 0 && (
               <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-                {selectedStatuses.length}
+                {selectedCategories.length}
               </span>
             )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56">
-          <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+          <DropdownMenuLabel>Filter by Category</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {statuses.map((status) => (
+          {categories.map((cat) => (
             <DropdownMenuCheckboxItem
-              key={status.value}
-              checked={selectedStatuses.includes(status.value)}
+              key={cat.value}
+              checked={selectedCategories.includes(cat.value)}
               onCheckedChange={(checked) =>
-                handleCheckedChange(status.value, checked as boolean)
+                handleCheckedChange(cat.value, checked as boolean)
               }
             >
-              {status.label}
+              {cat.label}
             </DropdownMenuCheckboxItem>
           ))}
         </DropdownMenuContent>
@@ -86,10 +84,5 @@ const FilterApplicationStatus = () => {
   );
 };
 
-export default FilterApplicationStatus;
-
-
-
-
-
+export default FilterDocumentCategory;
 

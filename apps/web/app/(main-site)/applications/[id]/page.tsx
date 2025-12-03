@@ -39,10 +39,6 @@ const ApplicationPage = async ({
         <UserAuthenticated />
       </Suspense>
 
-      <div>
-        <BackButton />
-      </div>
-
       <Suspense fallback={<ApplicationDetailSkeleton />}>
         <DisplayApplication params={params} searchParams={searchParams} />
       </Suspense>

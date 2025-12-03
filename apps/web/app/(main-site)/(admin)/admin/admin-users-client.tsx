@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { Input } from "@workspace/ui/components/input";
 import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 
 export type AdminUser = {
   id: string;
@@ -247,19 +248,21 @@ function AdminUsersPaginationControls({
 }
 
 export function AdminUsersClient({
-  users,
+  users: initialUsers,
   total,
   currentPage,
   totalPages,
   hasNextPage,
   hasPreviousPage,
 }: Props) {
+  const router = useRouter();
   const [view, setView] = React.useState<"cards" | "table">("cards");
+  const [users, setUsers] = React.useState<AdminUser[]>(initialUsers);
   const [userStates, setUserStates] = React.useState<
     Record<string, ActionState>
   >(() =>
     Object.fromEntries(
-      users.map((u) => [
+      initialUsers.map((u) => [
         u.id,
         {
           banning: false,
@@ -270,6 +273,26 @@ export function AdminUsersClient({
       ])
     )
   );
+
+  // Update users when initialUsers changes (e.g., after router refresh)
+  React.useEffect(() => {
+    setUsers(initialUsers);
+    // Initialize state for any new users
+    setUserStates((prev) => {
+      const newState = { ...prev };
+      initialUsers.forEach((u) => {
+        if (!newState[u.id]) {
+          newState[u.id] = {
+            banning: false,
+            unbanning: false,
+            revokingSessions: false,
+            error: null,
+          };
+        }
+      });
+      return newState;
+    });
+  }, [initialUsers]);
 
   const updateState = (userId: string, patch: Partial<ActionState>) => {
     setUserStates((prev) => ({
@@ -286,14 +309,44 @@ export function AdminUsersClient({
 
   const handleBan = async (userId: string) => {
     updateState(userId, { banning: true, error: null });
+    
+    // Store previous state for potential rollback
+    const previousUser = users.find((u) => u.id === userId);
+    if (!previousUser) return;
+    
+    // Optimistic update
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === userId
+          ? { ...u, banned: true, banReason: "Banned by admin from Admin Dashboard" }
+          : u
+      )
+    );
+
     try {
       await authClient.admin.banUser({
         userId,
         banReason: "Banned by admin from Admin Dashboard",
       });
+      
+      toast.success("User banned successfully", {
+        description: "The user has been banned and cannot access the site.",
+      });
+      
+      // Refresh to get latest data from server
+      router.refresh();
     } catch (error) {
       console.error("Error banning user", error);
+      
+      // Revert optimistic update
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? previousUser : u))
+      );
+      
       updateState(userId, { error: "Failed to ban user. Please try again." });
+      toast.error("Failed to ban user", {
+        description: "Please try again or check your connection.",
+      });
     } finally {
       updateState(userId, { banning: false });
     }
@@ -301,11 +354,41 @@ export function AdminUsersClient({
 
   const handleUnban = async (userId: string) => {
     updateState(userId, { unbanning: true, error: null });
+    
+    // Store previous state for potential rollback
+    const previousUser = users.find((u) => u.id === userId);
+    if (!previousUser) return;
+    
+    // Optimistic update
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === userId
+          ? { ...u, banned: false, banReason: null, banExpires: null }
+          : u
+      )
+    );
+
     try {
       await authClient.admin.unbanUser({ userId });
+      
+      toast.success("User unbanned successfully", {
+        description: "The user can now access the site again.",
+      });
+      
+      // Refresh to get latest data from server
+      router.refresh();
     } catch (error) {
       console.error("Error unbanning user", error);
+      
+      // Revert optimistic update
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? previousUser : u))
+      );
+      
       updateState(userId, { error: "Failed to unban user. Please try again." });
+      toast.error("Failed to unban user", {
+        description: "Please try again or check your connection.",
+      });
     } finally {
       updateState(userId, { unbanning: false });
     }
@@ -313,12 +396,26 @@ export function AdminUsersClient({
 
   const handleRevokeSessions = async (userId: string) => {
     updateState(userId, { revokingSessions: true, error: null });
+    
+    const user = users.find((u) => u.id === userId);
+    const userName = user?.name || user?.email || "User";
+
     try {
       await authClient.admin.revokeUserSessions({ userId });
+      
+      toast.success("Sessions revoked successfully", {
+        description: `${userName}'s active sessions have been revoked. They will need to sign in again.`,
+      });
+      
+      // Refresh to ensure we have latest data
+      router.refresh();
     } catch (error) {
       console.error("Error revoking user sessions", error);
       updateState(userId, {
         error: "Failed to revoke sessions. Please try again.",
+      });
+      toast.error("Failed to revoke sessions", {
+        description: "Please try again or check your connection.",
       });
     } finally {
       updateState(userId, { revokingSessions: false });
