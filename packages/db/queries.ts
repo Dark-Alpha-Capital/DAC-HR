@@ -189,6 +189,7 @@ export const getCandidatesWithPositionsFiltered = async (
     phone: string | null;
     location: string | null;
     source: string | null;
+    sourceUrl: string | null;
     note: string | null;
     createdAt: Date;
     updatedAt: Date;
@@ -208,6 +209,7 @@ export const getCandidatesWithPositionsFiltered = async (
           phone: candidate.phone,
           location: candidate.location,
           source: candidate.source,
+          sourceUrl: candidate.sourceUrl,
           note: candidate.note,
           createdAt: candidate.createdAt,
           updatedAt: candidate.updatedAt,
@@ -269,6 +271,7 @@ export const getCandidatesWithPositionsFiltered = async (
         phone: string | null;
         location: string | null;
         source: string | null;
+        sourceUrl: string | null;
         note: string | null;
         createdAt: Date;
         updatedAt: Date;

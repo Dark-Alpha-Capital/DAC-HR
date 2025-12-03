@@ -139,7 +139,11 @@ const CandidateContainer = ({ candidates }: CandidateContainerProps) => {
                   <TableCell className="py-1.5 px-2 text-sm">
                     {candidate.applicationStatus ? (
                       <Badge
-                        variant={applicationStatusColors[candidate.applicationStatus] || "outline"}
+                        variant={
+                          applicationStatusColors[
+                            candidate.applicationStatus
+                          ] || "outline"
+                        }
                         className="text-xs"
                       >
                         {candidate.applicationStatus.charAt(0).toUpperCase() +
@@ -183,7 +187,10 @@ const CandidateContainer = ({ candidates }: CandidateContainerProps) => {
         <div className="w-full overflow-x-auto pb-4">
           <div className="flex gap-3 md:gap-4 min-w-max pr-4">
             {candidatesByPosition.map((position) => (
-              <div key={position.id} className="shrink-0 w-64 sm:w-72 md:w-80 flex flex-col">
+              <div
+                key={position.id}
+                className="shrink-0 w-64 sm:w-72 md:w-80 flex flex-col"
+              >
                 <div className="mb-2 px-1">
                   <h3 className="font-semibold text-xs text-muted-foreground">
                     {position.name}
@@ -209,10 +216,16 @@ const CandidateContainer = ({ candidates }: CandidateContainerProps) => {
                                 </h4>
                                 {candidate.applicationStatus && (
                                   <Badge
-                                    variant={applicationStatusColors[candidate.applicationStatus] || "outline"}
+                                    variant={
+                                      applicationStatusColors[
+                                        candidate.applicationStatus
+                                      ] || "outline"
+                                    }
                                     className="shrink-0 text-xs"
                                   >
-                                    {candidate.applicationStatus.charAt(0).toUpperCase() +
+                                    {candidate.applicationStatus
+                                      .charAt(0)
+                                      .toUpperCase() +
                                       candidate.applicationStatus.slice(1)}
                                   </Badge>
                                 )}
