@@ -215,9 +215,20 @@ const DisplayCandidate = async ({ params }: { params: Params }) => {
             {candidate.source && (
               <div className="flex items-center gap-3">
                 <LinkIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <span className="text-muted-foreground">
-                  {candidate.source}
-                </span>
+                {candidate.sourceUrl ? (
+                  <a
+                    href={candidate.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-foreground transition-colors underline"
+                  >
+                    {candidate.source}
+                  </a>
+                ) : (
+                  <span className="text-muted-foreground">
+                    {candidate.source}
+                  </span>
+                )}
               </div>
             )}
           </div>

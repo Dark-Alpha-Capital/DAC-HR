@@ -50,6 +50,9 @@ const CandidateUploadForm = ({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const searchParams = useSearchParams();
+  const [selectedSource, setSelectedSource] = React.useState<
+    "LinkedIn" | "Upwork" | "Handshake" | "Indeed" | undefined
+  >(undefined);
 
   // Get the pre-selected position from URL params
   const preSelectedPositionId = searchParams.get("position");
@@ -68,7 +71,13 @@ const CandidateUploadForm = ({
       email: "",
       phone: "",
       location: "",
-      source: "",
+      source: undefined as
+        | "LinkedIn"
+        | "Upwork"
+        | "Handshake"
+        | "Indeed"
+        | undefined,
+      sourceUrl: "",
       note: "",
       positionId: defaultPositionId, // Use the pre-selected or default position
     },
@@ -102,6 +111,7 @@ const CandidateUploadForm = ({
             },
           });
           form.reset();
+          setSelectedSource(undefined);
           router.push(`/candidates`);
         }
       });
@@ -123,12 +133,19 @@ const CandidateUploadForm = ({
           <Button
             type="button"
             variant="outline"
-            onClick={() => form.reset()}
+            onClick={() => {
+              form.reset();
+              setSelectedSource(undefined);
+            }}
             disabled={isPending}
           >
             Reset
           </Button>
-          <Button type="submit" form="candidate-upload-form" disabled={isPending}>
+          <Button
+            type="submit"
+            form="candidate-upload-form"
+            disabled={isPending}
+          >
             {isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -230,10 +247,17 @@ const CandidateUploadForm = ({
                 const cleaned = value.replace(/[\s\-\(\)\+\.]/g, "");
                 // Check if it's all digits and has reasonable length (7-15 digits)
                 if (!/^\d{7,15}$/.test(cleaned)) {
-                  return "Please enter a valid phone number (7-15 digits). Format: +1 (555) 123-4567 or 5551234567";
+                  return [
+                    {
+                      message:
+                        "Please enter a valid phone number (7-15 digits). Format: +1 (555) 123-4567 or 5551234567",
+                    },
+                  ];
                 }
                 if (value.length > 20) {
-                  return "Phone number must be at most 20 characters.";
+                  return [
+                    { message: "Phone number must be at most 20 characters." },
+                  ];
                 }
                 return undefined;
               },
@@ -254,11 +278,7 @@ const CandidateUploadForm = ({
                     placeholder="Enter the phone number (e.g., +1 (555) 123-4567)"
                     autoComplete="tel"
                   />
-                  {isInvalid && (
-                    <FieldError
-                      errors={field.state.meta.errors as { message?: string }[]}
-                    />
-                  )}
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>
               );
             }}
@@ -300,21 +320,82 @@ const CandidateUploadForm = ({
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Source</FieldLabel>
-                  <Input
-                    id={field.name}
-                    name={field.name}
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    aria-invalid={isInvalid}
-                    placeholder="Enter the source (e.g., LinkedIn, Referral)"
-                    autoComplete="off"
-                  />
+                  <Select
+                    value={field.state.value || ""}
+                    onValueChange={(value) => {
+                      const newSource =
+                        value === ""
+                          ? undefined
+                          : (value as
+                              | "LinkedIn"
+                              | "Upwork"
+                              | "Handshake"
+                              | "Indeed");
+                      field.handleChange(newSource);
+                      setSelectedSource(newSource);
+                      // Clear sourceUrl when source is cleared
+                      if (value === "") {
+                        form.setFieldValue("sourceUrl", "");
+                      }
+                    }}
+                  >
+                    <SelectTrigger
+                      id={field.name}
+                      aria-invalid={isInvalid}
+                      className="w-full"
+                    >
+                      <SelectValue placeholder="Select a source (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                      <SelectItem value="Upwork">Upwork</SelectItem>
+                      <SelectItem value="Handshake">Handshake</SelectItem>
+                      <SelectItem value="Indeed">Indeed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FieldDescription>
+                    Select the source where you found this candidate
+                  </FieldDescription>
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>
               );
             }}
           />
+
+          {selectedSource && (
+            <form.Field
+              name="sourceUrl"
+              children={(field) => {
+                const isInvalid =
+                  field.state.meta.isTouched && !field.state.meta.isValid;
+                return (
+                  <Field data-invalid={isInvalid}>
+                    <FieldLabel htmlFor={field.name}>
+                      {selectedSource} URL
+                    </FieldLabel>
+                    <Input
+                      id={field.name}
+                      name={field.name}
+                      type="url"
+                      value={field.state.value || ""}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      aria-invalid={isInvalid}
+                      placeholder={`Enter the ${selectedSource} profile URL`}
+                      autoComplete="off"
+                    />
+                    <FieldDescription>
+                      Provide the URL to the candidate's {selectedSource}{" "}
+                      profile
+                    </FieldDescription>
+                    {isInvalid && (
+                      <FieldError errors={field.state.meta.errors} />
+                    )}
+                  </Field>
+                );
+              }}
+            />
+          )}
 
           <form.Field
             name="positionId"

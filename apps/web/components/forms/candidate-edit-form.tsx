@@ -50,6 +50,13 @@ const CandidateEditForm = ({
 }: CandidateEditFormProps) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [selectedSource, setSelectedSource] = React.useState<
+    "LinkedIn" | "Upwork" | "Handshake" | "Indeed" | undefined
+  >(
+    candidate.source && ["LinkedIn", "Upwork", "Handshake", "Indeed"].includes(candidate.source)
+      ? (candidate.source as "LinkedIn" | "Upwork" | "Handshake" | "Indeed")
+      : undefined
+  );
 
   const form = useForm({
     defaultValues: {
@@ -58,7 +65,10 @@ const CandidateEditForm = ({
       email: candidate.email,
       phone: candidate.phone || "",
       location: candidate.location || "",
-      source: candidate.source || "",
+      source: candidate.source && ["LinkedIn", "Upwork", "Handshake", "Indeed"].includes(candidate.source)
+        ? (candidate.source as "LinkedIn" | "Upwork" | "Handshake" | "Indeed")
+        : undefined,
+      sourceUrl: (candidate as any).sourceUrl || "",
       note: candidate.note || "",
       positionId: candidate.positionId || positions[0]?.id || "",
     },
@@ -110,7 +120,14 @@ const CandidateEditForm = ({
           <Button
             type="button"
             variant="outline"
-            onClick={() => form.reset()}
+            onClick={() => {
+              form.reset();
+              setSelectedSource(
+                candidate.source && ["LinkedIn", "Upwork", "Handshake", "Indeed"].includes(candidate.source)
+                  ? (candidate.source as "LinkedIn" | "Upwork" | "Handshake" | "Indeed")
+                  : undefined
+              );
+            }}
             disabled={isPending}
           >
             Reset
@@ -252,16 +269,35 @@ const CandidateEditForm = ({
                 return (
                   <Field data-invalid={isInvalid}>
                     <FieldLabel htmlFor={field.name}>Source</FieldLabel>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      aria-invalid={isInvalid}
-                      placeholder="Enter the source (e.g., LinkedIn, Referral)"
-                      autoComplete="off"
-                    />
+                    <Select
+                      value={field.state.value || ""}
+                      onValueChange={(value) => {
+                        const newSource = value === "" ? undefined : (value as "LinkedIn" | "Upwork" | "Handshake" | "Indeed");
+                        field.handleChange(newSource);
+                        setSelectedSource(newSource);
+                        // Clear sourceUrl when source is cleared
+                        if (value === "") {
+                          form.setFieldValue("sourceUrl", "");
+                        }
+                      }}
+                    >
+                      <SelectTrigger
+                        id={field.name}
+                        aria-invalid={isInvalid}
+                        className="w-full"
+                      >
+                        <SelectValue placeholder="Select a source (optional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                        <SelectItem value="Upwork">Upwork</SelectItem>
+                        <SelectItem value="Handshake">Handshake</SelectItem>
+                        <SelectItem value="Indeed">Indeed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FieldDescription>
+                      Select the source where you found this candidate
+                    </FieldDescription>
                     {isInvalid && (
                       <FieldError errors={field.state.meta.errors} />
                     )}
@@ -269,6 +305,40 @@ const CandidateEditForm = ({
                 );
               }}
             />
+
+            {selectedSource && (
+              <form.Field
+                name="sourceUrl"
+                children={(field) => {
+                  const isInvalid =
+                    field.state.meta.isTouched && !field.state.meta.isValid;
+                  return (
+                    <Field data-invalid={isInvalid}>
+                      <FieldLabel htmlFor={field.name}>
+                        {selectedSource} URL
+                      </FieldLabel>
+                      <Input
+                        id={field.name}
+                        name={field.name}
+                        type="url"
+                        value={field.state.value || ""}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        aria-invalid={isInvalid}
+                        placeholder={`Enter the ${selectedSource} profile URL`}
+                        autoComplete="off"
+                      />
+                      <FieldDescription>
+                        Provide the URL to the candidate's {selectedSource} profile
+                      </FieldDescription>
+                      {isInvalid && (
+                        <FieldError errors={field.state.meta.errors} />
+                      )}
+                    </Field>
+                  );
+                }}
+              />
+            )}
 
             <form.Field
               name="positionId"

@@ -35,6 +35,7 @@ export const createCandidate = async (data: CandidateFormSchema) => {
     phone,
     location,
     source,
+    sourceUrl,
     note,
     positionId,
   } = result.data;
@@ -48,7 +49,8 @@ export const createCandidate = async (data: CandidateFormSchema) => {
         email,
         phone: phone?.trim() || null,
         location: location?.trim() || null,
-        source: source?.trim() || null,
+        source: source || null,
+        sourceUrl: sourceUrl?.trim() || null,
         note: note?.trim() || null,
       })
       .returning();

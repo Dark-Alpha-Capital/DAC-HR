@@ -28,7 +28,7 @@ export const updateCandidate = async (
     return { error: result.error.flatten().fieldErrors };
   }
 
-  const { firstName, lastName, email, phone, location, source, note, positionId } =
+  const { firstName, lastName, email, phone, location, source, sourceUrl, note, positionId } =
     result.data;
 
   try {
@@ -41,6 +41,7 @@ export const updateCandidate = async (
         phone: phone || null,
         location: location || null,
         source: source || null,
+        sourceUrl: sourceUrl?.trim() || null,
         note: note || null,
         updatedAt: new Date(),
       })
