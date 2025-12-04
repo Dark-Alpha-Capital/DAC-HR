@@ -17,6 +17,23 @@ export interface UpdateApplicationInput {
     | "hired"
     | "rejected"
     | "withdrawn";
+  personality?:
+    | "ENFJ"
+    | "ENFP"
+    | "ENTJ"
+    | "ENTP"
+    | "ESFJ"
+    | "ESFP"
+    | "ESTJ"
+    | "ESTP"
+    | "INFJ"
+    | "INTJ"
+    | "INTP"
+    | "ISFJ"
+    | "ISFP"
+    | "ISTJ"
+    | "ISTP"
+    | null;
 }
 
 export const updateApplication = async (data: UpdateApplicationInput) => {
@@ -28,11 +45,12 @@ export const updateApplication = async (data: UpdateApplicationInput) => {
     return { error: "Unauthorized" };
   }
 
-  const { applicationId, status } = data;
+  const { applicationId, status, personality } = data;
 
   try {
     const updateData: Partial<typeof application.$inferInsert> = {};
     if (status !== undefined) updateData.status = status;
+    if (personality !== undefined) updateData.personality = personality;
 
     const [updatedApplication] = await db
       .update(application)

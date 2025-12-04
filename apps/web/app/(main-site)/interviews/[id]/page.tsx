@@ -7,20 +7,15 @@ import {
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
 import Link from "next/link";
-import BackButton from "@/components/back-button";
 import {
-  ArrowLeft,
   Calendar,
   Clock,
   User,
-  Users,
   Star,
   MessageSquare,
-  FileText,
   CheckCircle,
   Circle,
   XCircle,
-  ChevronRight,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import InterviewQuestionFeedbackDisplay from "@/components/interview-question-feedback-display";

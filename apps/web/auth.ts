@@ -30,10 +30,8 @@ const isAdminEmail = (email: string): boolean => {
 };
 
 export const auth = betterAuth({
-  // Explicitly set secret - Better Auth requires this for session encryption
   secret: process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET,
 
-  // Set baseURL for proper cookie handling (Better Auth will use BETTER_AUTH_URL env var if not set)
   baseURL: process.env.BETTER_AUTH_URL,
 
   database: drizzleAdapter(db, {
@@ -72,12 +70,10 @@ export const auth = betterAuth({
     }),
   ],
 
-  // Database hooks to set admin role for new users
   databaseHooks: {
     user: {
       create: {
         before: async (userData) => {
-          // Set admin role if email is in admin list
           if (userData.email && isAdminEmail(userData.email)) {
             return {
               data: {
@@ -86,7 +82,6 @@ export const auth = betterAuth({
               },
             };
           }
-          // Return default role for non-admin users
           return {
             data: {
               ...userData,
@@ -98,20 +93,16 @@ export const auth = betterAuth({
     },
   },
 
-  // Hook to check and update role on sign-in (for existing users)
   hooks: {
     after: createAuthMiddleware(async (ctx) => {
-      // Check if this is a social sign-in endpoint and a new session was created
       if (ctx.path === "/sign-in/social" && ctx.context.newSession) {
         const signedInUser = ctx.context.newSession.user;
 
-        // If user is signing in and their email is in admin list but they don't have admin role
         if (
           signedInUser.email &&
           isAdminEmail(signedInUser.email) &&
           signedInUser.role !== "admin"
         ) {
-          // Update the user's role to admin
           await db
             .update(usersTable)
             .set({ role: "admin" })

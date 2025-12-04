@@ -57,7 +57,7 @@ export const account = pgTable("account", {
   password: text("password"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
-    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .$onUpdate(() => new Date())
     .notNull(),
 });
 
@@ -169,7 +169,7 @@ export const roundTemplate = pgTable("round_template", {
   id: text("id")
     .primaryKey()
     .default(sql`gen_random_uuid()`),
-  name: text("name").notNull().unique(), // e.g., "Technical Interview"
+  name: text("name").notNull(), // e.g., "Technical Interview"
   description: text("description"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
@@ -221,6 +221,24 @@ export const applicationStatusEnum = pgEnum("application_status", [
   "withdrawn",
 ]);
 
+export const personalityEnum = pgEnum("personality", [
+  "ENFJ",
+  "ENFP",
+  "ENTJ",
+  "ENTP",
+  "ESFJ",
+  "ESFP",
+  "ESTJ",
+  "ESTP",
+  "INFJ",
+  "INTJ",
+  "INTP",
+  "ISFJ",
+  "ISFP",
+  "ISTJ",
+  "ISTP",
+]);
+
 export const application = pgTable("application", {
   id: text("id")
     .primaryKey()
@@ -232,6 +250,7 @@ export const application = pgTable("application", {
     .notNull()
     .references(() => position.id, { onDelete: "cascade" }),
   status: applicationStatusEnum("status").default("pending").notNull(),
+  personality: personalityEnum("personality"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

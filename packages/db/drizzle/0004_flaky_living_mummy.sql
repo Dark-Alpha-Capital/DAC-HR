@@ -1,0 +1,2 @@
+CREATE TYPE "public"."personality" AS ENUM('ENFJ', 'ENFP', 'ENTJ', 'ENTP', 'ESFJ', 'ESFP', 'ESTJ', 'ESTP', 'INFJ', 'INTJ', 'INTP', 'ISFJ', 'ISFP', 'ISTJ', 'ISTP');--> statement-breakpoint
+ALTER TABLE "application" ADD COLUMN "personality" "personality";

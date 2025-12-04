@@ -20,6 +20,7 @@ import { headers } from "next/headers";
 import RecordInterviewDialogWrapper from "@/components/record-interview-dialog-wrapper";
 import ApplicationProgressTimeline from "@/components/application-progress-timeline";
 import ApplicationStatusDisplay from "@/components/application-status-display";
+import ApplicationPersonalitySelector from "@/components/application-personality-selector";
 import { ApplicationDetailSkeleton } from "@/components/skeletons/application-detail-skeleton";
 import { UserAuthenticated } from "@/components/auth-checks";
 
@@ -153,6 +154,13 @@ const DisplayApplication = async ({
 
       <div className="space-y-3">
         <ApplicationStatusDisplay application={application} />
+      </div>
+
+      <div className="space-y-3">
+        <ApplicationPersonalitySelector
+          applicationId={id}
+          currentPersonality={application.personality}
+        />
       </div>
 
       {/* Progress Timeline with Interview Details */}
