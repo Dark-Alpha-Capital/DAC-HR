@@ -18,8 +18,7 @@ export const positionFormSchema = z.object({
       "origination-pipe-public-markets",
     ],
     {
-      required_error: "Department is required.",
-      invalid_type_error: "Department is required.",
+      message: "Department is required.",
     }
   ),
 });
