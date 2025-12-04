@@ -86,6 +86,7 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
               form.reset({
                 name: position.name,
                 description: position.description || "",
+                department: (position.department as any) || "management",
               });
             }}
             disabled={isPending}
