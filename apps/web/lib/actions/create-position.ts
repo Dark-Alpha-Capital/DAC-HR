@@ -33,7 +33,7 @@ export const createPosition = async (data: PositionFormSchema) => {
     return { error: result.error.flatten().fieldErrors };
   }
 
-  const { name, description } = result.data;
+  const { name, description, department } = result.data;
 
   try {
     const [newPosition] = await db
@@ -42,6 +42,7 @@ export const createPosition = async (data: PositionFormSchema) => {
         name,
         slug: slugify(name, { lower: true, strict: true }),
         description,
+        department,
       })
       .returning();
 

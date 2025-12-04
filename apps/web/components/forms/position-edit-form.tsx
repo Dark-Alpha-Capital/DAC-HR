@@ -41,6 +41,7 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
     defaultValues: {
       name: position.name,
       description: position.description || "",
+      department: (position.department as any) || "management",
     },
     validators: {
       onSubmit: positionFormSchema,
@@ -155,6 +156,36 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
                   <FieldDescription>
                     Describe the position in detail.
                   </FieldDescription>
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
+            }}
+          />
+          <form.Field
+            name="department"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>Department</FieldLabel>
+                  <select
+                    id={field.name}
+                    name={field.name}
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    aria-invalid={isInvalid}
+                  >
+                    <option value="management">Management</option>
+                    <option value="capital-markets">Capital Markets</option>
+                    <option value="deal-team">Deal Team</option>
+                    <option value="legal-operations">Legal Operations</option>
+                    <option value="origination-pipe-public-markets">
+                      Origination / PIPE / Public Markets
+                    </option>
+                  </select>
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>
               );

@@ -73,6 +73,14 @@ export const verification = pgTable("verification", {
     .notNull(),
 });
 
+export const positionDepartmentEnum = pgEnum("position_department", [
+  "management",
+  "capital-markets",
+  "deal-team",
+  "legal-operations",
+  "origination-pipe-public-markets",
+]);
+
 export const position = pgTable("position", {
   id: text("id")
     .primaryKey()
@@ -80,6 +88,7 @@ export const position = pgTable("position", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description"),
+  department: positionDepartmentEnum("department"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
