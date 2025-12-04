@@ -73,12 +73,17 @@ export const verification = pgTable("verification", {
     .notNull(),
 });
 
-export const positionDepartmentEnum = pgEnum("position_department", [
-  "management",
-  "capital-markets",
-  "deal-team",
-  "legal-operations",
-  "origination-pipe-public-markets",
+export const departmentEnum = pgEnum("department", [
+  "engineering",
+  "product",
+  "sales",
+  "marketing",
+  "hr",
+  "finance",
+  "operations",
+  "legal",
+  "customer-support",
+  "other",
 ]);
 
 export const position = pgTable("position", {
@@ -88,7 +93,7 @@ export const position = pgTable("position", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description"),
-  department: positionDepartmentEnum("department"),
+  department: departmentEnum("department"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -361,19 +366,6 @@ export const candidateOnboarding = pgTable("candidate_onboarding", {
     .$onUpdate(() => new Date())
     .notNull(),
 });
-
-export const departmentEnum = pgEnum("department", [
-  "engineering",
-  "product",
-  "sales",
-  "marketing",
-  "hr",
-  "finance",
-  "operations",
-  "legal",
-  "customer-support",
-  "other",
-]);
 
 export const employee = pgTable("employee", {
   id: text("id")

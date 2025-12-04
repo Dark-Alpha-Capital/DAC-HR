@@ -14,7 +14,15 @@ import {
   FieldLabel,
 } from "@workspace/ui/components/field";
 import { Input } from "@workspace/ui/components/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select";
 import { positionFormSchema } from "@/lib/schemas/position-form-schema";
+import { departmentEnum } from "@/lib/schemas/employee-form-schema";
 import { Loader2 } from "lucide-react";
 import { createPosition } from "@/lib/actions/create-position";
 import { useRouter } from "next/navigation";
@@ -28,7 +36,7 @@ const PositionUploadForm = () => {
     defaultValues: {
       name: "",
       description: "",
-      department: "management" as z.infer<
+      department: "engineering" as z.infer<
         typeof positionFormSchema
       >["department"],
     },
@@ -167,27 +175,28 @@ const PositionUploadForm = () => {
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Department</FieldLabel>
-                  <select
-                    id={field.name}
-                    name={field.name}
-                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  <Select
                     value={field.state.value || ""}
-                    onBlur={field.handleBlur}
-                    onChange={(e) =>
-                      field.handleChange(
-                        e.target.value as typeof field.state.value
-                      )
-                    }
-                    aria-invalid={isInvalid}
+                    onValueChange={(value) => {
+                      field.handleChange(value as typeof field.state.value);
+                    }}
                   >
-                    <option value="management">Management</option>
-                    <option value="capital-markets">Capital Markets</option>
-                    <option value="deal-team">Deal Team</option>
-                    <option value="legal-operations">Legal Operations</option>
-                    <option value="origination-pipe-public-markets">
-                      Origination / PIPE / Public Markets
-                    </option>
-                  </select>
+                    <SelectTrigger
+                      id={field.name}
+                      aria-invalid={isInvalid}
+                      className="w-full"
+                    >
+                      <SelectValue placeholder="Select a department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departmentEnum.options.map((dept) => (
+                        <SelectItem key={dept} value={dept}>
+                          {dept.charAt(0).toUpperCase() +
+                            dept.slice(1).replace("-", " ")}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>
               );

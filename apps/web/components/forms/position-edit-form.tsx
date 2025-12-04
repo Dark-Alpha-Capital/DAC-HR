@@ -19,7 +19,15 @@ import {
   InputGroupText,
   InputGroupTextarea,
 } from "@workspace/ui/components/input-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select";
 import { positionFormSchema } from "@/lib/schemas/position-form-schema";
+import { departmentEnum } from "@/lib/schemas/employee-form-schema";
 import { Loader2 } from "lucide-react";
 import { updatePosition } from "@/lib/actions/update-position";
 import { useRouter } from "next/navigation";
@@ -41,7 +49,7 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
     defaultValues: {
       name: position.name,
       description: position.description || "",
-      department: (position.department as any) || "management",
+      department: (position.department as any) || "engineering",
     },
     validators: {
       onSubmit: positionFormSchema,
@@ -86,7 +94,7 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
               form.reset({
                 name: position.name,
                 description: position.description || "",
-                department: (position.department as any) || "management",
+                department: (position.department as any) || "engineering",
               });
             }}
             disabled={isPending}
@@ -170,23 +178,28 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Department</FieldLabel>
-                  <select
-                    id={field.name}
-                    name={field.name}
-                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    aria-invalid={isInvalid}
+                  <Select
+                    value={field.state.value || ""}
+                    onValueChange={(value) => {
+                      field.handleChange(value as typeof field.state.value);
+                    }}
                   >
-                    <option value="management">Management</option>
-                    <option value="capital-markets">Capital Markets</option>
-                    <option value="deal-team">Deal Team</option>
-                    <option value="legal-operations">Legal Operations</option>
-                    <option value="origination-pipe-public-markets">
-                      Origination / PIPE / Public Markets
-                    </option>
-                  </select>
+                    <SelectTrigger
+                      id={field.name}
+                      aria-invalid={isInvalid}
+                      className="w-full"
+                    >
+                      <SelectValue placeholder="Select a department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departmentEnum.options.map((dept) => (
+                        <SelectItem key={dept} value={dept}>
+                          {dept.charAt(0).toUpperCase() +
+                            dept.slice(1).replace("-", " ")}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>
               );

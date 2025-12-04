@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { departmentEnum } from "./employee-form-schema";
 
 export const positionFormSchema = z.object({
   name: z
@@ -9,18 +10,7 @@ export const positionFormSchema = z.object({
     .string()
     .min(1, "Description is required."),
 
-  department: z.enum(
-    [
-      "management",
-      "capital-markets",
-      "deal-team",
-      "legal-operations",
-      "origination-pipe-public-markets",
-    ],
-    {
-      message: "Department is required.",
-    }
-  ),
+  department: departmentEnum,
 });
 
 export type PositionFormSchema = z.infer<typeof positionFormSchema>;
