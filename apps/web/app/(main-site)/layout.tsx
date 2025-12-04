@@ -28,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased flex flex-col min-h-screen`}
+        className={`${fontSans.variable} ${fontMono.variable} antialiased `}
       >
         <Providers>
           <SidebarProvider>
@@ -36,12 +36,10 @@ export default function RootLayout({
               <AppSidebar />
             </Suspense>
 
-            <SidebarInset className="flex-1">
-              <main className="flex-1 p-4">
-                <SidebarTrigger />
-                {children}
-              </main>
-            </SidebarInset>
+            <main className="flex-1 p-4">
+              <SidebarTrigger />
+              {children}
+            </main>
           </SidebarProvider>
           <Toaster />
         </Providers>

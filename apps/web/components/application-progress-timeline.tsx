@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -10,8 +9,6 @@ import {
   Clock,
   Star,
   Eye,
-  ChevronDown,
-  ChevronUp,
   Calendar,
   User,
   FileText,
@@ -78,22 +75,6 @@ export default function ApplicationProgressTimeline({
   users = [],
   application,
 }: ApplicationProgressTimelineProps) {
-  const [expandedInterviews, setExpandedInterviews] = useState<Set<string>>(
-    new Set(selectedInterviewId ? [selectedInterviewId] : [])
-  );
-
-  const toggleInterview = (interviewId: string) => {
-    setExpandedInterviews((prev) => {
-      const next = new Set(prev);
-      if (next.has(interviewId)) {
-        next.delete(interviewId);
-      } else {
-        next.add(interviewId);
-      }
-      return next;
-    });
-  };
-
   const getInterviewForRound = (positionRoundTemplateId: string) => {
     return interviews.find(
       (i) => i.positionRoundTemplateId === positionRoundTemplateId
@@ -204,9 +185,6 @@ export default function ApplicationProgressTimeline({
             const Icon = statusConfig.icon;
             const hasInterview = !!interview;
             const isPending = !hasInterview;
-            const isExpanded = interview
-              ? expandedInterviews.has(interview.id)
-              : false;
             const isSelected = interview?.id === selectedInterviewId;
 
             return (
@@ -308,66 +286,10 @@ export default function ApplicationProgressTimeline({
                           </div>
                         </div>
 
-                        {/* Interview Summary */}
-                        {hasInterview && (
-                          <div className="pt-2 border-t border-border/50">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                                <span className="font-medium">
-                                  Interview recorded
-                                </span>
-                                {interview.scheduledAt && (
-                                  <>
-                                    <span>•</span>
-                                    <div className="flex items-center gap-1">
-                                      <Calendar className="h-3 w-3" />
-                                      <span>
-                                        {formatDate(interview.scheduledAt)}
-                                      </span>
-                                    </div>
-                                  </>
-                                )}
-                                {interview.interviewer && (
-                                  <>
-                                    <span>•</span>
-                                    <div className="flex items-center gap-1">
-                                      <User className="h-3 w-3" />
-                                      <span>
-                                        {interview.interviewer.name ||
-                                          interview.interviewer.email}
-                                      </span>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() =>
-                                  interview && toggleInterview(interview.id)
-                                }
-                                className="h-7"
-                              >
-                                {isExpanded ? (
-                                  <>
-                                    <ChevronUp className="h-3 w-3 mr-1" />
-                                    Hide Details
-                                  </>
-                                ) : (
-                                  <>
-                                    <ChevronDown className="h-3 w-3 mr-1" />
-                                    Show Details
-                                  </>
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Expanded Interview Details */}
-                        {hasInterview && isExpanded && interview && (
-                          <div className="pt-3 border-t border-border/50 space-y-3">
-                            {/* Full Interview Details */}
+                        {/* Interview Details */}
+                        {hasInterview && interview && (
+                          <div className="pt-2 border-t border-border/50 space-y-3">
+                            {/* Interview Information */}
                             <div className="space-y-2 text-sm">
                               {interview.scheduledAt && (
                                 <div className="flex items-center gap-2">
@@ -410,16 +332,16 @@ export default function ApplicationProgressTimeline({
                             </div>
 
                             {/* Actions */}
-                            <div className="flex items-center gap-2 pt-2 border-t">
-                              {applicationId && (
+                            {applicationId && (
+                              <div className="flex items-center gap-2 pt-2 border-t">
                                 <Button size="sm" variant="outline" asChild>
                                   <Link href={`/interviews/${interview.id}`}>
                                     <Eye className="h-3 w-3 mr-2" />
                                     View
                                   </Link>
                                 </Button>
-                              )}
-                            </div>
+                              </div>
+                            )}
                           </div>
                         )}
 

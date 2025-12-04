@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
   ToggleGroup,
   ToggleGroupItem,
@@ -8,7 +8,6 @@ import {
 import {
   LayoutGrid,
   Table as TableIcon,
-  Columns,
   Download,
   Loader2,
 } from "lucide-react";
@@ -38,7 +37,7 @@ interface DocumentContainerProps {
   documents: Document[];
 }
 
-type ViewMode = "grid" | "table" | "kanban";
+type ViewMode = "grid" | "table";
 
 const categoryLabels = {
   "job-description": "Job Description",
@@ -52,25 +51,6 @@ const DocumentContainer = ({ documents }: DocumentContainerProps) => {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [previewDocument, setPreviewDocument] = useState<Document | null>(null);
   const [downloadingDocId, setDownloadingDocId] = useState<string | null>(null);
-
-  // Group documents by category for kanban view
-  const documentsByCategory = useMemo(() => {
-    const grouped = new Map<string, Document[]>();
-
-    documents.forEach((document) => {
-      const categoryKey = document.category || "other";
-      if (!grouped.has(categoryKey)) {
-        grouped.set(categoryKey, []);
-      }
-      grouped.get(categoryKey)!.push(document);
-    });
-
-    return Array.from(grouped.entries()).map(([category, docs]) => ({
-      category,
-      name: categoryLabels[category as keyof typeof categoryLabels] || "Other",
-      documents: docs,
-    }));
-  }, [documents]);
 
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString("en-US", {
@@ -147,9 +127,6 @@ const DocumentContainer = ({ documents }: DocumentContainerProps) => {
           <ToggleGroupItem value="table" aria-label="Table view">
             <TableIcon className="h-4 w-4" />
           </ToggleGroupItem>
-          <ToggleGroupItem value="kanban" aria-label="Kanban view">
-            <Columns className="h-4 w-4" />
-          </ToggleGroupItem>
         </ToggleGroup>
       </div>
 
@@ -159,7 +136,7 @@ const DocumentContainer = ({ documents }: DocumentContainerProps) => {
             <DocumentCard key={document.id} document={document} />
           ))}
         </div>
-      ) : viewMode === "table" ? (
+      ) : (
         <Table>
           <TableHeader>
             <TableRow>
@@ -239,107 +216,6 @@ const DocumentContainer = ({ documents }: DocumentContainerProps) => {
             })}
           </TableBody>
         </Table>
-      ) : (
-        <div className="overflow-x-auto pb-4">
-          <div className="flex gap-2 min-w-max">
-            {documentsByCategory.map((category) => (
-              <div
-                key={category.category}
-                className="shrink-0 w-72 flex flex-col"
-              >
-                <div className="mb-2 px-1">
-                  <h3 className="font-semibold text-xs text-muted-foreground">
-                    {category.name}
-                  </h3>
-                  <span className="text-xs text-muted-foreground">
-                    {category.documents.length}
-                  </span>
-                </div>
-                <div className="flex-1 space-y-1.5 overflow-y-auto max-h-[calc(100vh-300px)]">
-                  {category.documents.map((document) => (
-                    <Card
-                      key={document.id}
-                      className="hover:shadow-sm transition-shadow py-2 px-2"
-                    >
-                      <CardContent className="p-2">
-                        <div className="space-y-1.5">
-                          <div>
-                            <h4 className="font-medium leading-tight text-sm">
-                              {document.name}
-                            </h4>
-                            {document.description && (
-                              <p className="text-xs text-muted-foreground leading-tight line-clamp-2">
-                                {document.description}
-                              </p>
-                            )}
-                          </div>
-                          {document.tags && document.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1">
-                              {document.tags.slice(0, 3).map((tag, index) => (
-                                <span
-                                  key={index}
-                                  className="text-xs px-1.5 py-0.5 bg-muted rounded"
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                              {document.tags.length > 3 && (
-                                <span className="text-xs text-muted-foreground">
-                                  +{document.tags.length - 3}
-                                </span>
-                              )}
-                            </div>
-                          )}
-                          <div className="text-xs text-muted-foreground leading-tight">
-                            {formatDate(document.createdAt)}
-                          </div>
-                          <div className="flex items-center gap-1 pt-1.5 border-t">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() => setPreviewDocument(document)}
-                                >
-                                  <Eye className="h-3 w-3" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Preview</TooltipContent>
-                            </Tooltip>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() =>
-                                    handleDownloadDocument(document)
-                                  }
-                                  disabled={downloadingDocId === document.id}
-                                >
-                                  {downloadingDocId === document.id ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                  ) : (
-                                    <Download className="h-3 w-3" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Download</TooltipContent>
-                            </Tooltip>
-                            <div className="ml-auto">
-                              <DeleteDocumentButton documentId={document.id} />
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       )}
 
       {previewDocument && (

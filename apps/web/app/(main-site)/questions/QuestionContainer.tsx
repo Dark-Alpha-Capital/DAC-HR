@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@workspace/ui/components/toggle-group";
-import { LayoutGrid, Table as TableIcon, Columns } from "lucide-react";
+import { LayoutGrid, Table as TableIcon } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -43,70 +43,10 @@ interface QuestionContainerProps {
   questions: QuestionWithRounds[];
 }
 
-type ViewMode = "grid" | "table" | "kanban";
+type ViewMode = "grid" | "table";
 
 const QuestionContainer = ({ questions }: QuestionContainerProps) => {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
-
-  // Group questions by round for Kanban view,
-  // keeping track of which positions are linked via that round.
-  const questionsByRound = useMemo(() => {
-    const grouped = new Map<
-      string,
-      {
-        roundId: string;
-        roundName: string;
-        questions: {
-          question: QuestionWithRounds;
-          positions: QuestionPosition[];
-        }[];
-      }
-    >();
-
-    const unassigned: QuestionWithRounds[] = [];
-
-    questions.forEach((question) => {
-      if (!question.rounds || question.rounds.length === 0) {
-        unassigned.push(question);
-        return;
-      }
-
-      question.rounds.forEach((round) => {
-        if (!grouped.has(round.id)) {
-          grouped.set(round.id, {
-            roundId: round.id,
-            roundName: round.name || "Unknown",
-            questions: [],
-          });
-        }
-
-        const column = grouped.get(round.id)!;
-        if (!column.questions.some((item) => item.question.id === question.id)) {
-          column.questions.push({
-            question,
-            positions: round.positions ?? [],
-          });
-        }
-      });
-    });
-
-    const result = Array.from(grouped.values()).sort((a, b) =>
-      a.roundName.localeCompare(b.roundName)
-    );
-
-    if (unassigned.length > 0) {
-      result.push({
-        roundId: "unassigned",
-        roundName: "Unassigned",
-        questions: unassigned.map((question) => ({
-          question,
-          positions: [],
-        })),
-      });
-    }
-
-    return result;
-  }, [questions]);
 
   const renderRoundsAndPositions = (question: QuestionWithRounds) => {
     if (!question.rounds || question.rounds.length === 0) {
@@ -165,9 +105,6 @@ const QuestionContainer = ({ questions }: QuestionContainerProps) => {
           <ToggleGroupItem value="table" aria-label="Table view">
             <TableIcon className="h-4 w-4" />
           </ToggleGroupItem>
-          <ToggleGroupItem value="kanban" aria-label="Kanban view">
-            <Columns className="h-4 w-4" />
-          </ToggleGroupItem>
         </ToggleGroup>
       </div>
 
@@ -216,7 +153,7 @@ const QuestionContainer = ({ questions }: QuestionContainerProps) => {
             </Card>
           ))}
         </div>
-      ) : viewMode === "table" ? (
+      ) : (
         <Table>
           <TableHeader>
             <TableRow>
@@ -267,84 +204,6 @@ const QuestionContainer = ({ questions }: QuestionContainerProps) => {
             ))}
           </TableBody>
         </Table>
-      ) : (
-        <div className="overflow-x-auto pb-4">
-          <div className="flex gap-2 min-w-max">
-            {questionsByRound.map((group) => (
-              <div key={group.roundId} className="shrink-0 w-72 flex flex-col">
-                <div className="mb-2 px-1">
-                  <h3 className="font-semibold text-xs text-muted-foreground">
-                    {group.roundName}
-                  </h3>
-                  <span className="text-xs text-muted-foreground">
-                    {group.questions.length}
-                  </span>
-                </div>
-                <div className="flex-1 space-y-1.5 overflow-y-auto max-h-[calc(100vh-300px)]">
-                  {group.questions.map(({ question, positions }) => (
-                    <Card
-                      key={question.id}
-                      className="hover:shadow-sm transition-shadow py-2 px-2"
-                    >
-                      <CardContent className="p-2">
-                        <div className="space-y-1.5">
-                          <div>
-                            <h4 className="font-medium leading-tight text-sm line-clamp-3">
-                              {question.questionText}
-                            </h4>
-                          </div>
-                          {positions.length > 0 && (
-                            <div className="flex flex-wrap gap-1">
-                              {positions.map((position) => (
-                                <Badge
-                                  key={position.id}
-                                  variant="secondary"
-                                  className="text-xs"
-                                >
-                                  {position.name}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-                          {positions.length === 0 && (
-                            <span className="text-[10px] text-muted-foreground">
-                              No positions linked to this round
-                            </span>
-                          )}
-                          <div className="flex items-center gap-1 pt-1.5 border-t">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              asChild
-                            >
-                              <Link href={`/questions/${question.id}`}>
-                                <Eye className="h-3 w-3" />
-                              </Link>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              asChild
-                            >
-                              <Link href={`/questions/${question.id}/edit`}>
-                                <Pencil className="h-3 w-3" />
-                              </Link>
-                            </Button>
-                            <div className="ml-auto">
-                              <DeleteQuestionButton questionId={question.id} />
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       )}
     </div>
   );

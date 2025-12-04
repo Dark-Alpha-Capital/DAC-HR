@@ -12,6 +12,8 @@ import { Pencil, Calendar, Clock, Eye, Users, User } from "lucide-react";
 import DeletePositionButton from "@/components/delete-position-button";
 import { formatDate } from "@/lib/utils";
 import { UserIsAdmin } from "@/components/auth-checks";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type Params = Promise<{ slug: string }>;
 
@@ -137,20 +139,15 @@ const DisplayPosition = async ({ params }: { params: Params }) => {
       <div className="space-y-2">
         <h3 className="text-sm font-medium">Description</h3>
         {position.description ? (
-          <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-            {position.description}
-          </p>
-        ) : (
-          <p className="text-sm text-muted-foreground italic">
-            No description provided for this position.
-          </p>
-        )}
+          <div
+            dangerouslySetInnerHTML={{ __html: position.description }}
+            className="prose prose-sm max-w-none dark:prose-invert"
+          />
+        ) : null}
       </div>
     </div>
   );
 };
-
-// Rounds Section Component
 const RoundsSection = async ({ params }: { params: Params }) => {
   const { slug } = await params;
   const position = await getPositionBySlug(slug);

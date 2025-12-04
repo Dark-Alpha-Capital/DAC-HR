@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@workspace/ui/components/toggle-group";
-import { LayoutGrid, Table as TableIcon, Columns } from "lucide-react";
+import { LayoutGrid, Table as TableIcon } from "lucide-react";
 import CandidateCard from "@/components/candidate-card";
 import {
   Table,
@@ -46,31 +46,10 @@ interface CandidateContainerProps {
   candidates: Candidate[];
 }
 
-type ViewMode = "grid" | "table" | "kanban";
+type ViewMode = "grid" | "table";
 
 const CandidateContainer = ({ candidates }: CandidateContainerProps) => {
-  const [viewMode, setViewMode] = useState<ViewMode>("kanban");
-
-  // Group candidates by position for kanban view
-  const candidatesByPosition = useMemo(() => {
-    const grouped = new Map<string, Candidate[]>();
-
-    candidates.forEach((candidate) => {
-      const positionKey = candidate.position?.id || "unassigned";
-      const positionName = candidate.position?.name || "Unassigned";
-
-      if (!grouped.has(positionKey)) {
-        grouped.set(positionKey, []);
-      }
-      grouped.get(positionKey)!.push(candidate);
-    });
-
-    return Array.from(grouped.entries()).map(([id, candidates]) => ({
-      id,
-      name: candidates[0]?.position?.name || "Unassigned",
-      candidates,
-    }));
-  }, [candidates]);
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
   return (
     <div className="space-y-4">
@@ -89,9 +68,6 @@ const CandidateContainer = ({ candidates }: CandidateContainerProps) => {
           <ToggleGroupItem value="table" aria-label="Table view">
             <TableIcon className="h-4 w-4" />
           </ToggleGroupItem>
-          <ToggleGroupItem value="kanban" aria-label="Kanban view">
-            <Columns className="h-4 w-4" />
-          </ToggleGroupItem>
         </ToggleGroup>
       </div>
 
@@ -101,7 +77,7 @@ const CandidateContainer = ({ candidates }: CandidateContainerProps) => {
             <CandidateCard key={candidate.id} candidate={candidate} />
           ))}
         </div>
-      ) : viewMode === "table" ? (
+      ) : (
         <Table>
           <TableHeader>
             <TableRow>
@@ -183,112 +159,6 @@ const CandidateContainer = ({ candidates }: CandidateContainerProps) => {
             })}
           </TableBody>
         </Table>
-      ) : (
-        <div className="w-full overflow-x-auto pb-4">
-          <div className="flex gap-3 md:gap-4 min-w-max pr-4">
-            {candidatesByPosition.map((position) => (
-              <div
-                key={position.id}
-                className="shrink-0 w-64 sm:w-72 md:w-80 flex flex-col"
-              >
-                <div className="mb-2 px-1">
-                  <h3 className="font-semibold text-xs text-muted-foreground">
-                    {position.name}
-                  </h3>
-                  <span className="text-xs text-muted-foreground">
-                    {position.candidates.length}
-                  </span>
-                </div>
-                <div className="flex-1 space-y-1.5 overflow-y-auto max-h-[calc(100vh-300px)]">
-                  {position.candidates.map((candidate) => {
-                    const fullName = `${candidate.firstName} ${candidate.lastName}`;
-                    return (
-                      <Card
-                        key={candidate.id}
-                        className="hover:shadow-sm transition-shadow py-2 px-2"
-                      >
-                        <CardContent className="p-2">
-                          <div className="space-y-1.5">
-                            <div>
-                              <div className="flex items-start justify-between gap-2 mb-1">
-                                <h4 className="font-medium leading-tight">
-                                  {fullName}
-                                </h4>
-                                {candidate.applicationStatus && (
-                                  <Badge
-                                    variant={
-                                      applicationStatusColors[
-                                        candidate.applicationStatus
-                                      ] || "outline"
-                                    }
-                                    className="shrink-0 text-xs"
-                                  >
-                                    {candidate.applicationStatus
-                                      .charAt(0)
-                                      .toUpperCase() +
-                                      candidate.applicationStatus.slice(1)}
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-xs text-muted-foreground leading-tight">
-                                {candidate.email}
-                              </p>
-                            </div>
-                            {(candidate.phone || candidate.location) && (
-                              <div className="text-xs text-muted-foreground leading-tight">
-                                {candidate.phone && candidate.location ? (
-                                  <p>
-                                    {candidate.phone} • {candidate.location}
-                                  </p>
-                                ) : (
-                                  <>
-                                    {candidate.phone && (
-                                      <p>{candidate.phone}</p>
-                                    )}
-                                    {candidate.location && (
-                                      <p>{candidate.location}</p>
-                                    )}
-                                  </>
-                                )}
-                              </div>
-                            )}
-                            <div className="flex items-center gap-1 pt-1.5 border-t">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0"
-                                asChild
-                              >
-                                <Link href={`/candidates/${candidate.id}`}>
-                                  <Eye className="h-3 w-3" />
-                                </Link>
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0"
-                                asChild
-                              >
-                                <Link href={`/candidates/${candidate.id}/edit`}>
-                                  <Pencil className="h-3 w-3" />
-                                </Link>
-                              </Button>
-                              <div className="ml-auto">
-                                <DeleteCandidateButton
-                                  candidateId={candidate.id}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       )}
     </div>
   );

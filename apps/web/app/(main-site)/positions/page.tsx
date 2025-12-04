@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 const page = () => {
   return (
-    <div className="container mx-auto py-8 space-y-6">
+    <div className="container py-8 space-y-6">
       <Suspense>
         <UserIsAdmin />
       </Suspense>

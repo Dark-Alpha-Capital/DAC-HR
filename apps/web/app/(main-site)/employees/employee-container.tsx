@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useMemo, useState, useTransition } from "react";
+import React, { useState, useTransition } from "react";
 import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@workspace/ui/components/toggle-group";
-import { LayoutGrid, Table as TableIcon, Columns } from "lucide-react";
+import { LayoutGrid, Table as TableIcon } from "lucide-react";
 import EmployeeCard from "@/components/employee-card";
 import {
   Table,
@@ -34,7 +34,7 @@ interface EmployeeContainerProps {
   employees: Employee[];
 }
 
-type ViewMode = "grid" | "table" | "kanban";
+type ViewMode = "grid" | "table";
 
 const DeleteEmployeeIconButton = ({ employeeId }: { employeeId: string }) => {
   const router = useRouter();
@@ -68,32 +68,6 @@ const DeleteEmployeeIconButton = ({ employeeId }: { employeeId: string }) => {
 const EmployeeContainer = ({ employees }: EmployeeContainerProps) => {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
-  // Group employees by department for kanban view
-  const employeesByDepartment = useMemo(() => {
-    const grouped = new Map<string, Employee[]>();
-
-    employees.forEach((employee) => {
-      const departmentKey = employee.department || "unassigned";
-      const departmentName =
-        departmentKey.charAt(0).toUpperCase() +
-        departmentKey.slice(1).replace("-", " ");
-
-      if (!grouped.has(departmentKey)) {
-        grouped.set(departmentKey, []);
-      }
-      grouped.get(departmentKey)!.push(employee);
-    });
-
-    return Array.from(grouped.entries()).map(([id, employees]) => ({
-      id,
-      name: employees[0]?.department
-        ? employees[0].department.charAt(0).toUpperCase() +
-          employees[0].department.slice(1).replace("-", " ")
-        : "Unassigned",
-      employees,
-    }));
-  }, [employees]);
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-end">
@@ -111,9 +85,6 @@ const EmployeeContainer = ({ employees }: EmployeeContainerProps) => {
           <ToggleGroupItem value="table" aria-label="Table view">
             <TableIcon className="h-4 w-4" />
           </ToggleGroupItem>
-          <ToggleGroupItem value="kanban" aria-label="Kanban view">
-            <Columns className="h-4 w-4" />
-          </ToggleGroupItem>
         </ToggleGroup>
       </div>
 
@@ -123,7 +94,7 @@ const EmployeeContainer = ({ employees }: EmployeeContainerProps) => {
             <EmployeeCard key={employee.id} employee={employee} />
           ))}
         </div>
-      ) : viewMode === "table" ? (
+      ) : (
         <Table>
           <TableHeader>
             <TableRow>
@@ -182,76 +153,6 @@ const EmployeeContainer = ({ employees }: EmployeeContainerProps) => {
             })}
           </TableBody>
         </Table>
-      ) : (
-        <div className="w-full overflow-x-auto pb-4">
-          <div className="flex gap-3 md:gap-4 min-w-max pr-4">
-            {employeesByDepartment.map((department) => (
-              <div key={department.id} className="shrink-0 w-64 sm:w-72 md:w-80 flex flex-col">
-                <div className="mb-2 px-1">
-                  <h3 className="font-semibold text-xs text-muted-foreground">
-                    {department.name}
-                  </h3>
-                  <span className="text-xs text-muted-foreground">
-                    {department.employees.length}
-                  </span>
-                </div>
-                <div className="flex-1 space-y-1.5 overflow-y-auto max-h-[calc(100vh-300px)]">
-                  {department.employees.map((employee) => {
-                    const fullName = `${employee.firstName} ${employee.lastName}`;
-                    return (
-                      <Card
-                        key={employee.id}
-                        className="hover:shadow-sm transition-shadow py-2 px-2"
-                      >
-                        <CardContent className="p-2">
-                          <div className="space-y-1.5">
-                            <div>
-                              <h4 className="font-medium leading-tight">
-                                {fullName}
-                              </h4>
-                              {employee.position && (
-                                <p className="text-xs text-muted-foreground leading-tight">
-                                  {employee.position.name}
-                                </p>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1 pt-1.5 border-t">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0"
-                                asChild
-                              >
-                                <Link href={`/employees/${employee.id}`}>
-                                  <Eye className="h-3 w-3" />
-                                </Link>
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0"
-                                asChild
-                              >
-                                <Link href={`/employees/${employee.id}/edit`}>
-                                  <Pencil className="h-3 w-3" />
-                                </Link>
-                              </Button>
-                              <div className="ml-auto">
-                                <DeleteEmployeeButton
-                                  employeeId={employee.id}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       )}
     </div>
   );

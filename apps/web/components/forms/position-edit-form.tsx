@@ -25,6 +25,7 @@ import { updatePosition } from "@/lib/actions/update-position";
 import { useRouter } from "next/navigation";
 import type { InferSelectModel } from "drizzle-orm";
 import type { position } from "@workspace/db/schema";
+import { RichTextEditorField } from "@/components/rich-text-editor";
 
 type Position = InferSelectModel<typeof position>;
 
@@ -144,24 +145,13 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
                   <FieldLabel htmlFor={field.name}>
                     Position Description
                   </FieldLabel>
-                  <InputGroup>
-                    <InputGroupTextarea
-                      id={field.name}
-                      name={field.name}
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      placeholder="Describe the position in detail."
-                      rows={6}
-                      className="min-h-24 resize-none"
-                      aria-invalid={isInvalid}
-                    />
-                    <InputGroupAddon align="block-end">
-                      <InputGroupText className="tabular-nums">
-                        {field.state.value.length}/1000 characters
-                      </InputGroupText>
-                    </InputGroupAddon>
-                  </InputGroup>
+                  <RichTextEditorField
+                    value={field.state.value}
+                    onValueChange={(html) => field.handleChange(html)}
+                    error={isInvalid}
+                    minHeight="240px"
+                    placeholder="Describe the position in detail."
+                  />
                   <FieldDescription>
                     Describe the position in detail.
                   </FieldDescription>

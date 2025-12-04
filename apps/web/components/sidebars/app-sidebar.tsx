@@ -7,7 +7,7 @@ import {
   HelpCircle,
   Briefcase,
   FileText,
-  FolderKanban,
+  Folders,
   CircleDot,
   Shield,
   Building2,
@@ -37,7 +37,7 @@ const recruitingLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/candidates", label: "Candidates", icon: Users },
   { href: "/applications", label: "Applications", icon: FileText },
-  { href: "/documents", label: "Documents", icon: FolderKanban },
+  { href: "/documents", label: "Documents", icon: Folders },
 ] as const;
 
 // Management links (available to all users)
@@ -48,9 +48,9 @@ const managementLinks = [
 // Admin links (only for admins)
 const adminLinks = [
   { href: "/admin", label: "Admin", icon: Shield },
-  { href: "/questions", label: "Questions", icon: HelpCircle },
-  { href: "/rounds", label: "Rounds", icon: CircleDot },
   { href: "/positions", label: "Positions", icon: Briefcase },
+  { href: "/rounds", label: "Rounds", icon: CircleDot },
+  { href: "/questions", label: "Questions", icon: HelpCircle },
 ] as const;
 
 export function AppSidebar() {

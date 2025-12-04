@@ -396,6 +396,7 @@ export const getCandidateWithApplications = async (id: string) => {
       .select({
         id: application.id,
         status: application.status,
+        personality: application.personality,
         createdAt: application.createdAt,
         updatedAt: application.updatedAt,
         position: {

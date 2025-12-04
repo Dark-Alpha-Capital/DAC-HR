@@ -1,7 +1,17 @@
 import React, { Suspense } from "react";
-import { getApplicationWithInterviews, getUsers } from "@workspace/db/queries";
+import {
+  getApplicationWithInterviews,
+  getUsers,
+  getCandidateById,
+} from "@workspace/db/queries";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@workspace/ui/components/tabs";
 import Link from "next/link";
 import BackButton from "@/components/back-button";
 import {
@@ -13,6 +23,8 @@ import {
   Eye,
   UserCheck,
   UserX,
+  FileText,
+  MessageSquare,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { auth } from "@/auth";
@@ -23,9 +35,44 @@ import ApplicationStatusDisplay from "@/components/application-status-display";
 import ApplicationPersonalitySelector from "@/components/application-personality-selector";
 import { ApplicationDetailSkeleton } from "@/components/skeletons/application-detail-skeleton";
 import { UserAuthenticated } from "@/components/auth-checks";
+import ApplicationTabsContent from "@/components/application-tabs-content";
+import { Metadata } from "next";
 
 type Params = Promise<{ id: string }>;
 type SearchParams = Promise<{ interview?: string }>;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Params;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const application = await getApplicationWithInterviews(id);
+
+  if (!application) {
+    return {
+      title: "Application Not Found - DAC HR",
+      description:
+        "The application you're looking for doesn't exist or has been removed.",
+    };
+  }
+
+  const candidate = await getCandidateById(application.candidateId);
+  const candidateName = candidate
+    ? `${candidate.firstName} ${candidate.lastName}`
+    : "Candidate";
+  const statusCapitalized =
+    application.status.charAt(0).toUpperCase() + application.status.slice(1);
+
+  return {
+    title: `${application.position.name} - Application - DAC HR`,
+    description: `Application for ${application.position.name} by ${candidateName}. Status: ${statusCapitalized}. ${
+      application.interviews && application.interviews.length > 0
+        ? `${application.interviews.length} interview(s) recorded.`
+        : ""
+    }`,
+  };
+}
 
 const ApplicationPage = async ({
   params,
@@ -152,29 +199,14 @@ const DisplayApplication = async ({
         </div>
       </div>
 
-      <div className="space-y-3">
-        <ApplicationStatusDisplay application={application} />
-      </div>
-
-      <div className="space-y-3">
-        <ApplicationPersonalitySelector
-          applicationId={id}
-          currentPersonality={application.personality}
-        />
-      </div>
-
-      {/* Progress Timeline with Interview Details */}
-      <div className="space-y-3">
-        <ApplicationProgressTimeline
-          rounds={application.rounds}
-          interviews={application.interviews}
-          applicationId={id}
-          selectedInterviewId={interviewId}
-          currentUser={currentUser}
-          users={users}
-          application={application}
-        />
-      </div>
+      {/* Tabs for organizing content */}
+      <ApplicationTabsContent
+        application={application}
+        applicationId={id}
+        interviewId={interviewId}
+        currentUser={currentUser}
+        users={users}
+      />
     </div>
   );
 };

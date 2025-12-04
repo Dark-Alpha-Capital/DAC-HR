@@ -14,16 +14,11 @@ import {
   FieldLabel,
 } from "@workspace/ui/components/field";
 import { Input } from "@workspace/ui/components/input";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupText,
-  InputGroupTextarea,
-} from "@workspace/ui/components/input-group";
 import { positionFormSchema } from "@/lib/schemas/position-form-schema";
 import { Loader2 } from "lucide-react";
 import { createPosition } from "@/lib/actions/create-position";
 import { useRouter } from "next/navigation";
+import { RichTextEditorField } from "@/components/rich-text-editor";
 
 const PositionUploadForm = () => {
   const router = useRouter();
@@ -82,7 +77,11 @@ const PositionUploadForm = () => {
           >
             Reset
           </Button>
-          <Button type="submit" form="position-upload-form" disabled={isPending}>
+          <Button
+            type="submit"
+            form="position-upload-form"
+            disabled={isPending}
+          >
             {isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -136,26 +135,15 @@ const PositionUploadForm = () => {
                   <FieldLabel htmlFor={field.name}>
                     Position Description
                   </FieldLabel>
-                  <InputGroup>
-                    <InputGroupTextarea
-                      id={field.name}
-                      name={field.name}
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      placeholder="Describe the position in detail."
-                      rows={6}
-                      className="min-h-24 resize-none"
-                      aria-invalid={isInvalid}
-                    />
-                    <InputGroupAddon align="block-end">
-                      <InputGroupText className="tabular-nums">
-                        {field.state.value.length}/1000 characters
-                      </InputGroupText>
-                    </InputGroupAddon>
-                  </InputGroup>
+                  <RichTextEditorField
+                    value={field.state.value}
+                    onValueChange={(html) => field.handleChange(html)}
+                    error={isInvalid}
+                    minHeight="240px"
+                    placeholder="Describe the position in detail."
+                  />
                   <FieldDescription>
-                    Describe the position in detail.
+                    Add the job description with rich formatting.
                   </FieldDescription>
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>
