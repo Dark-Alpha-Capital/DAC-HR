@@ -25,6 +25,7 @@ export const employeeFormSchema = z.object({
   department: departmentEnum,
   positionId: z.string().nullable(),
   profileImage: z.string().nullable(),
+  bio: z.string().nullable().optional(),
 });
 
 export type EmployeeFormSchema = z.infer<typeof employeeFormSchema>;

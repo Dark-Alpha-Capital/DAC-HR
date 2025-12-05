@@ -28,7 +28,7 @@ export const updateEmployee = async (
     return { error: result.error.flatten().fieldErrors };
   }
 
-  const { firstName, lastName, department, positionId, profileImage } =
+  const { firstName, lastName, department, positionId, profileImage, bio } =
     result.data;
 
   try {
@@ -40,6 +40,7 @@ export const updateEmployee = async (
         department,
         positionId: positionId || null,
         profileImage: profileImage || null,
+        bio: bio || null,
       })
       .where(eq(employee.id, employeeId))
       .returning();

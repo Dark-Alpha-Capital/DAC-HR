@@ -28,6 +28,7 @@ import {
   departmentEnum,
 } from "@/lib/schemas/employee-form-schema";
 import { createEmployee } from "@/lib/actions/create-employee";
+import { RichTextEditor } from "@/components/rich-text-editor";
 
 const EmployeeUploadForm = ({
   positions,
@@ -48,6 +49,7 @@ const EmployeeUploadForm = ({
       department: "engineering" as const,
       positionId: "",
       profileImage: "",
+      bio: "",
     },
     validators: {
       onSubmit: employeeFormSchema as any,
@@ -112,6 +114,8 @@ const EmployeeUploadForm = ({
             if (fileInput) {
               fileInput.value = "";
             }
+            // Reset bio field
+            form.setFieldValue("bio", "");
             router.push("/employees");
           }
         } catch (error) {
@@ -183,6 +187,8 @@ const EmployeeUploadForm = ({
               if (fileInput) {
                 fileInput.value = "";
               }
+              // Reset bio field
+              form.setFieldValue("bio", "");
             }}
             disabled={isPending}
           >
@@ -386,6 +392,29 @@ const EmployeeUploadForm = ({
                     )}
                   </Field>
                 </>
+              );
+            }}
+          />
+
+          <form.Field
+            name="bio"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>Bio (Optional)</FieldLabel>
+                  <RichTextEditor
+                    content={field.state.value || ""}
+                    onChange={(html) => field.handleChange(html)}
+                    placeholder="Enter a detailed bio for this employee..."
+                    minHeight="200px"
+                  />
+                  <FieldDescription>
+                    Add a detailed bio for this employee. You can use rich text formatting.
+                  </FieldDescription>
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
               );
             }}
           />

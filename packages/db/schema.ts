@@ -378,6 +378,7 @@ export const employee = pgTable("employee", {
     onDelete: "set null",
   }),
   profileImage: text("profile_image"),
+  bio: text("bio"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

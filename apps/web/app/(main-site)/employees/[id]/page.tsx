@@ -16,6 +16,7 @@ import { Pencil, Calendar, Clock, Building2, Briefcase } from "lucide-react";
 import DeleteEmployeeButton from "@/components/delete-employee-button";
 import { formatDate } from "@/lib/utils";
 import EmployeeProfileImage from "@/components/employee-profile-image";
+import { RichTextEditor } from "@/components/rich-text-editor";
 
 type Params = Promise<{ id: string }>;
 
@@ -146,6 +147,22 @@ const DisplayEmployee = async ({ params }: { params: Params }) => {
           </div>
         </CardFooter>
       </Card>
+
+      {employee.bio && (
+        <Card className="mt-4 md:mt-6 lg:mt-8">
+          <CardHeader>
+            <CardTitle className="text-lg">Bio</CardTitle>
+          </CardHeader>
+          <Separator />
+          <CardContent className="pt-6">
+            <RichTextEditor
+              content={employee.bio}
+              editable={false}
+              className="border-0 shadow-none"
+            />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

@@ -24,7 +24,7 @@ export const createEmployee = async (data: EmployeeFormSchema) => {
     return { error: result.error.flatten().fieldErrors };
   }
 
-  const { firstName, lastName, department, positionId, profileImage } =
+  const { firstName, lastName, department, positionId, profileImage, bio } =
     result.data;
 
   try {
@@ -36,6 +36,7 @@ export const createEmployee = async (data: EmployeeFormSchema) => {
         department,
         positionId: positionId || null,
         profileImage: profileImage || null,
+        bio: bio || null,
       })
       .returning();
 

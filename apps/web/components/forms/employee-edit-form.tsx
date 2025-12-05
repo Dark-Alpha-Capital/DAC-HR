@@ -30,6 +30,7 @@ import {
 import { updateEmployee } from "@/lib/actions/update-employee";
 import * as z from "zod";
 import EmployeeProfileImage from "../employee-profile-image";
+import { RichTextEditor } from "@/components/rich-text-editor";
 
 interface EmployeeEditFormProps {
   employee: {
@@ -39,6 +40,7 @@ interface EmployeeEditFormProps {
     department: string;
     positionId?: string | null;
     profileImage?: string | null;
+    bio?: string | null;
   };
   positions: {
     id: string;
@@ -58,6 +60,7 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
       department: employee.department as z.infer<typeof departmentEnum>,
       positionId: employee.positionId,
       profileImage: employee.profileImage,
+      bio: employee.bio || "",
     },
     validators: {
       onSubmit: employeeFormSchema,
@@ -400,6 +403,31 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
                       )}
                     </Field>
                   </>
+                );
+              }}
+            />
+
+            <form.Field
+              name="bio"
+              children={(field) => {
+                const isInvalid =
+                  field.state.meta.isTouched && !field.state.meta.isValid;
+                return (
+                  <Field data-invalid={isInvalid}>
+                    <FieldLabel htmlFor={field.name}>Bio (Optional)</FieldLabel>
+                    <RichTextEditor
+                      content={field.state.value || ""}
+                      onChange={(html) => field.handleChange(html)}
+                      placeholder="Enter a detailed bio for this employee..."
+                      minHeight="200px"
+                    />
+                    <FieldDescription>
+                      Add a detailed bio for this employee. You can use rich text formatting.
+                    </FieldDescription>
+                    {isInvalid && (
+                      <FieldError errors={field.state.meta.errors} />
+                    )}
+                  </Field>
                 );
               }}
             />
