@@ -83,6 +83,7 @@ const EmployeeUploadForm = ({
             ...value,
             positionId: value.positionId || null,
             profileImage: finalImageUrl || null,
+            bio: value.bio || null,
           });
 
           if (result.error) {
@@ -406,7 +407,7 @@ const EmployeeUploadForm = ({
                   <FieldLabel htmlFor={field.name}>Bio (Optional)</FieldLabel>
                   <RichTextEditor
                     content={field.state.value || ""}
-                    onChange={(html) => field.handleChange(html)}
+                    onChange={(html) => field.handleChange(html || "")}
                     placeholder="Enter a detailed bio for this employee..."
                     minHeight="200px"
                   />

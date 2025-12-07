@@ -63,7 +63,7 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
       bio: employee.bio || "",
     },
     validators: {
-      onSubmit: employeeFormSchema,
+      onSubmit: employeeFormSchema as any,
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
@@ -94,6 +94,7 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
             ...value,
             positionId: value.positionId || null,
             profileImage: finalImageUrl || null,
+            bio: value.bio || null,
           });
 
           if (result.error) {
@@ -167,7 +168,9 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
     <div className="w-full space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2">
-          <h2 className="text-2xl font-semibold tracking-tight">Edit Employee</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Edit Employee
+          </h2>
           <p className="text-sm text-muted-foreground">
             Update the employee details below.
           </p>
@@ -181,11 +184,7 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
           >
             Cancel
           </Button>
-          <Button
-            type="submit"
-            form="employee-edit-form"
-            disabled={isPending}
-          >
+          <Button type="submit" form="employee-edit-form" disabled={isPending}>
             {isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -206,233 +205,224 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
         className="space-y-6"
       >
         <FieldGroup>
-            <form.Field
-              name="firstName"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
-                  <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>First Name</FieldLabel>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      aria-invalid={isInvalid}
-                      placeholder="Enter the first name"
-                      autoComplete="off"
-                    />
-                    {isInvalid && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
-                  </Field>
-                );
-              }}
-            />
+          <form.Field
+            name="firstName"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>First Name</FieldLabel>
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    aria-invalid={isInvalid}
+                    placeholder="Enter the first name"
+                    autoComplete="off"
+                  />
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
+            }}
+          />
 
-            <form.Field
-              name="lastName"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
-                  <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>Last Name</FieldLabel>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      aria-invalid={isInvalid}
-                      placeholder="Enter the last name"
-                      autoComplete="off"
-                    />
-                    {isInvalid && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
-                  </Field>
-                );
-              }}
-            />
+          <form.Field
+            name="lastName"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>Last Name</FieldLabel>
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    aria-invalid={isInvalid}
+                    placeholder="Enter the last name"
+                    autoComplete="off"
+                  />
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
+            }}
+          />
 
-            <form.Field
-              name="department"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
-                  <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>Department</FieldLabel>
-                    <Select
-                      value={field.state.value || ""}
-                      onValueChange={(value) => {
-                        field.handleChange(value as typeof field.state.value);
-                      }}
+          <form.Field
+            name="department"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>Department</FieldLabel>
+                  <Select
+                    value={field.state.value || ""}
+                    onValueChange={(value) => {
+                      field.handleChange(value as typeof field.state.value);
+                    }}
+                  >
+                    <SelectTrigger
+                      id={field.name}
+                      aria-invalid={isInvalid}
+                      className="w-full"
                     >
-                      <SelectTrigger
-                        id={field.name}
-                        aria-invalid={isInvalid}
-                        className="w-full"
-                      >
-                        <SelectValue placeholder="Select a department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {departmentEnum.options.map((dept) => (
-                          <SelectItem key={dept} value={dept}>
-                            {dept.charAt(0).toUpperCase() +
-                              dept.slice(1).replace("-", " ")}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {isInvalid && (
-                      <FieldError errors={field.state.meta.errors} />
+                      <SelectValue placeholder="Select a department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departmentEnum.options.map((dept) => (
+                        <SelectItem key={dept} value={dept}>
+                          {dept.charAt(0).toUpperCase() +
+                            dept.slice(1).replace("-", " ")}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
+            }}
+          />
+
+          <form.Field
+            name="positionId"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>
+                    Position (Optional)
+                  </FieldLabel>
+                  <Select
+                    value={field.state.value || ""}
+                    onValueChange={(value) => {
+                      field.handleChange(value);
+                    }}
+                  >
+                    <SelectTrigger
+                      id={field.name}
+                      aria-invalid={isInvalid}
+                      className="w-full"
+                    >
+                      <SelectValue placeholder="Select a position (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {positions.map((position) => (
+                        <SelectItem key={position.id} value={position.id}>
+                          {position.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FieldDescription>
+                    Link this employee to a position
+                  </FieldDescription>
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
+            }}
+          />
+
+          <form.Field
+            name="profileImage"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <>
+                  {employee.profileImage && !file && (
+                    <Field>
+                      <FieldLabel>Current Profile Image</FieldLabel>
+                      <div className="mt-2">
+                        <EmployeeProfileImage
+                          imageUrl={employee.profileImage}
+                          alt={`${employee.firstName} ${employee.lastName}`}
+                          className="h-32 w-32 rounded-full object-cover"
+                        />
+                      </div>
+                    </Field>
+                  )}
+                  <Field>
+                    <FieldLabel htmlFor="image-upload">
+                      Profile Image (Optional)
+                    </FieldLabel>
+                    <Input
+                      id="image-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="cursor-pointer"
+                    />
+                    <FieldDescription>
+                      Upload a new profile image (max 500MB)
+                    </FieldDescription>
+                    {file && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Selected: {file.name} (
+                        {file.size > 1024 * 1024
+                          ? `${(file.size / (1024 * 1024)).toFixed(2)} MB`
+                          : `${(file.size / 1024).toFixed(2)} KB`}
+                        )
+                      </p>
                     )}
                   </Field>
-                );
-              }}
-            />
-
-            <form.Field
-              name="positionId"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
                   <Field data-invalid={isInvalid}>
                     <FieldLabel htmlFor={field.name}>
-                      Position (Optional)
+                      Or provide image URL
                     </FieldLabel>
-                    <Select
+                    <Input
+                      id={field.name}
+                      name={field.name}
                       value={field.state.value || ""}
-                      onValueChange={(value) => {
-                        field.handleChange(value);
-                      }}
-                    >
-                      <SelectTrigger
-                        id={field.name}
-                        aria-invalid={isInvalid}
-                        className="w-full"
-                      >
-                        <SelectValue placeholder="Select a position (optional)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {positions.map((position) => (
-                          <SelectItem key={position.id} value={position.id}>
-                            {position.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FieldDescription>
-                      Link this employee to a position
-                    </FieldDescription>
-                    {isInvalid && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
-                  </Field>
-                );
-              }}
-            />
-
-            <form.Field
-              name="profileImage"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
-                  <>
-                    {employee.profileImage && !file && (
-                      <Field>
-                        <FieldLabel>Current Profile Image</FieldLabel>
-                        <div className="mt-2">
-                          <EmployeeProfileImage
-                            imageUrl={employee.profileImage}
-                            alt={`${employee.firstName} ${employee.lastName}`}
-                            className="h-32 w-32 rounded-full object-cover"
-                          />
-                        </div>
-                      </Field>
-                    )}
-                    <Field>
-                      <FieldLabel htmlFor="image-upload">
-                        Profile Image (Optional)
-                      </FieldLabel>
-                      <Input
-                        id="image-upload"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        className="cursor-pointer"
-                      />
-                      <FieldDescription>
-                        Upload a new profile image (max 500MB)
-                      </FieldDescription>
-                      {file && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Selected: {file.name} (
-                          {file.size > 1024 * 1024
-                            ? `${(file.size / (1024 * 1024)).toFixed(2)} MB`
-                            : `${(file.size / 1024).toFixed(2)} KB`}
-                          )
-                        </p>
-                      )}
-                    </Field>
-                    <Field data-invalid={isInvalid}>
-                      <FieldLabel htmlFor={field.name}>
-                        Or provide image URL
-                      </FieldLabel>
-                      <Input
-                        id={field.name}
-                        name={field.name}
-                        value={field.state.value || ""}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => handleUrlChange(e.target.value)}
-                        aria-invalid={isInvalid}
-                        placeholder="Enter image URL (optional)"
-                        autoComplete="off"
-                      />
-                      <FieldDescription>
-                        Provide an image URL instead of uploading a file
-                      </FieldDescription>
-                      {isInvalid && (
-                        <FieldError errors={field.state.meta.errors} />
-                      )}
-                    </Field>
-                  </>
-                );
-              }}
-            />
-
-            <form.Field
-              name="bio"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
-                  <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>Bio (Optional)</FieldLabel>
-                    <RichTextEditor
-                      content={field.state.value || ""}
-                      onChange={(html) => field.handleChange(html)}
-                      placeholder="Enter a detailed bio for this employee..."
-                      minHeight="200px"
+                      onBlur={field.handleBlur}
+                      onChange={(e) => handleUrlChange(e.target.value)}
+                      aria-invalid={isInvalid}
+                      placeholder="Enter image URL (optional)"
+                      autoComplete="off"
                     />
                     <FieldDescription>
-                      Add a detailed bio for this employee. You can use rich text formatting.
+                      Provide an image URL instead of uploading a file
                     </FieldDescription>
                     {isInvalid && (
                       <FieldError errors={field.state.meta.errors} />
                     )}
                   </Field>
-                );
-              }}
-            />
-          </FieldGroup>
-        </form>
+                </>
+              );
+            }}
+          />
+
+          <form.Field
+            name="bio"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>Bio (Optional)</FieldLabel>
+                  <RichTextEditor
+                    content={field.state.value || ""}
+                    onChange={(html) => field.handleChange(html || "")}
+                    placeholder="Enter a detailed bio for this employee..."
+                    minHeight="200px"
+                  />
+                  <FieldDescription>
+                    Add a detailed bio for this employee. You can use rich text
+                    formatting.
+                  </FieldDescription>
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
+            }}
+          />
+        </FieldGroup>
+      </form>
     </div>
   );
 };
