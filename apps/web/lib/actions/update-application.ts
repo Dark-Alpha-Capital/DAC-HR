@@ -6,34 +6,35 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
+import { updateApplicationStatus } from "@workspace/db/queries";
 
 export interface UpdateApplicationInput {
   applicationId: string;
   status?:
-    | "pending"
-    | "reviewed"
-    | "shortlisted"
-    | "interviewing"
-    | "hired"
-    | "rejected"
-    | "withdrawn";
+  | "pending"
+  | "reviewed"
+  | "shortlisted"
+  | "interviewing"
+  | "hired"
+  | "rejected"
+  | "withdrawn";
   personality?:
-    | "ENFJ"
-    | "ENFP"
-    | "ENTJ"
-    | "ENTP"
-    | "ESFJ"
-    | "ESFP"
-    | "ESTJ"
-    | "ESTP"
-    | "INFJ"
-    | "INTJ"
-    | "INTP"
-    | "ISFJ"
-    | "ISFP"
-    | "ISTJ"
-    | "ISTP"
-    | null;
+  | "ENFJ"
+  | "ENFP"
+  | "ENTJ"
+  | "ENTP"
+  | "ESFJ"
+  | "ESFP"
+  | "ESTJ"
+  | "ESTP"
+  | "INFJ"
+  | "INTJ"
+  | "INTP"
+  | "ISFJ"
+  | "ISFP"
+  | "ISTJ"
+  | "ISTP"
+  | null;
 }
 
 export const updateApplication = async (data: UpdateApplicationInput) => {
@@ -48,15 +49,31 @@ export const updateApplication = async (data: UpdateApplicationInput) => {
   const { applicationId, status, personality } = data;
 
   try {
-    const updateData: Partial<typeof application.$inferInsert> = {};
-    if (status !== undefined) updateData.status = status;
-    if (personality !== undefined) updateData.personality = personality;
+    let updatedApplication;
 
-    const [updatedApplication] = await db
-      .update(application)
-      .set(updateData)
-      .where(eq(application.id, applicationId))
-      .returning();
+    if (status !== undefined && status === "hired") {
+      // Use the new function that handles employee creation
+      updatedApplication = await updateApplicationStatus(applicationId, status);
+      
+      // If personality is also being updated, apply it
+      if (personality !== undefined) {
+        [updatedApplication] = await db
+          .update(application)
+          .set({ personality })
+          .where(eq(application.id, applicationId))
+          .returning();
+      }
+    } else {
+      const updateData: Partial<typeof application.$inferInsert> = {};
+      if (status !== undefined) updateData.status = status;
+      if (personality !== undefined) updateData.personality = personality;
+
+      [updatedApplication] = await db
+        .update(application)
+        .set(updateData)
+        .where(eq(application.id, applicationId))
+        .returning();
+    }
 
     if (updatedApplication?.candidateId) {
       revalidatePath(`/candidates/${updatedApplication.candidateId}`);
