@@ -57,6 +57,13 @@
       "when": 1764959317194,
       "tag": "0007_awesome_jack_flag",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1765305056504,
+      "tag": "0008_tidy_talos",
+      "breakpoints": true
     }
   ]
 }

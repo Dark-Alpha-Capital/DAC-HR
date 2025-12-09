@@ -14,16 +14,14 @@ import { Button } from "@workspace/ui/components/button";
 import { Filter } from "lucide-react";
 
 const departments = [
-  { value: "engineering", label: "Engineering" },
-  { value: "product", label: "Product" },
-  { value: "sales", label: "Sales" },
-  { value: "marketing", label: "Marketing" },
-  { value: "hr", label: "HR" },
-  { value: "finance", label: "Finance" },
-  { value: "operations", label: "Operations" },
+  { value: "management", label: "Management" },
+  { value: "capital-markets", label: "Capital Markets" },
+  { value: "deal-team", label: "Deal Team" },
   { value: "legal", label: "Legal" },
-  { value: "customer-support", label: "Customer Support" },
-  { value: "other", label: "Other" },
+  { value: "operations", label: "Operations" },
+  { value: "origination", label: "Origination" },
+  { value: "pipe", label: "PIPE" },
+  { value: "public-markets", label: "Public Markets" },
 ];
 
 const FilterEmployeeDepartment = () => {

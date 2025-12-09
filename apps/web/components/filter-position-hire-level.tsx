@@ -13,33 +13,32 @@ import {
 import { Button } from "@workspace/ui/components/button";
 import { Filter } from "lucide-react";
 
-const categories = [
-  { value: "job-description", label: "Job Description" },
-  { value: "onboarding", label: "Onboarding" },
-  { value: "policy", label: "Policy" },
-  { value: "hr-form", label: "HR Form" },
-  { value: "other", label: "Other" },
+const hireLevelOptions = [
+  { value: "managing-director", label: "Managing Director" },
+  { value: "vice-president", label: "Vice President" },
+  { value: "associate-analyst", label: "Associate Analyst" },
+  { value: "intern", label: "Intern" },
 ];
 
-const FilterDocumentCategory = () => {
+const FilterPositionHireLevel = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [selectedCategories, setSelectedCategories] = useOptimistic(
-    searchParams.getAll("category")
+  const [selectedLevels, setSelectedLevels] = useOptimistic(
+    searchParams.getAll("hireLevel")
   );
 
   const handleCheckedChange = (value: string, checked: boolean) => {
     startTransition(() => {
       const params = new URLSearchParams(searchParams);
-      params.delete("category");
+      params.delete("hireLevel");
 
       const newSelected = checked
-        ? [...selectedCategories, value]
-        : selectedCategories.filter((cat) => cat !== value);
+        ? [...selectedLevels, value]
+        : selectedLevels.filter((level) => level !== value);
 
-      newSelected.forEach((cat) => params.append("category", cat));
-      setSelectedCategories(newSelected);
+      newSelected.forEach((level) => params.append("hireLevel", level));
+      setSelectedLevels(newSelected);
 
       router.push(`?${params.toString()}`, {
         scroll: false,
@@ -56,26 +55,26 @@ const FilterDocumentCategory = () => {
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm">
             <Filter className="mr-2 h-4 w-4" />
-            Category
-            {selectedCategories.length > 0 && (
+            Hire Level
+            {selectedLevels.length > 0 && (
               <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-                {selectedCategories.length}
+                {selectedLevels.length}
               </span>
             )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56">
-          <DropdownMenuLabel>Filter by Category</DropdownMenuLabel>
+          <DropdownMenuLabel>Filter by Hire Level</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {categories.map((cat) => (
+          {hireLevelOptions.map((level) => (
             <DropdownMenuCheckboxItem
-              key={cat.value}
-              checked={selectedCategories.includes(cat.value)}
+              key={level.value}
+              checked={selectedLevels.includes(level.value)}
               onCheckedChange={(checked) =>
-                handleCheckedChange(cat.value, checked as boolean)
+                handleCheckedChange(level.value, checked as boolean)
               }
             >
-              {cat.label}
+              {level.label}
             </DropdownMenuCheckboxItem>
           ))}
         </DropdownMenuContent>
@@ -84,16 +83,5 @@ const FilterDocumentCategory = () => {
   );
 };
 
-export default FilterDocumentCategory;
-
-
-
-
-
-
-
-
-
-
-
+export default FilterPositionHireLevel;
 

@@ -5,13 +5,17 @@ import { getPositions } from "@workspace/db/queries";
 import PositionContainer from "./position-container";
 import { Metadata } from "next";
 import { UserIsAdmin } from "@/components/auth-checks";
+import FilterPositionHireLevel from "@/components/filter-position-hire-level";
+import ClearPositionFiltersButton from "@/components/clear-position-filters-button";
 
 export const metadata: Metadata = {
   title: "Positions",
   description: "Positions list",
 };
 
-const page = () => {
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
+
+const page = async ({ searchParams }: { searchParams: SearchParams }) => {
   return (
     <div className="container py-8 space-y-6">
       <Suspense>
@@ -26,7 +30,11 @@ const page = () => {
       </div>
 
       <Suspense fallback={<div>Loading...</div>}>
-        <PositionsList />
+        <PresentFilters />
+      </Suspense>
+
+      <Suspense fallback={<div>Loading...</div>}>
+        <PositionsList searchParams={searchParams} />
       </Suspense>
     </div>
   );
@@ -34,8 +42,27 @@ const page = () => {
 
 export default page;
 
-const PositionsList = async () => {
-  const positions = await getPositions();
+const PresentFilters = async () => {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <FilterPositionHireLevel />
+      <ClearPositionFiltersButton />
+    </div>
+  );
+};
+
+const PositionsList = async ({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) => {
+  const params = await searchParams;
+  const hireLevels = params.hireLevel
+    ? Array.isArray(params.hireLevel)
+      ? params.hireLevel
+      : [params.hireLevel]
+    : undefined;
+  const positions = await getPositions(hireLevels);
 
   if (positions.length === 0) {
     return (

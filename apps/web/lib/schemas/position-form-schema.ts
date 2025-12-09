@@ -1,6 +1,13 @@
 import * as z from "zod";
 import { departmentEnum } from "./employee-form-schema";
 
+export const hireLevelEnum = z.enum([
+  "managing-director",
+  "vice-president",
+  "associate-analyst",
+  "intern",
+]);
+
 export const positionFormSchema = z.object({
   name: z
     .string()
@@ -10,7 +17,11 @@ export const positionFormSchema = z.object({
     .string()
     .min(1, "Description is required."),
 
-  department: departmentEnum,
+  department: z
+    .array(departmentEnum)
+    .min(1, "At least one department must be selected."),
+
+  hireLevel: hireLevelEnum.optional(),
 });
 
 export type PositionFormSchema = z.infer<typeof positionFormSchema>;

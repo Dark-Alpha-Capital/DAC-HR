@@ -5,14 +5,11 @@ import { Button } from "@workspace/ui/components/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
 
-const ClearDocumentFiltersButton = () => {
+const ClearPositionFiltersButton = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
-  
-  const hasFilters = 
-    searchParams.has("category") || 
-    searchParams.has("name") || 
-    searchParams.has("tags");
+
+  const hasFilters = searchParams.has("hireLevel");
 
   if (!hasFilters) {
     return null;
@@ -24,9 +21,7 @@ const ClearDocumentFiltersButton = () => {
       size="icon"
       onClick={() => {
         const params = new URLSearchParams(searchParams);
-        params.delete("category");
-        params.delete("name");
-        params.delete("tags");
+        params.delete("hireLevel");
         router.push(`?${params.toString()}`);
       }}
     >
@@ -35,16 +30,5 @@ const ClearDocumentFiltersButton = () => {
   );
 };
 
-export default ClearDocumentFiltersButton;
-
-
-
-
-
-
-
-
-
-
-
+export default ClearPositionFiltersButton;
 

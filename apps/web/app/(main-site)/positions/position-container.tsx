@@ -19,12 +19,21 @@ import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import { Eye, Pencil } from "lucide-react";
 import DeletePositionButton from "@/components/delete-position-button";
+import { Badge } from "@workspace/ui/components/badge";
+
+const hireLevelLabels: Record<string, string> = {
+  "managing-director": "Managing Director",
+  "vice-president": "Vice President",
+  "associate-analyst": "Associate Analyst",
+  "intern": "Intern",
+};
 
 interface Position {
   id: string;
   name: string;
   slug: string;
   description: string | null;
+  hireLevel?: string | null;
 }
 
 interface PositionContainerProps {
@@ -63,6 +72,7 @@ const PositionContainer = ({ positions }: PositionContainerProps) => {
               positionName={position.name}
               positionDescription={position.description || ""}
               positionSlug={position.slug}
+              hireLevel={position.hireLevel}
             />
           ))}
         </div>
@@ -72,6 +82,7 @@ const PositionContainer = ({ positions }: PositionContainerProps) => {
             <TableHeader>
               <TableRow>
                 <TableHead className="py-1.5 px-2 text-xs">Name</TableHead>
+                <TableHead className="py-1.5 px-2 text-xs">Hire Level</TableHead>
                 <TableHead className="py-1.5 px-2 text-xs">Slug</TableHead>
                 <TableHead className="py-1.5 px-2 text-xs">Created</TableHead>
                 <TableHead className="text-right py-1.5 px-2 text-xs">
@@ -84,6 +95,15 @@ const PositionContainer = ({ positions }: PositionContainerProps) => {
                 <TableRow key={position.id}>
                   <TableCell className="py-1.5 px-2 font-medium text-sm">
                     {position.name}
+                  </TableCell>
+                  <TableCell className="py-1.5 px-2 text-sm">
+                    {position.hireLevel ? (
+                      <Badge variant="secondary" className="text-xs">
+                        {hireLevelLabels[position.hireLevel] || position.hireLevel}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                   <TableCell className="py-1.5 px-2 text-sm">
                     <code className="text-xs bg-muted px-1.5 py-0.5 rounded">

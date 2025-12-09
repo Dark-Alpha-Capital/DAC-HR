@@ -20,19 +20,35 @@ import { eq, asc, desc, inArray, and, or, sql } from "drizzle-orm";
 
 /**
  *
- * Fetches all positions from the database
+ * Fetches all positions from the database, optionally filtered by hire level
+ * @param hireLevels Optional array of hire level values to filter by
  * @returns An array of positions
  */
-export const getPositions = async () => {
+export const getPositions = async (hireLevels?: string[]) => {
   try {
-    return await db
+    let query = db
       .select({
         id: position.id,
         name: position.name,
         slug: position.slug,
         description: position.description,
+        hireLevel: position.hireLevel,
       })
       .from(position);
+
+    // Apply hire level filter if provided
+    if (hireLevels && hireLevels.length > 0) {
+      // Validate hire levels against enum values
+      const validHireLevels = hireLevels.filter(
+        (level): level is "managing-director" | "vice-president" | "associate-analyst" | "intern" =>
+          ["managing-director", "vice-president", "associate-analyst", "intern"].includes(level)
+      );
+      if (validHireLevels.length > 0) {
+        query = query.where(inArray(position.hireLevel, validHireLevels)) as typeof query;
+      }
+    }
+
+    return await query;
   } catch (error) {
     console.error("Error fetching positions", error);
     return [];
@@ -1683,20 +1699,10 @@ export const getEmployees = async (
       conditions.push(inArray(employee.positionId, positionIds));
     }
     if (departments && departments.length > 0) {
-      // Cast departments to the enum type for type safety
-      const validDepartments = departments as Array<
-        | "engineering"
-        | "product"
-        | "sales"
-        | "marketing"
-        | "hr"
-        | "finance"
-        | "operations"
-        | "legal"
-        | "customer-support"
-        | "other"
-      >;
-      conditions.push(inArray(employee.department, validDepartments));
+      // Use PostgreSQL array overlap operator (&&) to check if employee.department array overlaps with filter departments
+      conditions.push(
+        sql`${employee.department} && ${departments}::department[]`
+      );
     }
 
     if (conditions.length > 0) {

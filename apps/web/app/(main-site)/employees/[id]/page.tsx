@@ -14,9 +14,10 @@ import Link from "next/link";
 import BackButton from "@/components/back-button";
 import { Pencil, Calendar, Clock, Building2, Briefcase } from "lucide-react";
 import DeleteEmployeeButton from "@/components/delete-employee-button";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatDepartments } from "@/lib/utils";
 import EmployeeProfileImage from "@/components/employee-profile-image";
 import { RichTextEditor } from "@/components/rich-text-editor";
+import { Badge } from "@workspace/ui/components/badge";
 
 type Params = Promise<{ id: string }>;
 
@@ -115,10 +116,13 @@ const DisplayEmployee = async ({ params }: { params: Params }) => {
               <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium">Department</p>
-                <Badge variant="secondary" className="mt-1">
-                  {employee.department.charAt(0).toUpperCase() +
-                    employee.department.slice(1).replace("-", " ")}
-                </Badge>
+                <div className="mt-1 flex flex-wrap gap-2">
+                  {formatDepartments(employee.department).map((dept, idx) => (
+                    <Badge key={idx} variant="secondary">
+                      {dept}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </div>
             {employee.position && (

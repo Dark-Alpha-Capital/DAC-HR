@@ -74,16 +74,21 @@ export const verification = pgTable("verification", {
 });
 
 export const departmentEnum = pgEnum("department", [
-  "engineering",
-  "product",
-  "sales",
-  "marketing",
-  "hr",
-  "finance",
-  "operations",
+  "management",
+  "capital-markets",
+  "deal-team",
   "legal",
-  "customer-support",
-  "other",
+  "operations",
+  "origination",
+  "pipe",
+  "public-markets",
+]);
+
+export const hireLevelEnum = pgEnum("hire_level", [
+  "managing-director",
+  "vice-president",
+  "associate-analyst",
+  "intern",
 ]);
 
 export const position = pgTable("position", {
@@ -93,7 +98,8 @@ export const position = pgTable("position", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description"),
-  department: departmentEnum("department"),
+  department: departmentEnum("department").array(),
+  hireLevel: hireLevelEnum("hire_level"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -373,7 +379,7 @@ export const employee = pgTable("employee", {
     .default(sql`gen_random_uuid()`),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
-  department: departmentEnum("department").notNull(),
+  department: departmentEnum("department").array().notNull(),
   positionId: text("position_id").references(() => position.id, {
     onDelete: "set null",
   }),

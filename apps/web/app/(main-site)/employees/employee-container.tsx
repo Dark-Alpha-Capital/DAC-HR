@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import type { InferSelectModel } from "drizzle-orm";
 import type { employee } from "@workspace/db/schema";
+import { formatDepartments } from "@/lib/utils";
 
 type Employee = InferSelectModel<typeof employee> & {
   position: { id: string; name: string; slug: string } | null;
@@ -109,16 +110,14 @@ const EmployeeContainer = ({ employees }: EmployeeContainerProps) => {
           <TableBody>
             {employees.map((employee) => {
               const fullName = `${employee.firstName} ${employee.lastName}`;
-              const departmentName =
-                employee.department.charAt(0).toUpperCase() +
-                employee.department.slice(1).replace("-", " ");
+              const departmentNames = formatDepartments(employee.department);
               return (
                 <TableRow key={employee.id}>
                   <TableCell className="py-1.5 px-2 font-medium text-sm">
                     {fullName}
                   </TableCell>
                   <TableCell className="py-1.5 px-2 text-sm">
-                    {departmentName}
+                    {departmentNames.join(", ")}
                   </TableCell>
                   <TableCell className="py-1.5 px-2 text-sm">
                     {employee.position?.name || "-"}

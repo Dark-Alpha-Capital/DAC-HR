@@ -106,6 +106,14 @@ const DisplayPosition = async ({ params }: { params: Params }) => {
               {position.name}
             </h2>
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              {position.hireLevel && (
+                <Badge variant="secondary" className="text-[0.7rem]">
+                  {position.hireLevel === "managing-director" && "Managing Director"}
+                  {position.hireLevel === "vice-president" && "Vice President"}
+                  {position.hireLevel === "associate-analyst" && "Associate Analyst"}
+                  {position.hireLevel === "intern" && "Intern"}
+                </Badge>
+              )}
               <Badge variant="outline" className="gap-1.5 text-[0.7rem]">
                 <Calendar className="h-3 w-3" />
                 Created {formatDate(position.createdAt)}

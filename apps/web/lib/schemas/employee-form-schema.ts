@@ -1,16 +1,14 @@
 import * as z from "zod";
 
 export const departmentEnum = z.enum([
-  "engineering",
-  "product",
-  "sales",
-  "marketing",
-  "hr",
-  "finance",
-  "operations",
+  "management",
+  "capital-markets",
+  "deal-team",
   "legal",
-  "customer-support",
-  "other",
+  "operations",
+  "origination",
+  "pipe",
+  "public-markets",
 ]);
 
 export const employeeFormSchema = z.object({
@@ -22,7 +20,9 @@ export const employeeFormSchema = z.object({
     .string()
     .min(1, "Last name is required.")
     .max(50, "Last name must be at most 50 characters."),
-  department: departmentEnum,
+  department: z
+    .array(departmentEnum)
+    .min(1, "At least one department must be selected."),
   positionId: z.string().nullable(),
   profileImage: z.string().nullable(),
   bio: z.string().nullable().optional(),

@@ -12,13 +12,14 @@ import { Badge } from "@workspace/ui/components/badge";
 import { Eye, Pencil, Briefcase } from "lucide-react";
 import DeleteEmployeeButton from "./delete-employee-button";
 import EmployeeProfileImage from "./employee-profile-image";
+import { formatDepartments } from "@/lib/utils";
 
 interface EmployeeCardProps {
   employee: {
     id: string;
     firstName: string;
     lastName: string;
-    department: string;
+    department: string | string[];
     profileImage?: string | null;
     position?: {
       id: string;
@@ -50,11 +51,12 @@ const EmployeeCard = ({ employee }: EmployeeCardProps) => {
             </div>
           )}
           <div className="space-y-2 text-sm">
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">
-                {employee.department.charAt(0).toUpperCase() +
-                  employee.department.slice(1).replace("-", " ")}
-              </Badge>
+            <div className="flex items-center gap-2 flex-wrap">
+              {formatDepartments(employee.department).map((dept, idx) => (
+                <Badge key={idx} variant="secondary">
+                  {dept}
+                </Badge>
+              ))}
             </div>
             {employee.position && (
               <div className="flex items-center gap-2 text-muted-foreground">

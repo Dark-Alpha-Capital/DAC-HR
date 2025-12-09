@@ -33,7 +33,7 @@ export const updatePosition = async (
     return { error: result.error.flatten().fieldErrors };
   }
 
-  const { name, description, department } = result.data;
+  const { name, description, department, hireLevel } = result.data;
 
   try {
     const [updatedPosition] = await db
@@ -43,6 +43,7 @@ export const updatePosition = async (
         slug: slugify(name, { lower: true, strict: true }),
         description,
         department,
+        hireLevel: hireLevel || null,
         updatedAt: new Date(),
       })
       .where(eq(position.id, positionId))

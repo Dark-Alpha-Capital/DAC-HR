@@ -12,12 +12,21 @@ import { Eye, Pencil } from "lucide-react";
 import type { InferSelectModel } from "drizzle-orm";
 import type { position } from "@workspace/db/schema";
 import DeletePositionButton from "./delete-position-button";
+import { Badge } from "@workspace/ui/components/badge";
+
+const hireLevelLabels: Record<string, string> = {
+  "managing-director": "Managing Director",
+  "vice-president": "Vice President",
+  "associate-analyst": "Associate Analyst",
+  "intern": "Intern",
+};
 
 interface PositionCardProps {
   positionId: string;
   positionName: string;
   positionDescription: string;
   positionSlug: string;
+  hireLevel?: string | null;
 }
 
 const PositionCard = ({
@@ -25,11 +34,19 @@ const PositionCard = ({
   positionName,
   positionDescription,
   positionSlug,
+  hireLevel,
 }: PositionCardProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{positionName}</CardTitle>
+        <div className="flex items-start justify-between gap-2">
+          <CardTitle>{positionName}</CardTitle>
+          {hireLevel && (
+            <Badge variant="secondary" className="text-xs">
+              {hireLevelLabels[hireLevel] || hireLevel}
+            </Badge>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         {positionDescription ? (
