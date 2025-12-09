@@ -22,7 +22,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
-import { positionFormSchema, hireLevelEnum } from "@/lib/schemas/position-form-schema";
+import {
+  positionFormSchema,
+  hireLevelEnum,
+} from "@/lib/schemas/position-form-schema";
 import { departmentEnum } from "@/lib/schemas/employee-form-schema";
 import { Loader2, ChevronDown } from "lucide-react";
 import {
@@ -38,13 +41,13 @@ import { RichTextEditorField } from "@/components/rich-text-editor";
 import { cn } from "@workspace/ui/lib/utils";
 
 const departmentLabels: Record<z.infer<typeof departmentEnum>, string> = {
-  "management": "Management",
+  management: "Management",
   "capital-markets": "Capital Markets",
   "deal-team": "Deal Team",
-  "legal": "Legal",
-  "operations": "Operations",
-  "origination": "Origination",
-  "pipe": "PIPE",
+  legal: "Legal",
+  operations: "Operations",
+  origination: "Origination",
+  pipe: "PIPE",
   "public-markets": "Public Markets",
 };
 
@@ -52,7 +55,7 @@ const hireLevelLabels: Record<z.infer<typeof hireLevelEnum>, string> = {
   "managing-director": "Managing Director",
   "vice-president": "Vice President",
   "associate-analyst": "Associate Analyst",
-  "intern": "Intern",
+  intern: "Intern",
 };
 
 const PositionUploadForm = () => {
@@ -68,7 +71,7 @@ const PositionUploadForm = () => {
     },
 
     validators: {
-      onSubmit: positionFormSchema,
+      onSubmit: positionFormSchema as any,
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
@@ -152,13 +155,7 @@ const PositionUploadForm = () => {
                     name={field.name}
                     value={field.state.value as string}
                     onBlur={field.handleBlur}
-                    onChange={(e) =>
-                      field.handleChange(
-                        e.target.value as z.infer<
-                          typeof positionFormSchema
-                        >["department"]
-                      )
-                    }
+                    onChange={(e) => field.handleChange(e.target.value)}
                     aria-invalid={isInvalid}
                     placeholder="Enter the position name"
                     autoComplete="off"
@@ -270,10 +267,11 @@ const PositionUploadForm = () => {
                     value={field.state.value || ""}
                     onValueChange={(value) =>
                       field.handleChange(
-                        value === "" ? undefined : (value as z.infer<typeof hireLevelEnum>)
+                        value === ""
+                          ? undefined
+                          : (value as z.infer<typeof hireLevelEnum>)
                       )
                     }
-                    onBlur={field.handleBlur}
                   >
                     <SelectTrigger
                       id={field.name}

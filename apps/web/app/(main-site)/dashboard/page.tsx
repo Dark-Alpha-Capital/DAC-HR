@@ -370,16 +370,6 @@ async function EmployeesByDepartmentSection() {
           Distribution of employees across departments
         </p>
       </CardHeader>
-      <CardContent>
-        {employeesByDepartment.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <UserPlus className="h-12 w-12 mx-auto mb-3 opacity-50" />
-            <p>No employee data available</p>
-          </div>
-        ) : (
-          <EmployeesByDepartmentChart data={employeesByDepartment} />
-        )}
-      </CardContent>
     </Card>
   );
 }

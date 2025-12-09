@@ -27,7 +27,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
-import { positionFormSchema, hireLevelEnum } from "@/lib/schemas/position-form-schema";
+import {
+  positionFormSchema,
+  hireLevelEnum,
+  type PositionFormSchema,
+} from "@/lib/schemas/position-form-schema";
 import { departmentEnum } from "@/lib/schemas/employee-form-schema";
 import { Loader2, ChevronDown } from "lucide-react";
 import {
@@ -52,13 +56,13 @@ interface PositionEditFormProps {
 }
 
 const departmentLabels: Record<z.infer<typeof departmentEnum>, string> = {
-  "management": "Management",
+  management: "Management",
   "capital-markets": "Capital Markets",
   "deal-team": "Deal Team",
-  "legal": "Legal",
-  "operations": "Operations",
-  "origination": "Origination",
-  "pipe": "PIPE",
+  legal: "Legal",
+  operations: "Operations",
+  origination: "Origination",
+  pipe: "PIPE",
   "public-markets": "Public Markets",
 };
 
@@ -66,7 +70,7 @@ const hireLevelLabels: Record<z.infer<typeof hireLevelEnum>, string> = {
   "managing-director": "Managing Director",
   "vice-president": "Vice President",
   "associate-analyst": "Associate Analyst",
-  "intern": "Intern",
+  intern: "Intern",
 };
 
 const PositionEditForm = ({ position }: PositionEditFormProps) => {
@@ -77,15 +81,20 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
     defaultValues: {
       name: position.name,
       description: position.description || "",
-      department: (position.department as z.infer<typeof departmentEnum>[]) || [],
-      hireLevel: (position.hireLevel as z.infer<typeof hireLevelEnum> | null) || undefined,
-    },
+      department: position.department || [],
+      hireLevel: position.hireLevel as
+        | z.infer<typeof hireLevelEnum>
+        | undefined,
+    } as PositionFormSchema,
     validators: {
-      onSubmit: positionFormSchema,
+      onSubmit: positionFormSchema as any,
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
-        const result = await updatePosition(position.id, value);
+        const result = await updatePosition(
+          position.id,
+          value as PositionFormSchema
+        );
         if (result.success) {
           toast("Position updated successfully", {
             position: "bottom-right",
@@ -110,7 +119,9 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
     <div className="w-full space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2">
-          <h2 className="text-2xl font-semibold tracking-tight">Edit Position</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Edit Position
+          </h2>
           <p className="text-sm text-muted-foreground">
             Update the position details below.
           </p>
@@ -123,8 +134,13 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
               form.reset({
                 name: position.name,
                 description: position.description || "",
-                department: (position.department as z.infer<typeof departmentEnum>[]) || [],
-                hireLevel: (position.hireLevel as z.infer<typeof hireLevelEnum> | null) || undefined,
+                department:
+                  (position.department as z.infer<typeof departmentEnum>[]) ||
+                  [],
+                hireLevel:
+                  (position.hireLevel as z.infer<
+                    typeof hireLevelEnum
+                  > | null) || undefined,
               });
             }}
             disabled={isPending}
@@ -277,10 +293,11 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
                     value={field.state.value || ""}
                     onValueChange={(value) =>
                       field.handleChange(
-                        value === "" ? undefined : (value as z.infer<typeof hireLevelEnum>)
+                        value === ""
+                          ? undefined
+                          : (value as z.infer<typeof hireLevelEnum>)
                       )
                     }
-                    onBlur={field.handleBlur}
                   >
                     <SelectTrigger
                       id={field.name}

@@ -17,7 +17,6 @@ import DeleteEmployeeButton from "@/components/delete-employee-button";
 import { formatDate, formatDepartments } from "@/lib/utils";
 import EmployeeProfileImage from "@/components/employee-profile-image";
 import { RichTextEditor } from "@/components/rich-text-editor";
-import { Badge } from "@workspace/ui/components/badge";
 
 type Params = Promise<{ id: string }>;
 
@@ -170,4 +169,3 @@ const DisplayEmployee = async ({ params }: { params: Params }) => {
     </div>
   );
 };
-
