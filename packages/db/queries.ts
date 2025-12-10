@@ -40,11 +40,24 @@ export const getPositions = async (hireLevels?: string[]) => {
     if (hireLevels && hireLevels.length > 0) {
       // Validate hire levels against enum values
       const validHireLevels = hireLevels.filter(
-        (level): level is "managing-director" | "vice-president" | "associate-analyst" | "intern" =>
-          ["managing-director", "vice-president", "associate-analyst", "intern"].includes(level)
+        (
+          level
+        ): level is
+          | "managing-director"
+          | "vice-president"
+          | "associate-analyst"
+          | "intern" =>
+          [
+            "managing-director",
+            "vice-president",
+            "associate-analyst",
+            "intern",
+          ].includes(level)
       );
       if (validHireLevels.length > 0) {
-        query = query.where(inArray(position.hireLevel, validHireLevels)) as typeof query;
+        query = query.where(
+          inArray(position.hireLevel, validHireLevels)
+        ) as typeof query;
       }
     }
 

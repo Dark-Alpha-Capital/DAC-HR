@@ -12,6 +12,8 @@ import { auth } from "@/auth";
 import { headers } from "next/headers";
 
 export const createPosition = async (data: PositionFormSchema) => {
+  console.log("data", data);
+
   const session = await auth.api.getSession({
     headers: await headers(), // some endpoints might require headers
   });

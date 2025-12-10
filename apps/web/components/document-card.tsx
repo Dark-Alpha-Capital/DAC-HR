@@ -103,7 +103,7 @@ const DocumentCard = ({ document }: DocumentCardProps) => {
             size="sm"
             onClick={() => setIsPreviewOpen(true)}
           >
-              <Eye className="h-4 w-4" />
+            <Eye className="h-4 w-4" />
             Preview
           </Button>
 

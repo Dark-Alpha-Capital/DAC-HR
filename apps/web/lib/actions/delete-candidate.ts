@@ -23,8 +23,6 @@ export const deleteCandidate = async (id: string) => {
 
     return { success: true };
   } catch (error) {
-    console.error(error);
-
     if (error instanceof Error) {
       return { error: error.message };
     }
@@ -32,4 +30,3 @@ export const deleteCandidate = async (id: string) => {
     return { error: "Failed to delete candidate" };
   }
 };
-

@@ -30,12 +30,12 @@ function getFileType(url: string): FileType {
   if (lowerUrl.endsWith(".doc")) return "docx"; // Treat .doc as docx
   if (lowerUrl.endsWith(".txt")) return "txt";
   if (lowerUrl.endsWith(".text")) return "txt";
-  
+
   // Try to detect from content type or URL pattern
   if (lowerUrl.includes(".pdf") || lowerUrl.includes("pdf")) return "pdf";
   if (lowerUrl.includes(".docx") || lowerUrl.includes("docx")) return "docx";
   if (lowerUrl.includes(".txt") || lowerUrl.includes("text")) return "txt";
-  
+
   return "unknown";
 }
 
@@ -43,8 +43,7 @@ function getFileType(url: string): FileType {
 async function getSignedUrl(url: string): Promise<string> {
   // Check if URL is already a public URL (not GCS)
   const isPublicUrl =
-    !url.includes("storage.googleapis.com") &&
-    !url.startsWith("gs://");
+    !url.includes("storage.googleapis.com") && !url.startsWith("gs://");
 
   if (isPublicUrl) {
     return url;
@@ -113,9 +112,7 @@ export default function DocumentPreviewDialog({
     } catch (err) {
       console.error("Error loading preview:", err);
       setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to load document preview"
+        err instanceof Error ? err.message : "Failed to load document preview"
       );
       toast.error("Failed to load document preview");
     } finally {
@@ -157,9 +154,7 @@ export default function DocumentPreviewDialog({
           <DialogDescription>
             Preview of {document.name}
             {fileType !== "unknown" && (
-              <span className="ml-2 text-xs">
-                ({fileType.toUpperCase()})
-              </span>
+              <span className="ml-2 text-xs">({fileType.toUpperCase()})</span>
             )}
           </DialogDescription>
         </DialogHeader>
@@ -206,19 +201,21 @@ export default function DocumentPreviewDialog({
               <div className="flex-1 flex items-center justify-center p-8">
                 <div className="text-center max-w-md">
                   <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-semibold mb-2">
-                    DOCX Preview
-                  </h3>
+                  <h3 className="text-lg font-semibold mb-2">DOCX Preview</h3>
                   <p className="text-sm text-muted-foreground mb-6">
-                    DOCX files can be viewed using Microsoft Office Online viewer.
-                    You can also download the file to view it locally.
+                    DOCX files can be viewed using Microsoft Office Online
+                    viewer. You can also download the file to view it locally.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-2 justify-center">
                     <Button
                       onClick={() => {
                         // Use Office Online viewer
                         const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(previewUrl)}`;
-                        window.open(officeViewerUrl, "_blank", "noopener,noreferrer");
+                        window.open(
+                          officeViewerUrl,
+                          "_blank",
+                          "noopener,noreferrer"
+                        );
                       }}
                       variant="default"
                     >
@@ -257,7 +254,11 @@ export default function DocumentPreviewDialog({
             <Download className="h-4 w-4 mr-2" />
             Download
           </Button>
-          <Button onClick={() => onOpenChange(false)} variant="default" size="sm">
+          <Button
+            onClick={() => onOpenChange(false)}
+            variant="default"
+            size="sm"
+          >
             Close
           </Button>
         </div>
@@ -265,4 +266,3 @@ export default function DocumentPreviewDialog({
     </Dialog>
   );
 }
-
