@@ -1861,3 +1861,119 @@ export const getInterviewStatusDistribution = async () => {
     return [];
   }
 };
+
+/**
+ * Creates an employee from a hired candidate
+ * @param candidateId The ID of the hired candidate
+ * @param applicationId The ID of the application
+ * @returns The created employee or null if operation fails
+ */
+export const createEmployeeFromHiredCandidate = async (
+  candidateId: string,
+  applicationId: string
+) => {
+  try {
+    // Fetch candidate and application details
+    const [appResult] = await db
+      .select({
+        candidateId: application.candidateId,
+        positionId: application.positionId,
+      })
+      .from(application)
+      .where(eq(application.id, applicationId));
+
+    if (!appResult) {
+      console.error("Application not found");
+      return null;
+    }
+
+    const [candidateResult] = await db
+      .select()
+      .from(candidate)
+      .where(eq(candidate.id, candidateId));
+
+    if (!candidateResult) {
+      console.error("Candidate not found");
+      return null;
+    }
+
+    // Check if employee already exists for this candidate
+    const [existingEmployee] = await db
+      .select()
+      .from(employee)
+      .where(eq(employee.id, candidateId));
+
+    if (existingEmployee) {
+      console.warn("Employee already exists for candidate:", candidateId);
+      return existingEmployee;
+    }
+
+    // Create employee record
+    const [newEmployee] = await db
+      .insert(employee)
+      .values({
+        id: candidateId, // Use same ID as candidate for linking
+        firstName: candidateResult.firstName,
+        lastName: candidateResult.lastName,
+        positionId: appResult.positionId,
+        department: "other", // Default department, can be updated later
+        profileImage: null,
+        bio: null,
+      })
+      .returning();
+
+    return newEmployee;
+  } catch (error) {
+    console.error("Error creating employee from hired candidate", error);
+    return null;
+  }
+};
+
+/**
+ * Updates application status and handles hired status transitions
+ * @param applicationId The ID of the application to update
+ * @param newStatus The new status for the application
+ * @returns The updated application or null if operation fails
+ */
+export const updateApplicationStatus = async (
+  applicationId: string,
+  newStatus: string
+) => {
+  try {
+    // Get the application and candidate ID before updating
+    const [appBefore] = await db
+      .select({
+        candidateId: application.candidateId,
+      })
+      .from(application)
+      .where(eq(application.id, applicationId));
+
+    if (!appBefore) {
+      console.error("Application not found");
+      return null;
+    }
+
+    // Update the application status
+    const [updatedApp] = await db
+      .update(application)
+      .set({
+        status: newStatus,
+        updatedAt: new Date(),
+      })
+      .where(eq(application.id, applicationId))
+      .returning();
+
+    // If status changed to "hired", create employee record
+    if (newStatus === "hired") {
+      await createEmployeeFromHiredCandidate(
+        appBefore.candidateId,
+        applicationId
+      );
+    }
+
+    return updatedApp;
+  } catch (error) {
+    console.error("Error updating application status", error);
+    return null;
+  }
+};
