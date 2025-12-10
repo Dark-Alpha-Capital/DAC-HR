@@ -15,6 +15,7 @@ import {
   candidateDocument,
   candidateOnboarding,
   employee,
+  target,
 } from "./schema";
 import { eq, asc, desc, inArray, and, or, sql } from "drizzle-orm";
 
@@ -1861,3 +1862,53 @@ export const getInterviewStatusDistribution = async () => {
     return [];
   }
 };
+
+export async function getAllTargets() {
+  return await db.select().from(target).orderBy(desc(target.createdAt));
+}
+
+export async function getTargetById(id: string) {
+  const [result] = await db.select().from(target).where(eq(target.id, id));
+  return result;
+}
+
+export async function createTarget(data: {
+  description: string;
+  status: "pending" | "complete";
+  timeline: Date;
+  createdBy: string;
+}) {
+  const [newTarget] = await db
+    .insert(target)
+    .values({
+      description: data.description,
+      status: data.status,
+      timeline: data.timeline,
+      createdBy: data.createdBy,
+    })
+    .returning();
+  return newTarget;
+}
+
+export async function updateTarget(
+  id: string,
+  data: {
+    description?: string;
+    status?: "pending" | "complete";
+    timeline?: Date;
+  }
+) {
+  const [updated] = await db
+    .update(target)
+    .set({
+      ...data,
+      updatedAt: new Date(),
+    })
+    .where(eq(target.id, id))
+    .returning();
+  return updated;
+}
+
+export async function deleteTarget(id: string) {
+  await db.delete(target).where(eq(target.id, id));
+}

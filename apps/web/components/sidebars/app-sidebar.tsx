@@ -12,6 +12,7 @@ import {
   Shield,
   Building2,
   User,
+  Target,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -48,6 +49,7 @@ const managementLinks = [
 // Admin links (only for admins)
 const adminLinks = [
   { href: "/admin", label: "Admin", icon: Shield },
+  { href: "/admin/targets", label: "Targets", icon: Target },
   { href: "/positions", label: "Positions", icon: Briefcase },
   { href: "/rounds", label: "Rounds", icon: CircleDot },
   { href: "/questions", label: "Questions", icon: HelpCircle },

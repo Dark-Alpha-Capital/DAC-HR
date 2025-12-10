@@ -14,10 +14,13 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "dependencies": {
+    "date-fns": "^4.1.0",
     "minimatch": "^10.1.1",
-    "zod": "^4.1.12"
+    "react-markdown": "^10.1.0",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.19",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "prettier": "^3.6.2",
