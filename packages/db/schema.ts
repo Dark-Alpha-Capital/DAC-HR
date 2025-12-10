@@ -393,3 +393,29 @@ export const employee = pgTable("employee", {
 });
 
 export type Employee = InferSelectModel<typeof employee>;
+
+// Target status enum
+export const targetStatusEnum = pgEnum("target_status", [
+  "pending",
+  "complete",
+]);
+
+// Targets table for admin-created organizational targets
+export const target = pgTable("target", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  description: text("description").notNull(),
+  status: targetStatusEnum("status").default("pending").notNull(),
+  timeline: timestamp("timeline").notNull(),
+  createdBy: text("created_by")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+export type Target = InferSelectModel<typeof target>;
