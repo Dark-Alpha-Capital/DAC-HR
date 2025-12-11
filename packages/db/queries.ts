@@ -20,11 +20,15 @@ import { eq, asc, desc, inArray, and, or, sql } from "drizzle-orm";
 
 /**
  *
- * Fetches all positions from the database, optionally filtered by hire level
+ * Fetches all positions from the database, optionally filtered by hire level and status
  * @param hireLevels Optional array of hire level values to filter by
+ * @param statuses Optional array of status values to filter by
  * @returns An array of positions
  */
-export const getPositions = async (hireLevels?: string[]) => {
+export const getPositions = async (
+  hireLevels?: string[],
+  statuses?: string[]
+) => {
   try {
     let query = db
       .select({
@@ -33,8 +37,11 @@ export const getPositions = async (hireLevels?: string[]) => {
         slug: position.slug,
         description: position.description,
         hireLevel: position.hireLevel,
+        status: position.status,
       })
       .from(position);
+
+    const conditions = [];
 
     // Apply hire level filter if provided
     if (hireLevels && hireLevels.length > 0) {
@@ -55,10 +62,25 @@ export const getPositions = async (hireLevels?: string[]) => {
           ].includes(level)
       );
       if (validHireLevels.length > 0) {
-        query = query.where(
-          inArray(position.hireLevel, validHireLevels)
-        ) as typeof query;
+        conditions.push(inArray(position.hireLevel, validHireLevels));
       }
+    }
+
+    // Apply status filter if provided
+    if (statuses && statuses.length > 0) {
+      // Validate statuses against enum values
+      const validStatuses = statuses.filter(
+        (status): status is "active" | "hold" | "passed" | "upcoming" =>
+          ["active", "hold", "passed", "upcoming"].includes(status)
+      );
+      if (validStatuses.length > 0) {
+        conditions.push(inArray(position.status, validStatuses));
+      }
+    }
+
+    // Apply all conditions with AND
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as typeof query;
     }
 
     return await query;

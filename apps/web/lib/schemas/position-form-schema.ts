@@ -8,20 +8,25 @@ export const hireLevelEnum = z.enum([
   "intern",
 ]);
 
-export const positionFormSchema = z.object({
-  name: z
-    .string()
-    .min(1, "Position name is required."),
+export const positionStatusEnum = z.enum([
+  "active",
+  "hold",
+  "passed",
+  "upcoming",
+]);
 
-  description: z
-    .string()
-    .min(1, "Description is required."),
+export const positionFormSchema = z.object({
+  name: z.string().min(1, "Position name is required."),
+
+  description: z.string().min(1, "Description is required."),
 
   department: z
     .array(departmentEnum)
     .min(1, "At least one department must be selected."),
 
   hireLevel: hireLevelEnum.optional(),
+
+  status: positionStatusEnum.default("active"),
 });
 
 export type PositionFormSchema = z.infer<typeof positionFormSchema>;

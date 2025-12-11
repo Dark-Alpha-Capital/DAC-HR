@@ -9,7 +9,8 @@ const ClearPositionFiltersButton = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const hasFilters = searchParams.has("hireLevel");
+  const hasFilters =
+    searchParams.has("hireLevel") || searchParams.has("status");
 
   if (!hasFilters) {
     return null;
@@ -22,6 +23,7 @@ const ClearPositionFiltersButton = () => {
       onClick={() => {
         const params = new URLSearchParams(searchParams);
         params.delete("hireLevel");
+        params.delete("status");
         router.push(`?${params.toString()}`);
       }}
     >
@@ -31,4 +33,3 @@ const ClearPositionFiltersButton = () => {
 };
 
 export default ClearPositionFiltersButton;
-

@@ -25,7 +25,29 @@ const hireLevelLabels: Record<string, string> = {
   "managing-director": "Managing Director",
   "vice-president": "Vice President",
   "associate-analyst": "Associate Analyst",
-  "intern": "Intern",
+  intern: "Intern",
+};
+
+const statusLabels: Record<string, string> = {
+  active: "Active",
+  hold: "Hold",
+  passed: "Passed",
+  upcoming: "Upcoming",
+};
+
+const getStatusColorClass = (status: string | null | undefined): string => {
+  switch (status) {
+    case "active":
+      return "bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800";
+    case "hold":
+      return "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800";
+    case "passed":
+      return "bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800";
+    case "upcoming":
+      return "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800";
+    default:
+      return "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-200 dark:border-gray-800";
+  }
 };
 
 interface Position {
@@ -34,6 +56,7 @@ interface Position {
   slug: string;
   description: string | null;
   hireLevel?: string | null;
+  status?: string | null;
 }
 
 interface PositionContainerProps {
@@ -73,6 +96,7 @@ const PositionContainer = ({ positions }: PositionContainerProps) => {
               positionDescription={position.description || ""}
               positionSlug={position.slug}
               hireLevel={position.hireLevel}
+              status={position.status}
             />
           ))}
         </div>
@@ -82,7 +106,10 @@ const PositionContainer = ({ positions }: PositionContainerProps) => {
             <TableHeader>
               <TableRow>
                 <TableHead className="py-1.5 px-2 text-xs">Name</TableHead>
-                <TableHead className="py-1.5 px-2 text-xs">Hire Level</TableHead>
+                <TableHead className="py-1.5 px-2 text-xs">Status</TableHead>
+                <TableHead className="py-1.5 px-2 text-xs">
+                  Hire Level
+                </TableHead>
                 <TableHead className="py-1.5 px-2 text-xs">Slug</TableHead>
                 <TableHead className="py-1.5 px-2 text-xs">Created</TableHead>
                 <TableHead className="text-right py-1.5 px-2 text-xs">
@@ -97,9 +124,22 @@ const PositionContainer = ({ positions }: PositionContainerProps) => {
                     {position.name}
                   </TableCell>
                   <TableCell className="py-1.5 px-2 text-sm">
+                    {position.status ? (
+                      <Badge
+                        variant="outline"
+                        className={`text-xs ${getStatusColorClass(position.status)}`}
+                      >
+                        {statusLabels[position.status] || position.status}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="py-1.5 px-2 text-sm">
                     {position.hireLevel ? (
                       <Badge variant="secondary" className="text-xs">
-                        {hireLevelLabels[position.hireLevel] || position.hireLevel}
+                        {hireLevelLabels[position.hireLevel] ||
+                          position.hireLevel}
                       </Badge>
                     ) : (
                       <span className="text-xs text-muted-foreground">—</span>

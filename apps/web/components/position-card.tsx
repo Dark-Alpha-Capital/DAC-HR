@@ -18,7 +18,29 @@ const hireLevelLabels: Record<string, string> = {
   "managing-director": "Managing Director",
   "vice-president": "Vice President",
   "associate-analyst": "Associate Analyst",
-  "intern": "Intern",
+  intern: "Intern",
+};
+
+const statusLabels: Record<string, string> = {
+  active: "Active",
+  hold: "Hold",
+  passed: "Passed",
+  upcoming: "Upcoming",
+};
+
+const getStatusColorClass = (status: string | null | undefined): string => {
+  switch (status) {
+    case "active":
+      return "bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800";
+    case "hold":
+      return "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800";
+    case "passed":
+      return "bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800";
+    case "upcoming":
+      return "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800";
+    default:
+      return "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-200 dark:border-gray-800";
+  }
 };
 
 interface PositionCardProps {
@@ -27,6 +49,7 @@ interface PositionCardProps {
   positionDescription: string;
   positionSlug: string;
   hireLevel?: string | null;
+  status?: string | null;
 }
 
 const PositionCard = ({
@@ -35,17 +58,28 @@ const PositionCard = ({
   positionDescription,
   positionSlug,
   hireLevel,
+  status,
 }: PositionCardProps) => {
   return (
     <Card>
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <CardTitle>{positionName}</CardTitle>
-          {hireLevel && (
-            <Badge variant="secondary" className="text-xs">
-              {hireLevelLabels[hireLevel] || hireLevel}
-            </Badge>
-          )}
+          <div className="flex flex-col items-end gap-1">
+            {status && (
+              <Badge
+                variant="outline"
+                className={`text-xs ${getStatusColorClass(status)}`}
+              >
+                {statusLabels[status] || status}
+              </Badge>
+            )}
+            {hireLevel && (
+              <Badge variant="secondary" className="text-xs">
+                {hireLevelLabels[hireLevel] || hireLevel}
+              </Badge>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent>

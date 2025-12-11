@@ -30,6 +30,7 @@ import {
 import {
   positionFormSchema,
   hireLevelEnum,
+  positionStatusEnum,
   type PositionFormSchema,
 } from "@/lib/schemas/position-form-schema";
 import { departmentEnum } from "@/lib/schemas/employee-form-schema";
@@ -73,6 +74,13 @@ const hireLevelLabels: Record<z.infer<typeof hireLevelEnum>, string> = {
   intern: "Intern",
 };
 
+const statusLabels: Record<z.infer<typeof positionStatusEnum>, string> = {
+  active: "Active",
+  hold: "Hold",
+  passed: "Passed",
+  upcoming: "Upcoming",
+};
+
 const PositionEditForm = ({ position }: PositionEditFormProps) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -85,6 +93,8 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
       hireLevel: position.hireLevel as
         | z.infer<typeof hireLevelEnum>
         | undefined,
+      status:
+        (position.status as z.infer<typeof positionStatusEnum>) || "active",
     } as PositionFormSchema,
     validators: {
       onSubmit: positionFormSchema as any,
@@ -141,6 +151,9 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
                   (position.hireLevel as z.infer<
                     typeof hireLevelEnum
                   > | null) || undefined,
+                status:
+                  (position.status as z.infer<typeof positionStatusEnum>) ||
+                  "active",
               });
             }}
             disabled={isPending}
@@ -312,6 +325,38 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
                       {hireLevelEnum.options.map((level) => (
                         <SelectItem key={level} value={level}>
                           {hireLevelLabels[level]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
+            }}
+          />
+          <form.Field
+            name="status"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>Status</FieldLabel>
+                  <Select
+                    value={field.state.value || "active"}
+                    onValueChange={(value) =>
+                      field.handleChange(
+                        value as z.infer<typeof positionStatusEnum>
+                      )
+                    }
+                  >
+                    <SelectTrigger id={field.name} aria-invalid={isInvalid}>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {positionStatusEnum.options.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {statusLabels[status]}
                         </SelectItem>
                       ))}
                     </SelectContent>

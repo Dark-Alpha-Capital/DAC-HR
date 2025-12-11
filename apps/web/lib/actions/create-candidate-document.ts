@@ -62,4 +62,3 @@ export const createCandidateDocument = async (
     return { error: "Failed to create candidate document" };
   }
 };
-

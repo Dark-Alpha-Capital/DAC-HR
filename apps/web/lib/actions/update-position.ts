@@ -33,7 +33,7 @@ export const updatePosition = async (
     return { error: result.error.flatten().fieldErrors };
   }
 
-  const { name, description, department, hireLevel } = result.data;
+  const { name, description, department, hireLevel, status } = result.data;
 
   try {
     const [updatedPosition] = await db
@@ -44,6 +44,7 @@ export const updatePosition = async (
         description,
         department,
         hireLevel: hireLevel || null,
+        status: status || "active",
         updatedAt: new Date(),
       })
       .where(eq(position.id, positionId))

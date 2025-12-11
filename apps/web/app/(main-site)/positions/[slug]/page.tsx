@@ -106,11 +106,34 @@ const DisplayPosition = async ({ params }: { params: Params }) => {
               {position.name}
             </h2>
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              {position.status && (
+                <Badge
+                  variant="outline"
+                  className={`text-[0.7rem] ${
+                    position.status === "active"
+                      ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
+                      : position.status === "hold"
+                        ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800"
+                        : position.status === "passed"
+                          ? "bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800"
+                          : position.status === "upcoming"
+                            ? "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800"
+                            : ""
+                  }`}
+                >
+                  {position.status === "active" && "Active"}
+                  {position.status === "hold" && "Hold"}
+                  {position.status === "passed" && "Passed"}
+                  {position.status === "upcoming" && "Upcoming"}
+                </Badge>
+              )}
               {position.hireLevel && (
                 <Badge variant="secondary" className="text-[0.7rem]">
-                  {position.hireLevel === "managing-director" && "Managing Director"}
+                  {position.hireLevel === "managing-director" &&
+                    "Managing Director"}
                   {position.hireLevel === "vice-president" && "Vice President"}
-                  {position.hireLevel === "associate-analyst" && "Associate Analyst"}
+                  {position.hireLevel === "associate-analyst" &&
+                    "Associate Analyst"}
                   {position.hireLevel === "intern" && "Intern"}
                 </Badge>
               )}

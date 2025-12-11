@@ -25,6 +25,7 @@ import {
 import {
   positionFormSchema,
   hireLevelEnum,
+  positionStatusEnum,
 } from "@/lib/schemas/position-form-schema";
 import { departmentEnum } from "@/lib/schemas/employee-form-schema";
 import { Loader2, ChevronDown } from "lucide-react";
@@ -58,6 +59,13 @@ const hireLevelLabels: Record<z.infer<typeof hireLevelEnum>, string> = {
   intern: "Intern",
 };
 
+const statusLabels: Record<z.infer<typeof positionStatusEnum>, string> = {
+  active: "Active",
+  hold: "Hold",
+  passed: "Passed",
+  upcoming: "Upcoming",
+};
+
 const PositionUploadForm = () => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -68,6 +76,7 @@ const PositionUploadForm = () => {
       description: "",
       department: [] as z.infer<typeof positionFormSchema>["department"],
       hireLevel: undefined as z.infer<typeof positionFormSchema>["hireLevel"],
+      status: "active" as z.infer<typeof positionFormSchema>["status"],
     },
 
     validators: {
@@ -286,6 +295,38 @@ const PositionUploadForm = () => {
                       {hireLevelEnum.options.map((level) => (
                         <SelectItem key={level} value={level}>
                           {hireLevelLabels[level]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
+            }}
+          />
+          <form.Field
+            name="status"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>Status</FieldLabel>
+                  <Select
+                    value={field.state.value || "active"}
+                    onValueChange={(value) =>
+                      field.handleChange(
+                        value as z.infer<typeof positionStatusEnum>
+                      )
+                    }
+                  >
+                    <SelectTrigger id={field.name} aria-invalid={isInvalid}>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {positionStatusEnum.options.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {statusLabels[status]}
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -91,6 +91,13 @@ export const hireLevelEnum = pgEnum("hire_level", [
   "intern",
 ]);
 
+export const positionStatusEnum = pgEnum("position_status", [
+  "active",
+  "hold",
+  "passed",
+  "upcoming",
+]);
+
 export const position = pgTable("position", {
   id: text("id")
     .primaryKey()
@@ -100,6 +107,7 @@ export const position = pgTable("position", {
   description: text("description"),
   department: departmentEnum("department").array(),
   hireLevel: hireLevelEnum("hire_level"),
+  status: positionStatusEnum("status").default("active").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

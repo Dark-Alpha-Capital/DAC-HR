@@ -6,6 +6,7 @@ import PositionContainer from "./position-container";
 import { Metadata } from "next";
 import { UserIsAdmin } from "@/components/auth-checks";
 import FilterPositionHireLevel from "@/components/filter-position-hire-level";
+import FilterPositionStatus from "@/components/filter-position-status";
 import ClearPositionFiltersButton from "@/components/clear-position-filters-button";
 
 export const metadata: Metadata = {
@@ -46,6 +47,7 @@ const PresentFilters = async () => {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <FilterPositionHireLevel />
+      <FilterPositionStatus />
       <ClearPositionFiltersButton />
     </div>
   );
@@ -62,7 +64,12 @@ const PositionsList = async ({
       ? params.hireLevel
       : [params.hireLevel]
     : undefined;
-  const positions = await getPositions(hireLevels);
+  const statuses = params.status
+    ? Array.isArray(params.status)
+      ? params.status
+      : [params.status]
+    : undefined;
+  const positions = await getPositions(hireLevels, statuses);
 
   if (positions.length === 0) {
     return (

@@ -35,7 +35,7 @@ export const createPosition = async (data: PositionFormSchema) => {
     return { error: result.error.flatten().fieldErrors };
   }
 
-  const { name, description, department, hireLevel } = result.data;
+  const { name, description, department, hireLevel, status } = result.data;
 
   try {
     const [newPosition] = await db
@@ -46,6 +46,7 @@ export const createPosition = async (data: PositionFormSchema) => {
         description,
         department,
         hireLevel: hireLevel || null,
+        status: status || "active",
       })
       .returning();
 

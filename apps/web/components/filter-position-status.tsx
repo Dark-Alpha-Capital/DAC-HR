@@ -13,17 +13,14 @@ import {
 import { Button } from "@workspace/ui/components/button";
 import { Filter } from "lucide-react";
 
-const statuses = [
-  { value: "pending", label: "Pending" },
-  { value: "reviewed", label: "Reviewed" },
-  { value: "shortlisted", label: "Shortlisted" },
-  { value: "interviewing", label: "Interviewing" },
-  { value: "hired", label: "Hired" },
-  { value: "rejected", label: "Rejected" },
-  { value: "withdrawn", label: "Withdrawn" },
+const statusOptions = [
+  { value: "active", label: "Active" },
+  { value: "hold", label: "Hold" },
+  { value: "passed", label: "Passed" },
+  { value: "upcoming", label: "Upcoming" },
 ];
 
-const FilterApplicationStatus = () => {
+const FilterPositionStatus = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -69,7 +66,7 @@ const FilterApplicationStatus = () => {
         <DropdownMenuContent className="w-56">
           <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {statuses.map((status) => (
+          {statusOptions.map((status) => (
             <DropdownMenuCheckboxItem
               key={status.value}
               checked={selectedStatuses.includes(status.value)}
@@ -86,25 +83,4 @@ const FilterApplicationStatus = () => {
   );
 };
 
-export default FilterApplicationStatus;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+export default FilterPositionStatus;
