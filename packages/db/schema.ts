@@ -5,6 +5,7 @@ import {
   boolean,
   pgEnum,
   integer,
+  json,
 } from "drizzle-orm/pg-core";
 import { sql, type InferSelectModel } from "drizzle-orm";
 
@@ -401,3 +402,23 @@ export const employee = pgTable("employee", {
 });
 
 export type Employee = InferSelectModel<typeof employee>;
+
+export const auditLog = pgTable("audit_log", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  action: text("action").notNull(),
+  entityType: text("entity_type").notNull(),
+  entityId: text("entity_id").notNull(),
+  details: json("details"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+export type AuditLog = InferSelectModel<typeof auditLog>;

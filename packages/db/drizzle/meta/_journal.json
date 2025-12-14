@@ -78,6 +78,13 @@
       "when": 1765463395224,
       "tag": "0010_natural_nemesis",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1765704207997,
+      "tag": "0011_flowery_namorita",
+      "breakpoints": true
     }
   ]
 }

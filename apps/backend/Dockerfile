@@ -23,7 +23,10 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy application code
 COPY package.json bun.lock* ./
 COPY apps/backend ./apps/backend
-COPY packages/types ./packages/types
+COPY packages/db ./packages/db
+
+
+
 
 # Set working directory to backend
 WORKDIR /app/apps/backend
