@@ -19,6 +19,9 @@ coverage
 .turbo
 
 # Vercel
+
+service-account-key.json
+
 .vercel
 
 # Build Outputs
