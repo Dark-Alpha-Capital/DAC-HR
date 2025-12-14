@@ -52,6 +52,10 @@ export const createInterview = async (data: CreateInterviewInput) => {
       })
       .returning();
 
+    if (!newInterview) {
+      return { error: "Failed to create interview" };
+    }
+
     // Update application status to "interviewing" if it's still pending/reviewed
     if (app.status === "pending" || app.status === "reviewed") {
       await db

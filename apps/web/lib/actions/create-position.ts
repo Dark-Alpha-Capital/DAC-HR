@@ -52,6 +52,10 @@ export const createPosition = async (data: PositionFormSchema) => {
       })
       .returning();
 
+    if (!newPosition) {
+      return { error: "Failed to create position" };
+    }
+
     console.log("new position created", newPosition);
 
     revalidatePath("/positions");

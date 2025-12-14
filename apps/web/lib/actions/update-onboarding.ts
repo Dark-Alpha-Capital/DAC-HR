@@ -84,6 +84,10 @@ export async function updateOnboardingTasks(
         .returning()
         .execute();
 
+      if (!inserted) {
+        return { success: false, error: "Failed to create onboarding record" };
+      }
+
       revalidatePath(`/candidates/${candidateId}`);
 
       after(async () => {
@@ -132,6 +136,10 @@ export async function updateOnboardingTasks(
       .where(eq(candidateOnboarding.candidateId, candidateId))
       .returning()
       .execute();
+
+    if (!updated) {
+      return { success: false, error: "Failed to update onboarding record" };
+    }
 
     revalidatePath(`/candidates/${candidateId}`);
 

@@ -56,6 +56,10 @@ export const updateInterview = async (data: UpdateInterviewInput) => {
       .where(eq(interview.id, interviewId))
       .returning();
 
+    if (!updatedInterview) {
+      return { error: "Interview not found" };
+    }
+
     revalidatePath(`/candidates/${currentInterview.applicationId}`);
     revalidatePath(`/applications/${currentInterview.applicationId}`);
     revalidatePath(`/interviews/${interviewId}`);

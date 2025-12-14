@@ -55,7 +55,7 @@ export const createInterviewFeedback = async (
       )
       .limit(1);
 
-    let result;
+    let result: typeof interviewFeedback.$inferSelect | undefined;
     if (existing) {
       // Update existing feedback
       [result] = await db
@@ -92,14 +92,14 @@ export const createInterviewFeedback = async (
           ? "update_interview_feedback"
           : "create_interview_feedback",
         entityType: "interview_feedback",
-        entityId: result.id,
+        entityId: (result?.id as string) || "",
         details: {
           interviewFeedback: {
-            id: result.id,
-            interviewId: result.interviewId,
-            questionId: result.questionId,
-            notes: result.notes,
-            rating: result.rating,
+            id: result?.id || "",
+            interviewId: result?.interviewId || "",
+            questionId: result?.questionId || "",
+            notes: result?.notes || "",
+            rating: result?.rating || "",
           },
           input: {
             interviewId,
@@ -149,7 +149,7 @@ export const bulkCreateInterviewFeedback = async (
   const { interviewId, feedback } = data;
 
   try {
-    const results = [];
+    const results: (typeof interviewFeedback.$inferSelect)[] = [];
 
     for (const item of feedback) {
       // Check if feedback already exists
@@ -164,7 +164,7 @@ export const bulkCreateInterviewFeedback = async (
         )
         .limit(1);
 
-      let result;
+      let result: typeof interviewFeedback.$inferSelect | undefined;
       if (existing) {
         // Update existing feedback
         [result] = await db
@@ -187,7 +187,9 @@ export const bulkCreateInterviewFeedback = async (
           })
           .returning();
       }
-      results.push(result);
+      if (result) {
+        results.push(result);
+      }
     }
 
     const interview = await getInterviewById(interviewId);

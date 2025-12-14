@@ -28,7 +28,10 @@ async function fetchAuditLogs(
     limit,
   });
 
-  return result;
+  return {
+    logs: result.logs as AuditLog[],
+    total: result.total,
+  };
 }
 
 async function AuditLogsSectionInner({

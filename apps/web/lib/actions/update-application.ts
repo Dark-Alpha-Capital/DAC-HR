@@ -60,7 +60,11 @@ export const updateApplication = async (data: UpdateApplicationInput) => {
       .where(eq(application.id, applicationId))
       .returning();
 
-    if (updatedApplication?.candidateId) {
+    if (!updatedApplication) {
+      return { error: "Application not found" };
+    }
+
+    if (updatedApplication.candidateId) {
       revalidatePath(`/candidates/${updatedApplication.candidateId}`);
     }
     revalidatePath(`/applications/${applicationId}`);
