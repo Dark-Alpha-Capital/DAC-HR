@@ -9,9 +9,9 @@ COPY package.json bun.lock* ./
 # Copy backend package.json
 COPY apps/backend/package.json ./apps/backend/
 # Copy types package.json (dependency)
-COPY packages/types/package.json ./packages/types/
+COPY packages/db/package.json ./packages/db/
     # Install all dependencies
-    RUN bun install
+RUN bun install
 
 # Production stage
 FROM base AS production
@@ -24,7 +24,6 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY package.json bun.lock* ./
 COPY apps/backend ./apps/backend
 COPY packages/db ./packages/db
-
 
 
 
