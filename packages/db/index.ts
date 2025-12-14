@@ -20,6 +20,7 @@ const client =
     idle_timeout: 20,
     connect_timeout: 10,
     onnotice: () => {},
+    debug: process.env.NODE_ENV === "development" ? console.log : undefined,
   });
 
 if (process.env.NODE_ENV !== "production") {

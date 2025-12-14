@@ -444,6 +444,12 @@ export const getCandidateById = async (id: string) => {
  * @returns The candidate with applications (including position details) or null if not found
  */
 export const getCandidateWithApplications = async (id: string) => {
+  // Validate ID format
+  if (!id || typeof id !== "string" || id.trim().length === 0) {
+    console.error("Invalid candidate ID provided:", id);
+    return null;
+  }
+
   try {
     const [candidateResult] = await db
       .select()
@@ -490,7 +496,77 @@ export const getCandidateWithApplications = async (id: string) => {
       applications: applicationsWithInterviews,
     };
   } catch (error) {
-    console.error("Error fetching candidate with applications", error);
+    // Enhanced error logging
+    console.error("Error fetching candidate with applications");
+    console.error("Candidate ID:", id);
+    console.error("ID type:", typeof id);
+    console.error("ID length:", id?.length);
+
+    if (error instanceof Error) {
+      console.error("Error name:", error.name);
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+
+      // Check for postgres.js error properties (query and parameters are non-enumerable)
+      const errorAny = error as any;
+
+      // postgres.js errors have query and parameters properties
+      if (errorAny.query) {
+        console.error("Failed query:", errorAny.query);
+      }
+      if (errorAny.parameters) {
+        console.error("Query parameters:", errorAny.parameters);
+      }
+      if (errorAny.cause) {
+        console.error("Error cause:", errorAny.cause);
+      }
+
+      // Check for PostgreSQL-specific error properties
+      if (errorAny.code) {
+        console.error("PostgreSQL error code:", errorAny.code);
+      }
+      if (errorAny.detail) {
+        console.error("PostgreSQL error detail:", errorAny.detail);
+      }
+      if (errorAny.hint) {
+        console.error("PostgreSQL error hint:", errorAny.hint);
+      }
+      if (errorAny.position) {
+        console.error("PostgreSQL error position:", errorAny.position);
+      }
+      if (errorAny.internal_position) {
+        console.error(
+          "PostgreSQL internal position:",
+          errorAny.internal_position
+        );
+      }
+      if (errorAny.internal_query) {
+        console.error("PostgreSQL internal query:", errorAny.internal_query);
+      }
+      if (errorAny.where) {
+        console.error("PostgreSQL error where:", errorAny.where);
+      }
+      if (errorAny.schema) {
+        console.error("PostgreSQL error schema:", errorAny.schema);
+      }
+      if (errorAny.table) {
+        console.error("PostgreSQL error table:", errorAny.table);
+      }
+      if (errorAny.column) {
+        console.error("PostgreSQL error column:", errorAny.column);
+      }
+      if (errorAny.data_type) {
+        console.error("PostgreSQL error data type:", errorAny.data_type);
+      }
+      if (errorAny.constraint) {
+        console.error("PostgreSQL error constraint:", errorAny.constraint);
+      }
+    } else {
+      console.error("Unknown error type:", error);
+      console.error("Error stringified:", JSON.stringify(error, null, 2));
+    }
+
+    // Return null to prevent page crash, but log the error for debugging
     return null;
   }
 };
