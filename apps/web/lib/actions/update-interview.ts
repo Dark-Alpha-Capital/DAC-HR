@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@workspace/db";
-import { interview } from "@workspace/db/schema";
-import { revalidatePath } from "next/cache";
+import { interview, application } from "@workspace/db/schema";
+import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
@@ -60,7 +60,19 @@ export const updateInterview = async (data: UpdateInterviewInput) => {
       return { error: "Interview not found" };
     }
 
-    revalidatePath(`/candidates/${currentInterview.applicationId}`);
+    // Get candidateId from application
+    const [app] = await db
+      .select({ candidateId: application.candidateId })
+      .from(application)
+      .where(eq(application.id, currentInterview.applicationId))
+      .limit(1);
+
+    updateTag(`interview-${interviewId}`);
+    updateTag(`application-${currentInterview.applicationId}`);
+    if (app?.candidateId) {
+      updateTag(`candidate-applications-${app.candidateId}`);
+      revalidatePath(`/candidates/${app.candidateId}`);
+    }
     revalidatePath(`/applications/${currentInterview.applicationId}`);
     revalidatePath(`/interviews/${interviewId}`);
 

@@ -1,6 +1,7 @@
 import React, { Suspense } from "react";
 import { getCandidateById, getPositions } from "@workspace/db/queries";
 import CandidateEditForm from "@/components/forms/candidate-edit-form";
+import { cacheLife, cacheTag } from "next/cache";
 import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
@@ -17,7 +18,7 @@ const EditCandidatePage = async ({ params }: { params: Params }) => {
       </Suspense>
 
       <Suspense fallback={<FormLoadingFallback />}>
-        <EditCandidateForm params={params} />
+        <EditCandidateFormWrapper params={params} />
       </Suspense>
     </div>
   );
@@ -25,11 +26,39 @@ const EditCandidatePage = async ({ params }: { params: Params }) => {
 
 export default EditCandidatePage;
 
-const EditCandidateForm = async ({ params }: { params: Params }) => {
+// Cached function for candidate
+async function CachedCandidateById(uid: string) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag("candidates");
+  cacheTag(`candidate-${uid}`);
+  return await getCandidateById(uid);
+}
+
+// Cached function for positions
+async function CachedPositions() {
+  "use cache";
+  cacheLife("hr-metadata");
+  cacheTag("positions");
+  return await getPositions();
+}
+
+// Component (not cached) reads runtime data
+const EditCandidateFormWrapper = async ({ params }: { params: Params }) => {
   const { uid } = await params;
+  return <CachedEditCandidateForm uid={uid} />;
+};
+
+// Cached component receives data as props
+async function CachedEditCandidateForm({ uid }: { uid: string }) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag("candidates");
+  cacheTag(`candidate-${uid}`);
+
   const [candidate, positions] = await Promise.all([
-    getCandidateById(uid),
-    getPositions(),
+    CachedCandidateById(uid),
+    CachedPositions(),
   ]);
 
   if (!candidate) {
@@ -66,4 +95,4 @@ const EditCandidateForm = async ({ params }: { params: Params }) => {
       </div>
     </div>
   );
-};
+}

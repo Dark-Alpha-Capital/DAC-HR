@@ -40,9 +40,8 @@
   --sidebar-accent-foreground: oklch(0.6723 0.1606 244.9955);
   --sidebar-border: oklch(0.9271 0.0101 238.5177);
   --sidebar-ring: oklch(0.6818 0.1584 243.354);
-  --font-sans: Open Sans, sans-serif;
+  /* Font variables are set by Next.js font loader via className, don't override here */
   --font-serif: Georgia, serif;
-  --font-mono: Menlo, monospace;
   --radius: 1.3rem;
   --shadow-x: 0px;
   --shadow-y: 2px;
@@ -105,9 +104,8 @@
   --sidebar-accent-foreground: oklch(0.6692 0.1607 245.011);
   --sidebar-border: oklch(0.3795 0.022 240.5943);
   --sidebar-ring: oklch(0.6818 0.1584 243.354);
-  --font-sans: Open Sans, sans-serif;
+  /* Font variables are set by Next.js font loader via className, don't override here */
   --font-serif: Georgia, serif;
-  --font-mono: Menlo, monospace;
   --radius: 1.3rem;
   --shadow-x: 0px;
   --shadow-y: 2px;
@@ -169,8 +167,9 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
+  /* Font variables are set by Next.js font loader via className */
+  --font-geist: var(--font-geist);
+  --font-geist-mono: var(--font-geist-mono);
   --font-serif: var(--font-serif);
 
   --radius-sm: calc(var(--radius) - 4px);
@@ -197,6 +196,7 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-geist, ui-sans-serif, system-ui, sans-serif);
     letter-spacing: var(--tracking-normal);
   }
 }

@@ -2,7 +2,7 @@
 
 import { db } from "@workspace/db";
 import { interviewFeedback } from "@workspace/db/schema";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq, and } from "drizzle-orm";
@@ -81,6 +81,8 @@ export const createInterviewFeedback = async (
 
     const interview = await getInterviewById(interviewId);
     if (interview) {
+      updateTag(`interview-${interviewId}`);
+      updateTag(`application-${interview.applicationId}`);
       revalidatePath(`/interviews/${interviewId}`);
       revalidatePath(`/applications/${interview.applicationId}`);
     }
@@ -194,6 +196,8 @@ export const bulkCreateInterviewFeedback = async (
 
     const interview = await getInterviewById(interviewId);
     if (interview) {
+      updateTag(`interview-${interviewId}`);
+      updateTag(`application-${interview.applicationId}`);
       revalidatePath(`/interviews/${interviewId}`);
       revalidatePath(`/applications/${interview.applicationId}`);
     }

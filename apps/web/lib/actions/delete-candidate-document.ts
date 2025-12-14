@@ -2,7 +2,7 @@
 
 import { db } from "@workspace/db";
 import { candidateDocument } from "@workspace/db/schema";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
@@ -33,6 +33,7 @@ export const deleteCandidateDocument = async (
       .delete(candidateDocument)
       .where(eq(candidateDocument.id, documentId));
 
+    updateTag(`candidate-documents-${candidateId}`);
     revalidatePath(`/candidates/${candidateId}`);
     revalidatePath("/candidates");
 

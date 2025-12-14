@@ -7,6 +7,12 @@ import {
   TabsTrigger,
   TabsContent,
 } from "@workspace/ui/components/tabs";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
 import { FileText, MessageSquare } from "lucide-react";
 import ApplicationProgressTimeline from "@/components/application-progress-timeline";
 import ApplicationStatusDisplay from "@/components/application-status-display";
@@ -40,31 +46,41 @@ export default function ApplicationTabsContent({
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="overview" className="mt-6 space-y-6">
-        <div className="space-y-3">
-          <ApplicationStatusDisplay application={application} />
-        </div>
+      <TabsContent value="overview" className="mt-6">
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Application Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ApplicationStatusDisplay application={application} />
+            </CardContent>
+          </Card>
 
-        <div className="space-y-3">
-          <ApplicationPersonalitySelector
-            applicationId={applicationId}
-            currentPersonality={application.personality}
-          />
+          <Card>
+            <CardHeader>
+              <CardTitle>Personality Type</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ApplicationPersonalitySelector
+                applicationId={applicationId}
+                currentPersonality={application.personality}
+              />
+            </CardContent>
+          </Card>
         </div>
       </TabsContent>
 
       <TabsContent value="interviews" className="mt-6">
-        <div className="space-y-3">
-          <ApplicationProgressTimeline
-            rounds={application.rounds}
-            interviews={application.interviews}
-            applicationId={applicationId}
-            selectedInterviewId={interviewId}
-            currentUser={currentUser}
-            users={users}
-            application={application}
-          />
-        </div>
+        <ApplicationProgressTimeline
+          rounds={application.rounds}
+          interviews={application.interviews}
+          applicationId={applicationId}
+          selectedInterviewId={interviewId}
+          currentUser={currentUser}
+          users={users}
+          application={application}
+        />
       </TabsContent>
     </Tabs>
   );

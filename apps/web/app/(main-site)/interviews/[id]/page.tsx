@@ -22,6 +22,7 @@ import InterviewQuestionFeedbackDisplay from "@/components/interview-question-fe
 import InterviewSummaryDisplay from "@/components/interview-summary-display";
 import { cn } from "@workspace/ui/lib/utils";
 import { UserAuthenticated } from "@/components/auth-checks";
+import { cacheLife, cacheTag } from "next/cache";
 
 type Params = Promise<{ id: string }>;
 
@@ -33,7 +34,7 @@ const InterviewPage = async ({ params }: { params: Params }) => {
       </Suspense>
 
       <Suspense fallback={<InterviewLoadingSkeleton />}>
-        <DisplayInterview params={params} />
+        <DisplayInterviewWrapper params={params} />
       </Suspense>
     </div>
   );
@@ -41,9 +42,40 @@ const InterviewPage = async ({ params }: { params: Params }) => {
 
 export default InterviewPage;
 
-const DisplayInterview = async ({ params }: { params: Params }) => {
+// Cached function for interview
+async function CachedInterviewById(interviewId: string) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag(`interview-${interviewId}`);
+
+  return await getInterviewById(interviewId);
+}
+
+// Cached function for application with interviews
+async function CachedApplicationWithInterviews(applicationId: string) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag(`application-${applicationId}`);
+
+  return await getApplicationWithInterviews(applicationId);
+}
+
+// Cached function for candidate
+async function CachedCandidateById(candidateId: string) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag("candidates");
+  cacheTag(`candidate-${candidateId}`);
+
+  return await getCandidateById(candidateId);
+}
+
+// Component (not cached) reads runtime data
+const DisplayInterviewWrapper = async ({ params }: { params: Params }) => {
   const { id } = await params;
-  const interview = await getInterviewById(id);
+
+  // Fetch all data using cached functions
+  const interview = await CachedInterviewById(id);
 
   if (!interview) {
     return (
@@ -56,13 +88,32 @@ const DisplayInterview = async ({ params }: { params: Params }) => {
     );
   }
 
-  const application = await getApplicationWithInterviews(
+  const application = await CachedApplicationWithInterviews(
     interview.applicationId
   );
   const candidate = application
-    ? await getCandidateById(application.candidateId)
+    ? await CachedCandidateById(application.candidateId)
     : null;
 
+  return (
+    <DisplayInterview
+      interview={interview}
+      application={application}
+      candidate={candidate}
+    />
+  );
+};
+
+// Display component (not cached) receives data as props
+function DisplayInterview({
+  interview,
+  application,
+  candidate,
+}: {
+  interview: NonNullable<Awaited<ReturnType<typeof getInterviewById>>>;
+  application: Awaited<ReturnType<typeof getApplicationWithInterviews>> | null;
+  candidate: Awaited<ReturnType<typeof getCandidateById>> | null;
+}) {
   const getStatusConfig = (status: string) => {
     switch (status) {
       case "move_forward":
@@ -300,7 +351,7 @@ const DisplayInterview = async ({ params }: { params: Params }) => {
       </div>
     </div>
   );
-};
+}
 
 const InterviewLoadingSkeleton = () => {
   return (

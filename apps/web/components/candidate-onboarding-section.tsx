@@ -4,6 +4,7 @@ import {
   getOrCreateCandidateOnboarding,
 } from "@workspace/db/queries";
 import OnboardingCard from "./onboarding-card";
+import { cacheLife, cacheTag } from "next/cache";
 import {
   Card,
   CardContent,
@@ -12,16 +13,12 @@ import {
 } from "@workspace/ui/components/card";
 import { Briefcase } from "lucide-react";
 
-type Params = Promise<{ uid: string }>;
-
-interface CandidateOnboardingSectionProps {
-  params: Params;
-}
-
-const CandidateOnboardingSection = async ({
-  params,
-}: CandidateOnboardingSectionProps) => {
-  const { uid } = await params;
+// Cached component receives data as props
+async function CachedCandidateOnboardingSection({ uid }: { uid: string }) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag("candidates");
+  cacheTag(`candidate-applications-${uid}`);
 
   // Fetch candidate to check if they have a hired application
   const candidate = await getCandidateWithApplications(uid);
@@ -71,6 +68,6 @@ const CandidateOnboardingSection = async ({
       />
     </div>
   );
-};
+}
 
-export default CandidateOnboardingSection;
+export default CachedCandidateOnboardingSection;

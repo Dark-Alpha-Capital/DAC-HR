@@ -2,7 +2,7 @@
 
 import { db } from "@workspace/db";
 import { candidate } from "@workspace/db/schema";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
@@ -25,6 +25,8 @@ export const deleteCandidate = async (id: string) => {
 
     await db.delete(candidate).where(eq(candidate.id, id));
 
+    updateTag("candidates");
+    updateTag(`candidate-applications-${id}`);
     revalidatePath("/candidates");
 
     if (candidateData) {

@@ -6,7 +6,7 @@ import {
   DocumentFormSchema,
   documentFormSchema,
 } from "../schemas/document-form-schema";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { after } from "next/server";
@@ -43,6 +43,7 @@ export const createDocument = async (data: DocumentFormSchema) => {
       })
       .returning();
 
+    updateTag("documents");
     revalidatePath("/documents");
 
     after(async () => {

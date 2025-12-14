@@ -7,7 +7,7 @@ import {
   PositionFormSchema,
   positionFormSchema,
 } from "../schemas/position-form-schema";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { after } from "next/server";
@@ -58,6 +58,7 @@ export const createPosition = async (data: PositionFormSchema) => {
 
     console.log("new position created", newPosition);
 
+    updateTag("positions");
     revalidatePath("/positions");
 
     after(async () => {

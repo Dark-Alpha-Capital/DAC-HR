@@ -2,7 +2,7 @@
 
 import { db } from "@workspace/db";
 import { application } from "@workspace/db/schema";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
@@ -64,7 +64,9 @@ export const updateApplication = async (data: UpdateApplicationInput) => {
       return { error: "Application not found" };
     }
 
+    updateTag(`application-${applicationId}`);
     if (updatedApplication.candidateId) {
+      updateTag(`candidate-applications-${updatedApplication.candidateId}`);
       revalidatePath(`/candidates/${updatedApplication.candidateId}`);
     }
     revalidatePath(`/applications/${applicationId}`);

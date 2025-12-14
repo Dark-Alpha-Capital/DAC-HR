@@ -37,9 +37,29 @@ import { ApplicationDetailSkeleton } from "@/components/skeletons/application-de
 import { UserAuthenticated } from "@/components/auth-checks";
 import ApplicationTabsContent from "@/components/application-tabs-content";
 import { Metadata } from "next";
+import { cacheLife, cacheTag } from "next/cache";
 
 type Params = Promise<{ id: string }>;
 type SearchParams = Promise<{ interview?: string }>;
+
+// Cached function for application with interviews
+async function CachedApplicationForMetadata(applicationId: string) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag(`application-${applicationId}`);
+
+  return await getApplicationWithInterviews(applicationId);
+}
+
+// Cached function for candidate
+async function CachedCandidateById(candidateId: string) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag("candidates");
+  cacheTag(`candidate-${candidateId}`);
+
+  return await getCandidateById(candidateId);
+}
 
 export async function generateMetadata({
   params,
@@ -47,7 +67,7 @@ export async function generateMetadata({
   params: Params;
 }): Promise<Metadata> {
   const { id } = await params;
-  const application = await getApplicationWithInterviews(id);
+  const application = await CachedApplicationForMetadata(id);
 
   if (!application) {
     return {
@@ -57,7 +77,7 @@ export async function generateMetadata({
     };
   }
 
-  const candidate = await getCandidateById(application.candidateId);
+  const candidate = await CachedCandidateById(application.candidateId);
   const candidateName = candidate
     ? `${candidate.firstName} ${candidate.lastName}`
     : "Candidate";
@@ -88,7 +108,10 @@ const ApplicationPage = async ({
       </Suspense>
 
       <Suspense fallback={<ApplicationDetailSkeleton />}>
-        <DisplayApplication params={params} searchParams={searchParams} />
+        <DisplayApplicationWrapper
+          params={params}
+          searchParams={searchParams}
+        />
       </Suspense>
     </div>
   );
@@ -96,7 +119,8 @@ const ApplicationPage = async ({
 
 export default ApplicationPage;
 
-const DisplayApplication = async ({
+// Component (not cached) reads runtime data
+const DisplayApplicationWrapper = async ({
   params,
   searchParams,
 }: {
@@ -105,11 +129,40 @@ const DisplayApplication = async ({
 }) => {
   const { id } = await params;
   const { interview: interviewId } = await searchParams;
-  const application = await getApplicationWithInterviews(id);
   const session = await auth.api.getSession({
     headers: await headers(),
   });
+
+  // Fetch users dynamically (not cached)
   const users = await getUsers();
+
+  return (
+    <CachedDisplayApplication
+      applicationId={id}
+      interviewId={interviewId}
+      currentUser={session?.user}
+      users={users}
+    />
+  );
+};
+
+// Cached component receives data as props
+async function CachedDisplayApplication({
+  applicationId,
+  interviewId,
+  currentUser,
+  users,
+}: {
+  applicationId: string;
+  interviewId?: string;
+  currentUser?: { id: string; email?: string | null; name?: string | null };
+  users: Awaited<ReturnType<typeof getUsers>>;
+}) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag(`application-${applicationId}`);
+
+  const application = await getApplicationWithInterviews(applicationId);
 
   if (!application) {
     return (
@@ -124,36 +177,6 @@ const DisplayApplication = async ({
       </div>
     );
   }
-
-  const applicationStatusColors: Record<
-    string,
-    "default" | "secondary" | "outline" | "destructive"
-  > = {
-    pending: "outline",
-    reviewed: "secondary",
-    shortlisted: "default",
-    interviewing: "default",
-    hired: "default",
-    rejected: "destructive",
-    withdrawn: "outline",
-  } as const;
-
-  const applicationStatusIcons: Record<string, typeof Clock> = {
-    pending: Clock,
-    reviewed: Eye,
-    shortlisted: CheckCircle2,
-    interviewing: UserCheck,
-    hired: CheckCircle2,
-    rejected: XCircle,
-    withdrawn: UserX,
-  };
-
-  const getStatusIcon = (status: string) => {
-    const Icon = applicationStatusIcons[status] || Clock;
-    return <Icon className="h-4 w-4" />;
-  };
-
-  const currentUser = session?.user;
 
   return (
     <div className="space-y-6">
@@ -189,7 +212,7 @@ const DisplayApplication = async ({
             </Button>
             {currentUser && (
               <RecordInterviewDialogWrapper
-                applicationId={id}
+                applicationId={applicationId}
                 application={application}
                 users={users}
                 currentUserId={currentUser.id}
@@ -202,11 +225,11 @@ const DisplayApplication = async ({
       {/* Tabs for organizing content */}
       <ApplicationTabsContent
         application={application}
-        applicationId={id}
+        applicationId={applicationId}
         interviewId={interviewId}
         currentUser={currentUser}
         users={users}
       />
     </div>
   );
-};
+}

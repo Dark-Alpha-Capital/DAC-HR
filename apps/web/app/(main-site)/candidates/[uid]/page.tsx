@@ -11,6 +11,12 @@ import {
   TabsTrigger,
   TabsContent,
 } from "@workspace/ui/components/tabs";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
 import Link from "next/link";
 import {
   Pencil,
@@ -40,8 +46,18 @@ import CandidateOnboardingSection from "@/components/candidate-onboarding-sectio
 import { UserAuthenticated } from "@/components/auth-checks";
 import InlineApplicationStatusEditor from "@/components/inline-application-status-editor";
 import { Metadata } from "next";
+import { cacheLife, cacheTag } from "next/cache";
 
 type Params = Promise<{ uid: string }>;
+
+async function CachedCandidateForMetadata(uid: string) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag("candidates");
+  cacheTag(`candidate-applications-${uid}`);
+
+  return await getCandidateWithApplications(uid);
+}
 
 export async function generateMetadata({
   params,
@@ -49,7 +65,7 @@ export async function generateMetadata({
   params: Params;
 }): Promise<Metadata> {
   const { uid } = await params;
-  const candidate = await getCandidateWithApplications(uid);
+  const candidate = await CachedCandidateForMetadata(uid);
 
   if (!candidate) {
     return {
@@ -82,7 +98,7 @@ const CandidatePage = async ({ params }: { params: Params }) => {
       </Suspense>
 
       <Suspense fallback={<CandidateDetailSkeleton />}>
-        <CandidatePageContent params={params} />
+        <CandidatePageContentWrapper params={params} />
       </Suspense>
     </div>
   );
@@ -90,8 +106,19 @@ const CandidatePage = async ({ params }: { params: Params }) => {
 
 export default CandidatePage;
 
-const CandidatePageContent = async ({ params }: { params: Params }) => {
+// Component (not cached) reads runtime data
+const CandidatePageContentWrapper = async ({ params }: { params: Params }) => {
   const { uid } = await params;
+  return <CachedCandidatePageContent uid={uid} />;
+};
+
+// Cached component receives data as props
+async function CachedCandidatePageContent({ uid }: { uid: string }) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag("candidates");
+  cacheTag(`candidate-applications-${uid}`);
+
   const candidate = await getCandidateWithApplications(uid);
 
   if (!candidate) {
@@ -165,7 +192,7 @@ const CandidatePageContent = async ({ params }: { params: Params }) => {
             <FileText className="h-4 w-4 mr-2" />
             Documents
             <Suspense fallback={null}>
-              <DocumentsCount params={params} />
+              <CachedDocumentsCount uid={uid} />
             </Suspense>
           </TabsTrigger>
           <TabsTrigger value="onboarding">
@@ -188,32 +215,58 @@ const CandidatePageContent = async ({ params }: { params: Params }) => {
 
         <TabsContent value="documents" className="mt-6">
           <Suspense fallback={<SectionSkeleton />}>
-            <DisplayCandidateDocuments params={params} />
+            <CachedDisplayCandidateDocuments uid={uid} />
           </Suspense>
         </TabsContent>
 
         <TabsContent value="onboarding" className="mt-6">
           <Suspense fallback={<SectionSkeleton />}>
-            <CandidateOnboardingSection params={params} />
+            <CandidateOnboardingSection uid={uid} />
           </Suspense>
         </TabsContent>
       </Tabs>
     </div>
   );
+}
+
+// Component (not cached) reads runtime data
+const DocumentsCountWrapper = async ({ params }: { params: Params }) => {
+  const { uid } = await params;
+  return <CachedDocumentsCount uid={uid} />;
 };
 
-const DocumentsCount = async ({ params }: { params: Params }) => {
-  const { uid } = await params;
+// Cached component receives data as props
+async function CachedDocumentsCount({ uid }: { uid: string }) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag(`candidate-documents-${uid}`);
+
   const documents = await getDocumentsByCandidateId(uid);
   return documents.length > 0 ? (
     <Badge variant="secondary" className="ml-2 h-5 min-w-5 px-1.5 text-xs">
       {documents.length}
     </Badge>
   ) : null;
+}
+
+const DocumentsCount = DocumentsCountWrapper;
+
+// Component (not cached) reads runtime data
+const DisplayCandidateDocumentsWrapper = async ({
+  params,
+}: {
+  params: Params;
+}) => {
+  const { uid } = await params;
+  return <CachedDisplayCandidateDocuments uid={uid} />;
 };
 
-const DisplayCandidateDocuments = async ({ params }: { params: Params }) => {
-  const { uid } = await params;
+// Cached component receives data as props
+async function CachedDisplayCandidateDocuments({ uid }: { uid: string }) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag(`candidate-documents-${uid}`);
+
   const documents = await getDocumentsByCandidateId(uid);
 
   return (
@@ -245,7 +298,7 @@ const DisplayCandidateDocuments = async ({ params }: { params: Params }) => {
       )}
     </div>
   );
-};
+}
 
 const OverviewTab = ({
   candidate,
@@ -256,80 +309,88 @@ const OverviewTab = ({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Contact Information */}
-        <div className="space-y-6">
-          <h2 className="text-lg font-semibold">Contact Information</h2>
-          <div className="space-y-3 text-sm">
-            <div className="flex items-center gap-3">
-              <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <a
-                href={`mailto:${candidate.email}`}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {candidate.email}
-              </a>
-            </div>
-            {candidate.phone && (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Contact Information Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Contact Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <a
-                  href={`tel:${candidate.phone}`}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  href={`mailto:${candidate.email}`}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  {candidate.phone}
+                  {candidate.email}
                 </a>
               </div>
-            )}
-            {candidate.location && (
-              <div className="flex items-center gap-3">
-                <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <span className="text-muted-foreground">
-                  {candidate.location}
-                </span>
-              </div>
-            )}
-            {candidate.source && (
-              <div className="flex items-center gap-3">
-                <LinkIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                {candidate.sourceUrl ? (
+              {candidate.phone && (
+                <div className="flex items-center gap-3">
+                  <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
                   <a
-                    href={candidate.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-foreground transition-colors underline"
+                    href={`tel:${candidate.phone}`}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    {candidate.source}
+                    {candidate.phone}
                   </a>
-                ) : (
-                  <span className="text-muted-foreground">
-                    {candidate.source}
+                </div>
+              )}
+              {candidate.location && (
+                <div className="flex items-center gap-3">
+                  <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">
+                    {candidate.location}
                   </span>
-                )}
+                </div>
+              )}
+              {candidate.source && (
+                <div className="flex items-center gap-3">
+                  <LinkIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  {candidate.sourceUrl ? (
+                    <a
+                      href={candidate.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors underline"
+                    >
+                      {candidate.source}
+                    </a>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">
+                      {candidate.source}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {candidate.note && (
+              <div className="pt-4 border-t">
+                <h3 className="text-sm font-medium mb-2">Notes</h3>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                  {candidate.note}
+                </p>
               </div>
             )}
-          </div>
-          {candidate.note && (
-            <div className="pt-4 border-t">
-              <h3 className="text-sm font-semibold mb-2">Notes</h3>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                {candidate.note}
-              </p>
-            </div>
-          )}
-          <div className="pt-4 border-t">
-            <div className="text-xs text-muted-foreground">
-              <span className="font-medium">ID:</span>{" "}
-              <span className="font-mono">{candidate.id}</span>
-            </div>
-          </div>
-        </div>
 
-        {/* Quick Stats */}
-        <div className="space-y-6">
-          <h2 className="text-lg font-semibold">Quick Stats</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 border rounded-md">
+            <div className="pt-4 border-t">
+              <div className="text-xs text-muted-foreground">
+                <span className="font-medium">ID:</span>{" "}
+                <span className="font-mono">{candidate.id}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Stats Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Stats</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
               <div className="flex items-center gap-3">
                 <Briefcase className="h-5 w-5 text-muted-foreground" />
                 <div>
@@ -339,12 +400,12 @@ const OverviewTab = ({
                   </p>
                 </div>
               </div>
-              <Badge variant="secondary" className="text-lg">
+              <Badge variant="secondary" className="text-base font-semibold">
                 {candidate.applications.length}
               </Badge>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

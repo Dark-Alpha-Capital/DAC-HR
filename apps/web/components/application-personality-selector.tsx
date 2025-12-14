@@ -86,8 +86,7 @@ export default function ApplicationPersonalitySelector({
   };
 
   return (
-    <div className="space-y-2 w-fit">
-      <label className="text-sm font-medium">Personality Type</label>
+    <div className="w-full">
       <Select
         value={value}
         onValueChange={handleValueChange}

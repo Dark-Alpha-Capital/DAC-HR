@@ -7,7 +7,7 @@ import {
   PositionFormSchema,
   positionFormSchema,
 } from "../schemas/position-form-schema";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
@@ -56,6 +56,7 @@ export const updatePosition = async (
       return { error: "Position not found" };
     }
 
+    updateTag("positions");
     revalidatePath("/positions");
     revalidatePath(`/positions/${updatedPosition.slug}`);
     revalidatePath(`/positions/${updatedPosition.slug}/edit`);

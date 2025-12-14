@@ -11,7 +11,7 @@ import {
   CandidateFormSchema,
   candidateFormSchema,
 } from "../schemas/candidate-form-schema";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { after } from "next/server";
@@ -77,6 +77,8 @@ export const createCandidate = async (data: CandidateFormSchema) => {
       });
     }
 
+    updateTag("candidates");
+    updateTag(`candidate-applications-${newCandidate.id}`);
     revalidatePath("/candidates");
 
     after(async () => {

@@ -1,9 +1,13 @@
 "use server";
 
 import { db } from "@workspace/db";
-import { interview, interviewFeedback } from "@workspace/db/schema";
+import {
+  interview,
+  interviewFeedback,
+  application,
+} from "@workspace/db/schema";
 import { and, eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { after } from "next/server";
@@ -98,7 +102,18 @@ export async function saveInterviewRound(
       }
     }
 
-    revalidatePath(`/candidates/[slug]`, "page");
+    // Get candidateId from application
+    const [app] = await db
+      .select({ candidateId: application.candidateId })
+      .from(application)
+      .where(eq(application.id, data.applicationId))
+      .limit(1);
+
+    updateTag(`application-${data.applicationId}`);
+    if (app?.candidateId) {
+      updateTag(`candidate-applications-${app.candidateId}`);
+      revalidatePath(`/candidates/${app.candidateId}`);
+    }
 
     after(async () => {
       await insertAuditLog({
@@ -177,9 +192,23 @@ export async function startInterviewRound(data: {
       })
       .returning();
 
-    revalidatePath(`/candidates/[slug]`, "page");
+    // Get candidateId from application
+    const [app] = await db
+      .select({ candidateId: application.candidateId })
+      .from(application)
+      .where(eq(application.id, data.applicationId))
+      .limit(1);
 
     if (newInterview) {
+      updateTag(`interview-${newInterview.id}`);
+    }
+    updateTag(`application-${data.applicationId}`);
+    if (app?.candidateId) {
+      updateTag(`candidate-applications-${app.candidateId}`);
+      revalidatePath(`/candidates/${app.candidateId}`);
+    }
+
+    if (newInterview?.id) {
       after(async () => {
         await insertAuditLog({
           userId: session.user.id,

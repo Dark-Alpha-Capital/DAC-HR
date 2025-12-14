@@ -9,6 +9,7 @@ import FilterDocumentCategory from "@/components/filter-document-category";
 import FilterDocumentName from "@/components/filter-document-name";
 import FilterDocumentTags from "@/components/filter-document-tags";
 import ClearDocumentFiltersButton from "@/components/clear-document-filters-button";
+import { cacheLife, cacheTag } from "next/cache";
 
 export const metadata: Metadata = {
   title: "Documents",
@@ -17,7 +18,11 @@ export const metadata: Metadata = {
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
-const DocumentsPage = async ({ searchParams }: { searchParams: SearchParams }) => {
+const DocumentsPage = async ({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) => {
   return (
     <div className="container mx-auto py-8 space-y-6">
       <Suspense>
@@ -36,7 +41,7 @@ const DocumentsPage = async ({ searchParams }: { searchParams: SearchParams }) =
       </Suspense>
 
       <Suspense fallback={<div>Loading...</div>}>
-        <PresentDocuments searchParams={searchParams} />
+        <PresentDocumentsWrapper searchParams={searchParams} />
       </Suspense>
     </div>
   );
@@ -55,11 +60,25 @@ const PresentFilters = () => {
   );
 };
 
-async function PresentDocuments({
+// Cached function for documents
+async function CachedDocuments(
+  categoryFilters?: string[],
+  nameSearch?: string,
+  tagsSearch?: string
+) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag("documents");
+
+  return await getDocuments(categoryFilters, nameSearch, tagsSearch);
+}
+
+// Component (not cached) reads runtime data
+const PresentDocumentsWrapper = async ({
   searchParams,
 }: {
   searchParams: SearchParams;
-}) {
+}) => {
   const params = await searchParams;
   const { category, name, tags } = params;
 
@@ -76,7 +95,11 @@ async function PresentDocuments({
   // Extract tags search
   const tagsSearch = typeof tags === "string" ? tags : undefined;
 
-  const documents = await getDocuments(categoryFilters, nameSearch, tagsSearch);
+  const documents = await CachedDocuments(
+    categoryFilters,
+    nameSearch,
+    tagsSearch
+  );
 
   if (documents.length === 0) {
     return (
@@ -94,4 +117,4 @@ async function PresentDocuments({
   }
 
   return <DocumentContainer documents={documents} />;
-}
+};

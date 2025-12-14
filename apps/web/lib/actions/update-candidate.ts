@@ -6,7 +6,7 @@ import {
   CandidateFormSchema,
   candidateFormSchema,
 } from "../schemas/candidate-form-schema";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
@@ -92,6 +92,8 @@ export const updateCandidate = async (
       }
     }
 
+    updateTag("candidates");
+    updateTag(`candidate-applications-${candidateId}`);
     revalidatePath("/candidates");
     revalidatePath(`/candidates/${updatedCandidate.id}`);
     revalidatePath(`/candidates/${updatedCandidate.id}/edit`);

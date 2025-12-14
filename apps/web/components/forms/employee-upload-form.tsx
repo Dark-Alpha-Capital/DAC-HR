@@ -41,13 +41,13 @@ import { cn } from "@workspace/ui/lib/utils";
 import * as z from "zod";
 
 const departmentLabels: Record<z.infer<typeof departmentEnum>, string> = {
-  "management": "Management",
+  management: "Management",
   "capital-markets": "Capital Markets",
   "deal-team": "Deal Team",
-  "legal": "Legal",
-  "operations": "Operations",
-  "origination": "Origination",
-  "pipe": "PIPE",
+  legal: "Legal",
+  operations: "Operations",
+  origination: "Origination",
+  pipe: "PIPE",
   "public-markets": "Public Markets",
 };
 
@@ -216,7 +216,11 @@ const EmployeeUploadForm = ({
           >
             Reset
           </Button>
-          <Button type="submit" form="employee-upload-form" disabled={isPending}>
+          <Button
+            type="submit"
+            form="employee-upload-form"
+            disabled={isPending}
+          >
             {isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -463,7 +467,8 @@ const EmployeeUploadForm = ({
                     minHeight="200px"
                   />
                   <FieldDescription>
-                    Add a detailed bio for this employee. You can use rich text formatting.
+                    Add a detailed bio for this employee. You can use rich text
+                    formatting.
                   </FieldDescription>
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>

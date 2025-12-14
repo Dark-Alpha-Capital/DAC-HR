@@ -78,20 +78,21 @@ export default function ApplicationStatusDisplay({
 
   return (
     <>
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <h3 className="text-lg font-semibold">Application Status</h3>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <StatusIcon className="h-5 w-5 text-muted-foreground" />
+            <Badge
+              variant={statusColors[application.status]}
+              className="text-sm font-medium"
+            >
+              {statusLabels[application.status]}
+            </Badge>
+          </div>
           <Button variant="outline" size="sm" onClick={() => setIsOpen(true)}>
             <Edit className="h-4 w-4 mr-2" />
-            Edit Status
+            Edit
           </Button>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <StatusIcon className="h-5 w-5 text-muted-foreground" />
-          <Badge variant={statusColors[application.status]} className="text-sm">
-            {statusLabels[application.status]}
-          </Badge>
         </div>
       </div>
 

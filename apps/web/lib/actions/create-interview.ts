@@ -2,7 +2,7 @@
 
 import { db } from "@workspace/db";
 import { interview, application } from "@workspace/db/schema";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
@@ -64,6 +64,9 @@ export const createInterview = async (data: CreateInterviewInput) => {
         .where(eq(application.id, applicationId));
     }
 
+    updateTag(`interview-${newInterview.id}`);
+    updateTag(`application-${applicationId}`);
+    updateTag(`candidate-applications-${app.candidateId}`);
     revalidatePath(`/candidates/${app.candidateId}`);
     revalidatePath(`/applications/${applicationId}`);
 

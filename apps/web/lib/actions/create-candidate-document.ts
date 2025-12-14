@@ -5,7 +5,7 @@ import {
   CandidateDocumentFormSchema,
   candidateDocumentFormSchema,
 } from "../schemas/candidate-document-form-schema";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { after } from "next/server";
@@ -50,6 +50,7 @@ export const createCandidateDocument = async (
       })
       .returning();
 
+    updateTag(`candidate-documents-${candidateId}`);
     revalidatePath(`/candidates/${candidateId}`);
     revalidatePath("/candidates");
 

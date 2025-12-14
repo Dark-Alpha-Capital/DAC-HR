@@ -6,7 +6,7 @@ import {
   EmployeeFormSchema,
   employeeFormSchema,
 } from "../schemas/employee-form-schema";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
@@ -51,6 +51,7 @@ export const updateEmployee = async (
       return { error: "Failed to update employee" };
     }
 
+    updateTag("employees");
     revalidatePath("/employees");
     revalidatePath(`/employees/${employeeId}`);
 

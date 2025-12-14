@@ -3,7 +3,7 @@
 import { db } from "@workspace/db";
 import { position } from "@workspace/db/schema";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
@@ -31,6 +31,7 @@ export const deletePosition = async (id: string) => {
 
     await db.delete(position).where(eq(position.id, id));
 
+    updateTag("positions");
     revalidatePath("/positions");
 
     if (positionData) {

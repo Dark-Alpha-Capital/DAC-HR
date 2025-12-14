@@ -12,12 +12,12 @@ import { AppSidebar } from "@/components/sidebars/app-sidebar";
 
 const fontSans = Geist({
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--font-geist",
 });
 
 const fontMono = Geist_Mono({
   subsets: ["latin"],
-  variable: "--font-mono",
+  variable: "--font-geist-mono",
 });
 
 export default function RootLayout({
@@ -28,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${fontSans.variable} ${fontMono.variable} antialiased `}
+        className={`${fontSans.variable} ${fontMono.variable} font-geist antialiased`}
       >
         <Providers>
           <SidebarProvider>

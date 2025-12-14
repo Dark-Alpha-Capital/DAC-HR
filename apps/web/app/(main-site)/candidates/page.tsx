@@ -14,6 +14,7 @@ import { CandidatesListSkeleton } from "@/components/skeletons/candidates-list-s
 import { Metadata } from "next";
 import { UserAuthenticated } from "@/components/auth-checks";
 import CandidatesPaginationControls from "@/components/candidates-pagination-controls";
+import { cacheLife, cacheTag } from "next/cache";
 
 export const metadata: Metadata = {
   title: "Candidates",
@@ -41,7 +42,7 @@ const page = async ({ searchParams }: { searchParams: SearchParams }) => {
       </Suspense>
 
       <Suspense fallback={<CandidatesListSkeleton />}>
-        <CandidatesList searchParams={searchParams} />
+        <CandidatesListWrapper searchParams={searchParams} />
       </Suspense>
     </div>
   );
@@ -49,7 +50,11 @@ const page = async ({ searchParams }: { searchParams: SearchParams }) => {
 
 export default page;
 
-const PresentFilters = async () => {
+async function CachedPresentFilters() {
+  "use cache";
+  cacheLife("hr-metadata");
+  cacheTag("positions");
+
   const positions = await getPositions();
   const positionTypes = positions.map((position) => ({
     id: position.id,
@@ -64,9 +69,12 @@ const PresentFilters = async () => {
       <ClearCandidateFiltersButton />
     </div>
   );
-};
+}
 
-const CandidatesList = async ({
+const PresentFilters = CachedPresentFilters;
+
+// Component (not cached) reads runtime data
+const CandidatesListWrapper = async ({
   searchParams,
 }: {
   searchParams: SearchParams;
@@ -101,6 +109,33 @@ const CandidatesList = async ({
         : 1
     : 1;
   const currentPage = isNaN(page) || page < 1 ? 1 : page;
+
+  return (
+    <CachedCandidatesList
+      nameSearch={nameSearch}
+      emailSearch={emailSearch}
+      positionIds={positionIds}
+      currentPage={currentPage}
+    />
+  );
+};
+
+// Cached component receives data as props
+async function CachedCandidatesList({
+  nameSearch,
+  emailSearch,
+  positionIds,
+  currentPage,
+}: {
+  nameSearch?: string;
+  emailSearch?: string;
+  positionIds?: string[];
+  currentPage: number;
+}) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag("candidates");
+
   const limit = 50;
 
   const { candidates, total } = await getCandidatesWithPositionsFiltered(
@@ -143,4 +178,4 @@ const CandidatesList = async ({
       )}
     </div>
   );
-};
+}

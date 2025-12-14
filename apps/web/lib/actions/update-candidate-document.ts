@@ -5,7 +5,7 @@ import {
   CandidateDocumentFormSchema,
   candidateDocumentFormSchema,
 } from "../schemas/candidate-document-form-schema";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
@@ -57,6 +57,7 @@ export const updateCandidateDocument = async (
       return { error: "Candidate document not found" };
     }
 
+    updateTag(`candidate-documents-${candidateId}`);
     revalidatePath(`/candidates/${candidateId}`);
     revalidatePath("/candidates");
 

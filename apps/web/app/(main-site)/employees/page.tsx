@@ -8,6 +8,7 @@ import ClearEmployeeFiltersButton from "@/components/clear-employee-filters-butt
 import EmployeeContainer from "./employee-container";
 import { EmployeesListSkeleton } from "@/components/skeletons/employees-list-skeleton";
 import { Metadata } from "next";
+import { cacheLife, cacheTag } from "next/cache";
 
 export const metadata: Metadata = {
   title: "Employees",
@@ -37,7 +38,7 @@ const page = async ({ searchParams }: { searchParams: SearchParams }) => {
       </Suspense>
 
       <Suspense fallback={<EmployeesListSkeleton />}>
-        <EmployeesList searchParams={searchParams} />
+        <EmployeesListWrapper searchParams={searchParams} />
       </Suspense>
     </div>
   );
@@ -45,7 +46,11 @@ const page = async ({ searchParams }: { searchParams: SearchParams }) => {
 
 export default page;
 
-const PresentFilters = async () => {
+async function CachedPresentFilters() {
+  "use cache";
+  cacheLife("hr-metadata");
+  cacheTag("positions");
+
   const positions = await getPositions();
   const positionTypes = positions.map((position) => ({
     id: position.id,
@@ -59,9 +64,12 @@ const PresentFilters = async () => {
       <ClearEmployeeFiltersButton />
     </div>
   );
-};
+}
 
-const EmployeesList = async ({
+const PresentFilters = CachedPresentFilters;
+
+// Component (not cached) reads runtime data
+const EmployeesListWrapper = async ({
   searchParams,
 }: {
   searchParams: SearchParams;
@@ -81,6 +89,23 @@ const EmployeesList = async ({
       ? department
       : [department]
     : undefined;
+
+  return (
+    <CachedEmployeesList positionIds={positionIds} departments={departments} />
+  );
+};
+
+// Cached component receives data as props
+async function CachedEmployeesList({
+  positionIds,
+  departments,
+}: {
+  positionIds?: string[];
+  departments?: string[];
+}) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag("employees");
 
   const employees = await getEmployees(positionIds, departments);
 
@@ -106,4 +131,4 @@ const EmployeesList = async ({
   }
 
   return <EmployeeContainer employees={employees} />;
-};
+}

@@ -6,7 +6,7 @@ import {
   EmployeeFormSchema,
   employeeFormSchema,
 } from "../schemas/employee-form-schema";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { after } from "next/server";
@@ -46,6 +46,7 @@ export const createEmployee = async (data: EmployeeFormSchema) => {
       return { error: "Failed to create employee" };
     }
 
+    updateTag("employees");
     revalidatePath("/employees");
 
     after(async () => {
