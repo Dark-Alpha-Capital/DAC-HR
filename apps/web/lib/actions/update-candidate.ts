@@ -10,6 +10,8 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
+import { after } from "next/server";
+import { insertAuditLog } from "@workspace/db/queries";
 
 export const updateCandidate = async (
   candidateId: string,
@@ -28,8 +30,17 @@ export const updateCandidate = async (
     return { error: result.error.flatten().fieldErrors };
   }
 
-  const { firstName, lastName, email, phone, location, source, sourceUrl, note, positionId } =
-    result.data;
+  const {
+    firstName,
+    lastName,
+    email,
+    phone,
+    location,
+    source,
+    sourceUrl,
+    note,
+    positionId,
+  } = result.data;
 
   try {
     const [updatedCandidate] = await db
@@ -84,6 +95,49 @@ export const updateCandidate = async (
     revalidatePath("/candidates");
     revalidatePath(`/candidates/${updatedCandidate.id}`);
     revalidatePath(`/candidates/${updatedCandidate.id}/edit`);
+
+    after(async () => {
+      await insertAuditLog({
+        userId: session.user.id,
+        action: "update_candidate",
+        entityType: "candidate",
+        entityId: updatedCandidate.id,
+        details: {
+          candidate: {
+            id: updatedCandidate.id,
+            firstName: updatedCandidate.firstName,
+            lastName: updatedCandidate.lastName,
+            email: updatedCandidate.email,
+            phone: updatedCandidate.phone,
+            location: updatedCandidate.location,
+            source: updatedCandidate.source,
+            sourceUrl: updatedCandidate.sourceUrl,
+            note: updatedCandidate.note,
+            updatedAt: updatedCandidate.updatedAt.toISOString(),
+          },
+          input: {
+            firstName,
+            lastName,
+            email,
+            phone: phone || null,
+            location: location || null,
+            source: source || null,
+            sourceUrl: sourceUrl?.trim() || null,
+            note: note || null,
+            positionId: positionId?.trim() || null,
+          },
+          updatedBy: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+            positionUpdated: !!positionId,
+          },
+        },
+      });
+    });
 
     return { success: true, data: updatedCandidate };
   } catch (error) {

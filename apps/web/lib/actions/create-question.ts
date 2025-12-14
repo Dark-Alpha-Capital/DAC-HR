@@ -9,6 +9,8 @@ import {
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
+import { after } from "next/server";
+import { insertAuditLog } from "@workspace/db/queries";
 
 export const createQuestion = async (data: QuestionFormSchema) => {
   const session = await auth.api.getSession({
@@ -39,6 +41,34 @@ export const createQuestion = async (data: QuestionFormSchema) => {
     }
 
     revalidatePath("/questions");
+
+    after(async () => {
+      await insertAuditLog({
+        userId: session.user.id,
+        action: "create_question",
+        entityType: "question",
+        entityId: newQuestion.id,
+        details: {
+          question: {
+            id: newQuestion.id,
+            questionText: newQuestion.questionText,
+            createdAt: newQuestion.createdAt.toISOString(),
+            updatedAt: newQuestion.updatedAt.toISOString(),
+          },
+          input: {
+            questionText,
+          },
+          createdBy: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+          },
+        },
+      });
+    });
 
     return { success: true, data: newQuestion };
   } catch (error) {
@@ -92,6 +122,36 @@ export const createQuestionForRound = async (
 
     revalidatePath("/questions");
     revalidatePath(`/rounds/${roundId}`);
+
+    after(async () => {
+      await insertAuditLog({
+        userId: session.user.id,
+        action: "create_question_for_round",
+        entityType: "question",
+        entityId: newQuestion.id,
+        details: {
+          question: {
+            id: newQuestion.id,
+            questionText: newQuestion.questionText,
+            createdAt: newQuestion.createdAt.toISOString(),
+            updatedAt: newQuestion.updatedAt.toISOString(),
+          },
+          input: {
+            questionText,
+            roundId,
+          },
+          createdBy: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+            linkedToRound: true,
+          },
+        },
+      });
+    });
 
     return { success: true, data: newQuestion };
   } catch (error) {

@@ -6,6 +6,7 @@ import {
   application,
   candidatePosition,
 } from "@workspace/db/schema";
+import { insertAuditLog } from "@workspace/db/queries";
 import {
   CandidateFormSchema,
   candidateFormSchema,
@@ -13,6 +14,7 @@ import {
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
+import { after } from "next/server";
 
 export const createCandidate = async (data: CandidateFormSchema) => {
   const session = await auth.api.getSession({
@@ -76,6 +78,55 @@ export const createCandidate = async (data: CandidateFormSchema) => {
     }
 
     revalidatePath("/candidates");
+
+    after(async () => {
+      await insertAuditLog({
+        userId: session.user.id,
+        action: "create_candidate",
+        entityType: "candidate",
+        entityId: newCandidate.id,
+        details: {
+          // Candidate information
+          candidate: {
+            id: newCandidate.id,
+            firstName: newCandidate.firstName,
+            lastName: newCandidate.lastName,
+            email: newCandidate.email,
+            phone: newCandidate.phone,
+            location: newCandidate.location,
+            source: newCandidate.source,
+            sourceUrl: newCandidate.sourceUrl,
+            note: newCandidate.note,
+            createdAt: newCandidate.createdAt.toISOString(),
+            updatedAt: newCandidate.updatedAt.toISOString(),
+          },
+          // Input data provided
+          input: {
+            firstName,
+            lastName,
+            email,
+            phone: phone?.trim() || null,
+            location: location?.trim() || null,
+            source: source || null,
+            sourceUrl: sourceUrl?.trim() || null,
+            note: note?.trim() || null,
+            positionId: positionId?.trim() || null,
+          },
+          // User information (who created the candidate)
+          createdBy: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+          },
+          // Metadata
+          metadata: {
+            timestamp: new Date().toISOString(),
+            hasPosition: !!positionId && positionId.trim() !== "",
+            applicationCreated: !!(positionId && positionId.trim() !== ""),
+          },
+        },
+      });
+    });
 
     return { success: true, data: newCandidate };
   } catch (error) {

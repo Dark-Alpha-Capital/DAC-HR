@@ -6,6 +6,8 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
+import { after } from "next/server";
+import { insertAuditLog } from "@workspace/db/queries";
 
 export const deleteCandidateDocument = async (
   documentId: string,
@@ -20,12 +22,49 @@ export const deleteCandidateDocument = async (
   }
 
   try {
+    // Get document data before deletion for audit log
+    const [documentData] = await db
+      .select()
+      .from(candidateDocument)
+      .where(eq(candidateDocument.id, documentId))
+      .limit(1);
+
     await db
       .delete(candidateDocument)
       .where(eq(candidateDocument.id, documentId));
 
     revalidatePath(`/candidates/${candidateId}`);
     revalidatePath("/candidates");
+
+    if (documentData) {
+      after(async () => {
+        await insertAuditLog({
+          userId: session.user.id,
+          action: "delete_candidate_document",
+          entityType: "candidate_document",
+          entityId: documentId,
+          details: {
+            candidateDocument: {
+              id: documentData.id,
+              candidateId: documentData.candidateId,
+              name: documentData.name,
+              description: documentData.description,
+              category: documentData.category,
+              url: documentData.url,
+              tags: documentData.tags,
+            },
+            deletedBy: {
+              id: session.user.id,
+              email: session.user.email,
+              name: session.user.name,
+            },
+            metadata: {
+              timestamp: new Date().toISOString(),
+            },
+          },
+        });
+      });
+    }
 
     return { success: true };
   } catch (error) {
@@ -38,4 +77,3 @@ export const deleteCandidateDocument = async (
     return { error: "Failed to delete candidate document" };
   }
 };
-

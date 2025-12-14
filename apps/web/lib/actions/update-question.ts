@@ -10,6 +10,8 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
+import { after } from "next/server";
+import { insertAuditLog } from "@workspace/db/queries";
 
 export const updateQuestion = async (
   questionId: string,
@@ -48,6 +50,33 @@ export const updateQuestion = async (
     revalidatePath(`/questions/${updatedQuestion.id}`);
     revalidatePath(`/questions/${updatedQuestion.id}/edit`);
 
+    after(async () => {
+      await insertAuditLog({
+        userId: session.user.id,
+        action: "update_question",
+        entityType: "question",
+        entityId: updatedQuestion.id,
+        details: {
+          question: {
+            id: updatedQuestion.id,
+            questionText: updatedQuestion.questionText,
+            updatedAt: updatedQuestion.updatedAt.toISOString(),
+          },
+          input: {
+            questionText,
+          },
+          updatedBy: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+          },
+        },
+      });
+    });
+
     return { success: true, data: updatedQuestion };
   } catch (error) {
     console.error(error);
@@ -59,4 +88,3 @@ export const updateQuestion = async (
     return { error: "Failed to update question" };
   }
 };
-

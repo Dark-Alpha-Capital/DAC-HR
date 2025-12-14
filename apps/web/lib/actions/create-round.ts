@@ -6,6 +6,8 @@ import { RoundFormSchema, roundFormSchema } from "../schemas/round-form-schema";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
+import { after } from "next/server";
+import { insertAuditLog } from "@workspace/db/queries";
 
 export const createRound = async (data: RoundFormSchema) => {
   const session = await auth.api.getSession({
@@ -48,6 +50,38 @@ export const createRound = async (data: RoundFormSchema) => {
     });
 
     revalidatePath("/rounds");
+
+    after(async () => {
+      await insertAuditLog({
+        userId: session.user.id,
+        action: "create_round",
+        entityType: "round",
+        entityId: newRound.id,
+        details: {
+          round: {
+            id: newRound.id,
+            name: newRound.name,
+            description: newRound.description,
+            createdAt: newRound.createdAt.toISOString(),
+            updatedAt: newRound.updatedAt.toISOString(),
+          },
+          input: {
+            name,
+            description: description || null,
+            positionId,
+          },
+          createdBy: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+            linkedToPosition: !!positionId,
+          },
+        },
+      });
+    });
 
     return { success: true, data: newRound };
   } catch (error) {

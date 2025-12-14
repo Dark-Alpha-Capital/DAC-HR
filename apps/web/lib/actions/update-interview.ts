@@ -7,6 +7,8 @@ import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { getInterviewById } from "@workspace/db/queries";
+import { after } from "next/server";
+import { insertAuditLog } from "@workspace/db/queries";
 
 export interface UpdateInterviewInput {
   interviewId: string;
@@ -57,6 +59,43 @@ export const updateInterview = async (data: UpdateInterviewInput) => {
     revalidatePath(`/candidates/${currentInterview.applicationId}`);
     revalidatePath(`/applications/${currentInterview.applicationId}`);
     revalidatePath(`/interviews/${interviewId}`);
+
+    after(async () => {
+      await insertAuditLog({
+        userId: session.user.id,
+        action: "update_interview",
+        entityType: "interview",
+        entityId: updatedInterview.id,
+        details: {
+          interview: {
+            id: updatedInterview.id,
+            applicationId: updatedInterview.applicationId,
+            status: updatedInterview.status,
+            scheduledAt: updatedInterview.scheduledAt?.toISOString() || null,
+            overallFeedback: updatedInterview.overallFeedback,
+            rating: updatedInterview.rating,
+          },
+          input: {
+            interviewId,
+            status,
+            scheduledAt: scheduledAt
+              ? new Date(scheduledAt).toISOString()
+              : null,
+            overallFeedback,
+            rating,
+          },
+          updatedBy: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+            previousStatus: currentInterview.status,
+          },
+        },
+      });
+    });
 
     return { success: true, data: updatedInterview };
   } catch (error) {

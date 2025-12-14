@@ -4,6 +4,10 @@ import { db } from "@workspace/db";
 import { interview, interviewFeedback } from "@workspace/db/schema";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
+import { headers } from "next/headers";
+import { after } from "next/server";
+import { insertAuditLog } from "@workspace/db/queries";
 
 export type InterviewRoundData = {
   applicationId: string;
@@ -22,6 +26,14 @@ export type InterviewRoundData = {
 export async function saveInterviewRound(
   data: InterviewRoundData & { interviewId?: string }
 ) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session?.user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
   try {
     let interviewId = data.interviewId;
 
@@ -88,6 +100,48 @@ export async function saveInterviewRound(
 
     revalidatePath(`/candidates/[slug]`, "page");
 
+    after(async () => {
+      await insertAuditLog({
+        userId: session.user.id,
+        action: data.interviewId
+          ? "update_interview_round"
+          : "create_interview_round",
+        entityType: "interview",
+        entityId: interviewId as string,
+        details: {
+          interview: {
+            id: interviewId,
+            applicationId: data.applicationId,
+            positionRoundTemplateId: data.positionRoundTemplateId,
+            interviewerId: data.interviewerId,
+            scheduledAt: data.scheduledAt?.toISOString() || null,
+            overallFeedback: data.overallFeedback,
+            proceedToNextRound: data.proceedToNextRound,
+          },
+          input: {
+            interviewId: data.interviewId,
+            applicationId: data.applicationId,
+            positionRoundTemplateId: data.positionRoundTemplateId,
+            interviewerId: data.interviewerId,
+            scheduledAt: data.scheduledAt?.toISOString() || null,
+            overallFeedback: data.overallFeedback,
+            proceedToNextRound: data.proceedToNextRound,
+            questionIds: data.questionIds,
+            responsesCount: Object.keys(data.responses).length,
+          },
+          createdBy: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+            isUpdate: !!data.interviewId,
+          },
+        },
+      });
+    });
+
     return { success: true, interviewId };
   } catch (error) {
     console.error("Error saving interview round:", error);
@@ -103,6 +157,14 @@ export async function startInterviewRound(data: {
   positionRoundTemplateId: string;
   interviewerId: string;
 }) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session?.user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
   try {
     const [newInterview] = await db
       .insert(interview)
@@ -116,6 +178,41 @@ export async function startInterviewRound(data: {
       .returning();
 
     revalidatePath(`/candidates/[slug]`, "page");
+
+    if (newInterview) {
+      after(async () => {
+        await insertAuditLog({
+          userId: session.user.id,
+          action: "start_interview_round",
+          entityType: "interview",
+          entityId: newInterview.id,
+          details: {
+            interview: {
+              id: newInterview.id,
+              applicationId: newInterview.applicationId,
+              positionRoundTemplateId: newInterview.positionRoundTemplateId,
+              interviewerId: newInterview.interviewerId,
+              status: newInterview.status,
+              scheduledAt: newInterview.scheduledAt?.toISOString() || null,
+              createdAt: newInterview.createdAt.toISOString(),
+            },
+            input: {
+              applicationId: data.applicationId,
+              positionRoundTemplateId: data.positionRoundTemplateId,
+              interviewerId: data.interviewerId,
+            },
+            createdBy: {
+              id: session.user.id,
+              email: session.user.email,
+              name: session.user.name,
+            },
+            metadata: {
+              timestamp: new Date().toISOString(),
+            },
+          },
+        });
+      });
+    }
 
     return { success: true, interviewId: newInterview?.id };
   } catch (error) {

@@ -11,6 +11,8 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
+import { after } from "next/server";
+import { insertAuditLog } from "@workspace/db/queries";
 
 export const updatePosition = async (
   positionId: string,
@@ -57,6 +59,42 @@ export const updatePosition = async (
     revalidatePath("/positions");
     revalidatePath(`/positions/${updatedPosition.slug}`);
     revalidatePath(`/positions/${updatedPosition.slug}/edit`);
+
+    after(async () => {
+      await insertAuditLog({
+        userId: session.user.id,
+        action: "update_position",
+        entityType: "position",
+        entityId: updatedPosition.id,
+        details: {
+          position: {
+            id: updatedPosition.id,
+            name: updatedPosition.name,
+            slug: updatedPosition.slug,
+            description: updatedPosition.description,
+            department: updatedPosition.department,
+            hireLevel: updatedPosition.hireLevel,
+            status: updatedPosition.status,
+            updatedAt: updatedPosition.updatedAt.toISOString(),
+          },
+          input: {
+            name,
+            description,
+            department,
+            hireLevel: hireLevel || null,
+            status: status || "active",
+          },
+          updatedBy: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+          },
+        },
+      });
+    });
 
     return { success: true, data: updatedPosition };
   } catch (error) {

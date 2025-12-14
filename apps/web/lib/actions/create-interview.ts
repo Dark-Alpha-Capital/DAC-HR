@@ -6,6 +6,8 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
+import { after } from "next/server";
+import { insertAuditLog } from "@workspace/db/queries";
 
 export interface CreateInterviewInput {
   applicationId: string;
@@ -60,6 +62,43 @@ export const createInterview = async (data: CreateInterviewInput) => {
 
     revalidatePath(`/candidates/${app.candidateId}`);
     revalidatePath(`/applications/${applicationId}`);
+
+    after(async () => {
+      await insertAuditLog({
+        userId: session.user.id,
+        action: "create_interview",
+        entityType: "interview",
+        entityId: newInterview.id,
+        details: {
+          interview: {
+            id: newInterview.id,
+            applicationId: newInterview.applicationId,
+            positionRoundTemplateId: newInterview.positionRoundTemplateId,
+            interviewerId: newInterview.interviewerId,
+            scheduledAt: newInterview.scheduledAt?.toISOString() || null,
+            status: newInterview.status,
+            createdAt: newInterview.createdAt.toISOString(),
+          },
+          input: {
+            applicationId,
+            positionRoundTemplateId,
+            interviewerId,
+            scheduledAt: scheduledAt
+              ? new Date(scheduledAt).toISOString()
+              : null,
+          },
+          createdBy: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+            applicationStatus: app.status,
+          },
+        },
+      });
+    });
 
     return { success: true, data: newInterview };
   } catch (error) {

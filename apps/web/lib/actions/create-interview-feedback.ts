@@ -7,6 +7,8 @@ import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq, and } from "drizzle-orm";
 import { getInterviewById } from "@workspace/db/queries";
+import { after } from "next/server";
+import { insertAuditLog } from "@workspace/db/queries";
 
 export interface CreateInterviewFeedbackInput {
   interviewId: string;
@@ -82,6 +84,41 @@ export const createInterviewFeedback = async (
       revalidatePath(`/interviews/${interviewId}`);
       revalidatePath(`/applications/${interview.applicationId}`);
     }
+
+    after(async () => {
+      await insertAuditLog({
+        userId: session.user.id,
+        action: existing
+          ? "update_interview_feedback"
+          : "create_interview_feedback",
+        entityType: "interview_feedback",
+        entityId: result.id,
+        details: {
+          interviewFeedback: {
+            id: result.id,
+            interviewId: result.interviewId,
+            questionId: result.questionId,
+            notes: result.notes,
+            rating: result.rating,
+          },
+          input: {
+            interviewId,
+            questionId,
+            notes: notes ?? null,
+            rating: rating ?? null,
+          },
+          createdBy: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+            isUpdate: !!existing,
+          },
+        },
+      });
+    });
 
     return { success: true, data: result };
   } catch (error) {
@@ -159,6 +196,37 @@ export const bulkCreateInterviewFeedback = async (
       revalidatePath(`/applications/${interview.applicationId}`);
     }
 
+    after(async () => {
+      await insertAuditLog({
+        userId: session.user.id,
+        action: "bulk_create_interview_feedback",
+        entityType: "interview_feedback",
+        entityId: interviewId,
+        details: {
+          feedback: results.map((r) => ({
+            id: r.id,
+            interviewId: r.interviewId,
+            questionId: r.questionId,
+            notes: r.notes,
+            rating: r.rating,
+          })),
+          input: {
+            interviewId,
+            feedback,
+          },
+          createdBy: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+            count: results.length,
+          },
+        },
+      });
+    });
+
     return { success: true, data: results };
   } catch (error) {
     console.error("Error bulk creating interview feedback", error);
@@ -170,4 +238,3 @@ export const bulkCreateInterviewFeedback = async (
     return { error: "Failed to create interview feedback" };
   }
 };
-

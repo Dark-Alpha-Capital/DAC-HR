@@ -10,6 +10,8 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
+import { after } from "next/server";
+import { insertAuditLog } from "@workspace/db/queries";
 
 export const updateEmployee = async (
   employeeId: string,
@@ -52,6 +54,43 @@ export const updateEmployee = async (
     revalidatePath("/employees");
     revalidatePath(`/employees/${employeeId}`);
 
+    after(async () => {
+      await insertAuditLog({
+        userId: session.user.id,
+        action: "update_employee",
+        entityType: "employee",
+        entityId: updatedEmployee.id,
+        details: {
+          employee: {
+            id: updatedEmployee.id,
+            firstName: updatedEmployee.firstName,
+            lastName: updatedEmployee.lastName,
+            department: updatedEmployee.department,
+            positionId: updatedEmployee.positionId,
+            profileImage: updatedEmployee.profileImage,
+            bio: updatedEmployee.bio,
+            updatedAt: updatedEmployee.updatedAt.toISOString(),
+          },
+          input: {
+            firstName,
+            lastName,
+            department,
+            positionId: positionId || null,
+            profileImage: profileImage || null,
+            bio: bio || null,
+          },
+          updatedBy: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+          },
+        },
+      });
+    });
+
     return { success: true, data: updatedEmployee };
   } catch (error) {
     console.error(error);
@@ -63,4 +102,3 @@ export const updateEmployee = async (
     return { error: "Failed to update employee" };
   }
 };
-

@@ -7,6 +7,9 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
+import { after } from "next/server";
+import { insertAuditLog } from "@workspace/db/queries";
+import { getRoundById } from "@workspace/db/queries";
 
 export const deleteRound = async (id: string) => {
   const session = await auth.api.getSession({
@@ -22,9 +25,38 @@ export const deleteRound = async (id: string) => {
   }
 
   try {
+    // Get round data before deletion for audit log
+    const roundData = await getRoundById(id);
+
     await db.delete(roundTemplate).where(eq(roundTemplate.id, id));
 
     revalidatePath("/rounds");
+
+    if (roundData) {
+      after(async () => {
+        await insertAuditLog({
+          userId: session.user.id,
+          action: "delete_round",
+          entityType: "round",
+          entityId: id,
+          details: {
+            round: {
+              id: roundData.id,
+              name: roundData.name,
+              description: roundData.description,
+            },
+            deletedBy: {
+              id: session.user.id,
+              email: session.user.email,
+              name: session.user.name,
+            },
+            metadata: {
+              timestamp: new Date().toISOString(),
+            },
+          },
+        });
+      });
+    }
 
     return { success: true };
   } catch (error) {

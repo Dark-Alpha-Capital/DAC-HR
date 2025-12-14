@@ -12,6 +12,7 @@ import {
   Shield,
   Building2,
   User,
+  ScrollText,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -48,6 +49,7 @@ const managementLinks = [
 // Admin links (only for admins)
 const adminLinks = [
   { href: "/admin", label: "Admin", icon: Shield },
+  { href: "/admin/audit-logs", label: "Audit Logs", icon: ScrollText },
   { href: "/positions", label: "Positions", icon: Briefcase },
   { href: "/rounds", label: "Rounds", icon: CircleDot },
   { href: "/questions", label: "Questions", icon: HelpCircle },
@@ -99,7 +101,7 @@ export function AppSidebar() {
                       isActive={isActive(link.href)}
                       tooltip={link.label}
                     >
-                      <Link href={link.href}>
+                      <Link href={{ pathname: link.href }}>
                         <link.icon />
                         <span>{link.label}</span>
                       </Link>

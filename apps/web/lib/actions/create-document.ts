@@ -9,6 +9,8 @@ import {
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
+import { after } from "next/server";
+import { insertAuditLog } from "@workspace/db/queries";
 
 export const createDocument = async (data: DocumentFormSchema) => {
   const session = await auth.api.getSession({
@@ -42,6 +44,44 @@ export const createDocument = async (data: DocumentFormSchema) => {
       .returning();
 
     revalidatePath("/documents");
+
+    after(async () => {
+      await insertAuditLog({
+        userId: session.user.id,
+        action: "create_document",
+        entityType: "document",
+        entityId: newDocument.id,
+        details: {
+          document: {
+            id: newDocument.id,
+            name: newDocument.name,
+            slug: newDocument.slug,
+            description: newDocument.description,
+            category: newDocument.category,
+            url: newDocument.url,
+            tags: newDocument.tags,
+            createdAt: newDocument.createdAt.toISOString(),
+            updatedAt: newDocument.updatedAt.toISOString(),
+          },
+          input: {
+            name,
+            description:
+              description && description.trim() !== "" ? description : null,
+            category: category || "other",
+            url,
+            tags: tags && tags.length > 0 ? tags : null,
+          },
+          createdBy: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+          },
+        },
+      });
+    });
 
     return { success: true, data: newDocument };
   } catch (error) {

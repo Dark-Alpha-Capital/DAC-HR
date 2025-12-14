@@ -7,6 +7,9 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
+import { after } from "next/server";
+import { insertAuditLog } from "@workspace/db/queries";
+import { getQuestionById } from "@workspace/db/queries";
 
 export const deleteQuestion = async (id: string) => {
   const session = await auth.api.getSession({
@@ -18,9 +21,37 @@ export const deleteQuestion = async (id: string) => {
   }
 
   try {
+    // Get question data before deletion for audit log
+    const questionData = await getQuestionById(id);
+
     await db.delete(questionBank).where(eq(questionBank.id, id));
 
     revalidatePath("/questions");
+
+    if (questionData) {
+      after(async () => {
+        await insertAuditLog({
+          userId: session.user.id,
+          action: "delete_question",
+          entityType: "question",
+          entityId: id,
+          details: {
+            question: {
+              id: questionData.id,
+              questionText: questionData.questionText,
+            },
+            deletedBy: {
+              id: session.user.id,
+              email: session.user.email,
+              name: session.user.name,
+            },
+            metadata: {
+              timestamp: new Date().toISOString(),
+            },
+          },
+        });
+      });
+    }
 
     return { success: true };
   } catch (error) {
@@ -33,4 +64,3 @@ export const deleteQuestion = async (id: string) => {
     return { error: "Failed to delete question" };
   }
 };
-

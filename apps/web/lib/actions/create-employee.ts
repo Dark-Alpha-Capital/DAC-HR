@@ -9,6 +9,8 @@ import {
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
+import { after } from "next/server";
+import { insertAuditLog } from "@workspace/db/queries";
 
 export const createEmployee = async (data: EmployeeFormSchema) => {
   const session = await auth.api.getSession({
@@ -46,6 +48,44 @@ export const createEmployee = async (data: EmployeeFormSchema) => {
 
     revalidatePath("/employees");
 
+    after(async () => {
+      await insertAuditLog({
+        userId: session.user.id,
+        action: "create_employee",
+        entityType: "employee",
+        entityId: newEmployee.id,
+        details: {
+          employee: {
+            id: newEmployee.id,
+            firstName: newEmployee.firstName,
+            lastName: newEmployee.lastName,
+            department: newEmployee.department,
+            positionId: newEmployee.positionId,
+            profileImage: newEmployee.profileImage,
+            bio: newEmployee.bio,
+            createdAt: newEmployee.createdAt.toISOString(),
+            updatedAt: newEmployee.updatedAt.toISOString(),
+          },
+          input: {
+            firstName,
+            lastName,
+            department,
+            positionId: positionId || null,
+            profileImage: profileImage || null,
+            bio: bio || null,
+          },
+          createdBy: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+          },
+        },
+      });
+    });
+
     return { success: true, data: newEmployee };
   } catch (error) {
     console.error(error);
@@ -57,4 +97,3 @@ export const createEmployee = async (data: EmployeeFormSchema) => {
     return { error: "Failed to create employee" };
   }
 };
-

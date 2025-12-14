@@ -9,6 +9,10 @@ import {
 } from "@workspace/db/schema";
 import { eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
+import { headers } from "next/headers";
+import { after } from "next/server";
+import { insertAuditLog } from "@workspace/db/queries";
 
 type ApplicationStatus =
   | "pending"
@@ -23,7 +27,22 @@ export async function updateApplicationStatus(
   applicationId: string,
   status: ApplicationStatus
 ) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session?.user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
   try {
+    // Get current application data before update
+    const [currentApplication] = await db
+      .select()
+      .from(application)
+      .where(eq(application.id, applicationId))
+      .limit(1);
+
     // Update the application status
     const [updatedApplication] = await db
       .update(application)
@@ -37,6 +56,38 @@ export async function updateApplicationStatus(
 
     revalidatePath(`/applications/${applicationId}`);
     revalidatePath(`/candidates/[uid]`, "page");
+
+    after(async () => {
+      await insertAuditLog({
+        userId: session.user.id,
+        action: "update_application_status",
+        entityType: "application",
+        entityId: applicationId,
+        details: {
+          application: {
+            id: updatedApplication.id,
+            candidateId: updatedApplication.candidateId,
+            positionId: updatedApplication.positionId,
+            status: updatedApplication.status,
+            personality: updatedApplication.personality,
+            updatedAt: updatedApplication.updatedAt.toISOString(),
+          },
+          input: {
+            applicationId,
+            status,
+          },
+          previousStatus: currentApplication?.status || null,
+          updatedBy: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+          },
+        },
+      });
+    });
 
     return { success: true, application: updatedApplication };
   } catch (error) {

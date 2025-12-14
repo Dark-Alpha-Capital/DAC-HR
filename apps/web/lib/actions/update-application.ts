@@ -6,6 +6,8 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
+import { after } from "next/server";
+import { insertAuditLog } from "@workspace/db/queries";
 
 export interface UpdateApplicationInput {
   applicationId: string;
@@ -62,6 +64,38 @@ export const updateApplication = async (data: UpdateApplicationInput) => {
       revalidatePath(`/candidates/${updatedApplication.candidateId}`);
     }
     revalidatePath(`/applications/${applicationId}`);
+
+    after(async () => {
+      await insertAuditLog({
+        userId: session.user.id,
+        action: "update_application",
+        entityType: "application",
+        entityId: updatedApplication.id,
+        details: {
+          application: {
+            id: updatedApplication.id,
+            candidateId: updatedApplication.candidateId,
+            positionId: updatedApplication.positionId,
+            status: updatedApplication.status,
+            personality: updatedApplication.personality,
+            updatedAt: updatedApplication.updatedAt.toISOString(),
+          },
+          input: {
+            applicationId,
+            status,
+            personality,
+          },
+          updatedBy: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+          },
+        },
+      });
+    });
 
     return { success: true, data: updatedApplication };
   } catch (error) {

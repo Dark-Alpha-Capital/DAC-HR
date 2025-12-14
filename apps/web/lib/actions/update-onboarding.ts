@@ -4,6 +4,10 @@ import { db } from "@workspace/db";
 import { candidate, candidateOnboarding } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
+import { headers } from "next/headers";
+import { after } from "next/server";
+import { insertAuditLog } from "@workspace/db/queries";
 
 export async function toggleOnboardingTask(
   candidateId: string,
@@ -50,6 +54,14 @@ export async function updateOnboardingTasks(
     companyEmailActivate: boolean;
   }
 ) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session?.user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
   try {
     const existing = await db
       .select()
@@ -73,6 +85,38 @@ export async function updateOnboardingTasks(
         .execute();
 
       revalidatePath(`/candidates/${candidateId}`);
+
+      after(async () => {
+        await insertAuditLog({
+          userId: session.user.id,
+          action: "create_onboarding",
+          entityType: "candidate_onboarding",
+          entityId: inserted.id,
+          details: {
+            onboarding: {
+              id: inserted.id,
+              candidateId: inserted.candidateId,
+              contractSigned: inserted.contractSigned,
+              emailProvided: inserted.emailProvided,
+              onboardingPacketSent: inserted.onboardingPacketSent,
+              companyEmailActivate: inserted.companyEmailActivate,
+            },
+            input: {
+              candidateId,
+              tasks,
+            },
+            createdBy: {
+              id: session.user.id,
+              email: session.user.email,
+              name: session.user.name,
+            },
+            metadata: {
+              timestamp: new Date().toISOString(),
+            },
+          },
+        });
+      });
+
       return { success: true, data: inserted };
     }
 
@@ -90,6 +134,38 @@ export async function updateOnboardingTasks(
       .execute();
 
     revalidatePath(`/candidates/${candidateId}`);
+
+    after(async () => {
+      await insertAuditLog({
+        userId: session.user.id,
+        action: "update_onboarding",
+        entityType: "candidate_onboarding",
+        entityId: updated.id,
+        details: {
+          onboarding: {
+            id: updated.id,
+            candidateId: updated.candidateId,
+            contractSigned: updated.contractSigned,
+            emailProvided: updated.emailProvided,
+            onboardingPacketSent: updated.onboardingPacketSent,
+            companyEmailActivate: updated.companyEmailActivate,
+          },
+          input: {
+            candidateId,
+            tasks,
+          },
+          updatedBy: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+          },
+        },
+      });
+    });
+
     return { success: true, data: updated };
   } catch (error) {
     console.error("Error updating onboarding tasks:", error);

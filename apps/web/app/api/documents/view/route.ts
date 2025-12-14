@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSignedUrl } from "@/lib/storage";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
+import { after } from "next/server";
+import { insertAuditLog } from "@workspace/db/queries";
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,6 +38,29 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    after(async () => {
+      await insertAuditLog({
+        userId: session.user.id,
+        action: "view_document",
+        entityType: "document",
+        entityId: url,
+        details: {
+          document: {
+            url,
+            signedUrl,
+          },
+          viewedBy: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+          },
+        },
+      });
+    });
 
     return NextResponse.json({ url: signedUrl }, { status: 200 });
   } catch (error) {

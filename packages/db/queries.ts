@@ -15,8 +15,9 @@ import {
   candidateDocument,
   candidateOnboarding,
   employee,
+  auditLog,
 } from "./schema";
-import { eq, asc, desc, inArray, and, or, sql } from "drizzle-orm";
+import { eq, asc, desc, inArray, and, or, sql, count } from "drizzle-orm";
 
 /**
  *
@@ -1894,5 +1895,160 @@ export const getInterviewStatusDistribution = async () => {
   } catch (error) {
     console.error("Error fetching interview status distribution", error);
     return [];
+  }
+};
+
+/**
+ * Inserts an audit log entry into the database
+ * @param params Object containing userId, action, entityType, entityId, and details
+ * @returns The created audit log entry or null if insertion fails
+ */
+export const insertAuditLog = async (params: {
+  userId: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  details: Record<string, unknown>;
+}) => {
+  try {
+    const [logEntry] = await db
+      .insert(auditLog)
+      .values({
+        userId: params.userId,
+        action: params.action,
+        entityType: params.entityType,
+        entityId: params.entityId,
+        details: params.details,
+      })
+      .returning();
+
+    return logEntry;
+  } catch (error) {
+    console.error("Error inserting audit log", error);
+    return null;
+  }
+};
+
+/**
+ * Fetches audit logs with pagination and filters
+ * @param options Object containing filters and pagination options
+ * @returns Object containing audit logs array and total count
+ */
+export const getAuditLogs = async (options: {
+  action?: string;
+  entityType?: string;
+  userId?: string;
+  page?: number;
+  limit?: number;
+  search?: string;
+  startDate?: Date | string;
+  endDate?: Date | string;
+}) => {
+  try {
+    const {
+      action,
+      entityType,
+      userId,
+      page = 1,
+      limit = 10,
+      search,
+      startDate,
+      endDate,
+    } = options;
+
+    const offset = (page - 1) * limit;
+
+    // Build filter conditions
+    const conditions = [];
+
+    if (action && action.trim()) {
+      conditions.push(
+        sql`${auditLog.action} ILIKE ${sql.raw(`'%${action.trim().replace(/'/g, "''")}%'`)}`
+      );
+    }
+
+    if (entityType && entityType.trim()) {
+      conditions.push(
+        sql`${auditLog.entityType} ILIKE ${sql.raw(`'%${entityType.trim().replace(/'/g, "''")}%'`)}`
+      );
+    }
+
+    if (userId && userId.trim()) {
+      conditions.push(eq(auditLog.userId, userId.trim()));
+    }
+
+    // Search across action, entityType, and entityId
+    if (search && search.trim()) {
+      const searchTerm = `%${search.trim().replace(/'/g, "''")}%`;
+      conditions.push(
+        or(
+          sql`${auditLog.action} ILIKE ${sql.raw(`'${searchTerm}'`)}`,
+          sql`${auditLog.entityType} ILIKE ${sql.raw(`'${searchTerm}'`)}`,
+          sql`${auditLog.entityId} ILIKE ${sql.raw(`'${searchTerm}'`)}`
+        )!
+      );
+    }
+
+    // Date range filtering
+    if (startDate) {
+      const start = startDate instanceof Date ? startDate : new Date(startDate);
+      conditions.push(sql`${auditLog.createdAt} >= ${start}`);
+    }
+
+    if (endDate) {
+      const end = endDate instanceof Date ? endDate : new Date(endDate);
+      // Add 1 day and set to end of day to include the entire end date
+      const endOfDay = new Date(end);
+      endOfDay.setHours(23, 59, 59, 999);
+      conditions.push(sql`${auditLog.createdAt} <= ${endOfDay}`);
+    }
+
+    // Get total count
+    const totalResult = await db
+      .select({ count: count() })
+      .from(auditLog)
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
+
+    const total = totalResult[0]?.count ?? 0;
+
+    // Fetch audit logs with user information
+    const logs = await db
+      .select({
+        id: auditLog.id,
+        userId: auditLog.userId,
+        userName: user.name,
+        userEmail: user.email,
+        action: auditLog.action,
+        entityType: auditLog.entityType,
+        entityId: auditLog.entityId,
+        details: auditLog.details,
+        createdAt: auditLog.createdAt,
+        updatedAt: auditLog.updatedAt,
+      })
+      .from(auditLog)
+      .leftJoin(user, eq(auditLog.userId, user.id))
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(auditLog.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      logs: logs.map((log) => ({
+        id: log.id,
+        userId: log.userId,
+        userName: log.userName,
+        userEmail: log.userEmail,
+        action: log.action,
+        entityType: log.entityType,
+        entityId: log.entityId,
+        details: log.details,
+        createdAt: log.createdAt.toISOString(),
+        updatedAt: log.updatedAt.toISOString(),
+      })),
+      total,
+    };
+  } catch (error) {
+    console.error("Error fetching audit logs", error);
+    return { logs: [], total: 0 };
   }
 };

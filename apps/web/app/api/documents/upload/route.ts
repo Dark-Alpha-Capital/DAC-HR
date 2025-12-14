@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { uploadFile } from "@/lib/storage";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
+import { after } from "next/server";
+import { insertAuditLog } from "@workspace/db/queries";
 
 export async function POST(request: NextRequest) {
   try {
@@ -63,6 +65,31 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    after(async () => {
+      await insertAuditLog({
+        userId: session.user.id,
+        action: "upload_document",
+        entityType: "document",
+        entityId: url, // Using URL as entity ID since we don't have a document ID yet
+        details: {
+          file: {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            url,
+          },
+          uploadedBy: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+          },
+        },
+      });
+    });
 
     return NextResponse.json({ url }, { status: 200 });
   } catch (error) {

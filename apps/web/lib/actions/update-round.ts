@@ -11,6 +11,8 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
+import { after } from "next/server";
+import { insertAuditLog } from "@workspace/db/queries";
 
 export const updateRound = async (
   roundId: string,
@@ -59,6 +61,35 @@ export const updateRound = async (
     revalidatePath("/rounds");
     revalidatePath(`/rounds/${updatedRound.id}`);
     revalidatePath(`/rounds/${updatedRound.id}/edit`);
+
+    after(async () => {
+      await insertAuditLog({
+        userId: session.user.id,
+        action: "update_round",
+        entityType: "round",
+        entityId: updatedRound.id,
+        details: {
+          round: {
+            id: updatedRound.id,
+            name: updatedRound.name,
+            description: updatedRound.description,
+            updatedAt: updatedRound.updatedAt.toISOString(),
+          },
+          input: {
+            name,
+            description: description || null,
+          },
+          updatedBy: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+          },
+          metadata: {
+            timestamp: new Date().toISOString(),
+          },
+        },
+      });
+    });
 
     return { success: true, data: updatedRound };
   } catch (error) {
