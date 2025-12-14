@@ -8,9 +8,11 @@ FROM base AS deps
 COPY package.json bun.lock* ./
 # Copy backend package.json
 COPY apps/backend/package.json ./apps/backend/
-# Copy types package.json (dependency)
+# Copy workspace package.json files (required for workspace dependencies)
 COPY packages/db/package.json ./packages/db/
-    # Install all dependencies
+COPY packages/eslint-config/package.json ./packages/eslint-config/
+COPY packages/typescript-config/package.json ./packages/typescript-config/
+# Install all dependencies
 RUN bun install
 
 # Production stage
