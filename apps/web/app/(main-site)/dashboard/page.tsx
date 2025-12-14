@@ -133,14 +133,6 @@ export default function DashboardPage() {
                   {link.description}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="mt-auto pt-0">
-                <Link
-                  href={link.href}
-                  className="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1"
-                >
-                  Visit {link.label}
-                </Link>
-              </CardContent>
             </Card>
           );
         })}
