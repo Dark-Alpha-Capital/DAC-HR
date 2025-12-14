@@ -14,6 +14,7 @@ import { formatDate } from "@/lib/utils";
 import { UserIsAdmin } from "@/components/auth-checks";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { cacheLife, cacheTag } from "next/cache";
 
 type Params = Promise<{ slug: string }>;
 
@@ -44,19 +45,19 @@ const PositionPage = async ({ params }: { params: Params }) => {
       <div className="space-y-10">
         <section>
           <Suspense fallback={<PositionLoadingSkeleton />}>
-            <DisplayPosition params={params} />
+            <DisplayPositionWrapper params={params} />
           </Suspense>
         </section>
 
         <section>
           <Suspense fallback={<RoundsLoadingSkeleton />}>
-            <RoundsSection params={params} />
+            <RoundsSectionWrapper params={params} />
           </Suspense>
         </section>
 
         <section>
           <Suspense fallback={<CandidatesLoadingSkeleton />}>
-            <CandidatesSection params={params} />
+            <CandidatesSectionWrapper params={params} />
           </Suspense>
         </section>
       </div>
@@ -78,9 +79,38 @@ const PositionLoadingSkeleton = () => {
   );
 };
 
-const DisplayPosition = async ({ params }: { params: Params }) => {
+// Cached function for position by slug
+async function CachedPositionBySlug(slug: string) {
+  "use cache";
+  cacheLife("hr-metadata");
+  cacheTag("positions");
+
+  return await getPositionBySlug(slug);
+}
+
+// Cached function for rounds by position ID
+async function CachedRoundsByPositionId(positionId: string) {
+  "use cache";
+  cacheLife("hr-metadata");
+  cacheTag("positions");
+
+  return await getRoundsByPositionId(positionId);
+}
+
+// Cached function for candidates by position ID
+async function CachedCandidatesByPositionId(positionId: string) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag("positions");
+  cacheTag("candidates");
+
+  return await getCandidatesByPositionId(positionId);
+}
+
+// Component (not cached) reads runtime data
+const DisplayPositionWrapper = async ({ params }: { params: Params }) => {
   const { slug } = await params;
-  const position = await getPositionBySlug(slug);
+  const position = await CachedPositionBySlug(slug);
 
   if (!position) {
     return (
@@ -179,15 +209,15 @@ const DisplayPosition = async ({ params }: { params: Params }) => {
     </div>
   );
 };
-const RoundsSection = async ({ params }: { params: Params }) => {
+const RoundsSectionWrapper = async ({ params }: { params: Params }) => {
   const { slug } = await params;
-  const position = await getPositionBySlug(slug);
+  const position = await CachedPositionBySlug(slug);
 
   if (!position) {
     return null;
   }
 
-  const rounds = await getRoundsByPositionId(position.id);
+  const rounds = await CachedRoundsByPositionId(position.id);
 
   return (
     <div className="space-y-4">
@@ -242,15 +272,15 @@ const RoundsSection = async ({ params }: { params: Params }) => {
 };
 
 // Candidates Section Component
-const CandidatesSection = async ({ params }: { params: Params }) => {
+const CandidatesSectionWrapper = async ({ params }: { params: Params }) => {
   const { slug } = await params;
-  const position = await getPositionBySlug(slug);
+  const position = await CachedPositionBySlug(slug);
 
   if (!position) {
     return null;
   }
 
-  const candidates = await getCandidatesByPositionId(position.id);
+  const candidates = await CachedCandidatesByPositionId(position.id);
 
   return (
     <div className="space-y-4">

@@ -5,6 +5,7 @@ import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleto
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import { UserIsAdmin } from "@/components/auth-checks";
+import { cacheLife, cacheTag } from "next/cache";
 
 type Params = Promise<{ slug: string }>;
 
@@ -20,7 +21,7 @@ const EditPositionPage = async ({ params }: { params: Params }) => {
       </Button>
 
       <Suspense fallback={<FormLoadingFallback />}>
-        <EditPositionForm params={params} />
+        <EditPositionFormWrapper params={params} />
       </Suspense>
     </div>
   );
@@ -28,9 +29,19 @@ const EditPositionPage = async ({ params }: { params: Params }) => {
 
 export default EditPositionPage;
 
-const EditPositionForm = async ({ params }: { params: Params }) => {
+// Cached function for position by slug
+async function CachedPositionBySlug(slug: string) {
+  "use cache";
+  cacheLife("hr-metadata");
+  cacheTag("positions");
+
+  return await getPositionBySlug(slug);
+}
+
+// Component (not cached) reads runtime data
+const EditPositionFormWrapper = async ({ params }: { params: Params }) => {
   const { slug } = await params;
-  const position = await getPositionBySlug(slug);
+  const position = await CachedPositionBySlug(slug);
 
   if (!position) {
     return (

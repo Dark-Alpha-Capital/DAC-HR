@@ -8,6 +8,7 @@ import { UserIsAdmin } from "@/components/auth-checks";
 import FilterPositionHireLevel from "@/components/filter-position-hire-level";
 import FilterPositionStatus from "@/components/filter-position-status";
 import ClearPositionFiltersButton from "@/components/clear-position-filters-button";
+import { cacheLife, cacheTag } from "next/cache";
 
 export const metadata: Metadata = {
   title: "Positions",
@@ -35,7 +36,7 @@ const page = async ({ searchParams }: { searchParams: SearchParams }) => {
       </Suspense>
 
       <Suspense fallback={<div>Loading...</div>}>
-        <PositionsList searchParams={searchParams} />
+        <PositionsListWrapper searchParams={searchParams} />
       </Suspense>
     </div>
   );
@@ -53,7 +54,17 @@ const PresentFilters = async () => {
   );
 };
 
-const PositionsList = async ({
+// Cached function for positions
+async function CachedPositions(hireLevels?: string[], statuses?: string[]) {
+  "use cache";
+  cacheLife("hr-metadata");
+  cacheTag("positions");
+
+  return await getPositions(hireLevels, statuses);
+}
+
+// Component (not cached) reads runtime data
+const PositionsListWrapper = async ({
   searchParams,
 }: {
   searchParams: SearchParams;
@@ -69,7 +80,8 @@ const PositionsList = async ({
       ? params.status
       : [params.status]
     : undefined;
-  const positions = await getPositions(hireLevels, statuses);
+
+  const positions = await CachedPositions(hireLevels, statuses);
 
   if (positions.length === 0) {
     return (
