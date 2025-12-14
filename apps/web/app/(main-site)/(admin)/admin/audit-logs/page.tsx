@@ -8,6 +8,8 @@ type SearchParams = Promise<{
   userId?: string | string[];
   search?: string | string[];
   page?: string | string[];
+  startDate?: string | string[];
+  endDate?: string | string[];
 }>;
 
 export default async function AuditLogsPage({

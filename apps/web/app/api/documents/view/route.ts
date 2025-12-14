@@ -39,28 +39,28 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    after(async () => {
-      await insertAuditLog({
-        userId: session.user.id,
-        action: "view_document",
-        entityType: "document",
-        entityId: url,
-        details: {
-          document: {
-            url,
-            signedUrl,
-          },
-          viewedBy: {
-            id: session.user.id,
-            email: session.user.email,
-            name: session.user.name,
-          },
-          metadata: {
-            timestamp: new Date().toISOString(),
-          },
-        },
-      });
-    });
+    // after(async () => {
+    //   await insertAuditLog({
+    //     userId: session.user.id,
+    //     action: "view_document",
+    //     entityType: "document",
+    //     entityId: url,
+    //     details: {
+    //       document: {
+    //         url,
+    //         signedUrl,
+    //       },
+    //       viewedBy: {
+    //         id: session.user.id,
+    //         email: session.user.email,
+    //         name: session.user.name,
+    //       },
+    //       metadata: {
+    //         timestamp: new Date().toISOString(),
+    //       },
+    //     },
+    //   });
+    // });
 
     return NextResponse.json({ url: signedUrl }, { status: 200 });
   } catch (error) {

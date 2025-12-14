@@ -4,6 +4,8 @@ import React, { Suspense } from "react";
 import { getEmployees, getPositions } from "@workspace/db/queries";
 import FilterEmployeePosition from "@/components/filter-employee-position";
 import FilterEmployeeDepartment from "@/components/filter-employee-department";
+import FilterEmployeeName from "@/components/filter-employee-name";
+import FilterEmployeeEmail from "@/components/filter-employee-email";
 import ClearEmployeeFiltersButton from "@/components/clear-employee-filters-button";
 import EmployeeContainer from "./employee-container";
 import { EmployeesListSkeleton } from "@/components/skeletons/employees-list-skeleton";
@@ -59,6 +61,8 @@ async function CachedPresentFilters() {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
+      <FilterEmployeeName />
+      <FilterEmployeeEmail />
       <FilterEmployeePosition positions={positionTypes} />
       <FilterEmployeeDepartment />
       <ClearEmployeeFiltersButton />
@@ -74,7 +78,7 @@ const EmployeesListWrapper = async ({
 }: {
   searchParams: SearchParams;
 }) => {
-  const { position, department } = await searchParams;
+  const { position, department, name, email } = await searchParams;
 
   // Extract position IDs from the position parameter
   const positionIds = position
@@ -91,7 +95,12 @@ const EmployeesListWrapper = async ({
     : undefined;
 
   return (
-    <CachedEmployeesList positionIds={positionIds} departments={departments} />
+    <CachedEmployeesList
+      positionIds={positionIds}
+      departments={departments}
+      name={typeof name === "string" ? name : undefined}
+      email={typeof email === "string" ? email : undefined}
+    />
   );
 };
 
@@ -99,9 +108,13 @@ const EmployeesListWrapper = async ({
 async function CachedEmployeesList({
   positionIds,
   departments,
+  name,
+  email,
 }: {
   positionIds?: string[];
   departments?: string[];
+  name?: string;
+  email?: string;
 }) {
   "use cache";
   cacheLife("hr-data");
@@ -130,5 +143,11 @@ async function CachedEmployeesList({
     );
   }
 
-  return <EmployeeContainer employees={employees} />;
+  return (
+    <EmployeeContainer
+      employees={employees}
+      nameFilter={name}
+      emailFilter={email}
+    />
+  );
 }

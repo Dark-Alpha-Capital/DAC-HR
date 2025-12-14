@@ -1,0 +1,59 @@
+"use client";
+
+import React, { useTransition, useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Input } from "@workspace/ui/components/input";
+import { Mail } from "lucide-react";
+
+const FilterEmployeeEmail = () => {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleSearch = (value: string) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    timeoutRef.current = setTimeout(() => {
+      startTransition(() => {
+        const params = new URLSearchParams(searchParams);
+        if (value.trim()) {
+          params.set("email", value.trim());
+        } else {
+          params.delete("email");
+        }
+        router.push(`?${params.toString()}`, {
+          scroll: false,
+        });
+      });
+    }, 300);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <div
+      className="relative flex-1 max-w-sm"
+      data-pending={isPending ? "" : undefined}
+    >
+      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Input
+        type="email"
+        placeholder="Search by email..."
+        defaultValue={searchParams.get("email") || ""}
+        onChange={(e) => handleSearch(e.target.value)}
+        className="pl-9"
+      />
+    </div>
+  );
+};
+
+export default FilterEmployeeEmail;

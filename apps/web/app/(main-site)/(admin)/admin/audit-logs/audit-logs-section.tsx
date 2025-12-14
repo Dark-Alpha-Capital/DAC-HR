@@ -9,6 +9,8 @@ type SearchParams = Promise<{
   userId?: string | string[];
   search?: string | string[];
   page?: string | string[];
+  startDate?: string | string[];
+  endDate?: string | string[];
 }>;
 
 async function fetchAuditLogs(
@@ -17,7 +19,9 @@ async function fetchAuditLogs(
   userId?: string,
   search?: string,
   page: number = 1,
-  limit: number = 20
+  limit: number = 20,
+  startDate?: string,
+  endDate?: string
 ): Promise<{ logs: AuditLog[]; total: number }> {
   const result = await getAuditLogs({
     action,
@@ -26,6 +30,8 @@ async function fetchAuditLogs(
     search,
     page,
     limit,
+    startDate: startDate ? new Date(startDate) : undefined,
+    endDate: endDate ? new Date(endDate) : undefined,
   });
 
   return {
@@ -66,6 +72,18 @@ async function AuditLogsSectionInner({
       : params.search[0]
     : undefined;
 
+  const startDate = params.startDate
+    ? typeof params.startDate === "string"
+      ? params.startDate
+      : params.startDate[0]
+    : undefined;
+
+  const endDate = params.endDate
+    ? typeof params.endDate === "string"
+      ? params.endDate
+      : params.endDate[0]
+    : undefined;
+
   // Extract page number (default to 1)
   const page = params.page
     ? typeof params.page === "string"
@@ -83,7 +101,9 @@ async function AuditLogsSectionInner({
     userId,
     search,
     currentPage,
-    limit
+    limit,
+    startDate,
+    endDate
   );
 
   const totalPages = Math.ceil(total / limit);

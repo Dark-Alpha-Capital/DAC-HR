@@ -10,12 +10,14 @@ type Params = Promise<{ id: string }>;
 
 const page = async ({ params }: { params: Params }) => {
   return (
-    <div className="block-space narrow-container mx-auto">
+    <div className="block-space-mini narrow-container mx-auto">
       <BackButton />
 
-      <Suspense fallback={<FormLoadingFallback />}>
-        <DisplayEmployeeEditForm params={params} />
-      </Suspense>
+      <div className="mt-4 md:mt-6 lg:mt-8">
+        <Suspense fallback={<FormLoadingFallback />}>
+          <DisplayEmployeeEditForm params={params} />
+        </Suspense>
+      </div>
     </div>
   );
 };
@@ -47,4 +49,3 @@ async function DisplayEmployeeEditForm({ params }: { params: Params }) {
 
   return <EmployeeEditForm employee={employee} positions={cleanedPositions} />;
 }
-

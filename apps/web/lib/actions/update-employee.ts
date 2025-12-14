@@ -52,6 +52,7 @@ export const updateEmployee = async (
     }
 
     updateTag("employees");
+    updateTag(`employee-${employeeId}`);
     revalidatePath("/employees");
     revalidatePath(`/employees/${employeeId}`);
 

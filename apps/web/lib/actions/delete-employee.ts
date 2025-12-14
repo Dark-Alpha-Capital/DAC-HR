@@ -26,6 +26,7 @@ export const deleteEmployee = async (id: string) => {
     await db.delete(employee).where(eq(employee.id, id));
 
     updateTag("employees");
+    updateTag(`employee-${id}`);
     revalidatePath("/employees");
 
     if (employeeData) {

@@ -47,6 +47,9 @@ export const createEmployee = async (data: EmployeeFormSchema) => {
     }
 
     updateTag("employees");
+    if (newEmployee) {
+      updateTag(`employee-${newEmployee.id}`);
+    }
     revalidatePath("/employees");
 
     after(async () => {

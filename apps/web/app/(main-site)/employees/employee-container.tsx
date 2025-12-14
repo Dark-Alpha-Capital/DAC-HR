@@ -26,6 +26,17 @@ import { useRouter } from "next/navigation";
 import type { InferSelectModel } from "drizzle-orm";
 import type { employee } from "@workspace/db/schema";
 import { formatDepartments } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@workspace/ui/components/alert-dialog";
 
 type Employee = InferSelectModel<typeof employee> & {
   position: { id: string; name: string; slug: string } | null;
@@ -33,6 +44,8 @@ type Employee = InferSelectModel<typeof employee> & {
 
 interface EmployeeContainerProps {
   employees: Employee[];
+  nameFilter?: string;
+  emailFilter?: string;
 }
 
 type ViewMode = "grid" | "table";
@@ -40,34 +53,98 @@ type ViewMode = "grid" | "table";
 const DeleteEmployeeIconButton = ({ employeeId }: { employeeId: string }) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [open, setOpen] = useState(false);
+
+  const handleDelete = async () => {
+    startTransition(async () => {
+      const response = await deleteEmployee(employeeId);
+      if (response?.error) {
+        toast.error(response.error);
+        setOpen(false);
+      }
+      if (response?.success) {
+        toast.success("Employee deleted successfully");
+        setOpen(false);
+        router.refresh();
+      }
+    });
+  };
 
   return (
-    <Button
-      variant="destructive"
-      size="sm"
-      className="h-7 w-7 p-0"
-      onClick={async () => {
-        startTransition(async () => {
-          const response = await deleteEmployee(employeeId);
-          if (response?.error) {
-            toast.error(response.error);
-          }
-          if (response?.success) {
-            toast.success("Employee deleted successfully");
-            router.refresh();
-          }
-        });
-      }}
-      disabled={isPending}
-    >
-      <Trash2 className="h-3.5 w-3.5" />
-      {isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-    </Button>
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <Button
+          variant="destructive"
+          size="sm"
+          className="h-7 w-7 p-0"
+          disabled={isPending}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Employee</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete this employee? This action cannot be
+            undone and will permanently remove the employee from the system.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDelete}
+            disabled={isPending}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Deleting...
+              </>
+            ) : (
+              "Delete"
+            )}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
 
-const EmployeeContainer = ({ employees }: EmployeeContainerProps) => {
+const EmployeeContainer = ({
+  employees,
+  nameFilter,
+  emailFilter,
+}: EmployeeContainerProps) => {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+
+  // Filter employees based on name and email
+  const filteredEmployees = employees.filter((employee) => {
+    const fullName = `${employee.firstName} ${employee.lastName}`.toLowerCase();
+    const nameMatch = nameFilter
+      ? fullName.includes(nameFilter.toLowerCase())
+      : true;
+
+    // Note: Email filtering is not available yet as employees don't have an email field in the schema
+    // If email filter is provided but employees don't have email, we ignore the email filter
+    // This will be functional once email is added to the employee schema
+    const emailMatch = emailFilter
+      ? false // No email field available in employee schema, so email filter won't match
+      : true;
+
+    return nameMatch && emailMatch;
+  });
+
+  if (filteredEmployees.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">
+          No employees found matching your search criteria.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -91,7 +168,7 @@ const EmployeeContainer = ({ employees }: EmployeeContainerProps) => {
 
       {viewMode === "grid" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {employees.map((employee) => (
+          {filteredEmployees.map((employee) => (
             <EmployeeCard key={employee.id} employee={employee} />
           ))}
         </div>
@@ -108,7 +185,7 @@ const EmployeeContainer = ({ employees }: EmployeeContainerProps) => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {employees.map((employee) => {
+            {filteredEmployees.map((employee) => {
               const fullName = `${employee.firstName} ${employee.lastName}`;
               const departmentNames = formatDepartments(employee.department);
               return (

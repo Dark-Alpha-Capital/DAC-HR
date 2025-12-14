@@ -8,9 +8,12 @@ import { X } from "lucide-react";
 const ClearEmployeeFiltersButton = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
-  
-  const hasFilters = 
-    searchParams.has("position") || searchParams.has("department");
+
+  const hasFilters =
+    searchParams.has("position") ||
+    searchParams.has("department") ||
+    searchParams.has("name") ||
+    searchParams.has("email");
 
   if (!hasFilters) {
     return null;
@@ -24,6 +27,8 @@ const ClearEmployeeFiltersButton = () => {
         const params = new URLSearchParams(searchParams);
         params.delete("position");
         params.delete("department");
+        params.delete("name");
+        params.delete("email");
         router.push(`?${params.toString()}`);
       }}
     >
@@ -33,4 +38,3 @@ const ClearEmployeeFiltersButton = () => {
 };
 
 export default ClearEmployeeFiltersButton;
-

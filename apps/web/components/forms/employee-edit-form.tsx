@@ -115,10 +115,12 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
 
           // Update the employee with the final image URL
           const result = await updateEmployee(employee.id, {
-            ...value,
+            firstName: value.firstName,
+            lastName: value.lastName,
+            department: value.department,
             positionId: value.positionId || null,
             profileImage: finalImageUrl || null,
-            bio: value.bio || null,
+            bio: value.bio && value.bio.trim() !== "" ? value.bio : null,
           });
 
           if (result.error) {
@@ -141,7 +143,7 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
                 },
               },
             });
-            router.push("/employees");
+            router.push(`/employees/${employee.id}`);
           }
         } catch (error) {
           toast.error(
@@ -462,7 +464,10 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
                   <FieldLabel htmlFor={field.name}>Bio (Optional)</FieldLabel>
                   <RichTextEditor
                     content={field.state.value || ""}
-                    onChange={(html) => field.handleChange(html || "")}
+                    onChange={(html) => {
+                      // Ensure we always pass a string, even if empty
+                      field.handleChange(html || "");
+                    }}
                     placeholder="Enter a detailed bio for this employee..."
                     minHeight="200px"
                   />

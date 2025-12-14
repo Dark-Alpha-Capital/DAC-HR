@@ -39,6 +39,7 @@ import { createEmployee } from "@/lib/actions/create-employee";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { cn } from "@workspace/ui/lib/utils";
 import * as z from "zod";
+import EmployeeProfileImage from "../employee-profile-image";
 
 const departmentLabels: Record<z.infer<typeof departmentEnum>, string> = {
   management: "Management",
@@ -101,10 +102,12 @@ const EmployeeUploadForm = ({
 
           // Create the employee with the final image URL
           const result = await createEmployee({
-            ...value,
+            firstName: value.firstName,
+            lastName: value.lastName,
+            department: value.department,
             positionId: value.positionId || null,
             profileImage: finalImageUrl || null,
-            bio: value.bio || null,
+            bio: value.bio && value.bio.trim() !== "" ? value.bio : null,
           });
 
           if (result.error) {
@@ -462,7 +465,10 @@ const EmployeeUploadForm = ({
                   <FieldLabel htmlFor={field.name}>Bio (Optional)</FieldLabel>
                   <RichTextEditor
                     content={field.state.value || ""}
-                    onChange={(html) => field.handleChange(html || "")}
+                    onChange={(html) => {
+                      // Ensure we always pass a string, even if empty
+                      field.handleChange(html || "");
+                    }}
                     placeholder="Enter a detailed bio for this employee..."
                     minHeight="200px"
                   />
