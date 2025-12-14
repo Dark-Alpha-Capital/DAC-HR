@@ -17,7 +17,18 @@ import {
   employee,
   auditLog,
 } from "./schema";
-import { eq, asc, desc, inArray, and, or, sql, count } from "drizzle-orm";
+import {
+  eq,
+  asc,
+  desc,
+  inArray,
+  and,
+  or,
+  sql,
+  count,
+  gte,
+  lte,
+} from "drizzle-orm";
 
 /**
  *
@@ -1992,7 +2003,7 @@ export const getAuditLogs = async (options: {
     // Date range filtering
     if (startDate) {
       const start = startDate instanceof Date ? startDate : new Date(startDate);
-      conditions.push(sql`${auditLog.createdAt} >= ${start}`);
+      conditions.push(gte(auditLog.createdAt, start));
     }
 
     if (endDate) {
@@ -2000,7 +2011,7 @@ export const getAuditLogs = async (options: {
       // Add 1 day and set to end of day to include the entire end date
       const endOfDay = new Date(end);
       endOfDay.setHours(23, 59, 59, 999);
-      conditions.push(sql`${auditLog.createdAt} <= ${endOfDay}`);
+      conditions.push(lte(auditLog.createdAt, endOfDay));
     }
 
     // Get total count
