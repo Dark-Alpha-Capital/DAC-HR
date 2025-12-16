@@ -8,7 +8,8 @@ const app = new Hono()
   .use(logger())
   .use(
     cors({
-      origin: ["https://dac-hr-web.vercel.app/", "http://localhost:3000"],
+      origin: ["https://dac-hr-web.vercel.app", "http://localhost:3000"],
+      credentials: true,
     })
   )
   .get("/", (c) => c.text("Hono!"))
