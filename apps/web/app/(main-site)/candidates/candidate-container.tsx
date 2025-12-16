@@ -21,8 +21,7 @@ import { Eye, Pencil } from "lucide-react";
 import DeleteCandidateButton from "@/components/delete-candidate-button";
 import { Card, CardContent } from "@workspace/ui/components/card";
 import { Badge } from "@workspace/ui/components/badge";
-import type { InferSelectModel } from "drizzle-orm";
-import type { candidate } from "@workspace/db/schema";
+import type { Candidate } from "@workspace/db/schema";
 
 const applicationStatusColors: Record<
   string,
@@ -37,13 +36,13 @@ const applicationStatusColors: Record<
   withdrawn: "outline",
 } as const;
 
-type Candidate = InferSelectModel<typeof candidate> & {
+type CandidateWithPosition = Candidate & {
   position: { id: string; name: string } | null;
   applicationStatus?: string | null;
 };
 
 interface CandidateContainerProps {
-  candidates: Candidate[];
+  candidates: CandidateWithPosition[];
 }
 
 type ViewMode = "grid" | "table";

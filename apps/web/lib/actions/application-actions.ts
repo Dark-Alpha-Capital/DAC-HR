@@ -7,7 +7,7 @@ import {
   position,
   documents,
 } from "@workspace/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray } from "@workspace/db";
 import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";

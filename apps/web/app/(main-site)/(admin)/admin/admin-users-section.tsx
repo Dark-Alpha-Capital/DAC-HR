@@ -1,8 +1,7 @@
 import React from "react";
 import { Suspense } from "react";
-import { db } from "@workspace/db";
+import { db, sql, and, count } from "@workspace/db";
 import { user } from "@workspace/db/schema";
-import { sql, and, count } from "drizzle-orm";
 import { AdminUsersClient, AdminUser } from "./admin-users-client";
 
 type SearchParams = Promise<{

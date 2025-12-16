@@ -9,7 +9,7 @@ import {
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
-import { eq } from "drizzle-orm";
+import { eq } from "@workspace/db";
 import { after } from "next/server";
 import { insertAuditLog } from "@workspace/db/queries";
 

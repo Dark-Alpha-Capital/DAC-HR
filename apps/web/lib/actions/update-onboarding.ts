@@ -2,7 +2,7 @@
 
 import { db } from "@workspace/db";
 import { candidate, candidateOnboarding } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { eq } from "@workspace/db";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";

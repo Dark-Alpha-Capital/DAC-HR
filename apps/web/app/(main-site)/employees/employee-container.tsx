@@ -23,8 +23,7 @@ import { Card, CardContent } from "@workspace/ui/components/card";
 import { deleteEmployee } from "@/lib/actions/delete-employee";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import type { InferSelectModel } from "drizzle-orm";
-import type { employee } from "@workspace/db/schema";
+import type { Employee } from "@workspace/db/schema";
 import { formatDepartments } from "@/lib/utils";
 import {
   AlertDialog,
@@ -38,12 +37,12 @@ import {
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog";
 
-type Employee = InferSelectModel<typeof employee> & {
+type EmployeeWithPosition = Employee & {
   position: { id: string; name: string; slug: string } | null;
 };
 
 interface EmployeeContainerProps {
-  employees: Employee[];
+  employees: EmployeeWithPosition[];
   nameFilter?: string;
   emailFilter?: string;
 }
@@ -197,7 +196,13 @@ const EmployeeContainer = ({
                     {departmentNames.join(", ")}
                   </TableCell>
                   <TableCell className="py-1.5 px-2 text-sm">
-                    {employee.position?.name || "-"}
+                    {employee.positionId ? (
+                      <Link href={`/positions/${employee.positionId}`}>
+                        {employee.position?.name}
+                      </Link>
+                    ) : (
+                      "-"
+                    )}
                   </TableCell>
                   <TableCell className="text-right py-1.5 px-2">
                     <div className="flex items-center justify-end gap-1">

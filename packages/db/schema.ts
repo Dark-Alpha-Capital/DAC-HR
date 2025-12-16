@@ -116,6 +116,8 @@ export const position = pgTable("position", {
     .notNull(),
 });
 
+export type Position = InferSelectModel<typeof position>;
+
 export const candidate = pgTable("candidate", {
   id: text("id")
     .primaryKey()
@@ -195,6 +197,8 @@ export const questionBank = pgTable("question_bank", {
     .notNull(),
 });
 
+export type Question = InferSelectModel<typeof questionBank>;
+
 export const roundTemplate = pgTable("round_template", {
   id: text("id")
     .primaryKey()
@@ -207,6 +211,8 @@ export const roundTemplate = pgTable("round_template", {
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
 });
+
+export type RoundTemplate = InferSelectModel<typeof roundTemplate>;
 
 export const positionRoundTemplates = pgTable("position_round_templates", {
   id: text("id")

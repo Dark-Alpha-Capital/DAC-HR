@@ -6,7 +6,7 @@ import {
   interviewFeedback,
   application,
 } from "@workspace/db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq } from "@workspace/db";
 import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";

@@ -9,8 +9,6 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import { Eye, Pencil } from "lucide-react";
-import type { InferSelectModel } from "drizzle-orm";
-import type { position } from "@workspace/db/schema";
 import DeletePositionButton from "./delete-position-button";
 import { Badge } from "@workspace/ui/components/badge";
 

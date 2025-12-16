@@ -21,10 +21,7 @@ import { questionFormSchema } from "@/lib/schemas/question-form-schema";
 import { Loader2 } from "lucide-react";
 import { updateQuestion } from "@/lib/actions/update-question";
 import { useRouter } from "next/navigation";
-import type { InferSelectModel } from "drizzle-orm";
-import type { questionBank } from "@workspace/db/schema";
-
-type Question = InferSelectModel<typeof questionBank>;
+import type { Question } from "@workspace/db/schema";
 
 interface QuestionEditFormProps {
   question: Question;
@@ -73,7 +70,9 @@ const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
     <div className="w-full space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2">
-          <h2 className="text-2xl font-semibold tracking-tight">Edit Question</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Edit Question
+          </h2>
           <p className="text-sm text-muted-foreground">
             Update the question details below.
           </p>
@@ -91,11 +90,7 @@ const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
           >
             Reset
           </Button>
-          <Button
-            type="submit"
-            form="question-edit-form"
-            disabled={isPending}
-          >
+          <Button type="submit" form="question-edit-form" disabled={isPending}>
             {isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -116,44 +111,41 @@ const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
         className="space-y-6"
       >
         <FieldGroup>
-            <form.Field
-              name="questionText"
-              children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
-                return (
-                  <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>Question Text</FieldLabel>
-                    <InputGroup>
-                      <InputGroupTextarea
-                        id={field.name}
-                        name={field.name}
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder="Enter the question text"
-                        rows={6}
-                        className="min-h-24 resize-none"
-                        aria-invalid={isInvalid}
-                      />
-                      <InputGroupAddon align="block-end">
-                        <InputGroupText className="tabular-nums">
-                          {field.state.value.length}/500 characters
-                        </InputGroupText>
-                      </InputGroupAddon>
-                    </InputGroup>
-                    {isInvalid && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
-                  </Field>
-                );
-              }}
-            />
-          </FieldGroup>
-        </form>
+          <form.Field
+            name="questionText"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>Question Text</FieldLabel>
+                  <InputGroup>
+                    <InputGroupTextarea
+                      id={field.name}
+                      name={field.name}
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="Enter the question text"
+                      rows={6}
+                      className="min-h-24 resize-none"
+                      aria-invalid={isInvalid}
+                    />
+                    <InputGroupAddon align="block-end">
+                      <InputGroupText className="tabular-nums">
+                        {field.state.value.length}/500 characters
+                      </InputGroupText>
+                    </InputGroupAddon>
+                  </InputGroup>
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
+            }}
+          />
+        </FieldGroup>
+      </form>
     </div>
   );
 };
 
 export default QuestionEditForm;
-

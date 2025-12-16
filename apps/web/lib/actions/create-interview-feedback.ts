@@ -5,7 +5,7 @@ import { interviewFeedback } from "@workspace/db/schema";
 import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
-import { eq, and } from "drizzle-orm";
+import { eq, and } from "@workspace/db";
 import { getInterviewById } from "@workspace/db/queries";
 import { after } from "next/server";
 import { insertAuditLog } from "@workspace/db/queries";

@@ -8,11 +8,8 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import { Eye, Pencil } from "lucide-react";
-import type { InferSelectModel } from "drizzle-orm";
-import type { questionBank } from "@workspace/db/schema";
+import type { Question } from "@workspace/db/schema";
 import DeleteQuestionButton from "./delete-question-button";
-
-type Question = InferSelectModel<typeof questionBank>;
 
 interface QuestionCardProps {
   question: Question;
@@ -46,4 +43,3 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
 };
 
 export default QuestionCard;
-

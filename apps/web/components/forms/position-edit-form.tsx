@@ -44,13 +44,10 @@ import {
 } from "@workspace/ui/components/select";
 import { updatePosition } from "@/lib/actions/update-position";
 import { useRouter } from "next/navigation";
-import type { InferSelectModel } from "drizzle-orm";
-import type { position } from "@workspace/db/schema";
+import type { Position } from "@workspace/db/schema";
 import { RichTextEditorField } from "@/components/rich-text-editor";
 import { cn } from "@workspace/ui/lib/utils";
 import * as z from "zod";
-
-type Position = InferSelectModel<typeof position>;
 
 interface PositionEditFormProps {
   position: Position;

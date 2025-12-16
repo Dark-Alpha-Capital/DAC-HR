@@ -10,16 +10,13 @@ import {
 } from "@workspace/ui/components/card";
 import { Badge } from "@workspace/ui/components/badge";
 import { Eye, Pencil } from "lucide-react";
-import type { InferSelectModel } from "drizzle-orm";
-import type { candidate } from "@workspace/db/schema";
+import type { Candidate } from "@workspace/db/schema";
 import DeleteCandidateButton from "./delete-candidate-button";
 
-type Candidate = InferSelectModel<typeof candidate> & {
-  applicationStatus?: string | null;
-};
-
 interface CandidateCardProps {
-  candidate: Candidate;
+  candidate: Candidate & {
+    applicationStatus?: string | null;
+  };
 }
 
 const applicationStatusColors: Record<
@@ -45,7 +42,10 @@ const CandidateCard = ({ candidate }: CandidateCardProps) => {
           <CardTitle className="">{fullName}</CardTitle>
           {candidate.applicationStatus && (
             <Badge
-              variant={applicationStatusColors[candidate.applicationStatus] || "outline"}
+              variant={
+                applicationStatusColors[candidate.applicationStatus] ||
+                "outline"
+              }
               className="shrink-0 text-xs"
             >
               {candidate.applicationStatus.charAt(0).toUpperCase() +
