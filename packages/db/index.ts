@@ -1,5 +1,6 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+export { eq, and, or, sql, asc, desc, inArray, count, gte, lte } from "drizzle-orm";
 
 const url = process.env.DATABASE_URL;
 

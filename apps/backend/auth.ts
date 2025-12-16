@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db } from "@workspace/db";
+import { db, eq } from "@workspace/db";
 import { config } from "dotenv";
 import { nextCookies } from "better-auth/next-js";
 import {
@@ -11,7 +11,6 @@ import {
 } from "@workspace/db/schema";
 import { admin, customSession } from "better-auth/plugins";
 import { createAuthMiddleware } from "better-auth/api";
-import { eq } from "drizzle-orm";
 import { bearer } from "better-auth/plugins";
 
 config({
