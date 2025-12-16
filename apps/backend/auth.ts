@@ -12,6 +12,7 @@ import {
 import { admin, customSession } from "better-auth/plugins";
 import { createAuthMiddleware } from "better-auth/api";
 import { eq } from "drizzle-orm";
+import { bearer } from "better-auth/plugins";
 
 config({
   path: ".env",
@@ -29,9 +30,10 @@ const isAdminEmail = (email: string): boolean => {
   return ADMIN_EMAILS.includes(email.toLowerCase());
 };
 
-export const auth = betterAuth({
-  secret: process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET,
+export const auth: ReturnType<typeof betterAuth> = betterAuth({
+  secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL,
+
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {
@@ -41,6 +43,7 @@ export const auth = betterAuth({
       verification: verificationsTable,
     },
   }),
+
   emailAndPassword: {
     enabled: true,
   },
@@ -51,6 +54,7 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    bearer(),
     nextCookies(),
     admin(),
     customSession(async ({ user, session }) => {

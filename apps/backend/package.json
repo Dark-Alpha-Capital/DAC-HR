@@ -7,7 +7,6 @@
     "dev": "bun --watch index.ts",
     "start": "bun run index.ts"
   },
-  
   "devDependencies": {
     "@workspace/db": "workspace:*",
     "@types/bun": "latest"
@@ -16,6 +15,7 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "hono": "^4.10.4"
+    "hono": "^4.10.4",
+    "zod-to-json-schema": "^3.25.0"
   }
 }

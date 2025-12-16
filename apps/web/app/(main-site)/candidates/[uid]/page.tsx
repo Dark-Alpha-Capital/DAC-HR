@@ -2,11 +2,11 @@ import React, { Suspense } from "react";
 import {
   getCandidateWithApplications,
   getDocumentsByCandidateId,
+  getCandidateAiScreenings,
 } from "@workspace/db/queries";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
 import {
-  Tabs,
   TabsList,
   TabsTrigger,
   TabsContent,
@@ -36,6 +36,7 @@ import {
   Link as LinkIcon,
   User,
   ClipboardCheck,
+  Sparkles,
 } from "lucide-react";
 import DeleteCandidateButton from "@/components/delete-candidate-button";
 import { formatDate } from "@/lib/utils";
@@ -45,9 +46,15 @@ import CandidateDocumentTable from "@/components/candidate-document-table";
 import CandidateOnboardingSection from "@/components/candidate-onboarding-section";
 import { UserAuthenticated } from "@/components/auth-checks";
 import InlineApplicationStatusEditor from "@/components/inline-application-status-editor";
+import CandidateAiScreeningsTab from "@/components/candidate-ai-screenings-tab";
+import CandidateAiAnalysis from "@/components/candidate-ai-analysis";
+import CandidateTabsClient from "@/components/candidate-tabs-client";
 import { Metadata } from "next";
 import { cacheLife, cacheTag } from "next/cache";
-
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
+import { Session } from "better-auth";
+import { headers } from "next/headers";
 type Params = Promise<{ uid: string }>;
 
 async function CachedCandidateForMetadata(uid: string) {
@@ -93,10 +100,6 @@ export async function generateMetadata({
 const CandidatePage = async ({ params }: { params: Params }) => {
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <Suspense>
-        <UserAuthenticated />
-      </Suspense>
-
       <Suspense fallback={<CandidateDetailSkeleton />}>
         <CandidatePageContentWrapper params={params} />
       </Suspense>
@@ -109,11 +112,23 @@ export default CandidatePage;
 // Component (not cached) reads runtime data
 const CandidatePageContentWrapper = async ({ params }: { params: Params }) => {
   const { uid } = await params;
-  return <CachedCandidatePageContent uid={uid} />;
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  if (!session?.user) {
+    redirect("/login");
+  }
+  return <CachedCandidatePageContent uid={uid} session={session.session} />;
 };
 
 // Cached component receives data as props
-async function CachedCandidatePageContent({ uid }: { uid: string }) {
+async function CachedCandidatePageContent({
+  uid,
+  session,
+}: {
+  uid: string;
+  session: Session;
+}) {
   "use cache";
   cacheLife("hr-data");
   cacheTag("candidates");
@@ -170,7 +185,7 @@ async function CachedCandidatePageContent({ uid }: { uid: string }) {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="overview" className="w-full">
+      <CandidateTabsClient>
         <TabsList>
           <TabsTrigger value="overview">
             <User className="h-4 w-4 mr-2" />
@@ -199,6 +214,18 @@ async function CachedCandidatePageContent({ uid }: { uid: string }) {
             <ClipboardCheck className="h-4 w-4 mr-2" />
             Onboarding
           </TabsTrigger>
+
+          <TabsTrigger value="ai-screenings">
+            <Sparkles className="h-4 w-4 mr-2" />
+            AI Screenings
+            <Suspense fallback={null}>
+              <ScreeningsCount uid={uid} />
+            </Suspense>
+          </TabsTrigger>
+          <TabsTrigger value="ai-analysis">
+            <Sparkles className="h-4 w-4 mr-2" />
+            Do AI Analysis
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
@@ -224,7 +251,25 @@ async function CachedCandidatePageContent({ uid }: { uid: string }) {
             <CandidateOnboardingSection uid={uid} />
           </Suspense>
         </TabsContent>
-      </Tabs>
+
+        <TabsContent value="ai-screenings" className="mt-6">
+          <Suspense fallback={<SectionSkeleton />}>
+            <CandidateAiScreeningsTab
+              candidateId={uid}
+              positionId={candidate.applications[0]?.position.id ?? null}
+            />
+          </Suspense>
+        </TabsContent>
+        <TabsContent value="ai-analysis" className="mt-6">
+          <Suspense fallback={<SectionSkeleton />}>
+            <CandidateAiAnalysis
+              candidateId={uid}
+              positionId={candidate.applications[0]?.position.id ?? ""}
+              session={session}
+            />
+          </Suspense>
+        </TabsContent>
+      </CandidateTabsClient>
     </div>
   );
 }
@@ -410,6 +455,16 @@ const OverviewTab = ({
     </div>
   );
 };
+
+// Non-cached component - fetch fresh data every time for AI screenings
+async function ScreeningsCount({ uid }: { uid: string }) {
+  const screenings = await getCandidateAiScreenings(uid);
+  return screenings.length > 0 ? (
+    <Badge variant="secondary" className="ml-2 h-5 min-w-5 px-1.5 text-xs">
+      {screenings.length}
+    </Badge>
+  ) : null;
+}
 
 const ApplicationsTab = ({
   candidate,

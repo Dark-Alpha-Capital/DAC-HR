@@ -85,6 +85,27 @@
       "when": 1765704207997,
       "tag": "0011_flowery_namorita",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1765729909966,
+      "tag": "0012_uneven_charles_xavier",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1765891466564,
+      "tag": "0013_yellow_thunderbolt_ross",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1765892835646,
+      "tag": "0014_cold_energizer",
+      "breakpoints": true
     }
   ]
 }

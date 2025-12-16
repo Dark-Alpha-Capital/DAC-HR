@@ -29,7 +29,6 @@ import {
 } from "@workspace/ui/components/select";
 import { candidateDocumentFormSchema } from "@/lib/schemas/candidate-document-form-schema";
 import { Loader2 } from "lucide-react";
-import { createCandidateDocument } from "@/lib/actions/create-candidate-document";
 import { useRouter } from "next/navigation";
 
 const CandidateDocumentUploadForm = ({
@@ -64,40 +63,44 @@ const CandidateDocumentUploadForm = ({
 
       startTransition(async () => {
         try {
-          let finalUrl = value.url;
-
-          // If file is provided, upload it first
+          // Prepare form data for the consolidated API route
+          const formData = new FormData();
+          formData.append("candidateId", candidateId);
+          formData.append("name", value.name);
+          if (value.description) {
+            formData.append("description", value.description);
+          }
+          formData.append("category", value.category);
           if (file) {
-            const formData = new FormData();
             formData.append("file", file);
-
-            const uploadResponse = await fetch("/api/documents/upload", {
-              method: "POST",
-              body: formData,
-            });
-
-            if (!uploadResponse.ok) {
-              const errorData = await uploadResponse.json();
-              throw new Error(errorData.error || "Failed to upload file");
-            }
-
-            const { url: fileUrl } = await uploadResponse.json();
-            finalUrl = fileUrl;
           } else if (value.url && value.url.trim() !== "") {
-            // Validate URL format if provided directly
-            try {
-              new URL(value.url);
-            } catch {
-              throw new Error("Invalid URL format");
-            }
-            finalUrl = value.url.trim();
+            formData.append("url", value.url.trim());
+          }
+          if (value.tags && value.tags.length > 0) {
+            formData.append("tags", JSON.stringify(value.tags));
           }
 
-          // Create the candidate document with the final URL
-          const result = await createCandidateDocument(candidateId, {
-            ...value,
-            url: finalUrl,
+          const response = await fetch("/api/candidate/documents/new", {
+            method: "POST",
+            body: formData,
           });
+
+          let result;
+          try {
+            result = await response.json();
+          } catch {
+            throw new Error("Failed to parse server response");
+          }
+
+          if (!response.ok) {
+            throw new Error(
+              typeof result.error === "string"
+                ? result.error
+                : typeof result.error === "object"
+                  ? JSON.stringify(result.error)
+                  : "Failed to upload document"
+            );
+          }
 
           if (result.success) {
             toast.success("Document uploaded successfully", {

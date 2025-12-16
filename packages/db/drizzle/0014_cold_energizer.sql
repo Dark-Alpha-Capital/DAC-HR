@@ -1,0 +1,1 @@
+ALTER TABLE "candidate_ai_screening" ADD COLUMN "structured_data" json;

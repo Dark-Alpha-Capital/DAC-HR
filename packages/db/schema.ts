@@ -156,6 +156,7 @@ export const candidateDocument = pgTable("candidate_document", {
     .notNull(),
   url: text("url").notNull(),
   tags: text("tags").array(),
+  fileSearchDocumentName: text("file_search_document_name"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -422,3 +423,30 @@ export const auditLog = pgTable("audit_log", {
 });
 
 export type AuditLog = InferSelectModel<typeof auditLog>;
+
+export const candidateAiScreening = pgTable("candidate_ai_screening", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  candidateId: text("candidate_id")
+    .notNull()
+    .references(() => candidate.id, { onDelete: "cascade" }),
+  positionId: text("position_id").references(() => position.id, {
+    onDelete: "set null",
+  }),
+  applicationId: text("application_id").references(() => application.id, {
+    onDelete: "set null",
+  }),
+  analysis: text("analysis").notNull(), // The full AI analysis markdown text
+  structuredData: json("structured_data"), // Structured AI analysis data: { verdict, score (0-10), explanation, fullAnalysis }
+  model: text("model").default("gemini-2.5-flash"), // Which AI model was used
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+export type CandidateAiScreening = InferSelectModel<
+  typeof candidateAiScreening
+>;

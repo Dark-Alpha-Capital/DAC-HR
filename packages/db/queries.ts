@@ -16,6 +16,7 @@ import {
   candidateOnboarding,
   employee,
   auditLog,
+  candidateAiScreening,
 } from "./schema";
 import {
   eq,
@@ -2137,5 +2138,99 @@ export const getAuditLogs = async (options: {
   } catch (error) {
     console.error("Error fetching audit logs", error);
     return { logs: [], total: 0 };
+  }
+};
+
+/**
+ * Saves an AI screening analysis result for a candidate
+ * @param params Object containing candidateId, positionId (optional), applicationId (optional), analysis text, and model name
+ * @returns The created AI screening record or null if insertion fails
+ */
+export const saveCandidateAiScreening = async (params: {
+  candidateId: string;
+  positionId?: string | null;
+  applicationId?: string | null;
+  analysis: string;
+  model?: string;
+  structuredData?: any;
+}) => {
+  try {
+    const [screening] = await db
+      .insert(candidateAiScreening)
+      .values({
+        candidateId: params.candidateId,
+        positionId: params.positionId || null,
+        applicationId: params.applicationId || null,
+        analysis: params.analysis,
+        model: params.model || "gemini-2.5-flash",
+        structuredData: params.structuredData || null,
+      })
+      .returning();
+
+    return screening;
+  } catch (error) {
+    console.error("Error saving candidate AI screening", error);
+    return null;
+  }
+};
+
+/**
+ * Fetches all AI screening results for a candidate, optionally filtered by position
+ * @param candidateId The ID of the candidate
+ * @param positionId Optional position ID to filter by
+ * @returns Array of AI screening records, ordered by most recent first
+ */
+export const getCandidateAiScreenings = async (
+  candidateId: string,
+  positionId?: string
+) => {
+  try {
+    const conditions = [eq(candidateAiScreening.candidateId, candidateId)];
+
+    if (positionId) {
+      conditions.push(eq(candidateAiScreening.positionId, positionId));
+    }
+
+    const results = await db
+      .select()
+      .from(candidateAiScreening)
+      .where(and(...conditions))
+      .orderBy(desc(candidateAiScreening.createdAt));
+
+    return results;
+  } catch (error) {
+    console.error("Error fetching candidate AI screenings", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches the most recent AI screening result for a candidate, optionally filtered by position
+ * @param candidateId The ID of the candidate
+ * @param positionId Optional position ID to filter by
+ * @returns The most recent AI screening record or null if not found
+ */
+export const getLatestCandidateAiScreening = async (
+  candidateId: string,
+  positionId?: string
+) => {
+  try {
+    const conditions = [eq(candidateAiScreening.candidateId, candidateId)];
+
+    if (positionId) {
+      conditions.push(eq(candidateAiScreening.positionId, positionId));
+    }
+
+    const [result] = await db
+      .select()
+      .from(candidateAiScreening)
+      .where(and(...conditions))
+      .orderBy(desc(candidateAiScreening.createdAt))
+      .limit(1);
+
+    return result || null;
+  } catch (error) {
+    console.error("Error fetching latest candidate AI screening", error);
+    return null;
   }
 };
