@@ -30,6 +30,7 @@ import {
 import { candidateDocumentFormSchema } from "@/lib/schemas/candidate-document-form-schema";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { authClient } from "@/auth-client";
 
 const CandidateDocumentUploadForm = ({
   candidateId,
@@ -38,6 +39,7 @@ const CandidateDocumentUploadForm = ({
 }) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const { data: session } = authClient.useSession();
   const [file, setFile] = useState<File | null>(null);
   const [tagsInput, setTagsInput] = useState<string>("");
 
@@ -61,11 +63,17 @@ const CandidateDocumentUploadForm = ({
         return;
       }
 
+      if (!session?.session?.token) {
+        toast.error("You must be logged in to upload a document", {
+          position: "bottom-right",
+        });
+        return;
+      }
+
       startTransition(async () => {
         try {
-          // Prepare form data for the consolidated API route
+          // Prepare form data for the backend endpoint
           const formData = new FormData();
-          formData.append("candidateId", candidateId);
           formData.append("name", value.name);
           if (value.description) {
             formData.append("description", value.description);
@@ -80,10 +88,16 @@ const CandidateDocumentUploadForm = ({
             formData.append("tags", JSON.stringify(value.tags));
           }
 
-          const response = await fetch("/api/candidate/documents/new", {
-            method: "POST",
-            body: formData,
-          });
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_SERVER_URL}/candidate/${candidateId}/documents`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${session.session.token}`,
+              },
+              body: formData,
+            }
+          );
 
           let result;
           try {

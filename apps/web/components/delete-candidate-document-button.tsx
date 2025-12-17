@@ -3,9 +3,9 @@
 import React, { useTransition } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Loader2, Trash2 } from "lucide-react";
-import { deleteCandidateDocument } from "@/lib/actions/delete-candidate-document";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { authClient } from "@/auth-client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,25 +27,56 @@ const DeleteCandidateDocumentButton = ({
 }) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const { data: session } = authClient.useSession();
 
   const handleDelete = () => {
+    if (!session?.session?.token) {
+      toast.error("You must be logged in to delete a document", {
+        position: "bottom-right",
+      });
+      return;
+    }
+
     startTransition(async () => {
-      const response = await deleteCandidateDocument(documentId, candidateId);
-      if (response?.error) {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_SERVER_URL}/candidate/${candidateId}/documents/${documentId}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${session.session.token}`,
+            },
+          }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          toast.error(
+            typeof result.error === "string"
+              ? result.error
+              : typeof result.error === "object"
+                ? JSON.stringify(result.error)
+                : "Failed to delete document",
+            {
+              position: "bottom-right",
+            }
+          );
+        } else {
+          toast.success("Document deleted successfully", {
+            position: "bottom-right",
+          });
+          router.refresh();
+        }
+      } catch (error) {
         toast.error(
-          typeof response.error === "string"
-            ? response.error
+          error instanceof Error
+            ? error.message
             : "Failed to delete document",
           {
             position: "bottom-right",
           }
         );
-      }
-      if (response?.success) {
-        toast.success("Document deleted successfully", {
-          position: "bottom-right",
-        });
-        router.refresh();
       }
     });
   };

@@ -3,9 +3,9 @@
 import React, { useTransition } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Loader2, Trash2 } from "lucide-react";
-import { deleteCandidate } from "@/lib/actions/delete-candidate";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { deleteCandidate } from "@/lib/actions/delete-candidate";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,22 +17,53 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog";
+import { authClient } from "@/auth-client";
+import { resetCacheForCandidates } from "@/lib/actions/reset-cache";
 
 const DeleteCandidateButton = ({ candidateId }: { candidateId: string }) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
+  const { data: userSession } = authClient.useSession();
+
   const handleDelete = () => {
+    if (!userSession?.session?.token) {
+      toast.error("You must be logged in to delete a candidate", {
+        position: "bottom-right",
+      });
+      return;
+    }
+
     startTransition(async () => {
-      const response = await deleteCandidate(candidateId);
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_SERVER_URL}/candidate/${candidateId}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${userSession?.session?.token}`,
+            },
+          }
+        );
 
-      if (response?.error) {
-        toast.error(response.error);
-      }
+        const result = await response.json();
 
-      if (response?.success) {
-        toast.success("Candidate deleted successfully");
+        if (!response.ok) {
+          throw new Error(result.error || "Failed to delete candidate");
+        }
+
+        await resetCacheForCandidates();
+        toast.success("Candidate deleted successfully", {
+          position: "bottom-right",
+        });
         router.refresh();
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Failed to delete candidate",
+          {
+            position: "bottom-right",
+          }
+        );
       }
     });
   };
@@ -40,11 +71,7 @@ const DeleteCandidateButton = ({ candidateId }: { candidateId: string }) => {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button
-          variant="destructive"
-          size="sm"
-          disabled={isPending}
-        >
+        <Button variant="destructive" size="sm" disabled={isPending}>
           <Trash2 className="h-4 w-4" />
           {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
         </Button>

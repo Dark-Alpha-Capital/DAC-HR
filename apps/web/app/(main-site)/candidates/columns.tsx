@@ -19,8 +19,8 @@ import { toast } from "sonner";
 import Link from "next/link";
 
 import { Checkbox } from "@workspace/ui/components/checkbox";
-import { deleteCandidate } from "@/lib/actions/delete-candidate";
 import { useRouter } from "next/navigation";
+import { deleteCandidate } from "@/lib/actions/delete-candidate";
 
 export type Candidate = {
   id: string;
@@ -33,6 +33,30 @@ export type Candidate = {
 
 function CandidateActions({ candidate }: { candidate: Candidate }) {
   const router = useRouter();
+
+  const handleDelete = async () => {
+    const response = await deleteCandidate(candidate.id);
+
+    if (response?.error) {
+      toast.error(
+        typeof response.error === "string"
+          ? response.error
+          : "Failed to delete candidate",
+        {
+          position: "bottom-right",
+        }
+      );
+    }
+
+    if (response?.success) {
+      toast.success("Candidate deleted successfully", {
+        position: "bottom-right",
+      });
+      // Refresh to show updated data (cache is already invalidated by updateTag)
+      router.refresh();
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -51,18 +75,7 @@ function CandidateActions({ candidate }: { candidate: Candidate }) {
         >
           View candidate
         </DropdownMenuItem>
-        <DropdownMenuItem
-          variant={"destructive"}
-          onSelect={async () => {
-            const response = await deleteCandidate(candidate.id);
-            if (response?.error) {
-              toast.error(response.error);
-            }
-            if (response?.success) {
-              toast.success("Candidate deleted successfully");
-            }
-          }}
-        >
+        <DropdownMenuItem variant={"destructive"} onSelect={handleDelete}>
           Delete candidate
         </DropdownMenuItem>
       </DropdownMenuContent>

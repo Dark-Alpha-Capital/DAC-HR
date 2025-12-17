@@ -15,6 +15,8 @@ import { Metadata } from "next";
 import { UserAuthenticated } from "@/components/auth-checks";
 import CandidatesPaginationControls from "@/components/candidates-pagination-controls";
 import { cacheLife, cacheTag } from "next/cache";
+import { auth } from "@/auth";
+import { headers } from "next/headers";
 
 export const metadata: Metadata = {
   title: "Candidates",

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@workspace/db";
-import { candidate, candidatePosition } from "@workspace/db/schema";
+import { candidate, candidatePosition, application } from "@workspace/db/schema";
 import {
   CandidateFormSchema,
   candidateFormSchema,
@@ -9,7 +9,7 @@ import {
 import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
-import { eq } from "@workspace/db";
+import { eq, and } from "@workspace/db";
 import { after } from "next/server";
 import { insertAuditLog } from "@workspace/db/queries";
 
@@ -63,18 +63,21 @@ export const updateCandidate = async (
       return { error: "Candidate not found" };
     }
 
+    // Get the current positionId before updating
+    const [existingRelation] = await db
+      .select()
+      .from(candidatePosition)
+      .where(eq(candidatePosition.candidateId, candidateId))
+      .limit(1);
+
+    const oldPositionId = existingRelation?.positionId;
+    const positionChanged = oldPositionId !== positionId;
+
     // Update the candidatePosition relationship
     if (positionId) {
-      // Check if a relationship already exists
-      const [existingRelation] = await db
-        .select()
-        .from(candidatePosition)
-        .where(eq(candidatePosition.candidateId, candidateId))
-        .limit(1);
-
       if (existingRelation) {
         // Update existing relationship if positionId changed
-        if (existingRelation.positionId !== positionId) {
+        if (positionChanged) {
           await db
             .update(candidatePosition)
             .set({
@@ -89,6 +92,67 @@ export const updateCandidate = async (
           candidateId,
           positionId,
         });
+      }
+    }
+
+    // Handle application updates when position changes
+    if (positionId) {
+      // Check if an application already exists for the new position
+      const [existingApplicationForNewPosition] = await db
+        .select()
+        .from(application)
+        .where(
+          and(
+            eq(application.candidateId, candidateId),
+            eq(application.positionId, positionId)
+          )
+        )
+        .limit(1);
+
+      if (positionChanged && oldPositionId) {
+        // Position changed - find application for old position
+        const [oldApplication] = await db
+          .select()
+          .from(application)
+          .where(
+            and(
+              eq(application.candidateId, candidateId),
+              eq(application.positionId, oldPositionId)
+            )
+          )
+          .limit(1);
+
+        if (oldApplication) {
+          // Application exists for old position
+          if (!existingApplicationForNewPosition) {
+            // No application for new position - update old one to point to new position
+            await db
+              .update(application)
+              .set({
+                positionId,
+                updatedAt: new Date(),
+              })
+              .where(eq(application.id, oldApplication.id));
+          }
+          // If application already exists for new position, leave both as is
+          // (candidate can have applications for multiple positions)
+        } else if (!existingApplicationForNewPosition) {
+          // No application for old position and none for new position - create one
+          await db.insert(application).values({
+            candidateId,
+            positionId,
+            status: "pending",
+          });
+        }
+      } else if (!oldPositionId) {
+        // Position is being set for the first time - create application if it doesn't exist
+        if (!existingApplicationForNewPosition) {
+          await db.insert(application).values({
+            candidateId,
+            positionId,
+            status: "pending",
+          });
+        }
       }
     }
 

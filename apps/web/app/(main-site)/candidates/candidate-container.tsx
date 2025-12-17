@@ -22,7 +22,6 @@ import DeleteCandidateButton from "@/components/delete-candidate-button";
 import { Card, CardContent } from "@workspace/ui/components/card";
 import { Badge } from "@workspace/ui/components/badge";
 import type { Candidate } from "@workspace/db/schema";
-
 const applicationStatusColors: Record<
   string,
   "default" | "secondary" | "outline" | "destructive"

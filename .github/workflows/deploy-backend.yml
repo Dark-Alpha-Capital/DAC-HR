@@ -71,5 +71,5 @@ jobs:
               --platform managed \
               --region ${{ env.REGION }} \
               --allow-unauthenticated \
-              --set-env-vars "DATABASE_URL=${{ secrets.DATABASE_URL }}, GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY}},BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }},NODE_ENV=production" \
+              --set-env-vars "DATABASE_URL=${{ secrets.DATABASE_URL }}, GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY}}, GCS_CLIENT_EMAIL=${{ secrets.GCS_CLIENT_EMAIL }}, GCS_PRIVATE_KEY=${{ secrets.GCS_PRIVATE_KEY }}, GCLOUD_BUCKET=${{ secrets.GCLOUD_BUCKET }}, GCLOUD_PROJECT_ID=${{ secrets.GCLOUD_PROJECT_ID }},BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }},NODE_ENV=production" \
               --timeout=900s

@@ -1,16 +1,16 @@
 "use server";
 
-import { db } from "@workspace/db";
-import { candidate } from "@workspace/db/schema";
-import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
-import { eq } from "@workspace/db";
-import { after } from "next/server";
-import { insertAuditLog } from "@workspace/db/queries";
-import { getCandidateById } from "@workspace/db/queries";
+import { updateTag } from "next/cache";
+import { db, eq, desc } from "@workspace/db";
+import { session as sessionsTable } from "@workspace/db/schema";
 
-export const deleteCandidate = async (id: string) => {
+/**
+ * Server Action to delete a candidate
+ * Calls the backend API and invalidates Next.js cache tags
+ */
+export async function deleteCandidate(candidateId: string) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -20,53 +20,34 @@ export const deleteCandidate = async (id: string) => {
   }
 
   try {
-    // Get candidate data before deletion for audit log
-    const candidateData = await getCandidateById(id);
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_SERVER_URL}/candidate/${candidateId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${session.session.token}`,
+        },
+      }
+    );
 
-    await db.delete(candidate).where(eq(candidate.id, id));
+    const result = await response.json();
 
-    updateTag("candidates");
-    updateTag(`candidate-applications-${id}`);
-    revalidatePath("/candidates");
-
-    if (candidateData) {
-      after(async () => {
-        await insertAuditLog({
-          userId: session.user.id,
-          action: "delete_candidate",
-          entityType: "candidate",
-          entityId: id,
-          details: {
-            candidate: {
-              id: candidateData.id,
-              firstName: candidateData.firstName,
-              lastName: candidateData.lastName,
-              email: candidateData.email,
-              phone: candidateData.phone,
-              location: candidateData.location,
-              source: candidateData.source,
-              sourceUrl: candidateData.sourceUrl,
-              note: candidateData.note,
-            },
-            deletedBy: {
-              id: session.user.id,
-              email: session.user.email,
-              name: session.user.name,
-            },
-            metadata: {
-              timestamp: new Date().toISOString(),
-            },
-          },
-        });
-      });
+    if (!response.ok) {
+      throw new Error(result.error || "Failed to delete candidate");
     }
+
+    // Invalidate cache tags immediately after successful deletion
+    // This ensures the UI reflects the change right away
+    updateTag("candidates"); // Invalidate the candidates list
+    updateTag(`candidate-${candidateId}`); // Invalidate individual candidate page
+    updateTag(`candidate-applications-${candidateId}`); // Invalidate candidate applications
 
     return { success: true };
   } catch (error) {
-    if (error instanceof Error) {
-      return { error: error.message };
-    }
-
-    return { error: "Failed to delete candidate" };
+    console.error("Error deleting candidate:", error);
+    return {
+      error:
+        error instanceof Error ? error.message : "Failed to delete candidate",
+    };
   }
-};
+}

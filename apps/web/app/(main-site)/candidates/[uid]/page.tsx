@@ -210,11 +210,6 @@ async function CachedCandidatePageContent({
               <CachedDocumentsCount uid={uid} />
             </Suspense>
           </TabsTrigger>
-          <TabsTrigger value="onboarding">
-            <ClipboardCheck className="h-4 w-4 mr-2" />
-            Onboarding
-          </TabsTrigger>
-
           <TabsTrigger value="ai-screenings">
             <Sparkles className="h-4 w-4 mr-2" />
             AI Screenings
@@ -225,6 +220,10 @@ async function CachedCandidatePageContent({
           <TabsTrigger value="ai-analysis">
             <Sparkles className="h-4 w-4 mr-2" />
             Do AI Analysis
+          </TabsTrigger>
+          <TabsTrigger value="onboarding">
+            <ClipboardCheck className="h-4 w-4 mr-2" />
+            Onboarding
           </TabsTrigger>
         </TabsList>
 
@@ -246,12 +245,6 @@ async function CachedCandidatePageContent({
           </Suspense>
         </TabsContent>
 
-        <TabsContent value="onboarding" className="mt-6">
-          <Suspense fallback={<SectionSkeleton />}>
-            <CandidateOnboardingSection uid={uid} />
-          </Suspense>
-        </TabsContent>
-
         <TabsContent value="ai-screenings" className="mt-6">
           <Suspense fallback={<SectionSkeleton />}>
             <CandidateAiScreeningsTab
@@ -267,6 +260,11 @@ async function CachedCandidatePageContent({
               positionId={candidate.applications[0]?.position.id ?? ""}
               session={session}
             />
+          </Suspense>
+        </TabsContent>
+        <TabsContent value="onboarding" className="mt-6">
+          <Suspense fallback={<SectionSkeleton />}>
+            <CandidateOnboardingSection uid={uid} />
           </Suspense>
         </TabsContent>
       </CandidateTabsClient>
@@ -508,93 +506,108 @@ const ApplicationsTab = ({
           <p className="text-sm">No applications found for this candidate.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {candidate.applications.map((app) => (
-            <div
+            <Card
               key={app.id}
-              className="border rounded-md p-4 transition-colors"
+              className="flex flex-col transition-colors hover:shadow-md"
             >
-              <div className="flex items-start justify-between gap-3 mb-2">
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-sm mb-1 truncate">
-                    {app.position.name}
-                  </h4>
-                  {app.position.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-1">
-                      {app.position.description}
-                    </p>
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-base mb-2 line-clamp-2">
+                      {app.position.name}
+                    </CardTitle>
+                  </div>
+                  <InlineApplicationStatusEditor
+                    application={{ id: app.id, status: app.status }}
+                  />
+                </div>
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col space-y-4">
+                {app.position.description && (
+                  <div className="flex-1">
+                    <h5 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
+                      Job Description
+                    </h5>
+                    <div
+                      className="text-sm text-muted-foreground line-clamp-6 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4 [&_li]:mb-1"
+                      dangerouslySetInnerHTML={{
+                        __html: app.position.description,
+                      }}
+                    />
+                  </div>
+                )}
+                <div className="space-y-3 pt-3 border-t">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                    <Calendar className="h-3 w-3 shrink-0" />
+                    <span>Applied {formatDate(app.createdAt)}</span>
+                  </div>
+                  {app.personality && (
+                    <div>
+                      <Badge variant="outline" className="text-xs">
+                        Personality: {app.personality}
+                      </Badge>
+                    </div>
                   )}
-                </div>
-                <InlineApplicationStatusEditor
-                  application={{ id: app.id, status: app.status }}
-                />
-              </div>
-              <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3 flex-wrap">
-                <span>{formatDate(app.createdAt)}</span>
-                {app.personality && (
-                  <Badge variant="outline" className="text-xs">
-                    Personality: {app.personality}
-                  </Badge>
-                )}
-                <div className="flex items-center gap-1 ml-auto">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2"
-                    asChild
-                  >
-                    <Link href={`/applications/${app.id}`}>
-                      <Eye className="h-3 w-3 mr-1" />
-                      View
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-              <div className="pt-3 border-t space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                    <Users className="h-3 w-3" />
-                    <span>Interviews ({app.interviews?.length || 0})</span>
-                  </div>
-                </div>
-                {app.interviews && app.interviews.length > 0 && (
-                  <div className="space-y-1.5">
-                    {app.interviews.map((interview) => (
-                      <div
-                        key={interview.id}
-                        className="flex items-center justify-between text-xs p-2 rounded-md hover:bg-accent/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          {getInterviewStatusIcon(interview.status)}
-                          <span className="truncate">
-                            {interview.roundTemplate.name}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          {interview.scheduledAt && (
-                            <span className="text-muted-foreground">
-                              {formatDate(interview.scheduledAt)}
-                            </span>
-                          )}
-                          <Badge
-                            variant={
-                              interviewStatusColors[interview.status] ||
-                              "outline"
-                            }
-                            className="text-xs h-5"
+                  <div className="pt-2 space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                      <Users className="h-3 w-3" />
+                      <span>Interviews ({app.interviews?.length || 0})</span>
+                    </div>
+                    {app.interviews && app.interviews.length > 0 && (
+                      <div className="space-y-1.5 pl-5">
+                        {app.interviews.map((interview) => (
+                          <div
+                            key={interview.id}
+                            className="flex items-center justify-between text-xs p-2 rounded-md hover:bg-accent/50 transition-colors"
                           >
-                            {interview.status === "move_forward"
-                              ? "Move Forward"
-                              : interview.status.charAt(0).toUpperCase() +
-                                interview.status.slice(1)}
-                          </Badge>
-                        </div>
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              {getInterviewStatusIcon(interview.status)}
+                              <span className="truncate">
+                                {interview.roundTemplate.name}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {interview.scheduledAt && (
+                                <span className="text-muted-foreground text-[10px]">
+                                  {formatDate(interview.scheduledAt)}
+                                </span>
+                              )}
+                              <Badge
+                                variant={
+                                  interviewStatusColors[interview.status] ||
+                                  "outline"
+                                }
+                                className="text-xs h-4 px-1.5"
+                              >
+                                {interview.status === "move_forward"
+                                  ? "Move Forward"
+                                  : interview.status.charAt(0).toUpperCase() +
+                                    interview.status.slice(1)}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
-                )}
-              </div>
-            </div>
+                  <div className="pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      asChild
+                    >
+                      <Link href={`/applications/${app.id}`}>
+                        <Eye className="h-3 w-3 mr-2" />
+                        View Application
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}

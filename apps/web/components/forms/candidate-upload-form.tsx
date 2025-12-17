@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useTransition } from "react";
+import { useTransition, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import { useSearchParams } from "next/navigation"; // Add this import
@@ -36,16 +36,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
-import { createCandidate } from "@/lib/actions/create-candidate";
 import LocationInputField from "@/components/location-input-field";
+import { authClient } from "@/auth-client";
+import { Session } from "better-auth";
+import { resetCacheForCandidates } from "@/lib/actions/reset-cache";
 
 const CandidateUploadForm = ({
   positions,
+  userSession,
 }: {
   positions: {
     id: string;
     name: string;
   }[];
+  userSession: Session;
 }) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -53,6 +57,7 @@ const CandidateUploadForm = ({
   const [selectedSource, setSelectedSource] = React.useState<
     "LinkedIn" | "Upwork" | "Handshake" | "Indeed" | undefined
   >(undefined);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
 
   // Get the pre-selected position from URL params
   const preSelectedPositionId = searchParams.get("position");
@@ -85,34 +90,146 @@ const CandidateUploadForm = ({
       onSubmit: candidateFormSchema,
     },
     onSubmit: async ({ value }) => {
-      startTransition(async () => {
-        const result = await createCandidate({
-          ...value,
-          positionId: value.positionId || "",
+      if (!userSession) {
+        toast.error("You must be logged in to create a candidate", {
+          position: "bottom-right",
         });
-        if (result.error) {
+        return;
+      }
+
+      startTransition(async () => {
+        try {
+          // First, create the candidate
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_SERVER_URL}/candidate`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${userSession.token}`,
+              },
+              body: JSON.stringify({
+                ...value,
+                positionId: value.positionId || "",
+              }),
+            }
+          );
+
+          const result = await response.json();
+
+          if (!response.ok) {
+            toast.error(
+              typeof result.error === "string"
+                ? result.error
+                : typeof result.error === "object"
+                  ? JSON.stringify(result.error)
+                  : "Failed to create candidate",
+              {
+                position: "bottom-right",
+              }
+            );
+            return;
+          }
+
+          const candidateId = result.data?.id;
+
+          if (!candidateId) {
+            toast.error("Candidate created but no ID returned", {
+              position: "bottom-right",
+            });
+            return;
+          }
+
+          // If resume file was uploaded, upload it as a document
+          if (resumeFile) {
+            try {
+              const formData = new FormData();
+              formData.append("file", resumeFile);
+              formData.append("name", resumeFile.name || "Resume");
+              formData.append("category", "resume");
+              formData.append(
+                "description",
+                "Resume uploaded during candidate creation"
+              );
+
+              const documentResponse = await fetch(
+                `${process.env.NEXT_PUBLIC_SERVER_URL}/candidate/${candidateId}/documents`,
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${userSession.token}`,
+                  },
+                  body: formData,
+                }
+              );
+
+              const documentResult = await documentResponse.json();
+
+              if (!documentResponse.ok) {
+                console.error("Failed to upload resume:", documentResult);
+                toast.warning("Candidate created but resume upload failed", {
+                  position: "bottom-right",
+                  description:
+                    typeof documentResult.error === "string"
+                      ? documentResult.error
+                      : "The resume could not be uploaded. You can add it later.",
+                });
+              } else {
+                toast.success("Candidate and resume created successfully", {
+                  position: "bottom-right",
+                  description:
+                    "The candidate and resume have been created successfully.",
+                  action: {
+                    label: "View Candidate",
+                    onClick: () => {
+                      router.push(`/candidates/${candidateId}`);
+                    },
+                  },
+                });
+              }
+            } catch (documentError) {
+              console.error("Error uploading resume:", documentError);
+              toast.warning("Candidate created but resume upload failed", {
+                position: "bottom-right",
+                description:
+                  "The resume could not be uploaded. You can add it later.",
+              });
+            }
+          } else {
+            toast.success("Candidate created successfully", {
+              position: "bottom-right",
+              description: "The candidate has been created successfully.",
+              action: {
+                label: "View Candidate",
+                onClick: () => {
+                  router.push(`/candidates/${candidateId}`);
+                },
+              },
+            });
+          }
+
+          await resetCacheForCandidates();
+
+          form.reset();
+          setSelectedSource(undefined);
+          setResumeFile(null);
+          // Clear file input
+          const fileInput = document.getElementById(
+            "resume-upload"
+          ) as HTMLInputElement;
+          if (fileInput) {
+            fileInput.value = "";
+          }
+          router.push(`/candidates`);
+        } catch (error) {
           toast.error(
-            typeof result.error === "string"
-              ? result.error
+            error instanceof Error
+              ? error.message
               : "Failed to create candidate",
             {
               position: "bottom-right",
             }
           );
-        } else {
-          toast.success("Candidate created successfully", {
-            position: "bottom-right",
-            description: "The candidate has been created successfully.",
-            action: {
-              label: "View Candidate",
-              onClick: () => {
-                router.push(`/candidates/${result.data?.id}`);
-              },
-            },
-          });
-          form.reset();
-          setSelectedSource(undefined);
-          router.push(`/candidates`);
         }
       });
     },
@@ -136,6 +253,14 @@ const CandidateUploadForm = ({
             onClick={() => {
               form.reset();
               setSelectedSource(undefined);
+              setResumeFile(null);
+              // Clear file input
+              const fileInput = document.getElementById(
+                "resume-upload"
+              ) as HTMLInputElement;
+              if (fileInput) {
+                fileInput.value = "";
+              }
             }}
             disabled={isPending}
           >
@@ -434,6 +559,73 @@ const CandidateUploadForm = ({
               );
             }}
           />
+
+          <Field>
+            <FieldLabel htmlFor="resume-upload">Resume (Optional)</FieldLabel>
+            <div className="space-y-2">
+              <Input
+                id="resume-upload"
+                type="file"
+                onChange={(e) => {
+                  const selectedFile = e.target.files?.[0];
+                  if (selectedFile) {
+                    // Validate file size (max 500MB)
+                    const maxSize = 500 * 1024 * 1024; // 500MB
+                    if (selectedFile.size > maxSize) {
+                      toast.error("File size exceeds 500MB limit", {
+                        position: "bottom-right",
+                      });
+                      e.target.value = "";
+                      return;
+                    }
+
+                    // Block video file types
+                    const videoTypes = [
+                      "video/mp4",
+                      "video/mpeg",
+                      "video/quicktime",
+                      "video/x-msvideo",
+                      "video/x-ms-wmv",
+                      "video/webm",
+                      "video/ogg",
+                      "video/x-matroska",
+                      "video/3gpp",
+                      "video/x-flv",
+                    ];
+
+                    if (videoTypes.includes(selectedFile.type)) {
+                      toast.error(
+                        "Video files are not allowed. Please upload other file types.",
+                        {
+                          position: "bottom-right",
+                        }
+                      );
+                      e.target.value = "";
+                      return;
+                    }
+
+                    setResumeFile(selectedFile);
+                  } else {
+                    setResumeFile(null);
+                  }
+                }}
+                className="cursor-pointer"
+              />
+              <FieldDescription>
+                Upload the candidate's resume (max 500MB). All file types
+                accepted except videos.
+              </FieldDescription>
+              {resumeFile && (
+                <p className="text-sm text-muted-foreground">
+                  Selected: {resumeFile.name} (
+                  {resumeFile.size > 1024 * 1024
+                    ? `${(resumeFile.size / (1024 * 1024)).toFixed(2)} MB`
+                    : `${(resumeFile.size / 1024).toFixed(2)} KB`}
+                  )
+                </p>
+              )}
+            </div>
+          </Field>
 
           <form.Field
             name="note"
