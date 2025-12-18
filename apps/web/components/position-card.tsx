@@ -80,17 +80,7 @@ const PositionCard = ({
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        {positionDescription ? (
-          <p className="text-sm text-muted-foreground line-clamp-3">
-            {positionDescription}
-          </p>
-        ) : (
-          <p className="text-sm text-muted-foreground italic">
-            No description provided
-          </p>
-        )}
-      </CardContent>
+
       <CardFooter className="border-t">
         <div className="flex gap-2 w-full">
           <Button variant="outline" size="sm" asChild>
