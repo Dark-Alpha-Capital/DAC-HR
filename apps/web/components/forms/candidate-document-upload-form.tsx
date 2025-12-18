@@ -31,6 +31,7 @@ import { candidateDocumentFormSchema } from "@/lib/schemas/candidate-document-fo
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/auth-client";
+import { resetCacheForCandidateDocuments } from "@/lib/actions/reset-cache";
 
 const CandidateDocumentUploadForm = ({
   candidateId,
@@ -48,16 +49,15 @@ const CandidateDocumentUploadForm = ({
       name: "",
       description: "",
       category: "other" as "resume" | "cover-letter" | "portfolio" | "other",
-      url: "",
       tags: [] as string[],
     },
     validators: {
       onSubmit: candidateDocumentFormSchema,
     },
     onSubmit: async ({ value }) => {
-      // Validate that either file or URL is provided
-      if (!file && (!value.url || value.url.trim() === "")) {
-        toast.error("Please either upload a file or provide a document URL", {
+      // Validate that file is provided
+      if (!file) {
+        toast.error("Please upload a file", {
           position: "bottom-right",
         });
         return;
@@ -79,11 +79,7 @@ const CandidateDocumentUploadForm = ({
             formData.append("description", value.description);
           }
           formData.append("category", value.category);
-          if (file) {
-            formData.append("file", file);
-          } else if (value.url && value.url.trim() !== "") {
-            formData.append("url", value.url.trim());
-          }
+          formData.append("file", file);
           if (value.tags && value.tags.length > 0) {
             formData.append("tags", JSON.stringify(value.tags));
           }
@@ -126,6 +122,7 @@ const CandidateDocumentUploadForm = ({
                 },
               },
             });
+            await resetCacheForCandidateDocuments(candidateId);
             form.reset();
             setFile(null);
             setTagsInput("");
@@ -166,26 +163,9 @@ const CandidateDocumentUploadForm = ({
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       setFile(selectedFile);
-      // Clear URL when file is selected
-      form.setFieldValue("url", "");
       // Auto-fill name if empty
       if (!form.state.values.name) {
         form.setFieldValue("name", selectedFile.name);
-      }
-    }
-  };
-
-  const handleUrlChange = (value: string) => {
-    form.setFieldValue("url", value);
-    // Clear file when URL is entered
-    if (value.trim() !== "") {
-      setFile(null);
-      // Clear file input
-      const fileInput = document.getElementById(
-        "file-upload"
-      ) as HTMLInputElement;
-      if (fileInput) {
-        fileInput.value = "";
       }
     }
   };
@@ -219,8 +199,7 @@ const CandidateDocumentUploadForm = ({
             Upload Candidate Document
           </h2>
           <p className="text-sm text-muted-foreground">
-            Upload a file or provide a document URL, then fill in the details
-            below.
+            Upload a file and fill in the details below.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -268,73 +247,31 @@ const CandidateDocumentUploadForm = ({
         className="space-y-6"
       >
         <FieldGroup>
-          <form.Field
-            name="url"
-            children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
-              return (
-                <Field data-invalid={isInvalid}>
-                  <FieldLabel htmlFor="file-upload">Document Source</FieldLabel>
-                  <div className="rounded-lg border p-4">
-                    <div className="space-y-2.5">
-                      <Input
-                        id="file-upload"
-                        type="file"
-                        onChange={handleFileChange}
-                        className="cursor-pointer"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        All file types accepted except videos (max 500MB)
-                      </p>
-                      {file && (
-                        <p className="text-sm text-muted-foreground">
-                          Selected: {file.name} (
-                          {file.size > 1024 * 1024
-                            ? `${(file.size / (1024 * 1024)).toFixed(2)} MB`
-                            : `${(file.size / 1024).toFixed(2)} KB`}
-                          )
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="relative my-3">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                      </div>
-                      <div className="relative flex justify-center text-xs">
-                        <span className="bg-muted/30 px-2 text-muted-foreground">
-                          Or
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Input
-                        id="document-url"
-                        name={field.name}
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => handleUrlChange(e.target.value)}
-                        aria-invalid={isInvalid}
-                        placeholder="https://example.com/document.pdf"
-                        type="url"
-                        autoComplete="off"
-                        disabled={!!file}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Enter a direct URL to the document (file upload will be
-                        cleared)
-                      </p>
-                      {isInvalid && (
-                        <FieldError errors={field.state.meta.errors} />
-                      )}
-                    </div>
-                  </div>
-                </Field>
-              );
-            }}
-          />
+          <Field>
+            <FieldLabel htmlFor="file-upload">Document File</FieldLabel>
+            <div className="rounded-lg border p-4">
+              <div className="space-y-2.5">
+                <Input
+                  id="file-upload"
+                  type="file"
+                  onChange={handleFileChange}
+                  className="cursor-pointer"
+                />
+                <p className="text-xs text-muted-foreground">
+                  All file types accepted except videos (max 500MB)
+                </p>
+                {file && (
+                  <p className="text-sm text-muted-foreground">
+                    Selected: {file.name} (
+                    {file.size > 1024 * 1024
+                      ? `${(file.size / (1024 * 1024)).toFixed(2)} MB`
+                      : `${(file.size / 1024).toFixed(2)} KB`}
+                    )
+                  </p>
+                )}
+              </div>
+            </div>
+          </Field>
           <form.Field
             name="name"
             children={(field) => {

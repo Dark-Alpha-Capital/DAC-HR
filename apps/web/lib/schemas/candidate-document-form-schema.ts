@@ -9,12 +9,6 @@ export const candidateDocumentFormSchema = z.object({
     .string()
     .max(1000, "Description must be at most 1000 characters."),
   category: z.enum(["resume", "cover-letter", "portfolio", "other"]),
-  url: z
-    .string()
-    .refine(
-      (val) => val === "" || z.string().url().safeParse(val).success,
-      "Invalid URL format."
-    ),
   tags: z.array(z.string()),
 });
 

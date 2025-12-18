@@ -16,6 +16,8 @@ export default async function CandidateAiScreeningsTab({
     positionId || undefined
   );
 
+  console.log(screenings);
+
   return (
     <CandidateAiScreeningsClient
       screenings={screenings}

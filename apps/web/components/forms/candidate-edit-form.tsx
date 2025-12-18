@@ -73,7 +73,13 @@ const CandidateEditForm = ({
       positionId: candidate.positionId || positions[0]?.id || "",
     },
     validators: {
-      onSubmit: candidateFormSchema,
+      onSubmit: ({ value }) => {
+        const result = candidateFormSchema.safeParse(value);
+        if (!result.success) {
+          return result.error.format();
+        }
+        return undefined;
+      },
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {

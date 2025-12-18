@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useTransition } from "react";
 import {
   Card,
   CardContent,
@@ -9,16 +9,47 @@ import {
 } from "@workspace/ui/components/card";
 import { Badge } from "@workspace/ui/components/badge";
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
+import { Button } from "@workspace/ui/components/button";
+import { Textarea } from "@workspace/ui/components/textarea";
+import { Label } from "@workspace/ui/components/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@workspace/ui/components/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@workspace/ui/components/alert-dialog";
 import {
   Sparkles,
   Clock,
   CheckCircle2,
   XCircle,
   AlertCircle,
+  Trash2,
+  Pencil,
+  Loader2,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import type { CandidateAiScreening } from "@workspace/db/schema";
+import { deleteAiScreening } from "@/lib/actions/delete-ai-screening";
+import {
+  updateAiScreening,
+  type UpdateAiScreeningInput,
+} from "@/lib/actions/update-ai-screening";
 
 // Type for structured data
 type StructuredScreeningData = {
@@ -80,6 +111,12 @@ export default function CandidateAiScreeningsClient({
   screenings,
   positionId,
 }: CandidateAiScreeningsClientProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editAnalysis, setEditAnalysis] = useState("");
+
   // Convert date strings to Date objects if needed (Next.js serializes dates)
   const screeningsWithDates = screenings.map((s) => ({
     ...s,
@@ -96,6 +133,11 @@ export default function CandidateAiScreeningsClient({
         : null
     );
 
+  const candidateId =
+    screeningsWithDates.length > 0 && screeningsWithDates[0]
+      ? screeningsWithDates[0].candidateId
+      : null;
+
   const handleSelectScreening = (screening: CandidateAiScreening) => {
     setSelectedScreening({
       ...screening,
@@ -107,6 +149,100 @@ export default function CandidateAiScreeningsClient({
         screening.updatedAt instanceof Date
           ? screening.updatedAt
           : new Date(screening.updatedAt),
+    });
+  };
+
+  const handleDeleteClick = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!selectedScreening || !candidateId) return;
+
+    startTransition(async () => {
+      const result = await deleteAiScreening(selectedScreening.id, candidateId);
+
+      if (result.error) {
+        toast.error(result.error, {
+          position: "bottom-right",
+        });
+      } else {
+        toast.success("AI screening deleted successfully", {
+          position: "bottom-right",
+        });
+        setDeleteDialogOpen(false);
+
+        // Remove deleted screening from list and select next one
+        const remainingScreenings = screeningsWithDates.filter(
+          (s) => s.id !== selectedScreening.id
+        );
+
+        if (remainingScreenings.length > 0) {
+          setSelectedScreening(remainingScreenings[0] as CandidateAiScreening);
+        } else {
+          setSelectedScreening(null);
+        }
+
+        router.refresh();
+      }
+    });
+  };
+
+  const handleEditClick = () => {
+    if (!selectedScreening) return;
+    setEditAnalysis(selectedScreening.analysis);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSave = () => {
+    if (!selectedScreening || !candidateId) return;
+
+    if (!editAnalysis.trim()) {
+      toast.error("Analysis cannot be empty", {
+        position: "bottom-right",
+      });
+      return;
+    }
+
+    startTransition(async () => {
+      const structuredData = getStructuredData(selectedScreening);
+
+      const updateData: UpdateAiScreeningInput = {
+        screeningId: selectedScreening.id,
+        candidateId,
+        analysis: editAnalysis.trim(),
+        structuredData: structuredData || null,
+      };
+
+      const result = await updateAiScreening(updateData);
+
+      if (result.error) {
+        toast.error(result.error, {
+          position: "bottom-right",
+        });
+      } else {
+        toast.success("AI screening updated successfully", {
+          position: "bottom-right",
+        });
+        setEditDialogOpen(false);
+
+        // Update the selected screening with new data
+        if (result.data) {
+          setSelectedScreening({
+            ...result.data,
+            createdAt:
+              result.data.createdAt instanceof Date
+                ? result.data.createdAt
+                : new Date(result.data.createdAt),
+            updatedAt:
+              result.data.updatedAt instanceof Date
+                ? result.data.updatedAt
+                : new Date(result.data.updatedAt),
+          });
+        }
+
+        router.refresh();
+      }
     });
   };
 
@@ -226,7 +362,31 @@ export default function CandidateAiScreeningsClient({
             <div className="space-y-6">
               <Card className="flex flex-col h-[600px]">
                 <CardHeader className="shrink-0">
-                  <CardTitle className="text-base">Screening Details</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">
+                      Screening Details
+                    </CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleEditClick}
+                        disabled={isPending}
+                      >
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleDeleteClick}
+                        disabled={isPending}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent className="flex-1 overflow-hidden p-6">
                   <ScrollArea className="h-full">
@@ -272,6 +432,84 @@ export default function CandidateAiScreeningsClient({
           )}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete AI Screening?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete this AI
+              screening from the candidate's record.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isPending}
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Edit AI Screening</DialogTitle>
+            <DialogDescription>
+              Update the analysis text for this AI screening. You can edit the
+              markdown content below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+            <div className="space-y-2 flex-1 flex flex-col min-h-0">
+              <Label htmlFor="edit-analysis">Analysis</Label>
+              <Textarea
+                id="edit-analysis"
+                value={editAnalysis}
+                onChange={(e) => setEditAnalysis(e.target.value)}
+                placeholder="Enter the AI analysis..."
+                className="flex-1 min-h-[400px] resize-none font-mono text-sm"
+                disabled={isPending}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEditDialogOpen(false)}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleEditSave} disabled={isPending}>
+              {isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

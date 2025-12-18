@@ -30,6 +30,8 @@ export async function deleteCandidate(candidateId: string) {
       }
     );
 
+    console.log("response", response);
+
     const result = await response.json();
 
     if (!response.ok) {
@@ -45,6 +47,7 @@ export async function deleteCandidate(candidateId: string) {
     return { success: true };
   } catch (error) {
     console.error("Error deleting candidate:", error);
+
     return {
       error:
         error instanceof Error ? error.message : "Failed to delete candidate",

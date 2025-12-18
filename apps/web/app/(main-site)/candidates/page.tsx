@@ -17,6 +17,7 @@ import CandidatesPaginationControls from "@/components/candidates-pagination-con
 import { cacheLife, cacheTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
+import BulkUploadCandidatesDialog from "@/components/bulk-upload-candidates-dialog";
 
 export const metadata: Metadata = {
   title: "Candidates",
@@ -34,9 +35,12 @@ const page = async ({ searchParams }: { searchParams: SearchParams }) => {
 
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Candidates</h1>
-        <Button asChild>
-          <Link href="/candidates/new">New Candidate</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <BulkUploadCandidatesDialog />
+          <Button asChild>
+            <Link href="/candidates/new">New Candidate</Link>
+          </Button>
+        </div>
       </div>
 
       <Suspense>

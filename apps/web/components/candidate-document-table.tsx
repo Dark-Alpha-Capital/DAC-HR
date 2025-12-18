@@ -205,13 +205,7 @@ const CandidateDocumentTableRow = ({
               <Download className="h-3.5 w-3.5" />
             )}
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
-            <Link
-              href={`/candidates/${candidateId}/documents/${document.id}/edit`}
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </Link>
-          </Button>
+
           <DeleteCandidateDocumentButton
             documentId={document.id}
             candidateId={candidateId}

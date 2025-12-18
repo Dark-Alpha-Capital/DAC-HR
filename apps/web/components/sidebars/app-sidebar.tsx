@@ -35,7 +35,7 @@ import { SidebarUserNav } from "../sidebar-user-nav";
 
 // Recruiting links (available to all users)
 const recruitingLinks = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/candidates", label: "Candidates", icon: Users },
   { href: "/applications", label: "Applications", icon: FileText },
   { href: "/documents", label: "Documents", icon: Folders },

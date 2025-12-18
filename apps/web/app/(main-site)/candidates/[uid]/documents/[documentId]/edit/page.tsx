@@ -3,17 +3,18 @@ import React, { Suspense } from "react";
 import BackButton from "@/components/back-button";
 import CandidateDocumentEditForm from "@/components/forms/candidate-document-edit-form";
 import { getDocumentsByCandidateId } from "@workspace/db/queries";
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 
 type Params = Promise<{ uid: string; documentId: string }>;
 
-const EditCandidateDocumentPage = async ({
-  params,
-}: {
-  params: Params;
-}) => {
+const EditCandidateDocumentPage = async ({ params }: { params: Params }) => {
   return (
     <div className="block-space narrow-container mx-auto">
       <BackButton />
@@ -53,8 +54,7 @@ const DisplayEditForm = async ({ params }: { params: Params }) => {
 
   return (
     <div>
-      <CandidateDocumentEditForm document={document} candidateId={uid} />
+      <CandidateDocumentEditForm />
     </div>
   );
 };
-
