@@ -100,7 +100,7 @@ const siteLinks = [
     icon: User,
     description: "View and manage your profile",
   },
-] as const;
+];
 
 export default function DashboardPage() {
   return (
@@ -118,22 +118,21 @@ export default function DashboardPage() {
         {siteLinks.map((link) => {
           const Icon = link.icon;
           return (
-            <Card
-              key={link.href}
-              className="flex flex-col hover:shadow-lg transition-shadow"
-            >
-              <CardHeader>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <Icon className="h-6 w-6 text-primary" />
+            <Link key={link.href} href={{ pathname: link.href }}>
+              <Card className="flex flex-col hover:shadow-lg transition-shadow cursor-pointer h-full">
+                <CardHeader>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <Icon className="h-6 w-6 text-primary" />
+                    </div>
+                    <CardTitle className="text-2xl">{link.label}</CardTitle>
                   </div>
-                  <CardTitle className="text-2xl">{link.label}</CardTitle>
-                </div>
-                <CardDescription className="text-base">
-                  {link.description}
-                </CardDescription>
-              </CardHeader>
-            </Card>
+                  <CardDescription className="text-base">
+                    {link.description}
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
           );
         })}
       </div>

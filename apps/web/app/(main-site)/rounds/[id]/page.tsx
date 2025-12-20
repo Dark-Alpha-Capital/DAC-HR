@@ -202,7 +202,7 @@ const DisplayRound = async ({ params }: { params: Params }) => {
                 asChild
                 className="h-auto py-1.5"
               >
-                <Link href={`/positions/${pos.id}`}>{pos.name}</Link>
+                <Link href={`/positions/${pos.slug}`}>{pos.name}</Link>
               </Button>
             ))}
           </div>
