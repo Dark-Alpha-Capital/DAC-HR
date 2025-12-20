@@ -1,6 +1,6 @@
 import React, { Suspense } from "react";
 import { Metadata } from "next";
-import { getDocuments } from "@workspace/db/queries";
+import { getDocuments, getDocumentCategories } from "@workspace/db/queries";
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import DocumentContainer from "./document-container";
@@ -9,6 +9,13 @@ import FilterDocumentCategory from "@/components/filter-document-category";
 import FilterDocumentName from "@/components/filter-document-name";
 import FilterDocumentTags from "@/components/filter-document-tags";
 import ClearDocumentFiltersButton from "@/components/clear-document-filters-button";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@workspace/ui/components/tabs";
+import DocumentCategoriesManager from "@/components/document-categories-manager";
 import { cacheLife, cacheTag } from "next/cache";
 
 export const metadata: Metadata = {
@@ -36,13 +43,28 @@ const DocumentsPage = async ({
         </Button>
       </div>
 
-      <Suspense>
-        <PresentFilters />
-      </Suspense>
+      <Tabs defaultValue="documents" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="categories">Categories</TabsTrigger>
+        </TabsList>
 
-      <Suspense fallback={<div>Loading...</div>}>
-        <PresentDocumentsWrapper searchParams={searchParams} />
-      </Suspense>
+        <TabsContent value="documents" className="space-y-6">
+          <Suspense>
+            <PresentFilters />
+          </Suspense>
+
+          <Suspense fallback={<div>Loading...</div>}>
+            <PresentDocumentsWrapper searchParams={searchParams} />
+          </Suspense>
+        </TabsContent>
+
+        <TabsContent value="categories">
+          <Suspense fallback={<div>Loading categories...</div>}>
+            <PresentCategories />
+          </Suspense>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
@@ -117,4 +139,18 @@ const PresentDocumentsWrapper = async ({
   }
 
   return <DocumentContainer documents={documents} />;
+};
+
+// Cached function for categories
+async function CachedCategories() {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag("documents");
+
+  return await getDocumentCategories();
+}
+
+const PresentCategories = async () => {
+  const categories = await CachedCategories();
+  return <DocumentCategoriesManager categories={categories} />;
 };

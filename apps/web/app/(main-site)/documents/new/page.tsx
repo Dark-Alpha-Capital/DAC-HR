@@ -5,10 +5,26 @@ import { Metadata } from "next";
 import { UserAuthenticated } from "@/components/auth-checks";
 import { Button } from "@workspace/ui/components/button";
 import { ArrowLeft } from "lucide-react";
+import { getDocumentCategories } from "@workspace/db/queries";
+import { cacheLife, cacheTag } from "next/cache";
 
 export const metadata: Metadata = {
   title: "New Document",
   description: "Create a new document",
+};
+
+// Cached function for categories
+async function CachedCategories() {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag("documents");
+
+  return await getDocumentCategories();
+}
+
+const CategoriesLoader = async () => {
+  const categories = await CachedCategories();
+  return <DocumentUploadForm categories={categories} />;
 };
 
 const page = () => {
@@ -28,8 +44,12 @@ const page = () => {
       </div>
 
       <div className="mt-4 md:mt-6 lg:mt-8">
-        <Suspense>
-          <DocumentUploadForm />
+        <Suspense
+          fallback={
+            <div className="text-muted-foreground">Loading form...</div>
+          }
+        >
+          <CategoriesLoader />
         </Suspense>
       </div>
     </div>

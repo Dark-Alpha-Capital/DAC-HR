@@ -12,6 +12,8 @@ import {
   interviewFeedback,
   user,
   documents,
+  documentCategories,
+  documentCategoryRelations,
   candidateDocument,
   candidateOnboarding,
   employee,
@@ -1413,7 +1415,10 @@ export async function getCandidatesByPositionId(positionId: string) {
 
 /**
  * Fetches all documents from the database
- * @returns An array of documents
+ * @param categoryFilters Optional array of category IDs to filter by (new system)
+ * @param nameSearch Optional search term for document name
+ * @param tagsSearch Optional search term for tags
+ * @returns An array of documents with their categories
  */
 export async function getDocuments(
   categoryFilters?: string[],
@@ -1421,34 +1426,25 @@ export async function getDocuments(
   tagsSearch?: string
 ) {
   try {
-    let query = db.select().from(documents);
+    let query = db
+      .select({
+        document: documents,
+      })
+      .from(documents);
 
     // Build filter conditions
     const conditions = [];
 
-    // Category filter
+    // Category filter - filter by category IDs (new system)
     if (categoryFilters && categoryFilters.length > 0) {
-      // Validate and cast to enum type
-      const validCategories = categoryFilters.filter(
-        (
-          cat
-        ): cat is
-          | "job-description"
-          | "onboarding"
-          | "policy"
-          | "hr-form"
-          | "other" =>
-          [
-            "job-description",
-            "onboarding",
-            "policy",
-            "hr-form",
-            "other",
-          ].includes(cat)
+      // Use a subquery to find documents that have any of the specified categories
+      conditions.push(
+        sql`EXISTS (
+          SELECT 1 FROM ${documentCategoryRelations} 
+          WHERE ${documentCategoryRelations.documentId} = ${documents.id}
+          AND ${documentCategoryRelations.categoryId} = ANY(${sql.raw(`ARRAY[${categoryFilters.map((id) => `'${id.replace(/'/g, "''")}'`).join(",")}]`)})
+        )`
       );
-      if (validCategories.length > 0) {
-        conditions.push(inArray(documents.category, validCategories));
-      }
     }
 
     // Name search
@@ -1478,7 +1474,21 @@ export async function getDocuments(
     }
 
     const results = await query.orderBy(desc(documents.createdAt));
-    return results;
+
+    // Fetch categories for each document
+    const documentsWithCategories = await Promise.all(
+      results.map(async (result) => {
+        const categories = await getDocumentCategoriesByDocumentId(
+          result.document.id
+        );
+        return {
+          ...result.document,
+          categories,
+        };
+      })
+    );
+
+    return documentsWithCategories;
   } catch (error) {
     console.error("Error fetching documents", error);
     return [];
@@ -2420,3 +2430,164 @@ export const getLatestCandidateAiScreening = async (
     return null;
   }
 };
+
+/**
+ * Fetches all document categories
+ * @returns An array of document categories
+ */
+export async function getDocumentCategories() {
+  try {
+    const results = await db
+      .select()
+      .from(documentCategories)
+      .orderBy(asc(documentCategories.name));
+    return results;
+  } catch (error) {
+    console.error("Error fetching document categories", error);
+    return [];
+  }
+}
+
+/**
+ * Fetches a single document category by ID
+ * @param id The category ID
+ * @returns The category or null if not found
+ */
+export async function getDocumentCategoryById(id: string) {
+  try {
+    const [result] = await db
+      .select()
+      .from(documentCategories)
+      .where(eq(documentCategories.id, id))
+      .limit(1);
+    return result || null;
+  } catch (error) {
+    console.error("Error fetching document category", error);
+    return null;
+  }
+}
+
+/**
+ * Creates a new document category
+ * @param name The category name
+ * @param description Optional description
+ * @returns The created category
+ */
+export async function createDocumentCategory(
+  name: string,
+  description?: string
+) {
+  try {
+    const [result] = await db
+      .insert(documentCategories)
+      .values({
+        name,
+        description: description || null,
+      })
+      .returning();
+    return result;
+  } catch (error) {
+    console.error("Error creating document category", error);
+    throw error;
+  }
+}
+
+/**
+ * Updates a document category
+ * @param id The category ID
+ * @param name The new name
+ * @param description Optional new description
+ * @returns The updated category
+ */
+export async function updateDocumentCategory(
+  id: string,
+  name: string,
+  description?: string
+) {
+  try {
+    const [result] = await db
+      .update(documentCategories)
+      .set({
+        name,
+        description: description || null,
+        updatedAt: new Date(),
+      })
+      .where(eq(documentCategories.id, id))
+      .returning();
+    return result;
+  } catch (error) {
+    console.error("Error updating document category", error);
+    throw error;
+  }
+}
+
+/**
+ * Deletes a document category
+ * @param id The category ID
+ */
+export async function deleteDocumentCategory(id: string) {
+  try {
+    await db.delete(documentCategories).where(eq(documentCategories.id, id));
+  } catch (error) {
+    console.error("Error deleting document category", error);
+    throw error;
+  }
+}
+
+/**
+ * Gets categories for a specific document
+ * @param documentId The document ID
+ * @returns Array of categories for the document
+ */
+export async function getDocumentCategoriesByDocumentId(documentId: string) {
+  try {
+    const results = await db
+      .select({
+        id: documentCategories.id,
+        name: documentCategories.name,
+        description: documentCategories.description,
+        createdAt: documentCategories.createdAt,
+        updatedAt: documentCategories.updatedAt,
+      })
+      .from(documentCategoryRelations)
+      .innerJoin(
+        documentCategories,
+        eq(documentCategoryRelations.categoryId, documentCategories.id)
+      )
+      .where(eq(documentCategoryRelations.documentId, documentId));
+    return results;
+  } catch (error) {
+    console.error("Error fetching document categories", error);
+    return [];
+  }
+}
+
+/**
+ * Sets categories for a document (replaces existing)
+ * @param documentId The document ID
+ * @param categoryIds Array of category IDs
+ */
+export async function setDocumentCategories(
+  documentId: string,
+  categoryIds: string[]
+) {
+  try {
+    // Delete existing relations
+    await db
+      .delete(documentCategoryRelations)
+      .where(eq(documentCategoryRelations.documentId, documentId));
+
+    // Insert new relations
+    if (categoryIds.length > 0) {
+      await db.insert(documentCategoryRelations).values(
+        categoryIds.map((categoryId) => ({
+          documentId,
+          categoryId,
+        }))
+      );
+    }
+  } catch (error) {
+    console.error("Error setting document categories", error);
+    throw error;
+  }
+}

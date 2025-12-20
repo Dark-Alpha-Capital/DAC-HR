@@ -25,8 +25,14 @@ import {
 import { useMediaQuery } from "@workspace/ui/hooks/use-media-query";
 import DocumentUploadForm from "../forms/document-upload-form";
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
+import { getAllCategories } from "@/lib/actions/document-category-actions";
 
-export default function AddDocumentDialog() {
+export default async function AddDocumentDialog() {
+  const categoriesResult = await getAllCategories();
+  if (!categoriesResult.success) {
+    return <div>Error loading categories</div>;
+  }
+  const categories = categoriesResult.data;
   const [open, setOpen] = React.useState(false);
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
@@ -44,7 +50,7 @@ export default function AddDocumentDialog() {
             </DialogDescription>
           </DialogHeader>
           <ScrollArea className="h-[500px]">
-            <DocumentUploadForm />
+            <DocumentUploadForm categories={categories} />
           </ScrollArea>
         </DialogContent>
       </Dialog>
@@ -63,7 +69,7 @@ export default function AddDocumentDialog() {
             Upload a document to the system. Click save when you&apos;re done.
           </DrawerDescription>
         </DrawerHeader>
-        <DocumentUploadForm />
+        <DocumentUploadForm categories={categories} />
         <DrawerFooter className="pt-2">
           <DrawerClose asChild>
             <Button variant="outline">Cancel</Button>

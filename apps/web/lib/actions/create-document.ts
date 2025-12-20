@@ -10,9 +10,11 @@ import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { after } from "next/server";
-import { insertAuditLog } from "@workspace/db/queries";
+import { insertAuditLog, setDocumentCategories } from "@workspace/db/queries";
 
 export const createDocument = async (data: DocumentFormSchema) => {
+  console.log("in create document");
+
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -27,7 +29,7 @@ export const createDocument = async (data: DocumentFormSchema) => {
     return { error: result.error.flatten().fieldErrors };
   }
 
-  const { name, description, category, url, tags } = result.data;
+  const { name, description, categoryIds, url, tags } = result.data;
 
   try {
     const [newDocument] = await db
@@ -37,11 +39,16 @@ export const createDocument = async (data: DocumentFormSchema) => {
         slug: slugify(name, { lower: true, strict: true }),
         description:
           description && description.trim() !== "" ? description : null,
-        category: category || "other",
+        category: "other", // Keep for backward compatibility
         url,
         tags: tags && tags.length > 0 ? tags : null,
       })
       .returning();
+
+    // Set document categories
+    if (categoryIds && categoryIds.length > 0) {
+      await setDocumentCategories(newDocument?.id || "", categoryIds);
+    }
 
     updateTag("documents");
     revalidatePath("/documents");
@@ -68,7 +75,7 @@ export const createDocument = async (data: DocumentFormSchema) => {
             name,
             description:
               description && description.trim() !== "" ? description : null,
-            category: category || "other",
+            categoryIds: categoryIds || [],
             url,
             tags: tags && tags.length > 0 ? tags : null,
           },

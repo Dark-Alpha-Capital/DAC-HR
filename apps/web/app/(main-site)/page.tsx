@@ -42,16 +42,6 @@ export default async function Page() {
       <Suspense fallback={<div>Loading...</div>}>
         <UserContent />
       </Suspense>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Suspense fallback={<StatsCardSkeleton />}>
-          <HomeStatsCards />
-        </Suspense>
-        <Suspense fallback={<StatsCardSkeleton />}>
-          <HomeEmployeeStat />
-        </Suspense>
-      </div>
     </div>
   );
 }

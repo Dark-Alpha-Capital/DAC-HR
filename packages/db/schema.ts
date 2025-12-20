@@ -360,6 +360,43 @@ export const documents = pgTable("documents", {
 
 export type Document = InferSelectModel<typeof documents>;
 
+// Document Categories table for editable categories
+export const documentCategories = pgTable("document_categories", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+});
+
+export type DocumentCategory = InferSelectModel<typeof documentCategories>;
+
+// Junction table for many-to-many relationship between documents and categories
+export const documentCategoryRelations = pgTable(
+  "document_category_relations",
+  {
+    id: text("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    documentId: text("document_id")
+      .notNull()
+      .references(() => documents.id, { onDelete: "cascade" }),
+    categoryId: text("category_id")
+      .notNull()
+      .references(() => documentCategories.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  }
+);
+
+export type DocumentCategoryRelation = InferSelectModel<
+  typeof documentCategoryRelations
+>;
+
 export const candidateOnboarding = pgTable("candidate_onboarding", {
   id: text("id")
     .primaryKey()

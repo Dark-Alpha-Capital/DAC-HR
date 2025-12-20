@@ -19,20 +19,31 @@ import {
   InputGroupText,
   InputGroupTextarea,
 } from "@workspace/ui/components/input-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select";
-import { documentFormSchema } from "@/lib/schemas/document-form-schema";
+import { Checkbox } from "@workspace/ui/components/checkbox";
 import { Loader2 } from "lucide-react";
 import { createDocument } from "@/lib/actions/create-document";
 import { useRouter } from "next/navigation";
+import type { DocumentCategory } from "@workspace/db/schema";
+import * as z from "zod";
 
-const DocumentUploadForm = () => {
+// Form validation schema (without url - it's added after file upload)
+const formValidationSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Document name is required.")
+    .max(255, "Document name must be at most 255 characters."),
+  description: z
+    .string()
+    .max(1000, "Description must be at most 1000 characters."),
+  categoryIds: z.array(z.string()).min(1, "At least one category is required."),
+  tags: z.array(z.string()),
+});
+
+interface DocumentUploadFormProps {
+  categories: DocumentCategory[];
+}
+
+const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [file, setFile] = useState<File | null>(null);
@@ -42,62 +53,59 @@ const DocumentUploadForm = () => {
     defaultValues: {
       name: "",
       description: "",
-      category: "other" as
-        | "job-description"
-        | "onboarding"
-        | "policy"
-        | "hr-form"
-        | "other",
-      url: "",
+      categoryIds: [] as string[],
       tags: [] as string[],
     },
     validators: {
-      onSubmit: documentFormSchema,
+      onSubmit: formValidationSchema,
     },
     onSubmit: async ({ value }) => {
-      // Validate that either file or URL is provided
-      if (!file && (!value.url || value.url.trim() === "")) {
-        toast.error("Please either upload a file or provide a document URL", {
+      console.log("onSubmit handler called", { value, file });
+
+      // Validate that file is provided
+      if (!file) {
+        toast.error("Please upload a file", {
           position: "bottom-right",
         });
         return;
       }
 
+      // Validate form values
+      const validationResult = formValidationSchema.safeParse(value);
+      if (!validationResult.success) {
+        console.log("Validation failed", validationResult.error);
+        const errors = validationResult.error.flatten().fieldErrors;
+        const firstError = Object.values(errors)[0]?.[0];
+        toast.error(firstError || "Please check the form for errors", {
+          position: "bottom-right",
+        });
+        return;
+      }
+
+      console.log("Validation passed, starting file upload");
+
       startTransition(async () => {
         try {
-          let finalUrl = value.url;
+          // Upload file first
+          const formData = new FormData();
+          formData.append("file", file);
 
-          // If file is provided, upload it first
-          if (file) {
-            const formData = new FormData();
-            formData.append("file", file);
+          const uploadResponse = await fetch("/api/documents/upload", {
+            method: "POST",
+            body: formData,
+          });
 
-            const uploadResponse = await fetch("/api/documents/upload", {
-              method: "POST",
-              body: formData,
-            });
-
-            if (!uploadResponse.ok) {
-              const errorData = await uploadResponse.json();
-              throw new Error(errorData.error || "Failed to upload file");
-            }
-
-            const { url: fileUrl } = await uploadResponse.json();
-            finalUrl = fileUrl;
-          } else if (value.url && value.url.trim() !== "") {
-            // Validate URL format if provided directly
-            try {
-              new URL(value.url);
-            } catch {
-              throw new Error("Invalid URL format");
-            }
-            finalUrl = value.url.trim();
+          if (!uploadResponse.ok) {
+            const errorData = await uploadResponse.json();
+            throw new Error(errorData.error || "Failed to upload file");
           }
 
-          // Create the document with the final URL
+          const { url: fileUrl } = await uploadResponse.json();
+
+          // Create the document with the uploaded file URL
           const result = await createDocument({
             ...value,
-            url: finalUrl,
+            url: fileUrl,
           });
 
           if (result.success) {
@@ -150,26 +158,9 @@ const DocumentUploadForm = () => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       setFile(selectedFile);
-      // Clear URL when file is selected
-      form.setFieldValue("url", "");
       // Auto-fill name if empty
       if (!form.state.values.name) {
         form.setFieldValue("name", selectedFile.name);
-      }
-    }
-  };
-
-  const handleUrlChange = (value: string) => {
-    form.setFieldValue("url", value);
-    // Clear file when URL is entered
-    if (value.trim() !== "") {
-      setFile(null);
-      // Clear file input
-      const fileInput = document.getElementById(
-        "file-upload"
-      ) as HTMLInputElement;
-      if (fileInput) {
-        fileInput.value = "";
       }
     }
   };
@@ -203,8 +194,7 @@ const DocumentUploadForm = () => {
             Upload Document
           </h2>
           <p className="text-sm text-muted-foreground">
-            Upload a file or provide a document URL, then fill in the details
-            below.
+            Upload a file and fill in the details below.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -247,75 +237,35 @@ const DocumentUploadForm = () => {
         id="document-upload-form"
         onSubmit={(e) => {
           e.preventDefault();
+          e.stopPropagation();
+          console.log("Form submitted, calling handleSubmit");
           form.handleSubmit();
         }}
         className="space-y-6"
       >
         <FieldGroup>
-          <form.Field
-            name="url"
-            children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
-              return (
-                <>
-                  <Field>
-                    <FieldLabel htmlFor="file-upload">Upload File</FieldLabel>
-                    <Input
-                      id="file-upload"
-                      type="file"
-                      onChange={handleFileChange}
-                      className="cursor-pointer"
-                    />
-                    <FieldDescription>
-                      All file types accepted except videos (max 500MB)
-                    </FieldDescription>
-                    {file && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Selected: {file.name} (
-                        {file.size > 1024 * 1024
-                          ? `${(file.size / (1024 * 1024)).toFixed(2)} MB`
-                          : `${(file.size / 1024).toFixed(2)} KB`}
-                        )
-                      </p>
-                    )}
-                  </Field>
-                  <div className="relative my-4">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-background px-2 text-muted-foreground">
-                        Or
-                      </span>
-                    </div>
-                  </div>
-                  <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor="document-url">Document URL</FieldLabel>
-                    <Input
-                      id="document-url"
-                      name={field.name}
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => handleUrlChange(e.target.value)}
-                      aria-invalid={isInvalid}
-                      placeholder="https://example.com/document.pdf"
-                      type="url"
-                      autoComplete="off"
-                      disabled={!!file}
-                    />
-                    <FieldDescription>
-                      Enter a direct URL to the document (file upload will be
-                      cleared)
-                    </FieldDescription>
-                    {isInvalid && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
-                  </Field>
-                </>
-              );
-            }}
-          />
+          <Field>
+            <FieldLabel htmlFor="file-upload">Upload File</FieldLabel>
+            <Input
+              id="file-upload"
+              type="file"
+              onChange={handleFileChange}
+              className="cursor-pointer"
+              required
+            />
+            <FieldDescription>
+              All file types accepted except videos (max 500MB)
+            </FieldDescription>
+            {file && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Selected: {file.name} (
+                {file.size > 1024 * 1024
+                  ? `${(file.size / (1024 * 1024)).toFixed(2)} MB`
+                  : `${(file.size / 1024).toFixed(2)} KB`}
+                )
+              </p>
+            )}
+          </Field>
 
           <form.Field
             name="name"
@@ -374,45 +324,66 @@ const DocumentUploadForm = () => {
           />
 
           <form.Field
-            name="category"
+            name="categoryIds"
             children={(field) => {
               const isInvalid =
                 field.state.meta.isTouched && !field.state.meta.isValid;
               return (
                 <Field data-invalid={isInvalid}>
-                  <FieldLabel htmlFor={field.name}>Category</FieldLabel>
-                  <Select
-                    value={field.state.value}
-                    onValueChange={(value) =>
-                      field.handleChange(
-                        value as
-                          | "job-description"
-                          | "onboarding"
-                          | "policy"
-                          | "hr-form"
-                          | "other"
-                      )
-                    }
-                    aria-invalid={isInvalid}
-                  >
-                    <SelectTrigger
-                      id={field.name}
-                      aria-invalid={isInvalid}
-                      className="w-full"
-                    >
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectSeparator />
-                      <SelectItem value="job-description">
-                        Job Description
-                      </SelectItem>
-                      <SelectItem value="onboarding">Onboarding</SelectItem>
-                      <SelectItem value="policy">Policy</SelectItem>
-                      <SelectItem value="hr-form">HR Form</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FieldLabel htmlFor={field.name}>Categories</FieldLabel>
+                  {categories.length === 0 ? (
+                    <div className="text-sm text-muted-foreground">
+                      No categories available. Please create categories first.
+                    </div>
+                  ) : (
+                    <div className="space-y-2 border rounded-md p-4">
+                      {categories.map((category) => {
+                        const isChecked = field.state.value.includes(
+                          category.id
+                        );
+                        return (
+                          <div
+                            key={category.id}
+                            className="flex items-center space-x-2"
+                          >
+                            <Checkbox
+                              id={`category-${category.id}`}
+                              checked={isChecked}
+                              onCheckedChange={(checked) => {
+                                const currentIds = field.state.value;
+                                if (checked) {
+                                  field.handleChange([
+                                    ...currentIds,
+                                    category.id,
+                                  ]);
+                                } else {
+                                  field.handleChange(
+                                    currentIds.filter(
+                                      (id) => id !== category.id
+                                    )
+                                  );
+                                }
+                              }}
+                            />
+                            <label
+                              htmlFor={`category-${category.id}`}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                            >
+                              {category.name}
+                              {category.description && (
+                                <span className="text-muted-foreground ml-2 text-xs">
+                                  - {category.description}
+                                </span>
+                              )}
+                            </label>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <FieldDescription>
+                    Select one or more categories for this document
+                  </FieldDescription>
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>
               );

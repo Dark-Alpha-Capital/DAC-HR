@@ -19,19 +19,15 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip";
 import { toast } from "sonner";
-import type { Document } from "@workspace/db/schema";
+import type { Document, DocumentCategory } from "@workspace/db/schema";
 
-interface DocumentContainerProps {
-  documents: Document[];
+interface DocumentWithCategories extends Document {
+  categories?: DocumentCategory[];
 }
 
-const categoryLabels = {
-  "job-description": "Job Description",
-  onboarding: "Onboarding",
-  policy: "Policy",
-  "hr-form": "HR Form",
-  other: "Other",
-} as const;
+interface DocumentContainerProps {
+  documents: DocumentWithCategories[];
+}
 
 const DocumentContainer = ({ documents }: DocumentContainerProps) => {
   const [previewDocument, setPreviewDocument] = useState<Document | null>(null);
@@ -113,10 +109,7 @@ const DocumentContainer = ({ documents }: DocumentContainerProps) => {
         </TableHeader>
         <TableBody>
           {documents.map((document, index) => {
-            const categoryLabel =
-              categoryLabels[
-                document.category as keyof typeof categoryLabels
-              ] || "Other";
+            const categories = document.categories || [];
             return (
               <TableRow key={document.id}>
                 <TableCell className="py-1.5 px-2 text-sm text-muted-foreground">
@@ -126,7 +119,20 @@ const DocumentContainer = ({ documents }: DocumentContainerProps) => {
                   {document.name}
                 </TableCell>
                 <TableCell className="py-1.5 px-2 text-sm">
-                  {categoryLabel}
+                  {categories.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {categories.map((cat) => (
+                        <span
+                          key={cat.id}
+                          className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground"
+                        >
+                          {cat.name}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
                 </TableCell>
                 <TableCell className="py-1.5 px-2 text-sm">
                   {document.description || "-"}

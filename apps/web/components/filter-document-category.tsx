@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useOptimistic, useTransition } from "react";
+import React, { useOptimistic, useTransition, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   DropdownMenu,
@@ -11,23 +11,35 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
 import { Button } from "@workspace/ui/components/button";
-import { Filter } from "lucide-react";
-
-const categories = [
-  { value: "job-description", label: "Job Description" },
-  { value: "onboarding", label: "Onboarding" },
-  { value: "policy", label: "Policy" },
-  { value: "hr-form", label: "HR Form" },
-  { value: "other", label: "Other" },
-];
+import { Filter, Loader2 } from "lucide-react";
+import { getAllCategories } from "@/lib/actions/document-category-actions";
+import type { DocumentCategory } from "@workspace/db/schema";
 
 const FilterDocumentCategory = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [categories, setCategories] = useState<DocumentCategory[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
   const [selectedCategories, setSelectedCategories] = useOptimistic(
     searchParams.getAll("category")
   );
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const result = await getAllCategories();
+        if (result.success && result.data) {
+          setCategories(result.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch categories", error);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const handleCheckedChange = (value: string, checked: boolean) => {
     startTransition(() => {
@@ -67,17 +79,27 @@ const FilterDocumentCategory = () => {
         <DropdownMenuContent className="w-56">
           <DropdownMenuLabel>Filter by Category</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {categories.map((cat) => (
-            <DropdownMenuCheckboxItem
-              key={cat.value}
-              checked={selectedCategories.includes(cat.value)}
-              onCheckedChange={(checked) =>
-                handleCheckedChange(cat.value, checked as boolean)
-              }
-            >
-              {cat.label}
-            </DropdownMenuCheckboxItem>
-          ))}
+          {loadingCategories ? (
+            <div className="flex items-center justify-center p-4">
+              <Loader2 className="h-4 w-4 animate-spin" />
+            </div>
+          ) : categories.length === 0 ? (
+            <div className="p-4 text-sm text-muted-foreground text-center">
+              No categories available
+            </div>
+          ) : (
+            categories.map((cat) => (
+              <DropdownMenuCheckboxItem
+                key={cat.id}
+                checked={selectedCategories.includes(cat.id)}
+                onCheckedChange={(checked) =>
+                  handleCheckedChange(cat.id, checked as boolean)
+                }
+              >
+                {cat.name}
+              </DropdownMenuCheckboxItem>
+            ))
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
