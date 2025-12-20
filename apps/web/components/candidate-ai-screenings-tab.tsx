@@ -15,10 +15,9 @@ export default async function CandidateAiScreeningsTab({
   cacheLife("hr-data");
   cacheTag(`candidate-ai-screenings-${candidateId}`);
 
-  const screenings = await getCandidateAiScreenings(
-    candidateId,
-    positionId || undefined
-  );
+  // Fetch all screenings for the candidate, not filtered by position
+  // This matches the behavior of ScreeningsCount component
+  const screenings = await getCandidateAiScreenings(candidateId);
 
   return (
     <CandidateAiScreeningsClient
