@@ -1,11 +1,12 @@
 import * as z from "zod";
 
-export const candidateSourceEnum = z.enum([
-  "LinkedIn",
-  "Upwork",
-  "Handshake",
-  "Indeed",
-]);
+export const candidateSourceEnum = z.enum(
+  ["LinkedIn", "Upwork", "Handshake", "Indeed"],
+  {
+    message:
+      "Invalid source. Only LinkedIn, Upwork, Handshake, and Indeed are supported as sources.",
+  }
+);
 
 export const candidateFormSchema = z
   .object({

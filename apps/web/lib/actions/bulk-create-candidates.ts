@@ -13,6 +13,7 @@ import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { after } from "next/server";
+import type { z } from "zod";
 
 export type BulkCandidateRow = {
   firstName: string;
@@ -38,22 +39,6 @@ export type BulkCandidateResult = {
   failed: number;
   errors: BulkCandidateValidationError[];
   data?: Array<{ id: string; email: string }>;
-};
-
-// Helper to extract error messages from Zod errors
-const extractFieldErrors = (
-  fieldErrors: Record<string, string[] | undefined>
-): Array<{ field: string; message: string }> => {
-  const errors: Array<{ field: string; message: string }> = [];
-  (Object.keys(fieldErrors) as Array<keyof typeof fieldErrors>).forEach(
-    (field) => {
-      const fieldError = fieldErrors[field];
-      if (fieldError?.[0]) {
-        errors.push({ field: String(field), message: fieldError[0] });
-      }
-    }
-  );
-  return errors;
 };
 
 // Helper to check for existing emails in the database
@@ -118,12 +103,12 @@ export const bulkCreateCandidates = async (
     });
 
     if (!validation.success) {
-      const fieldErrors = extractFieldErrors(
-        validation.error.flatten().fieldErrors
-      );
-      errors.push(
-        ...fieldErrors.map((e) => ({ row, field: e.field, message: e.message }))
-      );
+      // Extract all validation errors from Zod
+      validation.error.issues.forEach((issue) => {
+        const field = issue.path.length > 0 ? String(issue.path[0]) : "general";
+        const message = issue.message || "Invalid input";
+        errors.push({ row, field, message });
+      });
       continue;
     }
 
