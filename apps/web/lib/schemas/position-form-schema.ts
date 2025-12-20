@@ -4,7 +4,8 @@ import { departmentEnum } from "./employee-form-schema";
 export const hireLevelEnum = z.enum([
   "managing-director",
   "vice-president",
-  "associate-analyst",
+  "associate",
+  "analyst",
   "intern",
 ]);
 

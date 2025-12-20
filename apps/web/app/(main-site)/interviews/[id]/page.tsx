@@ -6,6 +6,12 @@ import {
 } from "@workspace/db/queries";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@workspace/ui/components/tabs";
 import Link from "next/link";
 import {
   Calendar,
@@ -16,6 +22,8 @@ import {
   CheckCircle,
   Circle,
   XCircle,
+  FileText,
+  Edit,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import InterviewQuestionFeedbackDisplay from "@/components/interview-question-feedback-display";
@@ -164,7 +172,10 @@ function DisplayInterview({
   const totalQuestions = interview.questions?.length || 0;
   const answeredQuestions =
     interview.questions?.filter(
-      (q) => q.feedback && q.feedback.notes && q.feedback.notes.trim() !== ""
+      (q) =>
+        q.feedback &&
+        ((q.feedback.notes && q.feedback.notes.trim() !== "") ||
+          q.feedback.rating !== null)
     ).length || 0;
   const progressPercentage =
     totalQuestions > 0
@@ -175,113 +186,116 @@ function DisplayInterview({
     <div className="space-y-8">
       {/* Header Section */}
       <div className="space-y-6 pb-6 border-b">
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-          <div className="flex-1 space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight">
-                {interview.roundTemplate.name}
-              </h1>
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight">
+              {interview.roundTemplate.name}
+            </h1>
+            <Badge
+              variant={statusConfig.badgeVariant}
+              className={cn(
+                "text-xs font-medium px-2.5 py-1 flex items-center gap-1.5",
+                statusConfig.badgeClass
+              )}
+            >
+              <StatusIcon className="h-3 w-3" />
+              {interview.status === "move_forward"
+                ? "Move Forward"
+                : interview.status.charAt(0).toUpperCase() +
+                  interview.status.slice(1)}
+            </Badge>
+            {interview.rating && (
               <Badge
-                variant={statusConfig.badgeVariant}
-                className={cn(
-                  "text-xs font-medium px-2.5 py-1 flex items-center gap-1.5",
-                  statusConfig.badgeClass
-                )}
+                variant="secondary"
+                className="text-xs font-medium px-2.5 py-1 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 flex items-center gap-1.5"
               >
-                <StatusIcon className="h-3 w-3" />
-                {interview.status === "move_forward"
-                  ? "Move Forward"
-                  : interview.status.charAt(0).toUpperCase() +
-                    interview.status.slice(1)}
+                <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+                {interview.rating}/5
               </Badge>
-              {interview.rating && (
-                <Badge
-                  variant="secondary"
-                  className="text-xs font-medium px-2.5 py-1 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 flex items-center gap-1.5"
-                >
-                  <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
-                  {interview.rating}/5
-                </Badge>
-              )}
-            </div>
-
-            {/* Metadata */}
-            <div className="flex flex-wrap items-center gap-6 text-sm">
-              {interview.scheduledAt && (
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Interview:</span>
-                  <span className="font-medium">
-                    {formatDate(interview.scheduledAt)}
-                  </span>
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Created:</span>
-                <span className="font-medium">
-                  {formatDate(interview.createdAt)}
-                </span>
-              </div>
-              <div>
-                <Button variant="link" size="sm" asChild>
-                  <Link href={`/candidates/${candidate?.id}`}>
-                    View Candidate
-                  </Link>
-                </Button>
-              </div>
-
-              {interview.interviewer && (
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Interviewer:</span>
-                  <span className="font-medium">
-                    {interview.interviewer.name || interview.interviewer.email}
-                  </span>
-                </div>
-              )}
-              {totalQuestions > 0 && (
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Questions:</span>
-                  <span className="font-medium">
-                    {answeredQuestions}/{totalQuestions}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Quick Actions */}
+            )}
           </div>
 
-          {/* Position Info */}
-          {application && (
-            <div className="lg:min-w-[240px]">
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Position
-                </p>
-                <p className="font-semibold text-lg">
-                  {application.position.name}
-                </p>
-                {application.position.description && (
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {application.position.description}
-                  </p>
-                )}
+          {/* Metadata */}
+          <div className="flex flex-wrap items-center gap-6 text-sm">
+            {interview.scheduledAt && (
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Interview:</span>
+                <span className="font-medium">
+                  {formatDate(interview.scheduledAt)}
+                </span>
               </div>
+            )}
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Created:</span>
+              <span className="font-medium">
+                {formatDate(interview.createdAt)}
+              </span>
             </div>
-          )}
+            <div>
+              <Button variant="link" size="sm" asChild>
+                <Link href={`/candidates/${candidate?.id}`}>
+                  View Candidate
+                </Link>
+              </Button>
+            </div>
+            <div>
+              <Button variant="link" size="sm" asChild>
+                <Link href={`/rounds/${interview.roundTemplate.id}/edit`}>
+                  <Edit className="h-4 w-4 mr-1.5" />
+                  Edit Round
+                </Link>
+              </Button>
+            </div>
+
+            {interview.interviewer && (
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Interviewer:</span>
+                <span className="font-medium">
+                  {interview.interviewer.name || interview.interviewer.email}
+                </span>
+              </div>
+            )}
+            {totalQuestions > 0 && (
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Questions:</span>
+                <span className="font-medium">
+                  {answeredQuestions}/{totalQuestions}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column - Questions Overview */}
-        {totalQuestions > 0 && (
-          <div className="lg:col-span-2 space-y-6">
-            {/* Progress Header + Inline Questions */}
-            <div className="space-y-4">
+      {/* Tabs Content */}
+      <Tabs defaultValue="questions" className="w-full">
+        <TabsList>
+          <TabsTrigger value="questions" className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            Questions
+            {totalQuestions > 0 && (
+              <Badge
+                variant="secondary"
+                className="ml-1 h-5 min-w-5 px-1.5 text-xs"
+              >
+                {totalQuestions}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="summary" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Summary
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="questions" className="mt-6">
+          {totalQuestions > 0 ? (
+            <div className="space-y-6">
+              {/* Progress Header */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
@@ -313,7 +327,7 @@ function DisplayInterview({
                 </div>
               </div>
 
-              {/* Inline editable questions */}
+              {/* Questions List */}
               <div className="space-y-4 pt-2">
                 {interview.questions.map((question, index) => (
                   <InterviewQuestionFeedbackDisplay
@@ -325,30 +339,31 @@ function DisplayInterview({
                 ))}
               </div>
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No questions available for this interview.</p>
+            </div>
+          )}
+        </TabsContent>
 
-        {/* Right Column - Summary */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-6 space-y-6">
-            {/* Round Summary */}
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-lg font-semibold mb-1">Round Summary</h2>
-                <p className="text-xs text-muted-foreground">
-                  Overall interview feedback
-                </p>
-              </div>
-              <div className="pt-2">
-                <InterviewSummaryDisplay
-                  interview={interview}
-                  applicationId={application?.id ?? interview.applicationId}
-                />
-              </div>
+        <TabsContent value="summary" className="mt-6">
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold mb-1">Round Summary</h2>
+              <p className="text-sm text-muted-foreground">
+                Overall interview feedback
+              </p>
+            </div>
+            <div className="pt-2">
+              <InterviewSummaryDisplay
+                interview={interview}
+                applicationId={application?.id ?? interview.applicationId}
+              />
             </div>
           </div>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -360,18 +375,14 @@ const InterviewLoadingSkeleton = () => {
         <div className="h-8 w-60 bg-muted animate-pulse rounded" />
         <div className="h-4 w-96 bg-muted animate-pulse rounded" />
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-4">
+      <div className="space-y-4">
+        <div className="h-10 w-64 bg-muted animate-pulse rounded" />
+        <div className="space-y-3">
           <div className="h-6 w-48 bg-muted animate-pulse rounded" />
-          <div className="space-y-3">
-            {[1, 2, 3].map((item) => (
-              <div key={item} className="h-24 bg-muted animate-pulse rounded" />
-            ))}
-          </div>
-        </div>
-        <div className="lg:col-span-1">
-          <div className="h-6 w-32 bg-muted animate-pulse rounded mb-4" />
-          <div className="h-32 bg-muted animate-pulse rounded" />
+          <div className="h-2 w-full bg-muted animate-pulse rounded" />
+          {[1, 2, 3].map((item) => (
+            <div key={item} className="h-24 bg-muted animate-pulse rounded" />
+          ))}
         </div>
       </div>
     </div>

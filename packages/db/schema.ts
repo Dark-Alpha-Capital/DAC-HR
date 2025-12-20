@@ -88,7 +88,8 @@ export const departmentEnum = pgEnum("department", [
 export const hireLevelEnum = pgEnum("hire_level", [
   "managing-director",
   "vice-president",
-  "associate-analyst",
+  "associate",
+  "analyst",
   "intern",
 ]);
 

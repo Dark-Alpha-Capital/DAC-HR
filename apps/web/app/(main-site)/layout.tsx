@@ -35,12 +35,10 @@ export default function RootLayout({
             <Suspense fallback={null}>
               <AppSidebar />
             </Suspense>
-            <SidebarInset>
-              <main className="flex-1 p-4">
-                <SidebarTrigger />
-                {children}
-              </main>
-            </SidebarInset>
+            <main className="flex-1 p-4">
+              <SidebarTrigger />
+              {children}
+            </main>
           </SidebarProvider>
           <Toaster />
         </Providers>

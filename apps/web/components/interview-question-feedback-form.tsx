@@ -5,6 +5,13 @@ import { useRouter } from "next/navigation";
 import { Button } from "@workspace/ui/components/button";
 import { Label } from "@workspace/ui/components/label";
 import { Textarea } from "@workspace/ui/components/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select";
 import { createInterviewFeedback } from "@/lib/actions/create-interview-feedback";
 import { toast } from "sonner";
 
@@ -35,16 +42,23 @@ export default function InterviewQuestionFeedbackForm({
 }: InterviewQuestionFeedbackFormProps) {
   const router = useRouter();
   const [notes, setNotes] = useState(question.feedback?.notes ?? "");
+  const [rating, setRating] = useState<string>(
+    question.feedback?.rating?.toString() ?? "none"
+  );
   const [isPending, startTransition] = useTransition();
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     startTransition(async () => {
+      const parsedRating =
+        rating && rating !== "none" ? parseInt(rating, 10) : undefined;
+
       const result = await createInterviewFeedback({
         interviewId,
         questionId: question.id,
         notes: notes.trim() === "" ? undefined : notes.trim(),
+        rating: parsedRating,
       });
 
       if (result.error) {
@@ -78,6 +92,26 @@ export default function InterviewQuestionFeedbackForm({
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor={`rating-${question.id}`}>Rating (1-5)</Label>
+          <Select value={rating} onValueChange={setRating}>
+            <SelectTrigger id={`rating-${question.id}`} className="w-full">
+              <SelectValue placeholder="Select rating" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No rating</SelectItem>
+              {[1, 2, 3, 4, 5].map((num) => (
+                <SelectItem key={num} value={num.toString()}>
+                  {num} {num === 1 ? "star" : "stars"}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Rate the candidate's answer to this question (optional)
+          </p>
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor={`notes-${question.id}`}>Notes</Label>
           <Textarea

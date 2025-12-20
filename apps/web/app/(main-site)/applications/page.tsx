@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import { getAllApplications, getPositions } from "@workspace/db/queries";
+import { getApplicationsFiltered, getPositions } from "@workspace/db/queries";
 import { Metadata } from "next";
 import { Briefcase } from "lucide-react";
 import { ApplicationsListSkeleton } from "@/components/skeletons/applications-list-skeleton";
@@ -10,6 +10,8 @@ import FilterApplicationStatus from "@/components/filter-application-status";
 import FilterCandidateName from "@/components/filter-candidate-name";
 import FilterCandidateEmail from "@/components/filter-candidate-email";
 import ClearApplicationFiltersButton from "@/components/clear-application-filters-button";
+import ApplicationsPaginationControls from "@/components/applications-pagination-controls";
+import { cacheLife, cacheTag } from "next/cache";
 
 export const metadata: Metadata = {
   title: "Applications",
@@ -32,7 +34,7 @@ const page = async ({ searchParams }: { searchParams: SearchParams }) => {
       </Suspense>
 
       <Suspense fallback={<ApplicationsListSkeleton />}>
-        <ApplicationsList searchParams={searchParams} />
+        <ApplicationsListWrapper searchParams={searchParams} />
       </Suspense>
     </div>
   );
@@ -40,7 +42,11 @@ const page = async ({ searchParams }: { searchParams: SearchParams }) => {
 
 export default page;
 
-const PresentFilters = async () => {
+async function CachedPresentFilters() {
+  "use cache";
+  cacheLife("hr-metadata");
+  cacheTag("positions");
+
   const positions = await getPositions();
   const positionTypes = positions.map((position) => ({
     id: position.id,
@@ -56,14 +62,17 @@ const PresentFilters = async () => {
       <ClearApplicationFiltersButton />
     </div>
   );
-};
+}
 
-const ApplicationsList = async ({
+const PresentFilters = CachedPresentFilters;
+
+// Component (not cached) reads runtime data
+const ApplicationsListWrapper = async ({
   searchParams,
 }: {
   searchParams: SearchParams;
 }) => {
-  const { name, email, position, status } = await searchParams;
+  const { name, email, position, status, page: pageParam } = await searchParams;
 
   // Extract search terms
   const nameSearch = name
@@ -89,39 +98,61 @@ const ApplicationsList = async ({
       : [status]
     : undefined;
 
-  const applications = await getAllApplications();
+  // Extract page number (default to 1)
+  const page = pageParam
+    ? typeof pageParam === "string"
+      ? parseInt(pageParam, 10)
+      : Array.isArray(pageParam) && pageParam[0]
+        ? parseInt(pageParam[0], 10)
+        : 1
+    : 1;
+  const currentPage = isNaN(page) || page < 1 ? 1 : page;
 
-  const filteredApplications = applications.filter((application) => {
-    // Name filter (searches first name and last name)
-    const matchesName = !nameSearch
-      ? true
-      : `${application.candidate.firstName} ${application.candidate.lastName}`
-          .toLowerCase()
-          .includes(nameSearch.toLowerCase()) ||
-        application.candidate.firstName
-          .toLowerCase()
-          .includes(nameSearch.toLowerCase()) ||
-        application.candidate.lastName
-          .toLowerCase()
-          .includes(nameSearch.toLowerCase());
+  return (
+    <CachedApplicationsList
+      nameSearch={nameSearch}
+      emailSearch={emailSearch}
+      positionIds={positionIds}
+      statuses={statuses}
+      currentPage={currentPage}
+    />
+  );
+};
 
-    // Email filter
-    const matchesEmail = !emailSearch
-      ? true
-      : application.candidate.email
-          .toLowerCase()
-          .includes(emailSearch.toLowerCase());
+// Cached component receives data as props
+async function CachedApplicationsList({
+  nameSearch,
+  emailSearch,
+  positionIds,
+  statuses,
+  currentPage,
+}: {
+  nameSearch?: string;
+  emailSearch?: string;
+  positionIds?: string[];
+  statuses?: string[];
+  currentPage: number;
+}) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag("applications");
 
-    const matchesPosition =
-      !positionIds || positionIds.includes(application.position.id);
+  const limit = 50;
 
-    const matchesStatus =
-      !statuses || statuses.includes(application.status as string);
+  const { applications, total } = await getApplicationsFiltered(
+    nameSearch,
+    emailSearch,
+    positionIds,
+    statuses,
+    currentPage,
+    limit
+  );
 
-    return matchesName && matchesEmail && matchesPosition && matchesStatus;
-  });
+  const totalPages = Math.ceil(total / limit);
+  const hasNextPage = currentPage < totalPages;
+  const hasPreviousPage = currentPage > 1;
 
-  if (filteredApplications.length === 0) {
+  if (applications.length === 0) {
     return (
       <div className="text-center py-12 border rounded-md">
         <Briefcase className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
@@ -135,5 +166,17 @@ const ApplicationsList = async ({
     );
   }
 
-  return <ApplicationContainer applications={filteredApplications} />;
-};
+  return (
+    <div className="space-y-6">
+      <ApplicationContainer applications={applications} />
+      {totalPages > 1 && (
+        <ApplicationsPaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          hasNextPage={hasNextPage}
+          hasPreviousPage={hasPreviousPage}
+        />
+      )}
+    </div>
+  );
+}

@@ -26,9 +26,10 @@ export const createQuestion = async (data: QuestionFormSchema) => {
     return { error: result.error.flatten().fieldErrors };
   }
 
-  const { questionText } = result.data;
+  const { questionText, roundTemplateId } = result.data;
 
   try {
+    // Create the question
     const [newQuestion] = await db
       .insert(questionBank)
       .values({
@@ -40,7 +41,14 @@ export const createQuestion = async (data: QuestionFormSchema) => {
       return { error: "Failed to create question" };
     }
 
+    // Link the question to the round
+    await db.insert(roundTemplateQuestions).values({
+      roundTemplateId,
+      questionId: newQuestion.id,
+    });
+
     revalidatePath("/questions");
+    revalidatePath(`/rounds/${roundTemplateId}`);
 
     after(async () => {
       await insertAuditLog({
@@ -57,6 +65,7 @@ export const createQuestion = async (data: QuestionFormSchema) => {
           },
           input: {
             questionText,
+            roundTemplateId,
           },
           createdBy: {
             id: session.user.id,
@@ -65,6 +74,7 @@ export const createQuestion = async (data: QuestionFormSchema) => {
           },
           metadata: {
             timestamp: new Date().toISOString(),
+            linkedToRound: true,
           },
         },
       });

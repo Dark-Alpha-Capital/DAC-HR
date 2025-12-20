@@ -16,7 +16,8 @@ import { Filter } from "lucide-react";
 const hireLevelOptions = [
   { value: "managing-director", label: "Managing Director" },
   { value: "vice-president", label: "Vice President" },
-  { value: "associate-analyst", label: "Associate Analyst" },
+  { value: "associate", label: "Associate" },
+  { value: "analyst", label: "Analyst" },
   { value: "intern", label: "Intern" },
 ];
 

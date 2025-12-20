@@ -65,12 +65,14 @@ export const getPositions = async (
         ): level is
           | "managing-director"
           | "vice-president"
-          | "associate-analyst"
+          | "associate"
+          | "analyst"
           | "intern" =>
           [
             "managing-director",
             "vice-president",
-            "associate-analyst",
+            "associate",
+            "analyst",
             "intern",
           ].includes(level)
       );
@@ -190,6 +192,166 @@ export const getAllApplications = async () => {
   } catch (error) {
     console.error("Error fetching all applications", error);
     return [];
+  }
+};
+
+/**
+ * Fetches applications with filtering and pagination support
+ * @param nameSearch Optional search term for candidate first name or last name
+ * @param emailSearch Optional search term for candidate email
+ * @param positionIds Optional array of position IDs to filter by
+ * @param statuses Optional array of status values to filter by
+ * @param page Page number (1-indexed) for pagination
+ * @param limit Number of applications per page
+ * @returns An object with applications array and total count
+ */
+export const getApplicationsFiltered = async (
+  nameSearch?: string,
+  emailSearch?: string,
+  positionIds?: string[],
+  statuses?: string[],
+  page: number = 1,
+  limit: number = 50
+): Promise<{
+  applications: Array<{
+    id: string;
+    candidateId: string;
+    positionId: string;
+    status: string;
+    personality: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    candidate: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+    };
+    position: {
+      id: string;
+      name: string;
+      slug: string;
+      description: string | null;
+    };
+    interviews: Array<{
+      id: string;
+      status: string;
+    }>;
+  }>;
+  total: number;
+}> => {
+  try {
+    let query = db
+      .select({
+        application: {
+          id: application.id,
+          candidateId: application.candidateId,
+          positionId: application.positionId,
+          status: application.status,
+          personality: application.personality,
+          createdAt: application.createdAt,
+          updatedAt: application.updatedAt,
+        },
+        candidate: {
+          id: candidate.id,
+          firstName: candidate.firstName,
+          lastName: candidate.lastName,
+          email: candidate.email,
+        },
+        position: {
+          id: position.id,
+          name: position.name,
+          slug: position.slug,
+          description: position.description,
+        },
+      })
+      .from(application)
+      .innerJoin(candidate, eq(application.candidateId, candidate.id))
+      .innerJoin(position, eq(application.positionId, position.id));
+
+    // Build filter conditions
+    const conditions = [];
+
+    if (nameSearch) {
+      const searchLower = nameSearch.toLowerCase();
+      conditions.push(
+        or(
+          sql`LOWER(${candidate.firstName}) LIKE ${`%${searchLower}%`}`,
+          sql`LOWER(${candidate.lastName}) LIKE ${`%${searchLower}%`}`,
+          sql`LOWER(CONCAT(${candidate.firstName}, ' ', ${candidate.lastName})) LIKE ${`%${searchLower}%`}`
+        )
+      );
+    }
+
+    if (emailSearch) {
+      conditions.push(
+        sql`LOWER(${candidate.email}) LIKE ${`%${emailSearch.toLowerCase()}%`}`
+      );
+    }
+
+    if (positionIds && positionIds.length > 0) {
+      conditions.push(inArray(application.positionId, positionIds));
+    }
+
+    if (statuses && statuses.length > 0) {
+      conditions.push(
+        inArray(
+          application.status,
+          statuses as Array<
+            | "pending"
+            | "reviewed"
+            | "shortlisted"
+            | "interviewing"
+            | "hired"
+            | "rejected"
+            | "withdrawn"
+          >
+        )
+      );
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as typeof query;
+    }
+
+    // Order by createdAt descending (newest first)
+    query = query.orderBy(desc(application.createdAt)) as typeof query;
+
+    // Get all results for filtering
+    const allResults = await query;
+
+    // Get total count before pagination
+    const total = allResults.length;
+
+    // Apply pagination
+    const offset = (page - 1) * limit;
+    const paginatedResults = allResults.slice(offset, offset + limit);
+
+    // Fetch interviews for paginated applications
+    const applicationsWithInterviews = await Promise.all(
+      paginatedResults.map(async (result) => {
+        const interviews = await getInterviewsByApplicationId(
+          result.application.id
+        );
+        return {
+          ...result.application,
+          candidate: result.candidate,
+          position: result.position,
+          interviews: interviews.map((interview) => ({
+            id: interview.id,
+            status: interview.status,
+          })),
+        };
+      })
+    );
+
+    return {
+      applications: applicationsWithInterviews,
+      total,
+    };
+  } catch (error) {
+    console.error("Error fetching filtered applications", error);
+    return { applications: [], total: 0 };
   }
 };
 
@@ -910,6 +1072,30 @@ export const getRoundById = async (id: string) => {
   } catch (error) {
     console.error("Error fetching round by id", error);
     return null;
+  }
+};
+
+/**
+ * Fetches all positions linked to a specific round template
+ * @param roundId The ID of the round template
+ * @returns An array of positions linked to the round
+ */
+export const getPositionsByRoundId = async (roundId: string) => {
+  try {
+    const results = await db
+      .select({
+        id: position.id,
+        name: position.name,
+        slug: position.slug,
+      })
+      .from(positionRoundTemplates)
+      .innerJoin(position, eq(positionRoundTemplates.positionId, position.id))
+      .where(eq(positionRoundTemplates.roundTemplateId, roundId));
+
+    return results;
+  } catch (error) {
+    console.error("Error fetching positions by round id", error);
+    return [];
   }
 };
 

@@ -13,10 +13,10 @@ import {
 import { Button } from "@workspace/ui/components/button";
 import { Filter } from "lucide-react";
 
-const FilterPositionType = ({
-  positionTypes,
+const FilterQuestionRound = ({
+  rounds,
 }: {
-  positionTypes: {
+  rounds: {
     id: string;
     name: string;
   }[];
@@ -24,21 +24,21 @@ const FilterPositionType = ({
   const searchParams = useSearchParams();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [selectedTypes, setSelectedTypes] = useOptimistic(
-    searchParams.getAll("type")
+  const [selectedRounds, setSelectedRounds] = useOptimistic(
+    searchParams.getAll("round")
   );
 
   const handleCheckedChange = (value: string, checked: boolean) => {
     startTransition(() => {
       const params = new URLSearchParams(searchParams);
-      params.delete("type");
+      params.delete("round");
 
       const newSelected = checked
-        ? [...selectedTypes, value]
-        : selectedTypes.filter((type) => type !== value);
+        ? [...selectedRounds, value]
+        : selectedRounds.filter((round) => round !== value);
 
-      newSelected.forEach((type) => params.append("type", type));
-      setSelectedTypes(newSelected);
+      newSelected.forEach((round) => params.append("round", round));
+      setSelectedRounds(newSelected);
 
       router.push(`?${params.toString()}`, {
         scroll: false,
@@ -55,27 +55,39 @@ const FilterPositionType = ({
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm">
             <Filter className="mr-2 h-4 w-4" />
-            Position Type
+            Round
+            {selectedRounds.length > 0 && (
+              <span className="ml-2 rounded-full bg-primary px-1.5 py-0.5 text-xs text-primary-foreground">
+                {selectedRounds.length}
+              </span>
+            )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56">
-          <DropdownMenuLabel>Filter by Position</DropdownMenuLabel>
+          <DropdownMenuLabel>Filter by Round</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {positionTypes.map((type) => (
-            <DropdownMenuCheckboxItem
-              key={type.id}
-              checked={selectedTypes.includes(type.id)}
-              onCheckedChange={(checked) =>
-                handleCheckedChange(type.id, checked as boolean)
-              }
-            >
-              {type.name}
-            </DropdownMenuCheckboxItem>
-          ))}
+          {rounds.length === 0 ? (
+            <div className="px-2 py-1.5 text-sm text-muted-foreground">
+              No rounds available
+            </div>
+          ) : (
+            rounds.map((round) => (
+              <DropdownMenuCheckboxItem
+                key={round.id}
+                checked={selectedRounds.includes(round.id)}
+                onCheckedChange={(checked) =>
+                  handleCheckedChange(round.id, checked as boolean)
+                }
+              >
+                {round.name}
+              </DropdownMenuCheckboxItem>
+            ))
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
   );
 };
 
-export default FilterPositionType;
+export default FilterQuestionRound;
+

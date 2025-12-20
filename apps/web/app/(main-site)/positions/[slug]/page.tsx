@@ -155,8 +155,8 @@ const PositionPageContentWrapper = async ({ params }: { params: Params }) => {
                 {position.hireLevel === "managing-director" &&
                   "Managing Director"}
                 {position.hireLevel === "vice-president" && "Vice President"}
-                {position.hireLevel === "associate-analyst" &&
-                  "Associate Analyst"}
+                {position.hireLevel === "associate" && "Associate"}
+                {position.hireLevel === "analyst" && "Analyst"}
                 {position.hireLevel === "intern" && "Intern"}
               </Badge>
             )}
@@ -294,8 +294,8 @@ const OverviewTab = ({
                 {position.hireLevel === "managing-director" &&
                   "Managing Director"}
                 {position.hireLevel === "vice-president" && "Vice President"}
-                {position.hireLevel === "associate-analyst" &&
-                  "Associate Analyst"}
+                {position.hireLevel === "associate" && "Associate"}
+                {position.hireLevel === "analyst" && "Analyst"}
                 {position.hireLevel === "intern" && "Intern"}
               </p>
             )}

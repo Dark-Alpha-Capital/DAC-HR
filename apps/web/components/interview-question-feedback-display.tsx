@@ -7,7 +7,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@workspace/ui/components/collapsible";
-import { Edit, Plus, ChevronDown, MessageSquare } from "lucide-react";
+import { Edit, Plus, ChevronDown, MessageSquare, Star } from "lucide-react";
+import { Badge } from "@workspace/ui/components/badge";
 import { cn } from "@workspace/ui/lib/utils";
 import EditQuestionFeedbackDialog from "./dialogs/edit-question-feedback-dialog";
 
@@ -37,8 +38,8 @@ export default function InterviewQuestionFeedbackDisplay({
 
   const hasFeedback =
     question.feedback &&
-    question.feedback.notes &&
-    question.feedback.notes.trim() !== "";
+    ((question.feedback.notes && question.feedback.notes.trim() !== "") ||
+      question.feedback.rating !== null);
 
   return (
     <>
@@ -67,6 +68,15 @@ export default function InterviewQuestionFeedbackDisplay({
                         <MessageSquare className="h-3 w-3" />
                         Has feedback
                       </span>
+                    )}
+                    {question.feedback?.rating && (
+                      <Badge
+                        variant="secondary"
+                        className="text-xs font-medium px-2 py-0.5 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 flex items-center gap-1"
+                      >
+                        <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+                        {question.feedback.rating}/5
+                      </Badge>
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap">
@@ -114,13 +124,34 @@ export default function InterviewQuestionFeedbackDisplay({
 
         {hasFeedback && (
           <CollapsibleContent className="px-4 pb-4">
-            <div className="space-y-2 pt-2 border-t">
-              <span className="text-sm font-medium text-muted-foreground">
-                Notes:
-              </span>
-              <p className="text-sm whitespace-pre-wrap leading-relaxed bg-muted/50 p-3 rounded-md">
-                {question.feedback?.notes}
-              </p>
+            <div className="space-y-4 pt-2 border-t">
+              {question.feedback?.rating && (
+                <div className="space-y-2">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Rating:
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant="secondary"
+                      className="text-sm font-medium px-2.5 py-1 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 flex items-center gap-1.5"
+                    >
+                      <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
+                      {question.feedback.rating}/5
+                    </Badge>
+                  </div>
+                </div>
+              )}
+              {question.feedback?.notes &&
+                question.feedback.notes.trim() !== "" && (
+                  <div className="space-y-2">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Notes:
+                    </span>
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed bg-muted/50 p-3 rounded-md">
+                      {question.feedback.notes}
+                    </p>
+                  </div>
+                )}
             </div>
           </CollapsibleContent>
         )}

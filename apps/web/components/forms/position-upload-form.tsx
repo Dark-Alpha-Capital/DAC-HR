@@ -55,7 +55,8 @@ const departmentLabels: Record<z.infer<typeof departmentEnum>, string> = {
 const hireLevelLabels: Record<z.infer<typeof hireLevelEnum>, string> = {
   "managing-director": "Managing Director",
   "vice-president": "Vice President",
-  "associate-analyst": "Associate Analyst",
+  associate: "Associate",
+  analyst: "Analyst",
   intern: "Intern",
 };
 

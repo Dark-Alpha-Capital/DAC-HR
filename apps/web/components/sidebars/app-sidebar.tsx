@@ -13,6 +13,7 @@ import {
   Building2,
   User,
   ScrollText,
+  Home,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -35,7 +36,8 @@ import { SidebarUserNav } from "../sidebar-user-nav";
 
 // Recruiting links (available to all users)
 const recruitingLinks = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/", label: "Home", icon: Home },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/candidates", label: "Candidates", icon: Users },
   { href: "/applications", label: "Applications", icon: FileText },
   { href: "/documents", label: "Documents", icon: Folders },
@@ -65,7 +67,7 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar variant="inset" collapsible="icon">
+    <Sidebar collapsible="icon" className="bg-background">
       {/* <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>

@@ -17,7 +17,7 @@ import {
   InputGroupText,
   InputGroupTextarea,
 } from "@workspace/ui/components/input-group";
-import { questionFormSchema } from "@/lib/schemas/question-form-schema";
+import { questionEditFormSchema } from "@/lib/schemas/question-form-schema";
 import { Loader2 } from "lucide-react";
 import { updateQuestion } from "@/lib/actions/update-question";
 import { useRouter } from "next/navigation";
@@ -36,7 +36,7 @@ const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
       questionText: question.questionText,
     },
     validators: {
-      onSubmit: questionFormSchema,
+      onSubmit: questionEditFormSchema,
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {

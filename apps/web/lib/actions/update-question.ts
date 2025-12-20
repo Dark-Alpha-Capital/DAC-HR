@@ -5,6 +5,8 @@ import { questionBank } from "@workspace/db/schema";
 import {
   QuestionFormSchema,
   questionFormSchema,
+  QuestionEditFormSchema,
+  questionEditFormSchema,
 } from "../schemas/question-form-schema";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
@@ -15,7 +17,7 @@ import { insertAuditLog } from "@workspace/db/queries";
 
 export const updateQuestion = async (
   questionId: string,
-  data: QuestionFormSchema
+  data: QuestionEditFormSchema
 ) => {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -25,7 +27,7 @@ export const updateQuestion = async (
     return { error: "Unauthorized" };
   }
 
-  const result = questionFormSchema.safeParse(data);
+  const result = questionEditFormSchema.safeParse(data);
   if (!result.success) {
     return { error: result.error.flatten().fieldErrors };
   }

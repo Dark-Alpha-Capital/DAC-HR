@@ -2,15 +2,17 @@ import React, { Suspense } from "react";
 import QuestionUploadForm from "@/components/forms/question-upload-form";
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
-import { getRoundById } from "@workspace/db/queries";
+import { getRoundById, getPositions } from "@workspace/db/queries";
 import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";
 import BackButton from "@/components/back-button";
+import { db, eq } from "@workspace/db";
+import { positionRoundTemplates } from "@workspace/db/schema";
 
 type Params = Promise<{ id: string }>;
 
 const AddQuestionPage = async ({ params }: { params: Params }) => {
   return (
-    <div className="block-space narrow-container mx-auto">
+    <div className="container mx-auto py-8 space-y-6">
       <BackButton />
       <Suspense fallback={<FormLoadingFallback />}>
         <DisplayAddQuestionForm params={params} />
@@ -36,16 +38,27 @@ const DisplayAddQuestionForm = async ({ params }: { params: Params }) => {
     );
   }
 
+  // Get the position associated with this round
+  const positionRoundTemplate = await db
+    .select({
+      positionId: positionRoundTemplates.positionId,
+    })
+    .from(positionRoundTemplates)
+    .where(eq(positionRoundTemplates.roundTemplateId, id))
+    .limit(1);
+
+  const positionId = positionRoundTemplate[0]?.positionId || "";
+
+  // Get all positions for the form
+  const positions = await getPositions();
+
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold mb-2">Add Question to Round</h1>
-        <p className="text-muted-foreground">
-          Adding a question to:{" "}
-          <span className="font-semibold">{round.name}</span>
-        </p>
-      </div>
-      <QuestionUploadForm roundId={id} onSuccessRedirect={`/rounds/${id}`} />
+      <QuestionUploadForm
+        positions={positions.map((p) => ({ id: p.id, name: p.name }))}
+        preSelectedPositionId={positionId}
+        preSelectedRoundId={id}
+      />
     </div>
   );
 };

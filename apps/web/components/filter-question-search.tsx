@@ -3,9 +3,9 @@
 import React, { useTransition, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@workspace/ui/components/input";
-import { Tag } from "lucide-react";
+import { Search } from "lucide-react";
 
-const FilterDocumentTags = () => {
+const FilterQuestionSearch = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -20,9 +20,9 @@ const FilterDocumentTags = () => {
       startTransition(() => {
         const params = new URLSearchParams(searchParams);
         if (value.trim()) {
-          params.set("tags", value.trim());
+          params.set("search", value.trim());
         } else {
-          params.delete("tags");
+          params.delete("search");
         }
         router.push(`?${params.toString()}`, {
           scroll: false,
@@ -44,11 +44,11 @@ const FilterDocumentTags = () => {
       className="relative flex-1 max-w-sm"
       data-pending={isPending ? "" : undefined}
     >
-      <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       <Input
         type="text"
-        placeholder="Search by tags..."
-        defaultValue={searchParams.get("tags") || ""}
+        placeholder="Search questions..."
+        defaultValue={searchParams.get("search") || ""}
         onChange={(e) => handleSearch(e.target.value)}
         className="pl-9"
       />
@@ -56,34 +56,5 @@ const FilterDocumentTags = () => {
   );
 };
 
-export default FilterDocumentTags;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+export default FilterQuestionSearch;
 

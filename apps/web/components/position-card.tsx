@@ -15,7 +15,8 @@ import { Badge } from "@workspace/ui/components/badge";
 const hireLevelLabels: Record<string, string> = {
   "managing-director": "Managing Director",
   "vice-president": "Vice President",
-  "associate-analyst": "Associate Analyst",
+  associate: "Associate",
+  analyst: "Analyst",
   intern: "Intern",
 };
 
