@@ -125,7 +125,7 @@ export const candidate = pgTable("candidate", {
     .default(sql`gen_random_uuid()`),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
-  email: text("email").notNull(),
+  email: text("email").notNull().unique(),
   phone: text("phone"),
   location: text("location"),
   source: text("source"),

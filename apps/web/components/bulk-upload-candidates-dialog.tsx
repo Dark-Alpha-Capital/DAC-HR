@@ -21,7 +21,6 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
-import { ScrollArea } from "@workspace/ui/components/scroll-area";
 import {
   Alert,
   AlertDescription,
@@ -279,15 +278,14 @@ export default function BulkUploadCandidatesDialog() {
       return;
     }
 
-    // Filter out rows with errors
-    const validCandidates = parsedCandidates.filter(
-      (c) => !c._errors || c._errors.length === 0
-    );
+    // Check if there are any errors - all candidates must be valid
+    const hasErrors = validationErrors.size > 0;
 
-    if (validCandidates.length === 0) {
-      toast.error("Please fix all errors before uploading.", {
-        position: "bottom-right",
-      });
+    if (hasErrors) {
+      toast.error(
+        "Please fix all validation errors before uploading. All candidates must pass validation (all-or-nothing approach).",
+        { position: "bottom-right", duration: 6000 }
+      );
       return;
     }
 
@@ -295,12 +293,12 @@ export default function BulkUploadCandidatesDialog() {
       try {
         // Create mapping: server array index -> Excel row number
         const rowNumberMap = new Map<number, number>();
-        validCandidates.forEach((candidate, index) => {
+        parsedCandidates.forEach((candidate, index) => {
           rowNumberMap.set(index + 1, candidate._rowNumber);
         });
 
-        // Prepare candidates for upload
-        const candidatesToUpload: BulkCandidateRow[] = validCandidates.map(
+        // Prepare ALL candidates for upload (all-or-nothing)
+        const candidatesToUpload: BulkCandidateRow[] = parsedCandidates.map(
           (c) => ({
             firstName: c.firstName,
             lastName: c.lastName,
@@ -318,7 +316,7 @@ export default function BulkUploadCandidatesDialog() {
 
         if (result.success) {
           toast.success(
-            `Successfully uploaded ${result.created} candidate(s).`,
+            `Successfully uploaded all ${result.created} candidate(s).`,
             { position: "bottom-right" }
           );
           setOpen(false);
@@ -354,16 +352,16 @@ export default function BulkUploadCandidatesDialog() {
         );
 
         toast.error(
-          `Upload completed with errors. ${result.created} created, ${result.failed} failed.`,
-          { position: "bottom-right", duration: 5000 }
+          `Upload failed: ${result.failed} validation error(s) found. No candidates were uploaded (all-or-nothing). Please fix all errors and try again.`,
+          { position: "bottom-right", duration: 7000 }
         );
       } catch (error) {
         console.error("Error uploading candidates:", error);
         toast.error(
           error instanceof Error
             ? error.message
-            : "Failed to upload candidates. Please try again.",
-          { position: "bottom-right" }
+            : "Failed to upload candidates. All changes were rolled back.",
+          { position: "bottom-right", duration: 6000 }
         );
       }
     });
@@ -405,6 +403,11 @@ export default function BulkUploadCandidatesDialog() {
             information. The file should have columns: First Name, Last Name,
             Email, Phone (optional), Location (optional), Source (optional),
             Source URL (optional), Note (optional), Position ID (optional).
+            <br />
+            <strong>
+              All-or-nothing: All candidates must pass validation. If any
+              candidate fails validation, nothing will be uploaded.
+            </strong>
           </DialogDescription>
         </DialogHeader>
 
@@ -596,9 +599,7 @@ export default function BulkUploadCandidatesDialog() {
           <Button
             onClick={handleUpload}
             disabled={
-              isPending ||
-              parsedCandidates.length === 0 ||
-              validCandidatesCount === 0
+              isPending || parsedCandidates.length === 0 || errorCount > 0
             }
           >
             {isPending ? (
@@ -608,8 +609,8 @@ export default function BulkUploadCandidatesDialog() {
               </>
             ) : (
               <>
-                Upload {validCandidatesCount} Candidate
-                {validCandidatesCount !== 1 ? "s" : ""}
+                Upload All {parsedCandidates.length} Candidate
+                {parsedCandidates.length !== 1 ? "s" : ""}
               </>
             )}
           </Button>
