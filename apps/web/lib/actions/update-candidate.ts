@@ -1,7 +1,11 @@
 "use server";
 
 import { db } from "@workspace/db";
-import { candidate, candidatePosition, application } from "@workspace/db/schema";
+import {
+  candidate,
+  candidatePosition,
+  application,
+} from "@workspace/db/schema";
 import {
   CandidateFormSchema,
   candidateFormSchema,
@@ -156,11 +160,30 @@ export const updateCandidate = async (
       }
     }
 
+    // Get the application ID for cache invalidation
+    let applicationId: string | undefined;
+    if (positionId) {
+      const [currentApplication] = await db
+        .select()
+        .from(application)
+        .where(
+          and(
+            eq(application.candidateId, candidateId),
+            eq(application.positionId, positionId)
+          )
+        )
+        .limit(1);
+      applicationId = currentApplication?.id;
+    }
+
     updateTag("candidates");
     updateTag(`candidate-applications-${candidateId}`);
     revalidatePath("/candidates");
     revalidatePath(`/candidates/${updatedCandidate.id}`);
     revalidatePath(`/candidates/${updatedCandidate.id}/edit`);
+    if (applicationId) {
+      updateTag(`application-${applicationId}`);
+    }
 
     after(async () => {
       await insertAuditLog({

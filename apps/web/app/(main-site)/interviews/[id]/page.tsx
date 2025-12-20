@@ -24,6 +24,7 @@ import {
   XCircle,
   FileText,
   Edit,
+  ArrowLeft,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import InterviewQuestionFeedbackDisplay from "@/components/interview-question-feedback-display";
@@ -36,7 +37,7 @@ type Params = Promise<{ id: string }>;
 
 const InterviewPage = async ({ params }: { params: Params }) => {
   return (
-    <div className="container mx-auto py-6 space-y-8">
+    <div className="container mx-auto py-4 space-y-8">
       <Suspense>
         <UserAuthenticated />
       </Suspense>
@@ -104,11 +105,20 @@ const DisplayInterviewWrapper = async ({ params }: { params: Params }) => {
     : null;
 
   return (
-    <DisplayInterview
-      interview={interview}
-      application={application}
-      candidate={candidate}
-    />
+    <div>
+      <Link href={`/applications/${application?.id ?? ""}`}>
+        <Button variant="link" size="sm">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Application
+        </Button>
+      </Link>
+
+      <DisplayInterview
+        interview={interview}
+        application={application}
+        candidate={candidate}
+      />
+    </div>
   );
 };
 
