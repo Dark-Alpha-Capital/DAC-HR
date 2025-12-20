@@ -2,11 +2,7 @@ import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import React, { Suspense } from "react";
 import { getEmployees, getPositions } from "@workspace/db/queries";
-import FilterEmployeePosition from "@/components/filter-employee-position";
-import FilterEmployeeDepartment from "@/components/filter-employee-department";
-import FilterEmployeeName from "@/components/filter-employee-name";
-import FilterEmployeeEmail from "@/components/filter-employee-email";
-import ClearEmployeeFiltersButton from "@/components/clear-employee-filters-button";
+import EmployeeFilters from "@/components/employee-filters";
 import EmployeeContainer from "./employee-container";
 import { EmployeesListSkeleton } from "@/components/skeletons/employees-list-skeleton";
 import { Metadata } from "next";
@@ -59,15 +55,7 @@ async function CachedPresentFilters() {
     name: position.name,
   }));
 
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <FilterEmployeeName />
-      <FilterEmployeeEmail />
-      <FilterEmployeePosition positions={positionTypes} />
-      <FilterEmployeeDepartment />
-      <ClearEmployeeFiltersButton />
-    </div>
-  );
+  return <EmployeeFilters positions={positionTypes} />;
 }
 
 const PresentFilters = CachedPresentFilters;

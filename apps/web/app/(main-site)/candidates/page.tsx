@@ -5,10 +5,7 @@ import {
   getCandidatesWithPositionsFiltered,
   getPositions,
 } from "@workspace/db/queries";
-import FilterCandidateName from "@/components/filter-candidate-name";
-import FilterCandidateEmail from "@/components/filter-candidate-email";
-import FilterCandidatePosition from "@/components/filter-candidate-position";
-import ClearCandidateFiltersButton from "@/components/clear-candidate-filters-button";
+import CandidateFilters from "@/components/candidate-filters";
 import CandidateContainer from "./candidate-container";
 import { CandidatesListSkeleton } from "@/components/skeletons/candidates-list-skeleton";
 import { Metadata } from "next";
@@ -67,14 +64,7 @@ async function CachedPresentFilters() {
     name: position.name,
   }));
 
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <FilterCandidateName />
-      <FilterCandidateEmail />
-      <FilterCandidatePosition positions={positionTypes} />
-      <ClearCandidateFiltersButton />
-    </div>
-  );
+  return <CandidateFilters positions={positionTypes} />;
 }
 
 const PresentFilters = CachedPresentFilters;
