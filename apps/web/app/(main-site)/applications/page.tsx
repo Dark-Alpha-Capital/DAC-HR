@@ -168,7 +168,11 @@ async function CachedApplicationsList({
 
   return (
     <div className="space-y-6">
-      <ApplicationContainer applications={applications} />
+      <ApplicationContainer
+        applications={applications}
+        currentPage={currentPage}
+        limit={limit}
+      />
       {totalPages > 1 && (
         <ApplicationsPaginationControls
           currentPage={currentPage}

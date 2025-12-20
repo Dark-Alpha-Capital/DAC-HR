@@ -1,18 +1,8 @@
 "use client";
 
 import React, { useState, useMemo, useTransition } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardFooter,
-} from "@workspace/ui/components/card";
 import { Button } from "@workspace/ui/components/button";
 import { Checkbox } from "@workspace/ui/components/checkbox";
-import { Separator } from "@workspace/ui/components/separator";
-import { Badge } from "@workspace/ui/components/badge";
 import { updateOnboardingTasks } from "@/lib/actions/update-onboarding";
 import { toast } from "sonner";
 import {
@@ -138,110 +128,95 @@ const OnboardingCard: React.FC<OnboardingCardProps> = ({
   };
 
   return (
-    <Card className="mt-4 md:mt-6 lg:mt-8">
-      <CardHeader>
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <CardTitle className="text-xl">Onboarding Tasks</CardTitle>
-            <CardDescription className="mt-1">
-              Track and manage the onboarding process
-            </CardDescription>
-          </div>
-          <Badge variant="secondary">{Math.round(progress)}% Complete</Badge>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold">Onboarding Tasks</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {Object.values(tasks).filter(Boolean).length} of{" "}
+            {onboardingTasks.length} completed
+          </p>
         </div>
-        <div className="mt-4 space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Progress</span>
-            <span className="font-medium">
-              {Object.values(tasks).filter(Boolean).length} of{" "}
-              {onboardingTasks.length} completed
-            </span>
-          </div>
-          <div className="h-2 w-full rounded-full bg-secondary overflow-hidden">
-            <div
-              className="h-full bg-primary transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
+        <div className="text-xs text-muted-foreground">
+          {Math.round(progress)}%
         </div>
-      </CardHeader>
-      <Separator />
-      <CardContent className="pt-6">
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {onboardingTasks.map((task) => {
-            const Icon = task.icon;
-            const isChecked = tasks[task.key];
+      </div>
 
-            return (
-              <div
-                key={task.id}
+      <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
+        <div
+          className="h-full bg-primary transition-all duration-300"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-2">
+        {onboardingTasks.map((task) => {
+          const Icon = task.icon;
+          const isChecked = tasks[task.key];
+
+          return (
+            <div
+              key={task.id}
+              className={cn(
+                "flex items-center gap-2.5 py-2 transition-colors",
+                isChecked && "opacity-60"
+              )}
+            >
+              <Checkbox
+                checked={isChecked}
+                onCheckedChange={(checked) =>
+                  handleTaskChange(task.key, checked === true)
+                }
+                id={task.id}
+                className="h-4 w-4"
+              />
+              <Icon
                 className={cn(
-                  "flex items-center gap-3 p-3 rounded-lg border transition-colors",
-                  isChecked
-                    ? "bg-primary/5 border-primary/20"
-                    : "bg-background border-border "
+                  "h-3.5 w-3.5 shrink-0",
+                  isChecked ? "text-primary" : "text-muted-foreground"
+                )}
+              />
+              <label
+                htmlFor={task.id}
+                className={cn(
+                  "text-sm cursor-pointer flex-1",
+                  isChecked && "text-muted-foreground line-through"
                 )}
               >
-                <Checkbox
-                  checked={isChecked}
-                  onCheckedChange={(checked) =>
-                    handleTaskChange(task.key, checked === true)
-                  }
-                  id={task.id}
-                />
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <Icon
-                    className={cn(
-                      "h-4 w-4 shrink-0",
-                      isChecked ? "text-primary" : "text-muted-foreground"
-                    )}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <label
-                      htmlFor={task.id}
-                      className={cn(
-                        "text-sm font-medium cursor-pointer block",
-                        isChecked && "text-primary"
-                      )}
-                    >
-                      {task.label}
-                    </label>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {task.description}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                {task.label}
+              </label>
+            </div>
+          );
+        })}
 
-          <CardFooter className="px-0 pt-6 pb-0">
-            <Button
-              type="submit"
-              disabled={isPending || !hasChanges}
-              className="w-full sm:w-auto"
-            >
-              {isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Changes
-                </>
-              )}
-            </Button>
-            {hasChanges && !isPending && (
-              <p className="text-xs text-muted-foreground ml-4">
-                You have unsaved changes
-              </p>
+        <div className="flex items-center gap-2 pt-2">
+          <Button
+            type="submit"
+            disabled={isPending || !hasChanges}
+            size="sm"
+            variant="outline"
+            className="h-8"
+          >
+            {isPending ? (
+              <>
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="mr-1.5 h-3.5 w-3.5" />
+                Save
+              </>
             )}
-          </CardFooter>
-        </form>
-      </CardContent>
-    </Card>
+          </Button>
+          {hasChanges && !isPending && (
+            <span className="text-xs text-muted-foreground">
+              Unsaved changes
+            </span>
+          )}
+        </div>
+      </form>
+    </div>
   );
 };
 

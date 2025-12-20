@@ -173,7 +173,11 @@ async function CachedCandidatesList({
 
   return (
     <div className="space-y-6">
-      <CandidateContainer candidates={candidates} />
+      <CandidateContainer
+        candidates={candidates}
+        currentPage={currentPage}
+        limit={limit}
+      />
       {totalPages > 1 && (
         <CandidatesPaginationControls
           currentPage={currentPage}

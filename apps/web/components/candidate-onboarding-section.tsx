@@ -27,15 +27,6 @@ async function CachedCandidateOnboardingSection({ uid }: { uid: string }) {
     return null;
   }
 
-  // Check if candidate has been hired (any application with status "hired")
-  const isHired = candidate.applications.some((app) => app.status === "hired");
-
-  // If not hired, show message
-  if (!isHired) {
-    return <div></div>;
-  }
-
-  // If hired, fetch and display onboarding data
   const rawData = await getOrCreateCandidateOnboarding(candidate.id);
 
   if (!rawData) {

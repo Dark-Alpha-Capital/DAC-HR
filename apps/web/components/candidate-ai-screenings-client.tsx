@@ -30,16 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@workspace/ui/components/alert-dialog";
-import {
-  Sparkles,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  Trash2,
-  Pencil,
-  Loader2,
-} from "lucide-react";
+import { Sparkles, Clock, Trash2, Pencil, Loader2 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
@@ -51,12 +42,10 @@ import {
   type UpdateAiScreeningInput,
 } from "@/lib/actions/update-ai-screening";
 
-// Type for structured data
+// Simplified type for structured data - just score and analysis
 type StructuredScreeningData = {
-  verdict: "Strong Hire" | "Hire" | "Neutral / On the Fence" | "Do Not Hire";
   score: number; // 0-10
-  explanation: string;
-  fullAnalysis: string;
+  analysis: string;
 };
 
 interface CandidateAiScreeningsClientProps {
@@ -64,10 +53,8 @@ interface CandidateAiScreeningsClientProps {
   positionId: string | null;
 }
 
-// Helper function to safely extract structured data
-function getStructuredData(
-  screening: CandidateAiScreening
-): StructuredScreeningData | null {
+// Helper function to safely extract score from structured data
+function getScore(screening: CandidateAiScreening): number | null {
   if (
     !screening.structuredData ||
     typeof screening.structuredData !== "object" ||
@@ -78,30 +65,14 @@ function getStructuredData(
 
   const data = screening.structuredData as any;
 
-  // Check if it's the new simplified format
-  if (
-    typeof data.verdict === "string" &&
-    typeof data.score === "number" &&
-    typeof data.explanation === "string" &&
-    typeof data.fullAnalysis === "string"
-  ) {
-    return {
-      verdict: data.verdict,
-      score: data.score,
-      explanation: data.explanation,
-      fullAnalysis: data.fullAnalysis,
-    };
+  // Check for score in simplified format
+  if (typeof data.score === "number") {
+    return data.score;
   }
 
   // Backward compatibility: try to extract from old format
-  if (data.overallVerdict?.recommendation) {
-    return {
-      verdict: data.overallVerdict.recommendation,
-      score: 5, // Default score for old format
-      explanation:
-        data.overallVerdict.justification || "No explanation available",
-      fullAnalysis: data.fullAnalysis || screening.analysis || "",
-    };
+  if (data.verdict && typeof data.score === "number") {
+    return data.score;
   }
 
   return null;
@@ -205,13 +176,46 @@ export default function CandidateAiScreeningsClient({
     }
 
     startTransition(async () => {
-      const structuredData = getStructuredData(selectedScreening);
+      const score = getScore(selectedScreening);
+      const existingStructuredData = selectedScreening.structuredData as
+        | {
+            verdict:
+              | "Strong Hire"
+              | "Hire"
+              | "Neutral / On the Fence"
+              | "Do Not Hire";
+            score: number;
+            explanation: string;
+            fullAnalysis: string;
+          }
+        | null
+        | undefined;
+
+      // Preserve existing structuredData structure if it exists and has all required fields
+      // Otherwise set to null since we don't have all required fields to construct a valid object
+      let structuredData: UpdateAiScreeningInput["structuredData"] = null;
+      if (
+        existingStructuredData &&
+        typeof existingStructuredData === "object" &&
+        "verdict" in existingStructuredData &&
+        "score" in existingStructuredData &&
+        "explanation" in existingStructuredData &&
+        "fullAnalysis" in existingStructuredData
+      ) {
+        // Preserve the structure and update fullAnalysis with the new analysis
+        structuredData = {
+          verdict: existingStructuredData.verdict,
+          score: existingStructuredData.score,
+          explanation: existingStructuredData.explanation,
+          fullAnalysis: editAnalysis.trim(),
+        };
+      }
 
       const updateData: UpdateAiScreeningInput = {
         screeningId: selectedScreening.id,
         candidateId,
         analysis: editAnalysis.trim(),
-        structuredData: structuredData || null,
+        structuredData,
       };
 
       const result = await updateAiScreening(updateData);
@@ -287,16 +291,7 @@ export default function CandidateAiScreeningsClient({
             <CardContent>
               <div className="space-y-2 max-h-[600px] overflow-y-auto">
                 {screeningsWithDates.map((screening) => {
-                  const structuredData = getStructuredData(screening);
-                  const getVerdictColor = (verdict: string) => {
-                    if (verdict === "Strong Hire")
-                      return "bg-green-500/10 text-green-700 border-green-500/20";
-                    if (verdict === "Hire")
-                      return "bg-blue-500/10 text-blue-700 border-blue-500/20";
-                    if (verdict === "Neutral / On the Fence")
-                      return "bg-yellow-500/10 text-yellow-700 border-yellow-500/20";
-                    return "bg-red-500/10 text-red-700 border-red-500/20";
-                  };
+                  const score = getScore(screening);
 
                   const getScoreColor = (score: number) => {
                     if (score >= 8) return "text-green-600";
@@ -328,18 +323,12 @@ export default function CandidateAiScreeningsClient({
                               </span>
                             )}
                           </div>
-                          {structuredData && (
-                            <div className="flex items-center gap-2 mt-2 flex-wrap">
-                              <Badge
-                                variant="outline"
-                                className={`text-xs ${getVerdictColor(structuredData.verdict)}`}
-                              >
-                                {structuredData.verdict}
-                              </Badge>
+                          {score !== null && (
+                            <div className="flex items-center gap-2 mt-2">
                               <span
-                                className={`text-sm font-semibold ${getScoreColor(structuredData.score)}`}
+                                className={`text-sm font-semibold ${getScoreColor(score)}`}
                               >
-                                {structuredData.score}/10
+                                Score: {score}/10
                               </span>
                             </div>
                           )}
@@ -407,17 +396,33 @@ export default function CandidateAiScreeningsClient({
                       )}
 
                       {(() => {
-                        const structuredData =
-                          getStructuredData(selectedScreening);
-                        return structuredData ? (
-                          <StructuredDataDisplay data={structuredData} />
+                        const score = getScore(selectedScreening);
+                        return score !== null ? (
+                          <div className="pt-4 border-t">
+                            <div className="flex items-center gap-3 mb-4">
+                              <span className="text-sm font-medium text-muted-foreground">
+                                Score:
+                              </span>
+                              <span
+                                className={`text-2xl font-bold ${
+                                  score >= 8
+                                    ? "text-green-600"
+                                    : score >= 6
+                                      ? "text-blue-600"
+                                      : score >= 4
+                                        ? "text-yellow-600"
+                                        : "text-red-600"
+                                }`}
+                              >
+                                {score}/10
+                              </span>
+                            </div>
+                          </div>
                         ) : null;
                       })()}
 
                       <div className="pt-4 border-t">
-                        <h3 className="text-sm font-medium mb-3">
-                          Full Analysis
-                        </h3>
+                        <h3 className="text-sm font-medium mb-3">Analysis</h3>
                         <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-code:text-foreground prose-pre:text-foreground prose-blockquote:text-foreground prose-li:text-foreground">
                           <ReactMarkdown>
                             {selectedScreening.analysis}
@@ -510,99 +515,6 @@ export default function CandidateAiScreeningsClient({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-function StructuredDataDisplay({ data }: { data: StructuredScreeningData }) {
-  const getVerdictColor = (verdict: string) => {
-    if (verdict === "Strong Hire")
-      return "bg-green-500/10 text-green-700 border-green-500/20 dark:text-green-400";
-    if (verdict === "Hire")
-      return "bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400";
-    if (verdict === "Neutral / On the Fence")
-      return "bg-yellow-500/10 text-yellow-700 border-yellow-500/20 dark:text-yellow-400";
-    return "bg-red-500/10 text-red-700 border-red-500/20 dark:text-red-400";
-  };
-
-  const getScoreColor = (score: number) => {
-    if (score >= 8) return "text-green-600 dark:text-green-400";
-    if (score >= 6) return "text-blue-600 dark:text-blue-400";
-    if (score >= 4) return "text-yellow-600 dark:text-yellow-400";
-    return "text-red-600 dark:text-red-400";
-  };
-
-  const getVerdictIcon = (verdict: string) => {
-    if (verdict === "Strong Hire" || verdict === "Hire") {
-      return (
-        <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-      );
-    }
-    if (verdict === "Do Not Hire") {
-      return <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />;
-    }
-    return (
-      <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-    );
-  };
-
-  return (
-    <div className="space-y-4 pt-4 border-t">
-      {/* Verdict and Score Card */}
-      <div
-        className="p-5 rounded-lg border-2 shadow-sm"
-        style={{
-          backgroundColor:
-            data.verdict === "Strong Hire"
-              ? "rgba(34, 197, 94, 0.1)"
-              : data.verdict === "Hire"
-                ? "rgba(59, 130, 246, 0.1)"
-                : data.verdict === "Neutral / On the Fence"
-                  ? "rgba(234, 179, 8, 0.1)"
-                  : "rgba(239, 68, 68, 0.1)",
-          borderColor:
-            data.verdict === "Strong Hire"
-              ? "rgba(34, 197, 94, 0.3)"
-              : data.verdict === "Hire"
-                ? "rgba(59, 130, 246, 0.3)"
-                : data.verdict === "Neutral / On the Fence"
-                  ? "rgba(234, 179, 8, 0.3)"
-                  : "rgba(239, 68, 68, 0.3)",
-        }}
-      >
-        <div className="flex items-center gap-2 mb-4">
-          {getVerdictIcon(data.verdict)}
-          <h3 className="text-base font-semibold">Assessment Summary</h3>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3 mb-4">
-          <Badge
-            variant="outline"
-            className={`text-sm font-medium py-1 px-2 ${getVerdictColor(data.verdict)}`}
-          >
-            {data.verdict}
-          </Badge>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground font-medium">
-              Score:
-            </span>
-            <span className={`text-2xl font-bold ${getScoreColor(data.score)}`}>
-              {data.score}
-            </span>
-            <span
-              className={`text-sm font-medium ${getScoreColor(data.score)}`}
-            >
-              /10
-            </span>
-          </div>
-        </div>
-
-        <div className="pt-3 border-t border-border/50">
-          <p className="text-sm leading-relaxed text-foreground">
-            {data.explanation}
-          </p>
-        </div>
-      </div>
     </div>
   );
 }

@@ -64,6 +64,7 @@ const PositionContainer = ({ positions }: PositionContainerProps) => {
       <Table className="min-w-[640px]">
         <TableHeader>
           <TableRow>
+            <TableHead className="py-1.5 px-2 text-xs w-16">#</TableHead>
             <TableHead className="py-1.5 px-2 text-xs">Name</TableHead>
             <TableHead className="py-1.5 px-2 text-xs">Status</TableHead>
             <TableHead className="py-1.5 px-2 text-xs">Hire Level</TableHead>
@@ -75,8 +76,11 @@ const PositionContainer = ({ positions }: PositionContainerProps) => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {positions.map((position) => (
+          {positions.map((position, index) => (
             <TableRow key={position.id}>
+              <TableCell className="py-1.5 px-2 text-sm text-muted-foreground">
+                {index + 1}
+              </TableCell>
               <TableCell className="py-1.5 px-2 font-medium text-sm">
                 {position.name}
               </TableCell>

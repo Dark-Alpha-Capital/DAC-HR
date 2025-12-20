@@ -2,12 +2,6 @@
 
 import React, { useState, useTransition } from "react";
 import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "@workspace/ui/components/toggle-group";
-import { LayoutGrid, Table as TableIcon } from "lucide-react";
-import EmployeeCard from "@/components/employee-card";
-import {
   Table,
   TableBody,
   TableCell,
@@ -18,8 +12,6 @@ import {
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
-import DeleteEmployeeButton from "@/components/delete-employee-button";
-import { Card, CardContent } from "@workspace/ui/components/card";
 import { deleteEmployee } from "@/lib/actions/delete-employee";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -46,8 +38,6 @@ interface EmployeeContainerProps {
   nameFilter?: string;
   emailFilter?: string;
 }
-
-type ViewMode = "grid" | "table";
 
 const DeleteEmployeeIconButton = ({ employeeId }: { employeeId: string }) => {
   const router = useRouter();
@@ -116,8 +106,6 @@ const EmployeeContainer = ({
   nameFilter,
   emailFilter,
 }: EmployeeContainerProps) => {
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
-
   // Filter employees based on name and email
   const filteredEmployees = employees.filter((employee) => {
     const fullName = `${employee.firstName} ${employee.lastName}`.toLowerCase();
@@ -146,96 +134,72 @@ const EmployeeContainer = ({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-end">
-        <ToggleGroup
-          type="single"
-          value={viewMode}
-          onValueChange={(value) => {
-            if (value) setViewMode(value as ViewMode);
-          }}
-          variant="outline"
-        >
-          <ToggleGroupItem value="grid" aria-label="Grid view">
-            <LayoutGrid className="h-4 w-4" />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="table" aria-label="Table view">
-            <TableIcon className="h-4 w-4" />
-          </ToggleGroupItem>
-        </ToggleGroup>
-      </div>
-
-      {viewMode === "grid" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredEmployees.map((employee) => (
-            <EmployeeCard key={employee.id} employee={employee} />
-          ))}
-        </div>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="py-1.5 px-2 text-xs">Name</TableHead>
-              <TableHead className="py-1.5 px-2 text-xs">Department</TableHead>
-              <TableHead className="py-1.5 px-2 text-xs">Position</TableHead>
-              <TableHead className="text-right py-1.5 px-2 text-xs">
-                Actions
-              </TableHead>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="py-1.5 px-2 text-xs w-16">#</TableHead>
+          <TableHead className="py-1.5 px-2 text-xs">Name</TableHead>
+          <TableHead className="py-1.5 px-2 text-xs">Department</TableHead>
+          <TableHead className="py-1.5 px-2 text-xs">Position</TableHead>
+          <TableHead className="text-right py-1.5 px-2 text-xs">
+            Actions
+          </TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {filteredEmployees.map((employee, index) => {
+          const fullName = `${employee.firstName} ${employee.lastName}`;
+          const departmentNames = formatDepartments(employee.department);
+          return (
+            <TableRow key={employee.id}>
+              <TableCell className="py-1.5 px-2 text-sm text-muted-foreground">
+                {index + 1}
+              </TableCell>
+              <TableCell className="py-1.5 px-2 font-medium text-sm">
+                {fullName}
+              </TableCell>
+              <TableCell className="py-1.5 px-2 text-sm">
+                {departmentNames.join(", ")}
+              </TableCell>
+              <TableCell className="py-1.5 px-2 text-sm">
+                {employee.positionId ? (
+                  <Link href={`/positions/${employee.positionId}`}>
+                    {employee.position?.name}
+                  </Link>
+                ) : (
+                  "-"
+                )}
+              </TableCell>
+              <TableCell className="text-right py-1.5 px-2">
+                <div className="flex items-center justify-end gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    asChild
+                  >
+                    <Link href={`/employees/${employee.id}`}>
+                      <Eye className="h-3.5 w-3.5" />
+                    </Link>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    asChild
+                  >
+                    <Link href={`/employees/${employee.id}/edit`}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Link>
+                  </Button>
+                  <DeleteEmployeeIconButton employeeId={employee.id} />
+                </div>
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredEmployees.map((employee) => {
-              const fullName = `${employee.firstName} ${employee.lastName}`;
-              const departmentNames = formatDepartments(employee.department);
-              return (
-                <TableRow key={employee.id}>
-                  <TableCell className="py-1.5 px-2 font-medium text-sm">
-                    {fullName}
-                  </TableCell>
-                  <TableCell className="py-1.5 px-2 text-sm">
-                    {departmentNames.join(", ")}
-                  </TableCell>
-                  <TableCell className="py-1.5 px-2 text-sm">
-                    {employee.positionId ? (
-                      <Link href={`/positions/${employee.positionId}`}>
-                        {employee.position?.name}
-                      </Link>
-                    ) : (
-                      "-"
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right py-1.5 px-2">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                        asChild
-                      >
-                        <Link href={`/employees/${employee.id}`}>
-                          <Eye className="h-3.5 w-3.5" />
-                        </Link>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                        asChild
-                      >
-                        <Link href={`/employees/${employee.id}/edit`}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Link>
-                      </Button>
-                      <DeleteEmployeeIconButton employeeId={employee.id} />
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      )}
-    </div>
+          );
+        })}
+      </TableBody>
+    </Table>
   );
 };
 

@@ -255,7 +255,7 @@ async function CachedCandidatePageContent({
         </TabsContent>
         <TabsContent value="ai-analysis" className="mt-6">
           <Suspense fallback={<SectionSkeleton />}>
-            <CandidateAiAnalysis
+            <CachedCandidateAiAnalysis
               candidateId={uid}
               positionId={candidate.applications[0]?.position.id ?? ""}
               session={session}
@@ -340,6 +340,32 @@ async function CachedDisplayCandidateDocuments({ uid }: { uid: string }) {
         <CandidateDocumentTable documents={documents} candidateId={uid} />
       )}
     </div>
+  );
+}
+
+// Cached component for AI Analysis - fetches documents
+async function CachedCandidateAiAnalysis({
+  candidateId,
+  positionId,
+  session,
+}: {
+  candidateId: string;
+  positionId: string;
+  session: Session;
+}) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag(`candidate-documents-${candidateId}`);
+
+  const documents = await getDocumentsByCandidateId(candidateId);
+
+  return (
+    <CandidateAiAnalysis
+      candidateId={candidateId}
+      positionId={positionId}
+      session={session}
+      documents={documents}
+    />
   );
 }
 

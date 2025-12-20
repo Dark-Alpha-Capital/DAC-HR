@@ -1,5 +1,6 @@
 import { getCandidateAiScreenings } from "@workspace/db/queries";
 import CandidateAiScreeningsClient from "./candidate-ai-screenings-client";
+import { cacheLife, cacheTag } from "next/cache";
 
 interface CandidateAiScreeningsTabProps {
   candidateId: string;
@@ -10,13 +11,14 @@ export default async function CandidateAiScreeningsTab({
   candidateId,
   positionId,
 }: CandidateAiScreeningsTabProps) {
-  // No caching - fetch fresh data every time
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag(`candidate-ai-screenings-${candidateId}`);
+
   const screenings = await getCandidateAiScreenings(
     candidateId,
     positionId || undefined
   );
-
-  console.log(screenings);
 
   return (
     <CandidateAiScreeningsClient

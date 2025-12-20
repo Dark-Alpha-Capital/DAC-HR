@@ -11,6 +11,7 @@ import { Metadata } from "next";
 import FilterQuestionSearch from "@/components/filter-question-search";
 import FilterQuestionPosition from "@/components/filter-question-position";
 import FilterQuestionRound from "@/components/filter-question-round";
+import ClearQuestionFiltersButton from "@/components/clear-question-filters-button";
 
 export const metadata: Metadata = {
   title: "Questions",
@@ -63,6 +64,7 @@ const QuestionsPageContent = async ({
         <Suspense fallback={<div className="h-9 w-32" />}>
           <FilterControls />
         </Suspense>
+        <ClearQuestionFiltersButton />
       </div>
 
       <Suspense fallback={<div>Loading...</div>}>

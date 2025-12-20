@@ -950,7 +950,11 @@ const candidate = new Hono()
         return c.json({ error: "Candidate ID is required" }, { status: 400 });
       }
 
-      let body: { positionId?: string } = {};
+      let body: {
+        positionId?: string;
+        documentIds?: string[];
+        customPrompt?: string;
+      } = {};
       try {
         body = await c.req.json();
       } catch {
@@ -960,10 +964,20 @@ const candidate = new Hono()
         );
       }
 
-      const { positionId } = body;
+      const { positionId, documentIds, customPrompt } = body;
       if (positionId) {
         console.log(
           `[POST /candidate/:id/ai-analysis] Analysis focused on position: ${positionId}`
+        );
+      }
+      if (documentIds && documentIds.length > 0) {
+        console.log(
+          `[POST /candidate/:id/ai-analysis] Analysis focused on ${documentIds.length} specific document(s)`
+        );
+      }
+      if (customPrompt) {
+        console.log(
+          `[POST /candidate/:id/ai-analysis] Custom prompt provided (${customPrompt.length} characters)`
         );
       }
 
@@ -1052,12 +1066,82 @@ const candidate = new Hono()
           : null,
       };
 
+      // Fetch selected documents if documentIds are provided
+      let selectedDocuments: Array<{
+        id: string;
+        name: string;
+        fileSearchDocumentName: string | null;
+      }> = [];
+      if (documentIds && documentIds.length > 0) {
+        console.log(
+          `[POST /candidate/:id/ai-analysis] Fetching ${documentIds.length} selected document(s)...`
+        );
+        const allDocuments = await getDocumentsByCandidateId(candidateId);
+        selectedDocuments = allDocuments
+          .filter((doc) => documentIds.includes(doc.id))
+          .map((doc) => ({
+            id: doc.id,
+            name: doc.name,
+            fileSearchDocumentName: doc.fileSearchDocumentName,
+          }));
+
+        console.log(
+          `[POST /candidate/:id/ai-analysis] Found ${selectedDocuments.length} document(s) with fileSearchDocumentName`
+        );
+      }
+
       const structuredContextJson = JSON.stringify(structuredContext, null, 2);
 
       // Simplified prompt for candidate suitability analysis
       console.log(
         `[POST /candidate/:id/ai-analysis] Generating AI analysis prompt...`
       );
+
+      // Build document selection instruction
+      let documentInstruction = "";
+      if (selectedDocuments.length > 0) {
+        const documentsWithFileSearch = selectedDocuments.filter(
+          (doc) => doc.fileSearchDocumentName
+        );
+        if (documentsWithFileSearch.length > 0) {
+          documentInstruction = `
+IMPORTANT: Focus your analysis on the following specific documents from the file search store:
+${documentsWithFileSearch
+  .map(
+    (doc) =>
+      `- ${doc.name} (fileSearchDocumentName: ${doc.fileSearchDocumentName})`
+  )
+  .join("\n")}
+
+When using the fileSearch tool, prioritize these documents, but you may also reference other documents if relevant.
+`;
+        } else {
+          documentInstruction = `
+NOTE: Specific documents were selected, but they may not be available in the file search store yet.
+Please analyze all available documents for this candidate.
+`;
+        }
+      } else {
+        documentInstruction = `
+Use the fileSearch tool to retrieve and read **all** documents for this candidate
+from the \`${CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME}\` store. These may include resume,
+cover letter, case studies, work samples, interview feedback, and internal notes.
+`;
+      }
+
+      // Build custom prompt section
+      let customPromptSection = "";
+      if (customPrompt && customPrompt.trim()) {
+        customPromptSection = `
+
+ADDITIONAL USER REQUIREMENTS:
+The user has provided specific questions or requirements for this analysis:
+${customPrompt.trim()}
+
+Please ensure your analysis addresses these specific requirements while maintaining the overall evaluation framework.
+`;
+      }
+
       const prompt = `
 You are an expert buy-side hedge fund recruiter and people manager for DarkAlpha Capital.
 Your task is to evaluate whether the candidate is a strong fit for the specific position,
@@ -1065,9 +1149,7 @@ using BOTH:
 - the structured candidate + position data I give you, AND
 - the candidate's documents available via the file search tool.
 
-FIRST, use the fileSearch tool to retrieve and read **all** documents for this candidate
-from the \`${CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME}\` store. These may include resume,
-cover letter, case studies, work samples, interview feedback, and internal notes.
+FIRST, ${documentInstruction.trim()}
 
 Then, based on everything you know, produce a comprehensive markdown analysis report
 covering the candidate's background, skills, experience fit, culture fit, and overall
@@ -1082,23 +1164,22 @@ Here is the structured data about the candidate and position (JSON):
 \`\`\`json
 ${structuredContextJson}
 \`\`\`
+${customPromptSection}
 
 Now perform the full analysis as described above.
       `.trim();
 
-      // Note: Cannot use responseMimeType: "application/json" with tools (fileSearch)
-      // So we'll ask the model to return JSON in the prompt and parse it manually
+      // Simplified prompt - just ask for score and analysis
       const enhancedPrompt = `${prompt}
 
-IMPORTANT: You must respond with ONLY valid JSON that matches this simple structure:
-{
-  "verdict": "Strong Hire" | "Hire" | "Neutral / On the Fence" | "Do Not Hire",
-  "score": 0-10,
-  "explanation": "A clear explanation of your verdict and score (2-4 sentences)",
-  "fullAnalysis": "The complete markdown analysis report covering candidate background, skills, experience fit, culture fit, and overall suitability"
-}
+Please provide your analysis in the following format:
 
-Return ONLY the JSON object, no markdown formatting, no code blocks, just pure JSON.`;
+**Score:** [A number from 0-10 indicating candidate suitability]
+
+**Analysis:**
+[Your complete markdown analysis report covering candidate background, skills, experience fit, culture fit, and overall suitability]
+
+You can provide the analysis in any format you prefer, but please include a clear score (0-10) and a comprehensive analysis.`;
 
       console.log(
         `[POST /candidate/:id/ai-analysis] Calling Gemini API for analysis...`
@@ -1128,28 +1209,73 @@ Return ONLY the JSON object, no markdown formatting, no code blocks, just pure J
         `[POST /candidate/:id/ai-analysis] Gemini API response received in ${aiDuration}ms`
       );
 
-      // Extract and parse JSON from response
+      // Extract score and analysis from response (flexible parsing)
       console.log(`[POST /candidate/:id/ai-analysis] Parsing AI response...`);
-      let responseText = response.text || "";
+      let responseText: string = response.text || "";
 
-      // Remove markdown code blocks if present
-      responseText = responseText
-        .replace(/```json\n?/g, "")
-        .replace(/```\n?/g, "")
-        .trim();
+      // Try to extract score from the response (look for patterns like "Score: 7" or "Score: 7.5" or "**Score:** 8")
+      let score = 5; // Default score if not found
+      const scorePatterns = [
+        /\*\*Score:\*\*\s*(\d+(?:\.\d+)?)/i,
+        /Score:\s*(\d+(?:\.\d+)?)/i,
+        /"score":\s*(\d+(?:\.\d+)?)/i,
+        /score["\s:]*(\d+(?:\.\d+)?)/i,
+      ];
 
-      // Try to extract JSON if wrapped in text
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        responseText = jsonMatch[0];
+      for (const pattern of scorePatterns) {
+        const match = responseText.match(pattern);
+        if (match && match[1]) {
+          const extractedScore = parseFloat(match[1]);
+          if (
+            !isNaN(extractedScore) &&
+            extractedScore >= 0 &&
+            extractedScore <= 10
+          ) {
+            score = Math.round(extractedScore * 10) / 10; // Round to 1 decimal place
+            console.log(
+              `[POST /candidate/:id/ai-analysis] Extracted score: ${score}`
+            );
+            break;
+          }
+        }
       }
 
-      const parsedResponse = JSON.parse(responseText);
-      const candidateAiScreening =
-        candidateAiScreeningSchema.parse(parsedResponse);
+      // Extract analysis - use the full response text, or try to find it after "Analysis:" marker
+      let analysis = responseText.trim();
+      const analysisMarkers = [
+        /\*\*Analysis:\*\*\s*([\s\S]*)/i,
+        /Analysis:\s*([\s\S]*)/i,
+        /"analysis":\s*"([\s\S]*)"/i,
+      ];
+
+      for (const pattern of analysisMarkers) {
+        const match = responseText.match(pattern);
+        if (match && match[1]) {
+          analysis = match[1].trim();
+          break;
+        }
+      }
+
+      // Clean up the analysis text
+      analysis = analysis
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "")
+        .replace(/^\*\*Score:\*\*\s*\d+(?:\.\d+)?\s*/i, "")
+        .replace(/^Score:\s*\d+(?:\.\d+)?\s*/i, "")
+        .trim();
+
+      // If analysis is empty, use the full response
+      if (!analysis || analysis.length < 50) {
+        analysis = responseText.trim();
+      }
+
+      const candidateAiScreening = {
+        score,
+        analysis,
+      };
 
       console.log(
-        `[POST /candidate/:id/ai-analysis] AI analysis parsed successfully - Verdict: ${candidateAiScreening.verdict}, Score: ${candidateAiScreening.score}`
+        `[POST /candidate/:id/ai-analysis] AI analysis parsed successfully - Score: ${candidateAiScreening.score}, Analysis length: ${candidateAiScreening.analysis.length} characters`
       );
 
       // Save the analysis to the database
@@ -1160,9 +1286,12 @@ Return ONLY the JSON object, no markdown formatting, no code blocks, just pure J
         candidateId,
         positionId: targetApplication?.position.id || null,
         applicationId: targetApplication?.id || null,
-        analysis: candidateAiScreening.fullAnalysis,
+        analysis: candidateAiScreening.analysis,
         model: "gemini-2.5-flash",
-        structuredData: candidateAiScreening,
+        structuredData: {
+          score: candidateAiScreening.score,
+          analysis: candidateAiScreening.analysis,
+        },
       });
 
       if (!savedScreening) {
@@ -1181,9 +1310,9 @@ Return ONLY the JSON object, no markdown formatting, no code blocks, just pure J
       );
       return c.json(
         {
-          analysis: candidateAiScreening.fullAnalysis,
+          analysis: candidateAiScreening.analysis,
+          score: candidateAiScreening.score,
           screeningId: savedScreening?.id || null,
-          structuredData: candidateAiScreening,
         },
         { status: 200 }
       );

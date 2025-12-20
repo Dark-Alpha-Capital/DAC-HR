@@ -130,6 +130,7 @@ const QuestionContainer = ({
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="py-3 px-4 w-16">#</TableHead>
             <TableHead className="py-3 px-4">Question</TableHead>
             <TableHead className="py-3 px-4">Round</TableHead>
             <TableHead className="py-3 px-4">Position</TableHead>
@@ -137,8 +138,11 @@ const QuestionContainer = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredQuestions.map((question) => (
+          {filteredQuestions.map((question, index) => (
             <TableRow key={question.id}>
+              <TableCell className="py-3 px-4 text-muted-foreground">
+                {index + 1}
+              </TableCell>
               <TableCell className="py-3 px-4 font-medium max-w-[500px]">
                 <div className="line-clamp-2">{question.questionText}</div>
               </TableCell>

@@ -36,13 +36,21 @@ type Application = {
 
 interface ApplicationContainerProps {
   applications: Application[];
+  currentPage?: number;
+  limit?: number;
 }
 
-const ApplicationContainer = ({ applications }: ApplicationContainerProps) => {
+const ApplicationContainer = ({
+  applications,
+  currentPage = 1,
+  limit = 50,
+}: ApplicationContainerProps) => {
+  const startIndex = (currentPage - 1) * limit;
   return (
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead className="py-1.5 px-2 text-xs w-16">#</TableHead>
           <TableHead className="py-1.5 px-2 text-xs">Candidate</TableHead>
           <TableHead className="py-1.5 px-2 text-xs">Position</TableHead>
           <TableHead className="py-1.5 px-2 text-xs">Status</TableHead>
@@ -53,10 +61,13 @@ const ApplicationContainer = ({ applications }: ApplicationContainerProps) => {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {applications.map((application) => {
+        {applications.map((application, index) => {
           const fullName = `${application.candidate.firstName} ${application.candidate.lastName}`;
           return (
             <TableRow key={application.id}>
+              <TableCell className="py-1.5 px-2 text-sm text-muted-foreground">
+                {startIndex + index + 1}
+              </TableCell>
               <TableCell className="py-1.5 px-2 text-sm">
                 <div className="flex flex-col">
                   <span className="font-medium">{fullName}</span>
