@@ -5,6 +5,7 @@ import {
   candidate,
   candidatePosition,
   application,
+  interview,
 } from "@workspace/db/schema";
 import {
   CandidateFormSchema,
@@ -13,7 +14,7 @@ import {
 import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
-import { eq, and } from "@workspace/db";
+import { eq, and, inArray } from "@workspace/db";
 import { after } from "next/server";
 import { insertAuditLog } from "@workspace/db/queries";
 
@@ -130,6 +131,41 @@ export const updateCandidate = async (
           // Application exists for old position
           if (!existingApplicationForNewPosition) {
             // No application for new position - update old one to point to new position
+            // CRITICAL: When position changes, interviews become invalid because they
+            // reference round templates for the old position. We need to handle them.
+
+            // Get all interviews for this application
+            const existingInterviews = await db
+              .select({ id: interview.id, status: interview.status })
+              .from(interview)
+              .where(eq(interview.applicationId, oldApplication.id));
+
+            // Delete pending/scheduled interviews - they're not meaningful for the new position
+            // Keep completed interviews for historical purposes (they'll be orphaned but that's acceptable)
+            const interviewsToDelete = existingInterviews.filter(
+              (inv) => inv.status === "pending" || inv.status === "scheduled"
+            );
+
+            if (interviewsToDelete.length > 0) {
+              const interviewIdsToDelete = interviewsToDelete.map(
+                (inv) => inv.id
+              );
+              await db
+                .delete(interview)
+                .where(inArray(interview.id, interviewIdsToDelete));
+            }
+
+            // Invalidate cache for all affected interviews (including completed ones we kept)
+            for (const inv of existingInterviews) {
+              updateTag(`interview-${inv.id}`);
+              revalidatePath(`/interviews/${inv.id}`);
+            }
+
+            // Invalidate cache for the old application (before position update)
+            updateTag(`application-${oldApplication.id}`);
+            revalidatePath(`/applications/${oldApplication.id}`);
+
+            // Now update the application position
             await db
               .update(application)
               .set({
