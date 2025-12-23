@@ -10,7 +10,7 @@ import {
   CandidateFormSchema,
   candidateFormSchema,
 } from "../schemas/candidate-form-schema";
-import { revalidatePath } from "next/cache";
+import { revalidateCandidate, revalidateCandidates } from "../cache-utils";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 
@@ -65,7 +65,8 @@ export const createCandidate = async (data: CandidateFormSchema) => {
       });
     }
 
-    revalidatePath("/candidates");
+    await revalidateCandidate(newCandidate.id);
+    await revalidateCandidates();
 
     return { success: true, data: newCandidate };
   } catch (error) {

@@ -270,7 +270,7 @@ async function DashboardContent() {
                         <p className="text-xs text-muted-foreground">
                           {activity.type === "application"
                             ? `Status changed to ${activity.status}`
-                            : `${activity.roundName} ${activity.status === "scheduled" ? "scheduled" : activity.status}`}
+                            : `${activity.roundName} ${activity.status === "pending" ? "scheduled" : activity.status}`}
                         </p>
                         {activity.user && (
                           <p className="text-xs text-muted-foreground">

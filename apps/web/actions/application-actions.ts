@@ -3,7 +3,7 @@
 import { db } from "@workspace/db";
 import { application, candidate, position, documents } from "@workspace/db/schema";
 import { eq, inArray } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidateApplication } from "@/lib/cache-utils";
 
 type ApplicationStatus =
   | "pending"
@@ -38,8 +38,12 @@ export async function updateApplicationStatus(
       await triggerOnboardingWorkflow(applicationId);
     }
 
-    revalidatePath(`/applications/${applicationId}`);
-    revalidatePath(`/candidates/[uid]`, "page");
+    await revalidateApplication(
+      applicationId,
+      updatedApplication.candidateId,
+      updatedApplication.positionId,
+      status
+    );
 
     return { success: true, application: updatedApplication };
   } catch (error) {

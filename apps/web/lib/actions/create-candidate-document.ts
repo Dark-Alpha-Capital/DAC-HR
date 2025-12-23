@@ -5,7 +5,7 @@ import {
   CandidateDocumentFormSchema,
   candidateDocumentFormSchema,
 } from "../schemas/candidate-document-form-schema";
-import { revalidatePath } from "next/cache";
+import { revalidateCandidateDocument } from "../cache-utils";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 
@@ -48,8 +48,11 @@ export const createCandidateDocument = async (
       })
       .returning();
 
-    revalidatePath(`/candidates/${candidateId}`);
-    revalidatePath("/candidates");
+    if (!newCandidateDocument) {
+      return { error: "Failed to create candidate document" };
+    }
+
+    await revalidateCandidateDocument(candidateId, newCandidateDocument.id);
 
     return { success: true, data: newCandidateDocument };
   } catch (error) {

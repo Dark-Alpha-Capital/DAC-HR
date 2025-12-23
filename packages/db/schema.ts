@@ -306,3 +306,128 @@ export const documents = pgTable("documents", {
 });
 
 export type Document = InferSelectModel<typeof documents>;
+
+// ============================================
+// AI Analysis Tables
+// ============================================
+
+export const aiAnalysisStatusEnum = pgEnum("ai_analysis_status", [
+  "pending",
+  "processing",
+  "completed",
+  "failed",
+]);
+
+export const aiAnalysis = pgTable("ai_analysis", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  applicationId: text("application_id")
+    .notNull()
+    .references(() => application.id, { onDelete: "cascade" }),
+
+  // Document parsing results (JSON)
+  parsedResume: text("parsed_resume"), // JSON with structured resume data
+  parsedCoverLetter: text("parsed_cover_letter"), // JSON with cover letter insights
+
+  // Skills and experience
+  skillsExtracted: text("skills_extracted").array(), // Array of skill names
+  experienceYears: integer("experience_years"),
+  educationLevel: text("education_level"), // Bachelor's, Master's, PhD, etc.
+
+  // Matching scores (0-100)
+  overallScore: integer("overall_score"),
+  skillsMatchScore: integer("skills_match_score"),
+  experienceMatchScore: integer("experience_match_score"),
+  cultureFitScore: integer("culture_fit_score"),
+
+  // AI-generated content
+  summary: text("summary"), // 2-3 sentence summary
+  strengths: text("strengths").array(), // Key strengths
+  concerns: text("concerns").array(), // Potential concerns
+  detailedReport: text("detailed_report"), // Full markdown report
+
+  // Sentiment analysis
+  sentimentScore: integer("sentiment_score"), // -100 to 100
+  enthusiasm: text("enthusiasm"), // low, medium, high
+
+  // Metadata
+  modelUsed: text("model_used").default("claude-sonnet-4-5"),
+  tokensUsed: integer("tokens_used"),
+  processingTimeMs: integer("processing_time_ms"),
+
+  status: aiAnalysisStatusEnum("status").default("pending").notNull(),
+  errorMessage: text("error_message"),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+export type AiAnalysis = InferSelectModel<typeof aiAnalysis>;
+
+export const aiSkillCategoryEnum = pgEnum("ai_skill_category", [
+  "technical",
+  "soft",
+  "domain",
+  "language",
+  "tool",
+  "other",
+]);
+
+export const aiSkillProficiencyEnum = pgEnum("ai_skill_proficiency", [
+  "beginner",
+  "intermediate",
+  "advanced",
+  "expert",
+]);
+
+export const aiSkill = pgTable("ai_skill", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  analysisId: text("analysis_id")
+    .notNull()
+    .references(() => aiAnalysis.id, { onDelete: "cascade" }),
+
+  skillName: text("skill_name").notNull(),
+  category: aiSkillCategoryEnum("category"),
+  proficiencyLevel: aiSkillProficiencyEnum("proficiency_level"),
+  yearsOfExperience: integer("years_of_experience"),
+
+  // Matching
+  isRequiredForPosition: boolean("is_required_for_position").default(false),
+  matchScore: integer("match_score"), // How well this skill matches position requirements
+
+  source: text("source"), // resume, cover_letter, portfolio
+  context: text("context"), // Where/how the skill was mentioned
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type AiSkill = InferSelectModel<typeof aiSkill>;
+
+export const aiPositionRanking = pgTable("ai_position_ranking", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  positionId: text("position_id")
+    .notNull()
+    .references(() => position.id, { onDelete: "cascade" }),
+
+  rankings: text("rankings"), // JSON array of {applicationId, rank, score, reasoning}
+  totalCandidates: integer("total_candidates").notNull(),
+
+  // Top candidates quick access
+  topCandidateIds: text("top_candidate_ids").array(),
+
+  // Cohort insights
+  cohortInsights: text("cohort_insights"), // AI-generated insights about the candidate pool
+
+  generatedAt: timestamp("generated_at").defaultNow().notNull(),
+  validUntil: timestamp("valid_until"), // Rankings expire when new applications come in
+});
+
+export type AiPositionRanking = InferSelectModel<typeof aiPositionRanking>;

@@ -2,7 +2,7 @@
 
 import { db } from "@workspace/db";
 import { application } from "@workspace/db/schema";
-import { revalidatePath } from "next/cache";
+import { revalidateApplication } from "../cache-utils";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
@@ -40,10 +40,16 @@ export const updateApplication = async (data: UpdateApplicationInput) => {
       .where(eq(application.id, applicationId))
       .returning();
 
-    if (updatedApplication?.candidateId) {
-      revalidatePath(`/candidates/${updatedApplication.candidateId}`);
+    if (!updatedApplication) {
+      return { error: "Failed to update application" };
     }
-    revalidatePath(`/applications/${applicationId}`);
+
+    await revalidateApplication(
+      applicationId,
+      updatedApplication.candidateId,
+      updatedApplication.positionId,
+      status
+    );
 
     return { success: true, data: updatedApplication };
   } catch (error) {

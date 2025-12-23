@@ -4,13 +4,21 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@workspace/db": "workspace:*",
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
   "dependencies": {
-    "hono": "^4.10.4"
+    "@anthropic-ai/sdk": "^0.71.2",
+    "@types/pdf-parse": "^1.1.5",
+    "@workspace/db": "workspace:*",
+    "bullmq": "^5.66.2",
+    "drizzle-orm": "^0.44.7",
+    "hono": "^4.11.1",
+    "ioredis": "^5.8.2",
+    "mammoth": "^1.11.0",
+    "pdf-parse": "^2.4.5",
+    "zod": "^4.2.1"
   }
 }
