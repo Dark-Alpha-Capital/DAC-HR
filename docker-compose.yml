@@ -19,7 +19,7 @@ services:
         - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
     container_name: hr-automation
     ports:
-      - "3000:3000"
+      - "3001:3000"
 
     # ============================================
     # RUNTIME VARIABLES (Server-side & Secrets)
