@@ -20,9 +20,30 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd hr-automation
+            
+            # Update git remote and pull latest code
             git remote set-url origin https://${{ secrets.GH_PAT }}@github.com/${{ github.repository }}.git || true
             git pull origin main
-            docker-compose down
-            docker-compose build --no-cache
-            docker-compose up -d
-      
+            
+            # Ensure package-lock.json exists (needed for npm ci)
+            if [ ! -f package-lock.json ]; then
+              echo "Warning: package-lock.json not found. Run 'npm install' locally first."
+            fi
+            
+            # Stop existing containers
+            docker compose down || true
+            
+            # Build with build-time arguments for NEXT_PUBLIC_ variables
+            # These are read from the server's environment or .env file
+            docker compose build \
+              --build-arg NEXT_PUBLIC_BETTER_AUTH_BASEURL=${NEXT_PUBLIC_BETTER_AUTH_BASEURL:-} \
+              --build-arg NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
+            
+            # Start containers in detached mode
+            docker compose up -d
+            
+            # Show container status
+            docker compose ps
+            
+            # Show recent logs
+            docker compose logs --tail=50
