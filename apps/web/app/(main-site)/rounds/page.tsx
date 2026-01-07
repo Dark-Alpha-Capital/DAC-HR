@@ -7,6 +7,7 @@ import FilterPositionType from "@/components/filter-position-type";
 import ClearParamsButton from "@/components/clear-params-button";
 import { Metadata } from "next";
 import { UserIsAdmin } from "@/components/auth-checks";
+import { cacheLife, cacheTag } from "next/cache";
 
 export const metadata: Metadata = {
   title: "Rounds",
@@ -34,7 +35,7 @@ const page = async ({ searchParams }: { searchParams: SearchParams }) => {
       </Suspense>
 
       <Suspense fallback={<div>Loading...</div>}>
-        <RoundsList searchParams={searchParams} />
+        <RoundsListWrapper searchParams={searchParams} />
       </Suspense>
     </div>
   );
@@ -42,7 +43,11 @@ const page = async ({ searchParams }: { searchParams: SearchParams }) => {
 
 export default page;
 
-const PresentPositionFilter = async () => {
+async function CachedPresentPositionFilter() {
+  "use cache";
+  cacheLife("hr-metadata");
+  cacheTag("positions");
+
   const positions = await getPositions();
   const positionTypes = positions.map((position) => ({
     id: position.id,
@@ -55,14 +60,30 @@ const PresentPositionFilter = async () => {
       <ClearParamsButton />
     </div>
   );
-};
+}
 
-const RoundsList = async ({ searchParams }: { searchParams: SearchParams }) => {
+const PresentPositionFilter = CachedPresentPositionFilter;
+
+// Component (not cached) reads runtime data
+const RoundsListWrapper = async ({
+  searchParams,
+}: {
+  searchParams: SearchParams
+}) => {
   const { type } = await searchParams;
 
   // Extract position IDs from the type parameter
   // type can be a string (single ID) or string[] (array of IDs)
   const positionIds = type ? (Array.isArray(type) ? type : [type]) : undefined;
+
+  return <CachedRoundsList positionIds={positionIds} />;
+};
+
+// Cached component receives data as props
+async function CachedRoundsList({ positionIds }: { positionIds?: string[] }) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag("rounds");
 
   const rounds = await getRoundsWithPositions(positionIds);
 
@@ -82,4 +103,4 @@ const RoundsList = async ({ searchParams }: { searchParams: SearchParams }) => {
   }
 
   return <RoundContainer rounds={rounds} />;
-};
+}

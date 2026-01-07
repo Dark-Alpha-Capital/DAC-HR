@@ -54,15 +54,6 @@ const PresentFilters = async () => {
   );
 };
 
-// Cached function for positions
-async function CachedPositions(hireLevels?: string[], statuses?: string[]) {
-  "use cache";
-  cacheLife("hr-metadata");
-  cacheTag("positions");
-
-  return await getPositions(hireLevels, statuses);
-}
-
 // Component (not cached) reads runtime data
 const PositionsListWrapper = async ({
   searchParams,
@@ -81,7 +72,24 @@ const PositionsListWrapper = async ({
       : [params.status]
     : undefined;
 
-  const positions = await CachedPositions(hireLevels, statuses);
+  return (
+    <CachedPositionsList hireLevels={hireLevels} statuses={statuses} />
+  );
+};
+
+// Cached component receives data as props
+async function CachedPositionsList({
+  hireLevels,
+  statuses,
+}: {
+  hireLevels?: string[];
+  statuses?: string[];
+}) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag("positions");
+
+  const positions = await getPositions(hireLevels, statuses);
 
   if (positions.length === 0) {
     return (
@@ -95,4 +103,4 @@ const PositionsListWrapper = async ({
   }
 
   return <PositionContainer positions={positions} />;
-};
+}

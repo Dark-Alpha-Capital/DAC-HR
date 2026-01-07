@@ -12,6 +12,7 @@ import FilterQuestionSearch from "@/components/filter-question-search";
 import FilterQuestionPosition from "@/components/filter-question-position";
 import FilterQuestionRound from "@/components/filter-question-round";
 import ClearQuestionFiltersButton from "@/components/clear-question-filters-button";
+import { cacheLife, cacheTag } from "next/cache";
 
 export const metadata: Metadata = {
   title: "Questions",
@@ -68,7 +69,7 @@ const QuestionsPageContent = async ({
       </div>
 
       <Suspense fallback={<div>Loading...</div>}>
-        <QuestionsList
+        <QuestionsListWrapper
           search={search}
           positionIds={positionIds}
           roundIds={roundIds}
@@ -80,7 +81,12 @@ const QuestionsPageContent = async ({
 
 export default page;
 
-const FilterControls = async () => {
+async function CachedFilterControls() {
+  "use cache";
+  cacheLife("hr-metadata");
+  cacheTag("positions");
+  cacheTag("rounds");
+
   const [positions, rounds] = await Promise.all([getPositions(), getRounds()]);
 
   return (
@@ -89,9 +95,12 @@ const FilterControls = async () => {
       <FilterQuestionRound rounds={rounds} />
     </>
   );
-};
+}
 
-const QuestionsList = async ({
+const FilterControls = CachedFilterControls;
+
+// Component (not cached) reads runtime data
+const QuestionsListWrapper = async ({
   search,
   positionIds,
   roundIds,
@@ -100,6 +109,29 @@ const QuestionsList = async ({
   positionIds: string[];
   roundIds: string[];
 }) => {
+  return (
+    <CachedQuestionsList
+      search={search}
+      positionIds={positionIds}
+      roundIds={roundIds}
+    />
+  );
+};
+
+// Cached component receives data as props
+async function CachedQuestionsList({
+  search,
+  positionIds,
+  roundIds,
+}: {
+  search: string;
+  positionIds: string[];
+  roundIds: string[];
+}) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag("questions");
+
   const questions = await getQuestionsWithRounds();
 
   if (questions.length === 0) {
@@ -121,4 +153,4 @@ const QuestionsList = async ({
       roundIds={roundIds}
     />
   );
-};
+}

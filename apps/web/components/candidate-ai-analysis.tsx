@@ -147,7 +147,7 @@ export default function CandidateAiAnalysis({
         }
 
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_SERVER_URL}/candidate/${candidateId}/ai-analysis`,
+          `/api/candidate/${candidateId}/ai-analysis`,
           {
             method: "POST",
             headers: {

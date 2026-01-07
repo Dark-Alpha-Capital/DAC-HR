@@ -40,7 +40,7 @@ const DeleteCandidateDocumentButton = ({
     startTransition(async () => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_SERVER_URL}/candidate/${candidateId}/documents/${documentId}`,
+          `/api/candidate/${candidateId}/documents/${documentId}`,
           {
             method: "DELETE",
             headers: {

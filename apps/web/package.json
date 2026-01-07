@@ -5,7 +5,6 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "prebuild": "bun --cwd ../../packages/db run db:migrate",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -16,6 +15,7 @@
     "@google-cloud/storage": "^7.17.3",
     "@google/genai": "^1.33.0",
     "@react-google-maps/api": "^2.20.7",
+    "@simplewebauthn/browser": "^11.0.0",
     "@tailwindcss/postcss": "^4.1.17",
     "@tanstack/react-form": "^1.23.8",
     "@tanstack/react-table": "^8.21.3",
@@ -28,8 +28,8 @@
     "@tiptap/extension-underline": "^3.12.1",
     "@tiptap/react": "^3.12.1",
     "@tiptap/starter-kit": "^3.12.1",
-    "@workspace/db": "workspace:*",
-    "@workspace/ui": "workspace:*",
+    "@workspace/db": "*",
+    "@workspace/ui": "*",
     "better-auth": "^1.3.34",
     "class-variance-authority": "^0.7.1",
     "dotenv": "^17.2.3",
@@ -56,8 +56,8 @@
     "@types/node": "^20.19.9",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
-    "@workspace/eslint-config": "workspace:^",
-    "@workspace/typescript-config": "workspace:*",
+    "@workspace/eslint-config": "*",
+    "@workspace/typescript-config": "*",
     "typescript": "^5.9.2"
   },
   "overrides": {

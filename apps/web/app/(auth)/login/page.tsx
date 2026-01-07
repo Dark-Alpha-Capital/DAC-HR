@@ -12,6 +12,9 @@ export const metadata: Metadata = {
 };
 
 const page = async () => {
+  console.log("better auth base url", process.env.BETTER_AUTH_URL);
+  console.log("better auth secret", process.env.BETTER_AUTH_SECRET);
+
   return (
     <div className="min-h-screen">
       <Suspense fallback={<AuthLoadingSkeleton />}>

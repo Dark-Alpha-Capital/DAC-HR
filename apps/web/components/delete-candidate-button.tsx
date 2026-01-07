@@ -37,7 +37,7 @@ const DeleteCandidateButton = ({ candidateId }: { candidateId: string }) => {
     startTransition(async () => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_SERVER_URL}/candidate/${candidateId}`,
+          `/api/candidate/${candidateId}`,
           {
             method: "DELETE",
             headers: {

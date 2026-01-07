@@ -85,7 +85,7 @@ const CandidateDocumentUploadForm = ({
           }
 
           const response = await fetch(
-            `${process.env.NEXT_PUBLIC_SERVER_URL}/candidate/${candidateId}/documents`,
+            `/api/candidate/${candidateId}/documents`,
             {
               method: "POST",
               headers: {

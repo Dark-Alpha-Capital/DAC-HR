@@ -1,4 +1,5 @@
 import { drizzle } from "drizzle-orm/postgres-js";
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 export {
   eq,
@@ -14,30 +15,46 @@ export {
 } from "drizzle-orm";
 export type { InferSelectModel, InferInsertModel } from "drizzle-orm";
 
-const url = process.env.DATABASE_URL;
+let cachedDb: PostgresJsDatabase | undefined;
+let cachedClient: postgres.Sql | undefined;
 
-if (!url) {
-  console.error("ERROR: DATABASE_URL environment variable is not set!");
-  throw new Error("DATABASE_URL is required");
+function getDb(): PostgresJsDatabase {
+  if (cachedDb) {
+    return cachedDb;
+  }
+
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    throw new Error("DATABASE_URL is required");
+  }
+
+  const client =
+    cachedClient ??
+    postgres(url, {
+      max: 10,
+      idle_timeout: 20,
+      connect_timeout: 10,
+      onnotice: () => {},
+      debug: process.env.NODE_ENV === "development" ? console.log : undefined,
+    });
+
+  if (process.env.NODE_ENV !== "production") {
+    cachedClient = client;
+  }
+
+  const database = drizzle(client);
+  cachedDb = database;
+
+  return database;
 }
 
-declare global {
-  // eslint-disable-next-line no-var
-  var postgresClient: postgres.Sql | undefined;
-}
-
-const client =
-  globalThis.postgresClient ??
-  postgres(url, {
-    max: 10,
-    idle_timeout: 20,
-    connect_timeout: 10,
-    onnotice: () => {},
-    debug: process.env.NODE_ENV === "development" ? console.log : undefined,
-  });
-
-if (process.env.NODE_ENV !== "production") {
-  globalThis.postgresClient = client;
-}
-
-export const db = drizzle(client);
+export const db = new Proxy({} as PostgresJsDatabase, {
+  get(_target, prop) {
+    const database = getDb();
+    const value = database[prop as keyof PostgresJsDatabase];
+    if (typeof value === "function") {
+      return value.bind(database);
+    }
+    return value;
+  },
+});

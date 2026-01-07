@@ -9,3 +9,4 @@ export const candidateAiScreeningSchema = z.object({
     .describe("Numerical score out of 10 indicating candidate suitability"),
   analysis: z.string().describe("Complete markdown analysis report"),
 });
+

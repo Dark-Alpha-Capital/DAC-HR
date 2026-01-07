@@ -1,6 +1,7 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
+  "globalEnv": ["NODE_ENV"],
   "tasks": {
     "build": {
       "env": [
@@ -27,7 +28,9 @@
         "GCLOUD_PROJECT_ID",
         "GCS_CLIENT_EMAIL",
         "GCS_PRIVATE_KEY",
-        "GCLOUD_BUCKET"
+        "GCLOUD_BUCKET",
+        "NEXT_PUBLIC_BETTER_AUTH_BASEURL",
+        "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY"
       ],
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],

@@ -1,24 +1,30 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   typedRoutes: true,
   cacheComponents: true,
   cacheLife: {
-    // HR data: Changes infrequently but needs to be fresh when it does
     "hr-data": {
-      stale: 300, // 5 minutes - fast client navigation
-      revalidate: 3600, // 1 hour - reasonable refresh cycle
-      expire: 21600, // 6 hours - prevents very stale data
+      stale: 300,
+      revalidate: 3600,
+      expire: 21600,
     },
-    // HR metadata: Positions, departments change rarely
     "hr-metadata": {
-      stale: 300, // 5 minutes
-      revalidate: 86400, // 1 day - positions rarely change
-      expire: 604800, // 1 week
+      stale: 300,
+      revalidate: 86400,
+      expire: 604800,
     },
   },
   experimental: {
     turbopackFileSystemCacheForDev: true,
+  },
+  // Turbopack root configuration for monorepo support
+  // In Docker builds, TURBOPACK_ROOT is set to /app (monorepo root)
+  // In local development, resolve to monorepo root (two levels up from apps/web)
+  turbopack: {
+    root: process.env.TURBOPACK_ROOT || path.resolve(__dirname, "../.."),
   },
   images: {
     remotePatterns: [

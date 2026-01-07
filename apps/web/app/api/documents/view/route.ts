@@ -7,15 +7,6 @@ import { insertAuditLog } from "@workspace/db/queries";
 
 export async function GET(request: NextRequest) {
   try {
-    // Check authentication
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     // Get the document URL from query params
     const searchParams = request.nextUrl.searchParams;
     const url = searchParams.get("url");

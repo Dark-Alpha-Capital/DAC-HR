@@ -51,7 +51,7 @@ const BulkDeleteCandidatesButton = ({
     startTransition(async () => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_SERVER_URL}/candidate/bulk`,
+          `/api/candidate/bulk`,
           {
             method: "DELETE",
             headers: {

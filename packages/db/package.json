@@ -20,7 +20,7 @@
     "db:migrate": "npx tsx migrate.ts",
     "db:studio": "drizzle-kit studio",
     "db:push": "drizzle-kit push",
-    "db:seed": "bun seed.ts"
+    "db:seed": "npx tsx seed.ts"
   },
   "peerDependencies": {
     "typescript": "^5.9.3"
