@@ -14,6 +14,7 @@ const app = new Hono()
   )
   .get("/", (c) => c.text("Hono!"))
   .get("/health", (c) => c.text("OK"))
+  .get("/version", (c) => c.text(process.env.npm_package_version || "1.0.0"))
   .route("/candidate", candidate)
   .route("/post", post);
 
