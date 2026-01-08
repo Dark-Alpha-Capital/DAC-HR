@@ -14,6 +14,7 @@ import {
 import { Textarea } from "@workspace/ui/components/textarea";
 import { updateInterview } from "@/lib/actions/update-interview";
 import { toast } from "sonner";
+import { CheckCircle, XCircle, Clock, Circle, Loader2 } from "lucide-react";
 
 type InterviewStatus = "pending" | "move_forward" | "rejected" | "scheduled";
 
@@ -28,19 +29,16 @@ interface InterviewSummaryFormProps {
   applicationId: string;
 }
 
-const statusLabels: Record<InterviewStatus, string> = {
-  pending: "Pending",
-  move_forward: "Move Forward",
-  rejected: "Rejected",
-  scheduled: "Scheduled",
-};
-
-const statusDescriptions: Record<InterviewStatus, string> = {
-  pending: "Interview is pending or in progress",
-  move_forward: "Candidate should move forward to next round",
-  rejected: "Candidate has been rejected",
-  scheduled: "Interview has been scheduled",
-};
+const statusOptions: {
+  value: InterviewStatus;
+  label: string;
+  icon: typeof CheckCircle;
+}[] = [
+  { value: "pending", label: "Pending", icon: Circle },
+  { value: "scheduled", label: "Scheduled", icon: Clock },
+  { value: "move_forward", label: "Move Forward", icon: CheckCircle },
+  { value: "rejected", label: "Rejected", icon: XCircle },
+];
 
 export default function InterviewSummaryForm({
   interview,
@@ -85,76 +83,81 @@ export default function InterviewSummaryForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="grid sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="status">Status</Label>
+          <Label htmlFor="status" className="text-sm">
+            Decision
+          </Label>
           <Select
             value={status}
             onValueChange={(value: InterviewStatus) => setStatus(value)}
           >
-            <SelectTrigger id="status" className="w-full">
+            <SelectTrigger id="status">
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(statusLabels).map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  <div className="flex flex-col">
-                    <span>{label}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {statusDescriptions[value as InterviewStatus]}
+              {statusOptions.map((option) => {
+                const Icon = option.icon;
+                return (
+                  <SelectItem key={option.value} value={option.value}>
+                    <span className="flex items-center gap-2">
+                      <Icon className="h-3.5 w-3.5" />
+                      {option.label}
                     </span>
-                  </div>
-                </SelectItem>
-              ))}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="rating">Rating (1-5)</Label>
+          <Label htmlFor="rating" className="text-sm">
+            Rating
+          </Label>
           <Select value={rating} onValueChange={setRating}>
-            <SelectTrigger id="rating" className="w-full">
+            <SelectTrigger id="rating">
               <SelectValue placeholder="Select rating" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">No rating</SelectItem>
               {[1, 2, 3, 4, 5].map((num) => (
                 <SelectItem key={num} value={num.toString()}>
-                  {num} {num === 1 ? "star" : "stars"}
+                  {num}/5
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <p className="text-xs text-muted-foreground">
-            Rate the candidate's performance (optional)
-          </p>
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="overallFeedback">Overall Feedback</Label>
+        <Label htmlFor="overallFeedback" className="text-sm">
+          Overall Feedback
+        </Label>
         <Textarea
           id="overallFeedback"
-          placeholder="Summarize the candidate's performance and recommendation"
+          placeholder="Summarize the candidate's performance..."
           value={overallFeedback}
           onChange={(event) => setOverallFeedback(event.target.value)}
-          minLength={0}
-          rows={6}
+          rows={4}
+          className="resize-none"
         />
       </div>
 
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex items-center justify-end gap-3 pt-2">
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           onClick={() => router.push(`/applications/${applicationId}`)}
           disabled={isPending}
         >
-          Back to Application
+          Cancel
         </Button>
         <Button type="submit" disabled={isPending}>
-          {isPending ? "Saving..." : "Save Interview"}
+          {isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          Save Changes
         </Button>
       </div>
     </form>

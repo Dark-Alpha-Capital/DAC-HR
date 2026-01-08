@@ -109,7 +109,7 @@ const OnboardingCard: React.FC<OnboardingCardProps> = ({
         });
 
         if (result.success) {
-          toast.success("Onboarding tasks updated successfully", {
+          toast.success("Checklist updated successfully", {
             position: "bottom-right",
             description: "All changes have been saved.",
           });
@@ -117,8 +117,8 @@ const OnboardingCard: React.FC<OnboardingCardProps> = ({
           throw new Error(result.error || "Failed to update tasks");
         }
       } catch (err) {
-        console.error("Error saving onboarding tasks", err);
-        toast.error("Failed to update onboarding tasks", {
+        console.error("Error saving checklist tasks", err);
+        toast.error("Failed to update checklist", {
           position: "bottom-right",
           description:
             err instanceof Error ? err.message : "Please try again later.",
@@ -131,7 +131,7 @@ const OnboardingCard: React.FC<OnboardingCardProps> = ({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold">Onboarding Tasks</h3>
+          <h3 className="text-sm font-semibold">Checklist</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             {Object.values(tasks).filter(Boolean).length} of{" "}
             {onboardingTasks.length} completed

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useTransition, useState } from "react";
+import { useTransition, useState, useEffect } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
@@ -54,25 +54,62 @@ const departmentLabels: Record<z.infer<typeof departmentEnum>, string> = {
 
 const EmployeeUploadForm = ({
   positions,
+  candidateId,
+  candidateData,
+  applicationData,
 }: {
   positions: {
     id: string;
     name: string;
   }[];
+  candidateId?: string;
+  candidateData?: {
+    firstName: string;
+    lastName: string;
+    applications: Array<{
+      id: string;
+      position: {
+        id: string;
+        name: string;
+      };
+    }>;
+  } | null;
+  applicationData?: {
+    id: string;
+    position: {
+      id: string;
+      name: string;
+    };
+  } | null;
 }) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [file, setFile] = useState<File | null>(null);
 
-  const form = useForm({
-    defaultValues: {
+  // Pre-fill form with candidate data if available
+  const getInitialValues = () => {
+    if (candidateData) {
+      return {
+        firstName: candidateData.firstName || "",
+        lastName: candidateData.lastName || "",
+        department: [] as z.infer<typeof departmentEnum>[],
+        positionId: applicationData?.position.id || "",
+        profileImage: "",
+        bio: "",
+      };
+    }
+    return {
       firstName: "",
       lastName: "",
       department: [] as z.infer<typeof departmentEnum>[],
       positionId: "",
       profileImage: "",
       bio: "",
-    },
+    };
+  };
+
+  const form = useForm({
+    defaultValues: getInitialValues(),
     validators: {
       onSubmit: employeeFormSchema as any,
     },
@@ -157,6 +194,17 @@ const EmployeeUploadForm = ({
     },
   });
 
+  // Update form values when candidateData is available
+  useEffect(() => {
+    if (candidateData) {
+      form.setFieldValue("firstName", candidateData.firstName || "");
+      form.setFieldValue("lastName", candidateData.lastName || "");
+      if (applicationData?.position.id) {
+        form.setFieldValue("positionId", applicationData.position.id);
+      }
+    }
+  }, [candidateData, applicationData, form]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
@@ -193,10 +241,12 @@ const EmployeeUploadForm = ({
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2">
           <h2 className="text-2xl font-semibold tracking-tight">
-            Add New Employee
+            {candidateData ? "Add Hired Candidate to Employee Directory" : "Add New Employee"}
           </h2>
           <p className="text-sm text-muted-foreground">
-            Enter the employee details below to add them to the system.
+            {candidateData
+              ? "Complete the employee details below. Basic information has been pre-filled from the candidate profile."
+              : "Enter the employee details below to add them to the system."}
           </p>
         </div>
         <div className="flex items-center gap-3">

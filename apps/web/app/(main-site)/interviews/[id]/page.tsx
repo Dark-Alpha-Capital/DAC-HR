@@ -15,21 +15,24 @@ import {
 import Link from "next/link";
 import {
   Calendar,
-  Clock,
   User,
   Star,
-  MessageSquare,
   CheckCircle,
   Circle,
   XCircle,
-  FileText,
-  Edit,
+  Clock,
   ArrowLeft,
+  ExternalLink,
+  MessageSquare,
+  FileText,
+  Sparkles,
+  History,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import InterviewQuestionFeedbackDisplay from "@/components/interview-question-feedback-display";
-import InterviewSummaryDisplay from "@/components/interview-summary-display";
-import { cn } from "@workspace/ui/lib/utils";
+import InterviewSummaryForm from "@/components/interview-summary-form";
+import InterviewAiAnalysisTab from "@/components/interview-ai-analysis-tab";
+import InterviewScreeningsTab from "@/components/interview-screenings-tab";
 import { UserAuthenticated } from "@/components/auth-checks";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -37,7 +40,7 @@ type Params = Promise<{ id: string }>;
 
 const InterviewPage = async ({ params }: { params: Params }) => {
   return (
-    <div className="container mx-auto py-4 space-y-8">
+    <div className="container mx-auto py-6 max-w-4xl">
       <Suspense>
         <UserAuthenticated />
       </Suspense>
@@ -51,48 +54,42 @@ const InterviewPage = async ({ params }: { params: Params }) => {
 
 export default InterviewPage;
 
-// Cached function for interview
 async function CachedInterviewById(interviewId: string) {
   "use cache";
   cacheLife("hr-data");
   cacheTag(`interview-${interviewId}`);
-
   return await getInterviewById(interviewId);
 }
 
-// Cached function for application with interviews
 async function CachedApplicationWithInterviews(applicationId: string) {
   "use cache";
   cacheLife("hr-data");
   cacheTag(`application-${applicationId}`);
-
   return await getApplicationWithInterviews(applicationId);
 }
 
-// Cached function for candidate
 async function CachedCandidateById(candidateId: string) {
   "use cache";
   cacheLife("hr-data");
   cacheTag("candidates");
   cacheTag(`candidate-${candidateId}`);
-
   return await getCandidateById(candidateId);
 }
 
-// Component (not cached) reads runtime data
 const DisplayInterviewWrapper = async ({ params }: { params: Params }) => {
   const { id } = await params;
-
-  // Fetch all data using cached functions
   const interview = await CachedInterviewById(id);
 
   if (!interview) {
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-semibold">Interview not found</h1>
-        <p className="text-muted-foreground">
-          The interview you're looking for doesn't exist or has been removed.
+      <div className="text-center py-16">
+        <h1 className="text-xl font-medium">Interview not found</h1>
+        <p className="text-muted-foreground mt-2">
+          This interview doesn't exist or has been removed.
         </p>
+        <Button asChild variant="outline" className="mt-4">
+          <Link href="/applications">View Applications</Link>
+        </Button>
       </div>
     );
   }
@@ -105,24 +102,44 @@ const DisplayInterviewWrapper = async ({ params }: { params: Params }) => {
     : null;
 
   return (
-    <div>
-      <Link href={`/applications/${application?.id ?? ""}`}>
-        <Button variant="link" size="sm">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Application
-        </Button>
-      </Link>
-
-      <DisplayInterview
-        interview={interview}
-        application={application}
-        candidate={candidate}
-      />
-    </div>
+    <DisplayInterview
+      interview={interview}
+      application={application}
+      candidate={candidate}
+    />
   );
 };
 
-// Display component (not cached) receives data as props
+const statusConfig = {
+  move_forward: {
+    label: "Move Forward",
+    variant: "default" as const,
+    className:
+      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0",
+    icon: CheckCircle,
+  },
+  rejected: {
+    label: "Rejected",
+    variant: "destructive" as const,
+    className:
+      "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-0",
+    icon: XCircle,
+  },
+  scheduled: {
+    label: "Scheduled",
+    variant: "secondary" as const,
+    className:
+      "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-0",
+    icon: Clock,
+  },
+  pending: {
+    label: "Pending",
+    variant: "outline" as const,
+    className: "bg-muted text-muted-foreground border-0",
+    icon: Circle,
+  },
+};
+
 function DisplayInterview({
   interview,
   application,
@@ -132,246 +149,136 @@ function DisplayInterview({
   application: Awaited<ReturnType<typeof getApplicationWithInterviews>> | null;
   candidate: Awaited<ReturnType<typeof getCandidateById>> | null;
 }) {
-  const getStatusConfig = (status: string) => {
-    switch (status) {
-      case "move_forward":
-        return {
-          color: "text-emerald-600 dark:text-emerald-400",
-          bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
-          borderColor: "border-emerald-200 dark:border-emerald-800",
-          badgeVariant: "default" as const,
-          badgeClass:
-            "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800",
-          icon: CheckCircle,
-        };
-      case "rejected":
-        return {
-          color: "text-red-600 dark:text-red-400",
-          bgColor: "bg-red-50 dark:bg-red-950/30",
-          borderColor: "border-red-200 dark:border-red-800",
-          badgeVariant: "destructive" as const,
-          badgeClass:
-            "bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800",
-          icon: XCircle,
-        };
-      case "scheduled":
-        return {
-          color: "text-blue-600 dark:text-blue-400",
-          bgColor: "bg-blue-50 dark:bg-blue-950/30",
-          borderColor: "border-blue-200 dark:border-blue-800",
-          badgeVariant: "secondary" as const,
-          badgeClass:
-            "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800",
-          icon: Clock,
-        };
-      default:
-        return {
-          color: "text-muted-foreground",
-          bgColor: "bg-muted/50",
-          borderColor: "border-muted-foreground/20",
-          badgeVariant: "outline" as const,
-          badgeClass:
-            "bg-muted/50 text-muted-foreground border-muted-foreground/20",
-          icon: Circle,
-        };
-    }
-  };
-
-  const statusConfig = getStatusConfig(interview.status);
-  const StatusIcon = statusConfig.icon;
-  const totalQuestions = interview.questions?.length || 0;
-  const answeredQuestions =
-    interview.questions?.filter(
-      (q) =>
-        q.feedback &&
-        ((q.feedback.notes && q.feedback.notes.trim() !== "") ||
-          q.feedback.rating !== null)
-    ).length || 0;
-  const progressPercentage =
-    totalQuestions > 0
-      ? Math.round((answeredQuestions / totalQuestions) * 100)
-      : 0;
+  const config = statusConfig[interview.status] || statusConfig.pending;
+  const StatusIcon = config.icon;
+  const questions = interview.questions || [];
 
   return (
-    <div className="space-y-8">
-      {/* Header Section */}
-      <div className="space-y-6 pb-6 border-b">
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight">
+    <div className="space-y-6">
+      {/* Navigation */}
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" size="sm" asChild className="-ml-2">
+          <Link href={`/applications/${application?.id ?? ""}`}>
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Back
+          </Link>
+        </Button>
+        {candidate && (
+          <Button variant="ghost" size="sm" asChild>
+            <Link href={`/candidates/${candidate.id}`}>
+              View Candidate
+              <ExternalLink className="h-3 w-3 ml-1" />
+            </Link>
+          </Button>
+        )}
+      </div>
+
+      {/* Header */}
+      <header className="space-y-4 pb-6 border-b">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight">
               {interview.roundTemplate.name}
             </h1>
-            <Badge
-              variant={statusConfig.badgeVariant}
-              className={cn(
-                "text-xs font-medium px-2.5 py-1 flex items-center gap-1.5",
-                statusConfig.badgeClass
-              )}
-            >
-              <StatusIcon className="h-3 w-3" />
-              {interview.status === "move_forward"
-                ? "Move Forward"
-                : interview.status.charAt(0).toUpperCase() +
-                  interview.status.slice(1)}
-            </Badge>
+            {candidate && (
+              <p className="text-muted-foreground">
+                {candidate.firstName} {candidate.lastName}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
             {interview.rating && (
               <Badge
                 variant="secondary"
-                className="text-xs font-medium px-2.5 py-1 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 flex items-center gap-1.5"
+                className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0"
               >
-                <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+                <Star className="h-3 w-3 fill-current mr-1" />
                 {interview.rating}/5
               </Badge>
             )}
-          </div>
-
-          {/* Metadata */}
-          <div className="flex flex-wrap items-center gap-6 text-sm">
-            {interview.scheduledAt && (
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Interview:</span>
-                <span className="font-medium">
-                  {formatDate(interview.scheduledAt)}
-                </span>
-              </div>
-            )}
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Created:</span>
-              <span className="font-medium">
-                {formatDate(interview.createdAt)}
-              </span>
-            </div>
-            <div>
-              <Button variant="link" size="sm" asChild>
-                <Link href={`/candidates/${candidate?.id}`}>
-                  View Candidate
-                </Link>
-              </Button>
-            </div>
-            <div>
-              <Button variant="link" size="sm" asChild>
-                <Link href={`/rounds/${interview.roundTemplate.id}/edit`}>
-                  <Edit className="h-4 w-4 mr-1.5" />
-                  Edit Round
-                </Link>
-              </Button>
-            </div>
-
-            {interview.interviewer && (
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Interviewer:</span>
-                <span className="font-medium">
-                  {interview.interviewer.name || interview.interviewer.email}
-                </span>
-              </div>
-            )}
-            {totalQuestions > 0 && (
-              <div className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Questions:</span>
-                <span className="font-medium">
-                  {answeredQuestions}/{totalQuestions}
-                </span>
-              </div>
-            )}
+            <Badge variant={config.variant} className={config.className}>
+              <StatusIcon className="h-3 w-3 mr-1" />
+              {config.label}
+            </Badge>
           </div>
         </div>
-      </div>
 
-      {/* Tabs Content */}
+        {/* Meta info */}
+        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+          {interview.scheduledAt && (
+            <span className="flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5" />
+              {formatDate(interview.scheduledAt)}
+            </span>
+          )}
+          {interview.interviewer && (
+            <span className="flex items-center gap-1.5">
+              <User className="h-3.5 w-3.5" />
+              {interview.interviewer.name || interview.interviewer.email}
+            </span>
+          )}
+        </div>
+      </header>
+
+      {/* Tabs */}
       <Tabs defaultValue="questions" className="w-full">
         <TabsList>
-          <TabsTrigger value="questions" className="flex items-center gap-2">
+          <TabsTrigger value="questions" className="gap-2">
             <MessageSquare className="h-4 w-4" />
             Questions
-            {totalQuestions > 0 && (
-              <Badge
-                variant="secondary"
-                className="ml-1 h-5 min-w-5 px-1.5 text-xs"
-              >
-                {totalQuestions}
+            {questions.length > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                {questions.length}
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="summary" className="flex items-center gap-2">
+          <TabsTrigger value="summary" className="gap-2">
             <FileText className="h-4 w-4" />
             Summary
+          </TabsTrigger>
+          <TabsTrigger value="ai-analysis" className="gap-2">
+            <Sparkles className="h-4 w-4" />
+            AI Analysis
+          </TabsTrigger>
+          <TabsTrigger value="screenings" className="gap-2">
+            <History className="h-4 w-4" />
+            Screenings
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="questions" className="mt-6">
-          {totalQuestions > 0 ? (
-            <div className="space-y-6">
-              {/* Progress Header */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-semibold">Question Progress</h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {answeredQuestions} of {totalQuestions} questions answered
-                    </p>
-                  </div>
-                  <Badge variant="secondary" className="text-sm font-medium">
-                    {progressPercentage}%
-                  </Badge>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="space-y-2">
-                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className={cn(
-                        "h-full transition-all duration-500 rounded-full",
-                        interview.status === "move_forward"
-                          ? "bg-emerald-500"
-                          : interview.status === "rejected"
-                            ? "bg-red-500"
-                            : "bg-primary"
-                      )}
-                      style={{ width: `${progressPercentage}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Questions List */}
-              <div className="space-y-4 pt-2">
-                {interview.questions.map((question, index) => (
-                  <InterviewQuestionFeedbackDisplay
-                    key={question.id}
-                    interviewId={interview.id}
-                    question={question}
-                    index={index}
-                  />
-                ))}
-              </div>
+          {questions.length > 0 ? (
+            <div className="space-y-3">
+              {questions.map((question, index) => (
+                <InterviewQuestionFeedbackDisplay
+                  key={question.id}
+                  interviewId={interview.id}
+                  question={question}
+                  index={index}
+                />
+              ))}
             </div>
           ) : (
             <div className="text-center py-12 text-muted-foreground">
-              <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No questions available for this interview.</p>
+              <MessageSquare className="h-10 w-10 mx-auto mb-3 opacity-40" />
+              <p>No questions for this interview</p>
             </div>
           )}
         </TabsContent>
 
         <TabsContent value="summary" className="mt-6">
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-xl font-semibold mb-1">Round Summary</h2>
-              <p className="text-sm text-muted-foreground">
-                Overall interview feedback
-              </p>
-            </div>
-            <div className="pt-2">
-              <InterviewSummaryDisplay
-                interview={interview}
-                applicationId={application?.id ?? interview.applicationId}
-              />
-            </div>
-          </div>
+          <InterviewSummaryForm
+            interview={interview}
+            applicationId={application?.id ?? interview.applicationId}
+          />
+        </TabsContent>
+
+        <TabsContent value="ai-analysis" className="mt-6">
+          <InterviewAiAnalysisTab interviewId={interview.id} />
+        </TabsContent>
+
+        <TabsContent value="screenings" className="mt-6">
+          <InterviewScreeningsTab interviewId={interview.id} />
         </TabsContent>
       </Tabs>
     </div>
@@ -380,20 +287,20 @@ function DisplayInterview({
 
 const InterviewLoadingSkeleton = () => {
   return (
-    <div className="space-y-8">
-      <div className="space-y-4 pb-6 border-b">
-        <div className="h-8 w-60 bg-muted animate-pulse rounded" />
-        <div className="h-4 w-96 bg-muted animate-pulse rounded" />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="h-8 w-16 bg-muted animate-pulse rounded" />
+        <div className="h-8 w-28 bg-muted animate-pulse rounded" />
       </div>
-      <div className="space-y-4">
-        <div className="h-10 w-64 bg-muted animate-pulse rounded" />
-        <div className="space-y-3">
-          <div className="h-6 w-48 bg-muted animate-pulse rounded" />
-          <div className="h-2 w-full bg-muted animate-pulse rounded" />
-          {[1, 2, 3].map((item) => (
-            <div key={item} className="h-24 bg-muted animate-pulse rounded" />
-          ))}
-        </div>
+      <div className="space-y-4 pb-6 border-b">
+        <div className="h-7 w-64 bg-muted animate-pulse rounded" />
+        <div className="h-5 w-40 bg-muted animate-pulse rounded" />
+      </div>
+      <div className="h-10 w-48 bg-muted animate-pulse rounded" />
+      <div className="space-y-3">
+        {[1, 2, 3].map((item) => (
+          <div key={item} className="h-20 bg-muted animate-pulse rounded-lg" />
+        ))}
       </div>
     </div>
   );

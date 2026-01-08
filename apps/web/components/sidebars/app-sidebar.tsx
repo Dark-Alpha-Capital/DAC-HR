@@ -14,6 +14,9 @@ import {
   User,
   ScrollText,
   Home,
+  ClipboardCheck,
+  BookOpen,
+  ClipboardList,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -41,17 +44,20 @@ const recruitingLinks = [
   { href: "/candidates", label: "Candidates", icon: Users },
   { href: "/applications", label: "Applications", icon: FileText },
   { href: "/documents", label: "Documents", icon: Folders },
+  { href: "/weekly-checkin", label: "Weekly Check-in", icon: ClipboardCheck },
+  { href: "/docs", label: "Documentation", icon: BookOpen },
 ] as const;
 
-// Management links (available to all users)
+// Management links (only for admin users)
 const managementLinks = [
-  { href: "/employees", label: "Employees", icon: Building2 },
-] as const;
-
-// Admin links (only for admins)
-const adminLinks = [
   { href: "/admin", label: "Admin", icon: Shield },
   { href: "/admin/audit-logs", label: "Audit Logs", icon: ScrollText },
+  { href: "/employees", label: "Employees", icon: Building2 },
+  { href: "/weekly-checkin/records", label: "Check-in Records", icon: ClipboardList },
+] as const;
+
+// Admin links (available to all users)
+const adminLinks = [
   { href: "/positions", label: "Positions", icon: Briefcase },
   { href: "/rounds", label: "Rounds", icon: CircleDot },
   { href: "/questions", label: "Questions", icon: HelpCircle },
@@ -91,12 +97,59 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarHeader> */}
       <SidebarContent>
+        {/* Admin Section - available to all users */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Admin</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {adminLinks.map((link) => (
+                <SidebarMenuItem key={link.href}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive(link.href)}
+                    tooltip={link.label}
+                  >
+                    <Link href={{ pathname: link.href }}>
+                      <link.icon />
+                      <span>{link.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Recruiting Section */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Recruiting</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {recruitingLinks.map((link) => (
+                <SidebarMenuItem key={link.href}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive(link.href)}
+                    tooltip={link.label}
+                  >
+                    <Link href={{ pathname: link.href }}>
+                      <link.icon />
+                      <span>{link.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Management Section - only for admin users */}
         {isAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+            <SidebarGroupLabel>Management</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {adminLinks.map((link) => (
+                {managementLinks.map((link) => (
                   <SidebarMenuItem key={link.href}>
                     <SidebarMenuButton
                       asChild
@@ -114,52 +167,6 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         )}
-
-        {/* Recruiting Section */}
-        <SidebarGroup>
-          <SidebarGroupLabel>Recruiting</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {recruitingLinks.map((link) => (
-                <SidebarMenuItem key={link.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive(link.href)}
-                    tooltip={link.label}
-                  >
-                    <Link href={link.href}>
-                      <link.icon />
-                      <span>{link.label}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Management Section */}
-        <SidebarGroup>
-          <SidebarGroupLabel>Management</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {managementLinks.map((link) => (
-                <SidebarMenuItem key={link.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive(link.href)}
-                    tooltip={link.label}
-                  >
-                    <Link href={link.href}>
-                      <link.icon />
-                      <span>{link.label}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
         <Suspense>
