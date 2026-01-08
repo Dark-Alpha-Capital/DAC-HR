@@ -8,7 +8,8 @@ FROM base AS deps
 COPY package.json package-lock.json* ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/ ./packages/
-RUN npm ci --legacy-peer-deps
+# Try npm ci first (faster, more deterministic), fall back to npm install if lock file is out of sync
+RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
 
 # Build the application
 FROM base AS builder

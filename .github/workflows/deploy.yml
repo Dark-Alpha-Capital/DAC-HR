@@ -19,44 +19,23 @@ jobs:
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd hr-automation
+            set -e
             
-            # Update git remote and pull latest code
+            cd hr-automation
             git remote set-url origin https://${{ secrets.GH_PAT }}@github.com/${{ github.repository }}.git || true
             git pull origin main
             
-            # Ensure package-lock.json exists (needed for npm ci)
-            if [ ! -f package-lock.json ]; then
-              echo "Warning: package-lock.json not found. Run 'npm install' locally first."
-            fi
-            
-            # Stop existing containers completely
+            # Stop and remove old containers/images
             docker compose down || true
-            
-            # Clean up old/dangling images to save disk space and prevent conflicts
             docker image prune -f
             
-            # Build without cache to ensure fresh build
-            # Build with build-time arguments for NEXT_PUBLIC_ variables
-            # These are read from the server's environment or .env file
-            docker compose build --no-cache \
-              --build-arg NEXT_PUBLIC_BETTER_AUTH_BASEURL=${NEXT_PUBLIC_BETTER_AUTH_BASEURL:-} \
-              --build-arg NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
+            # Build without cache (docker-compose.yml handles all build args automatically)
+            docker compose build --no-cache
             
-            # Start containers in detached mode and force recreation
+            # Start containers
             docker compose up -d --force-recreate
             
-            # Wait a moment for containers to start
-            sleep 5
-            
-            # Show container status
+            # Show status
+            sleep 3
             docker compose ps
-            
-            # Verify the build date of the running container
-            echo "=== Container Build Info ==="
-            docker inspect -f '{{ .Created }}' hr-automation || echo "Container name might differ, checking all containers:"
-            docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.CreatedAt}}"
-            
-            # Show recent logs
-            echo "=== Recent Application Logs ==="
-            docker compose logs --tail=50
+            docker compose logs --tail=30
