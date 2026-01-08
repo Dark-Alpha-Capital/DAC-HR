@@ -221,9 +221,9 @@ async function CachedCandidatePageContent({
             <Sparkles className="h-4 w-4 mr-2" />
             Do AI Analysis
           </TabsTrigger>
-          <TabsTrigger value="onboarding">
+          <TabsTrigger value="checklist">
             <ClipboardCheck className="h-4 w-4 mr-2" />
-            Onboarding
+            Checklist
           </TabsTrigger>
         </TabsList>
 
@@ -262,7 +262,7 @@ async function CachedCandidatePageContent({
             />
           </Suspense>
         </TabsContent>
-        <TabsContent value="onboarding" className="mt-6">
+        <TabsContent value="checklist" className="mt-6">
           <Suspense fallback={<SectionSkeleton />}>
             <CandidateOnboardingSection uid={uid} />
           </Suspense>
@@ -273,11 +273,6 @@ async function CachedCandidatePageContent({
 }
 
 // Component (not cached) reads runtime data
-const DocumentsCountWrapper = async ({ params }: { params: Params }) => {
-  const { uid } = await params;
-  return <CachedDocumentsCount uid={uid} />;
-};
-
 // Cached component receives data as props
 async function CachedDocumentsCount({ uid }: { uid: string }) {
   "use cache";
@@ -291,18 +286,6 @@ async function CachedDocumentsCount({ uid }: { uid: string }) {
     </Badge>
   ) : null;
 }
-
-const DocumentsCount = DocumentsCountWrapper;
-
-// Component (not cached) reads runtime data
-const DisplayCandidateDocumentsWrapper = async ({
-  params,
-}: {
-  params: Params;
-}) => {
-  const { uid } = await params;
-  return <CachedDisplayCandidateDocuments uid={uid} />;
-};
 
 // Cached component receives data as props
 async function CachedDisplayCandidateDocuments({ uid }: { uid: string }) {
@@ -547,24 +530,12 @@ const ApplicationsTab = ({
                   </div>
                   <InlineApplicationStatusEditor
                     application={{ id: app.id, status: app.status }}
+                    candidateId={candidate.id}
                   />
                 </div>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col space-y-4">
-                {app.position.description && (
-                  <div className="flex-1">
-                    <h5 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
-                      Job Description
-                    </h5>
-                    <div
-                      className="text-sm text-muted-foreground line-clamp-6 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4 [&_li]:mb-1"
-                      dangerouslySetInnerHTML={{
-                        __html: app.position.description,
-                      }}
-                    />
-                  </div>
-                )}
-                <div className="space-y-3 pt-3 border-t">
+                <div className="space-y-3">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                     <Calendar className="h-3 w-3 shrink-0" />
                     <span>Applied {formatDate(app.createdAt)}</span>

@@ -8,10 +8,9 @@ HR Automation system for Dark Alpha Capital - a full-stack application for manag
 
 ## Tech Stack
 
-- **Runtime**: Bun (v1.3.1) - use `bun` instead of npm/pnpm/node
+- **Runtime**: Bun - use `bun` instead of npm/pnpm/node
 - **Monorepo**: Turborepo with workspaces in `apps/` and `packages/`
 - **Frontend**: Next.js 16 with React 19, Tailwind CSS v4, shadcn/ui components
-- **Backend**: Hono API server running on Bun
 - **Database**: PostgreSQL with Drizzle ORM
 - **Auth**: better-auth with Google OAuth and email/password
 - **Storage**: Google Cloud Storage for documents
@@ -39,9 +38,8 @@ bun --cwd packages/db run db:studio      # Open Drizzle Studio
 bun --cwd packages/db run db:push        # Push schema changes
 bun --cwd packages/db run db:seed        # Seed database
 
-# Run individual apps
+# Run web app individually
 bun --cwd apps/web run dev               # Web app on :3000
-bun --cwd apps/backend run dev           # Backend API on :8080
 
 # Type checking (web app)
 bun --cwd apps/web run typecheck
@@ -53,8 +51,7 @@ bun --cwd apps/web run typecheck
 
 ```
 apps/
-├── web/           # Next.js frontend (main HR dashboard)
-└── backend/       # Hono API server (candidate routes, document management)
+└── web/           # Next.js frontend (main HR dashboard)
 
 packages/
 ├── db/            # Drizzle schema, queries, migrations
@@ -78,12 +75,13 @@ packages/
 - `employee` - Hired employees
 - `documents` / `candidateDocument` - File storage references
 - `candidateAiScreening` - AI-generated candidate analysis
+- `auditLog` - Tracks all entity changes with user info
 
 ### Auth Pattern
 
-Both web and backend use `better-auth` with shared configuration:
-- Admin roles determined by email whitelist in `auth.ts`
-- Web uses `nextCookies()` plugin, backend adds `bearer()` plugin
+Uses `better-auth` with shared configuration in `apps/web/auth.ts`:
+- Admin roles determined by email whitelist
+- Uses `nextCookies()` plugin for cookie-based auth
 - Session validation: `auth.api.getSession({ headers: await headers() })`
 
 ### UI Components
@@ -93,34 +91,25 @@ Import from `@workspace/ui/components/{component}`:
 import { Button } from "@workspace/ui/components/button"
 ```
 
-### Backend Routes
+### Server Action Pattern
 
-Hono routes in `apps/backend/routes/`:
-- `/candidate` - Candidate CRUD, bulk operations, AI screening
-- `/post` - Document posting endpoints
-- Type exports via `AppType` for client usage
+Server actions in `apps/web/lib/actions/` follow this pattern:
+1. Validate session with `auth.api.getSession()`
+2. Parse input with Zod schemas from `lib/schemas/`
+3. Perform database operation
+4. Call `revalidatePath()` / `updateTag()` for cache invalidation
+5. Log action with `insertAuditLog()` using `after()` for non-blocking audit
 
 ## Environment Variables
-
-### For Local Development
 
 Required in `apps/web/.env`:
 - `DATABASE_URL` - PostgreSQL connection
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` - OAuth
 - `BETTER_AUTH_SECRET` - Auth encryption
 - `BETTER_AUTH_URL` - Auth base URL (e.g., http://localhost:3000)
-- `NEXT_PUBLIC_BETTER_AUTH_BASEURL` - Public auth URL (same as BETTER_AUTH_URL)
+- `NEXT_PUBLIC_BETTER_AUTH_BASEURL` - Public auth URL
 - `GEMINI_API_KEY` - AI screening
-
-Required in `apps/backend/.env`:
-- `DATABASE_URL`
 - `GCLOUD_PROJECT_ID`, `GCS_CLIENT_EMAIL`, `GCS_PRIVATE_KEY`, `GCLOUD_BUCKET` - Cloud Storage
-
-### For Docker Build
-
-For Docker builds, create a `.env` file in the project root with all the above variables. This prevents warnings during `docker-compose build`.
-
-The `docker-compose.yml` file uses `${VAR:-}` syntax to provide default empty values, but you should still create a `.env` file with actual values for the build to work correctly at runtime.
 
 ## Local Development
 
@@ -149,7 +138,5 @@ docker-compose logs -f
 # Stop the container
 docker-compose down
 ```
-
-**Note**: Before building, ensure you have a `.env` file in the project root with all required environment variables. This prevents warnings during the Docker build process.
 
 The application will be available at `http://localhost:3001` (mapped from container port 3000).

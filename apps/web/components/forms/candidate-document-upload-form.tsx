@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { useTransition, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
@@ -27,7 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
-import { candidateDocumentFormSchema } from "@/lib/schemas/candidate-document-form-schema";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/auth-client";
@@ -51,28 +49,19 @@ const CandidateDocumentUploadForm = ({
       category: "other" as "resume" | "cover-letter" | "portfolio" | "other",
       tags: [] as string[],
     },
-    validators: {
-      onSubmit: candidateDocumentFormSchema,
-    },
     onSubmit: async ({ value }) => {
-      // Validate that file is provided
       if (!file) {
-        toast.error("Please upload a file", {
-          position: "bottom-right",
-        });
+        toast.error("Please upload a file");
         return;
       }
 
       if (!session?.session?.token) {
-        toast.error("You must be logged in to upload a document", {
-          position: "bottom-right",
-        });
+        toast.error("You must be logged in to upload a document");
         return;
       }
 
       startTransition(async () => {
         try {
-          // Prepare form data for the backend endpoint
           const formData = new FormData();
           formData.append("name", value.name);
           if (value.description) {
@@ -95,65 +84,43 @@ const CandidateDocumentUploadForm = ({
             }
           );
 
-          let result;
-          try {
-            result = await response.json();
-          } catch {
-            throw new Error("Failed to parse server response");
-          }
+          const result = await response.json();
 
           if (!response.ok) {
-            throw new Error(
+            const errorMessage =
               typeof result.error === "string"
                 ? result.error
                 : typeof result.error === "object"
                   ? JSON.stringify(result.error)
-                  : "Failed to upload document"
-            );
+                  : "Failed to upload document";
+            toast.error(errorMessage);
+            return;
           }
 
           if (result.success) {
-            toast.success("Document uploaded successfully", {
-              position: "bottom-right",
-              action: {
-                label: "View Candidate",
-                onClick: () => {
-                  router.push(`/candidates/${candidateId}`);
-                },
-              },
-            });
+            toast.success("Document uploaded successfully");
             await resetCacheForCandidateDocuments(candidateId);
             form.reset();
             setFile(null);
             setTagsInput("");
-            // Clear file input
             const fileInput = document.getElementById(
               "file-upload"
             ) as HTMLInputElement;
-            if (fileInput) {
-              fileInput.value = "";
-            }
-            // Navigate back to candidate page
+            if (fileInput) fileInput.value = "";
             router.push(`/candidates/${candidateId}`);
           } else {
-            toast.error(
+            const errorMessage =
               typeof result.error === "string"
                 ? result.error
-                : "Failed to upload document",
-              {
-                position: "bottom-right",
-              }
-            );
+                : "Failed to upload document";
+            toast.error(errorMessage);
           }
         } catch (error) {
-          toast.error(
+          const errorMessage =
             error instanceof Error
               ? error.message
-              : "Failed to upload document",
-            {
-              position: "bottom-right",
-            }
-          );
+              : "Failed to upload document";
+          toast.error(errorMessage);
         }
       });
     },
@@ -163,7 +130,6 @@ const CandidateDocumentUploadForm = ({
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       setFile(selectedFile);
-      // Auto-fill name if empty
       if (!form.state.values.name) {
         form.setFieldValue("name", selectedFile.name);
       }
@@ -172,23 +138,11 @@ const CandidateDocumentUploadForm = ({
 
   const handleTagsChange = (value: string) => {
     setTagsInput(value);
-    // Parse tags on the fly but keep raw input for display
     const tagsArray = value
       .split(",")
       .map((tag) => tag.trim())
       .filter((tag) => tag.length > 0);
     form.setFieldValue("tags", tagsArray);
-  };
-
-  const handleTagsBlur = () => {
-    // Ensure tags are properly formatted on blur
-    const tagsArray = tagsInput
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter((tag) => tag.length > 0);
-    form.setFieldValue("tags", tagsArray);
-    // Update input to show cleaned version
-    setTagsInput(tagsArray.join(", "));
   };
 
   return (
@@ -210,13 +164,10 @@ const CandidateDocumentUploadForm = ({
               form.reset();
               setFile(null);
               setTagsInput("");
-              // Clear file input
               const fileInput = document.getElementById(
                 "file-upload"
               ) as HTMLInputElement;
-              if (fileInput) {
-                fileInput.value = "";
-              }
+              if (fileInput) fileInput.value = "";
             }}
             disabled={isPending}
           >
@@ -272,136 +223,108 @@ const CandidateDocumentUploadForm = ({
               </div>
             </div>
           </Field>
+
           <form.Field
             name="name"
-            children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
-              return (
-                <Field data-invalid={isInvalid}>
-                  <FieldLabel htmlFor={field.name}>Document Name</FieldLabel>
-                  <Input
+            children={(field) => (
+              <Field>
+                <FieldLabel htmlFor={field.name}>Document Name</FieldLabel>
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  placeholder="Enter document name"
+                  autoComplete="off"
+                />
+              </Field>
+            )}
+          />
+
+          <form.Field
+            name="description"
+            children={(field) => (
+              <Field>
+                <FieldLabel htmlFor={field.name}>Description</FieldLabel>
+                <InputGroup>
+                  <InputGroupTextarea
                     id={field.name}
                     name={field.name}
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
-                    aria-invalid={isInvalid}
-                    placeholder="Enter document name"
-                    autoComplete="off"
+                    placeholder="Enter document description (optional)"
+                    rows={4}
+                    className="min-h-20 resize-none"
                   />
-                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                </Field>
-              );
-            }}
-          />
-
-          <form.Field
-            name="description"
-            children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
-              return (
-                <Field data-invalid={isInvalid}>
-                  <FieldLabel htmlFor={field.name}>Description</FieldLabel>
-                  <InputGroup>
-                    <InputGroupTextarea
-                      id={field.name}
-                      name={field.name}
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      placeholder="Enter document description (optional)"
-                      rows={4}
-                      className="min-h-20 resize-none"
-                      aria-invalid={isInvalid}
-                    />
-                    <InputGroupAddon align="block-end">
-                      <InputGroupText className="tabular-nums">
-                        {field.state.value.length}/1000 characters
-                      </InputGroupText>
-                    </InputGroupAddon>
-                  </InputGroup>
-                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                </Field>
-              );
-            }}
+                  <InputGroupAddon align="block-end">
+                    <InputGroupText className="tabular-nums">
+                      {field.state.value.length}/1000 characters
+                    </InputGroupText>
+                  </InputGroupAddon>
+                </InputGroup>
+              </Field>
+            )}
           />
 
           <form.Field
             name="category"
-            children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
-              return (
-                <Field data-invalid={isInvalid}>
-                  <FieldLabel htmlFor={field.name}>Category</FieldLabel>
-                  <Select
-                    value={field.state.value}
-                    onValueChange={(value) =>
-                      field.handleChange(
-                        value as
-                          | "resume"
-                          | "cover-letter"
-                          | "portfolio"
-                          | "other"
-                      )
-                    }
-                    aria-invalid={isInvalid}
-                  >
-                    <SelectTrigger
-                      id={field.name}
-                      aria-invalid={isInvalid}
-                      className="w-full"
-                    >
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectSeparator />
-                      <SelectItem value="resume">Resume</SelectItem>
-                      <SelectItem value="cover-letter">Cover Letter</SelectItem>
-                      <SelectItem value="portfolio">Portfolio</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                </Field>
-              );
-            }}
+            children={(field) => (
+              <Field>
+                <FieldLabel htmlFor={field.name}>Category</FieldLabel>
+                <Select
+                  value={field.state.value}
+                  onValueChange={(value) =>
+                    field.handleChange(
+                      value as "resume" | "cover-letter" | "portfolio" | "other"
+                    )
+                  }
+                >
+                  <SelectTrigger id={field.name} className="w-full">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectSeparator />
+                    <SelectItem value="resume">Resume</SelectItem>
+                    <SelectItem value="cover-letter">Cover Letter</SelectItem>
+                    <SelectItem value="portfolio">Portfolio</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+            )}
           />
 
           <form.Field
             name="tags"
-            children={(field) => {
-              return (
-                <Field>
-                  <FieldLabel htmlFor="tags-input">Tags</FieldLabel>
-                  <Input
-                    id="tags-input"
-                    value={tagsInput}
-                    onChange={(e) => handleTagsChange(e.target.value)}
-                    onBlur={handleTagsBlur}
-                    placeholder="Enter tags separated by commas (e.g., important, resume, 2024)"
-                    autoComplete="off"
-                  />
-                  <FieldDescription>
-                    Separate multiple tags with commas
-                  </FieldDescription>
-                  {field.state.value.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {field.state.value.map((tag, index) => (
-                        <span
-                          key={index}
-                          className="inline-flex items-center rounded-md bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </Field>
-              );
-            }}
+            children={(field) => (
+              <Field>
+                <FieldLabel htmlFor="tags-input">Tags</FieldLabel>
+                <Input
+                  id="tags-input"
+                  value={tagsInput}
+                  onChange={(e) => handleTagsChange(e.target.value)}
+                  placeholder="Enter tags separated by commas (e.g., important, resume, 2024)"
+                  autoComplete="off"
+                />
+                <FieldDescription>
+                  Separate multiple tags with commas
+                </FieldDescription>
+                {field.state.value.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {field.state.value.map((tag, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center rounded-md bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </Field>
+            )}
           />
         </FieldGroup>
       </form>

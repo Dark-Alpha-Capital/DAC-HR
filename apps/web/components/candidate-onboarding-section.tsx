@@ -33,11 +33,11 @@ async function CachedCandidateOnboardingSection({ uid }: { uid: string }) {
     return (
       <Card className="mt-4 md:mt-6 lg:mt-8">
         <CardHeader>
-          <CardTitle className="text-lg">Onboarding</CardTitle>
+          <CardTitle className="text-lg">Checklist</CardTitle>
         </CardHeader>
         <CardContent className="pt-6">
           <p className="text-sm text-muted-foreground">
-            Onboarding enabled, but no data available.
+            Checklist enabled, but no data available.
           </p>
         </CardContent>
       </Card>

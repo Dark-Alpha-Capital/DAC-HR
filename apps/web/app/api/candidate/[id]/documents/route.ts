@@ -59,6 +59,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now();
+  console.log(
+    `[POST /api/candidate/:id/documents] Request started at ${new Date().toISOString()}`
+  );
   try {
     const authResult = await requireAuth();
     if (authResult instanceof NextResponse) {
@@ -156,11 +159,11 @@ export async function POST(
         );
       }
 
-      // Upload file to storage
+      // Upload file to storage (use /Candidates folder for candidate documents)
       console.log(
         `[POST /api/candidate/:id/documents] Uploading file to storage...`
       );
-      const uploadedUrl = await uploadFile(file);
+      const uploadedUrl = await uploadFile(file, "/Candidates");
       console.log(
         `[POST /api/candidate/:id/documents] File uploaded successfully - URL: ${uploadedUrl}`
       );
@@ -417,7 +420,7 @@ export async function POST(
 
     const duration = Date.now() - startTime;
     console.log(
-      `[POST /api/candidate/:id/documents] Request completed successfully in ${duration}ms - Document ID: ${newCandidateDocument?.id}`
+      `[POST /api/candidate/:id/documents] ✅ Request completed successfully at ${new Date().toISOString()} - Duration: ${duration}ms - Document ID: ${newCandidateDocument?.id}`
     );
     return NextResponse.json(
       { success: true, data: newCandidateDocument },
@@ -425,13 +428,19 @@ export async function POST(
     );
   } catch (error) {
     const duration = Date.now() - startTime;
+    const errorMessage =
+      error instanceof Error ? error.message : "Internal server error";
     console.error(
-      `[POST /api/candidate/:id/documents] Error creating candidate document after ${duration}ms:`,
-      error
+      `[POST /api/candidate/:id/documents] ❌ Error creating candidate document at ${new Date().toISOString()} - Duration: ${duration}ms:`,
+      {
+        error,
+        errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+      }
     );
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Internal server error",
+        error: errorMessage,
       },
       { status: 500 }
     );

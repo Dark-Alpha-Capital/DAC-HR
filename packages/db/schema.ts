@@ -494,3 +494,74 @@ export const candidateAiScreening = pgTable("candidate_ai_screening", {
 export type CandidateAiScreening = InferSelectModel<
   typeof candidateAiScreening
 >;
+
+export const interviewAiAnalysis = pgTable("interview_ai_analysis", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  interviewId: text("interview_id")
+    .notNull()
+    .references(() => interview.id, { onDelete: "cascade" }),
+  applicationId: text("application_id").references(() => application.id, {
+    onDelete: "set null",
+  }),
+  positionId: text("position_id").references(() => position.id, {
+    onDelete: "set null",
+  }),
+  analysis: text("analysis").notNull(),
+  structuredData: json("structured_data"),
+  customPrompt: text("custom_prompt"),
+  model: text("model").default("gemini-2.5-flash"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+export type InterviewAiAnalysis = InferSelectModel<typeof interviewAiAnalysis>;
+
+export const sourcingChannelEnum = pgEnum("sourcing_channel", [
+  "linkedin",
+  "indeed",
+  "upwork",
+  "handshake",
+  "internal-referrals",
+  "university-portals",
+  "agency",
+  "other",
+]);
+
+export const recruiterWeeklyCheckin = pgTable("recruiter_weekly_checkin", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  weekStartDate: timestamp("week_start_date").notNull(),
+  weekEndDate: timestamp("week_end_date").notNull(),
+  recruiterName: text("recruiter_name").notNull(),
+  positionsWorked: text("positions_worked").array(),
+  candidatesSourced: integer("candidates_sourced").default(0),
+  candidatesScreened: integer("candidates_screened").default(0),
+  candidatesRejected: integer("candidates_rejected").default(0),
+  candidatesAdvanced2ndRound: integer("candidates_advanced_2nd_round").default(0),
+  candidatesAdvanced3rdRound: integer("candidates_advanced_3rd_round").default(0),
+  offersExtended: integer("offers_extended").default(0),
+  offersAccepted: integer("offers_accepted").default(0),
+  bestPerformingChannels: text("best_performing_channels").array(),
+  avgTimeToScreen: text("avg_time_to_screen"),
+  delaysOrBottlenecks: text("delays_or_bottlenecks"),
+  concernsOrEscalations: text("concerns_or_escalations"),
+  supportNeeded: text("support_needed"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+export type RecruiterWeeklyCheckin = InferSelectModel<
+  typeof recruiterWeeklyCheckin
+>;

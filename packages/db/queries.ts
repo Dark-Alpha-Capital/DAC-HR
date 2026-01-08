@@ -19,6 +19,8 @@ import {
   employee,
   auditLog,
   candidateAiScreening,
+  interviewAiAnalysis,
+  recruiterWeeklyCheckin,
 } from "./schema";
 import {
   eq,
@@ -2591,3 +2593,142 @@ export async function setDocumentCategories(
     throw error;
   }
 }
+
+/**
+ * Saves an interview AI analysis result
+ * @param params Object containing interviewId, applicationId, positionId, analysis text, customPrompt, and model name
+ * @returns The created interview AI analysis record or null if insertion fails
+ */
+export const saveInterviewAiAnalysis = async (params: {
+  interviewId: string;
+  applicationId?: string | null;
+  positionId?: string | null;
+  analysis: string;
+  customPrompt?: string | null;
+  model?: string;
+  structuredData?: unknown;
+}) => {
+  try {
+    const [result] = await db
+      .insert(interviewAiAnalysis)
+      .values({
+        interviewId: params.interviewId,
+        applicationId: params.applicationId || null,
+        positionId: params.positionId || null,
+        analysis: params.analysis,
+        customPrompt: params.customPrompt || null,
+        model: params.model || "gemini-2.5-flash",
+        structuredData: params.structuredData || null,
+      })
+      .returning();
+
+    return result;
+  } catch (error) {
+    console.error("Error saving interview AI analysis", error);
+    return null;
+  }
+};
+
+/**
+ * Fetches all AI analysis results for an interview
+ * @param interviewId The ID of the interview
+ * @returns Array of interview AI analysis records, ordered by most recent first
+ */
+export const getInterviewAiAnalysesByInterviewId = async (
+  interviewId: string
+) => {
+  try {
+    const results = await db
+      .select()
+      .from(interviewAiAnalysis)
+      .where(eq(interviewAiAnalysis.interviewId, interviewId))
+      .orderBy(desc(interviewAiAnalysis.createdAt));
+
+    return results;
+  } catch (error) {
+    console.error("Error fetching interview AI analyses", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches the most recent AI analysis result for an interview
+ * @param interviewId The ID of the interview
+ * @returns The most recent interview AI analysis record or null if not found
+ */
+export const getLatestInterviewAiAnalysis = async (interviewId: string) => {
+  try {
+    const [result] = await db
+      .select()
+      .from(interviewAiAnalysis)
+      .where(eq(interviewAiAnalysis.interviewId, interviewId))
+      .orderBy(desc(interviewAiAnalysis.createdAt))
+      .limit(1);
+
+    return result || null;
+  } catch (error) {
+    console.error("Error fetching latest interview AI analysis", error);
+    return null;
+  }
+};
+
+/**
+ * Deletes an interview AI analysis by ID
+ * @param analysisId The ID of the analysis to delete
+ * @returns True if deleted successfully, false otherwise
+ */
+export const deleteInterviewAiAnalysis = async (analysisId: string) => {
+  try {
+    await db
+      .delete(interviewAiAnalysis)
+      .where(eq(interviewAiAnalysis.id, analysisId));
+    return true;
+  } catch (error) {
+    console.error("Error deleting interview AI analysis", error);
+    return false;
+  }
+};
+
+/**
+ * Fetches all weekly check-ins with user info
+ * @returns An array of weekly check-ins with user details
+ */
+export const getWeeklyCheckins = async () => {
+  try {
+    const results = await db
+      .select({
+        id: recruiterWeeklyCheckin.id,
+        userId: recruiterWeeklyCheckin.userId,
+        weekStartDate: recruiterWeeklyCheckin.weekStartDate,
+        weekEndDate: recruiterWeeklyCheckin.weekEndDate,
+        recruiterName: recruiterWeeklyCheckin.recruiterName,
+        positionsWorked: recruiterWeeklyCheckin.positionsWorked,
+        candidatesSourced: recruiterWeeklyCheckin.candidatesSourced,
+        candidatesScreened: recruiterWeeklyCheckin.candidatesScreened,
+        candidatesRejected: recruiterWeeklyCheckin.candidatesRejected,
+        candidatesAdvanced2ndRound: recruiterWeeklyCheckin.candidatesAdvanced2ndRound,
+        candidatesAdvanced3rdRound: recruiterWeeklyCheckin.candidatesAdvanced3rdRound,
+        offersExtended: recruiterWeeklyCheckin.offersExtended,
+        offersAccepted: recruiterWeeklyCheckin.offersAccepted,
+        bestPerformingChannels: recruiterWeeklyCheckin.bestPerformingChannels,
+        avgTimeToScreen: recruiterWeeklyCheckin.avgTimeToScreen,
+        delaysOrBottlenecks: recruiterWeeklyCheckin.delaysOrBottlenecks,
+        concernsOrEscalations: recruiterWeeklyCheckin.concernsOrEscalations,
+        supportNeeded: recruiterWeeklyCheckin.supportNeeded,
+        createdAt: recruiterWeeklyCheckin.createdAt,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        },
+      })
+      .from(recruiterWeeklyCheckin)
+      .leftJoin(user, eq(recruiterWeeklyCheckin.userId, user.id))
+      .orderBy(desc(recruiterWeeklyCheckin.createdAt));
+
+    return results;
+  } catch (error) {
+    console.error("Error fetching weekly check-ins", error);
+    return [];
+  }
+};
