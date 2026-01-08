@@ -30,7 +30,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@workspace/ui/components/alert-dialog";
-import { Sparkles, Clock, Trash2, Pencil, Loader2 } from "lucide-react";
+import {
+  Sparkles,
+  Clock,
+  Trash2,
+  Pencil,
+  Loader2,
+  CheckCircle2,
+  AlertTriangle,
+  TrendingUp,
+  Code,
+  Users,
+} from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
@@ -41,11 +52,41 @@ import {
   updateAiScreening,
   type UpdateAiScreeningInput,
 } from "@/lib/actions/update-ai-screening";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@workspace/ui/components/collapsible";
+import { ChevronDown } from "lucide-react";
 
-// Simplified type for structured data - just score and analysis
+// Full structured data type based on candidateAiScreeningSchema
 type StructuredScreeningData = {
   score: number; // 0-10
-  analysis: string;
+  recommendation?: "Strong Hire" | "Hire" | "Neutral" | "Do Not Hire";
+  strengths?: Array<{ title: string; description: string }>;
+  concerns?: Array<{
+    title: string;
+    description: string;
+    severity: "Low" | "Medium" | "High";
+  }>;
+  experienceFit?: {
+    score: number;
+    assessment: string;
+    relevantExperience: string[];
+    gaps: string[];
+  };
+  skillsFit?: {
+    score: number;
+    assessment: string;
+    strongSkills: string[];
+    developingSkills: string[];
+  };
+  cultureFit?: {
+    score: number;
+    assessment: string;
+    indicators: string[];
+  };
+  analysis?: string;
 };
 
 interface CandidateAiScreeningsClientProps {
@@ -53,8 +94,10 @@ interface CandidateAiScreeningsClientProps {
   positionId: string | null;
 }
 
-// Helper function to safely extract score from structured data
-function getScore(screening: CandidateAiScreening): number | null {
+// Helper function to safely extract structured data
+function getStructuredData(
+  screening: CandidateAiScreening
+): StructuredScreeningData | null {
   if (
     !screening.structuredData ||
     typeof screening.structuredData !== "object" ||
@@ -63,19 +106,53 @@ function getScore(screening: CandidateAiScreening): number | null {
     return null;
   }
 
-  const data = screening.structuredData as any;
+  return screening.structuredData as StructuredScreeningData;
+}
 
-  // Check for score in simplified format
-  if (typeof data.score === "number") {
-    return data.score;
+// Helper function to safely extract score from structured data
+function getScore(screening: CandidateAiScreening): number | null {
+  const data = getStructuredData(screening);
+  return data?.score ?? null;
+}
+
+// Helper to get score color
+function getScoreColor(score: number): string {
+  if (score >= 8) return "text-green-600";
+  if (score >= 6) return "text-blue-600";
+  if (score >= 4) return "text-yellow-600";
+  return "text-red-600";
+}
+
+// Helper to get recommendation badge variant
+function getRecommendationVariant(
+  recommendation?: string
+): "default" | "secondary" | "destructive" | "outline" {
+  switch (recommendation) {
+    case "Strong Hire":
+      return "default";
+    case "Hire":
+      return "secondary";
+    case "Neutral":
+      return "outline";
+    case "Do Not Hire":
+      return "destructive";
+    default:
+      return "outline";
   }
+}
 
-  // Backward compatibility: try to extract from old format
-  if (data.verdict && typeof data.score === "number") {
-    return data.score;
+// Helper to get severity color
+function getSeverityColor(severity: string): string {
+  switch (severity) {
+    case "High":
+      return "text-red-600";
+    case "Medium":
+      return "text-yellow-600";
+    case "Low":
+      return "text-blue-600";
+    default:
+      return "text-muted-foreground";
   }
-
-  return null;
 }
 
 export default function CandidateAiScreeningsClient({
@@ -176,46 +253,13 @@ export default function CandidateAiScreeningsClient({
     }
 
     startTransition(async () => {
-      const score = getScore(selectedScreening);
-      const existingStructuredData = selectedScreening.structuredData as
-        | {
-            verdict:
-              | "Strong Hire"
-              | "Hire"
-              | "Neutral / On the Fence"
-              | "Do Not Hire";
-            score: number;
-            explanation: string;
-            fullAnalysis: string;
-          }
-        | null
-        | undefined;
-
-      // Preserve existing structuredData structure if it exists and has all required fields
-      // Otherwise set to null since we don't have all required fields to construct a valid object
-      let structuredData: UpdateAiScreeningInput["structuredData"] = null;
-      if (
-        existingStructuredData &&
-        typeof existingStructuredData === "object" &&
-        "verdict" in existingStructuredData &&
-        "score" in existingStructuredData &&
-        "explanation" in existingStructuredData &&
-        "fullAnalysis" in existingStructuredData
-      ) {
-        // Preserve the structure and update fullAnalysis with the new analysis
-        structuredData = {
-          verdict: existingStructuredData.verdict,
-          score: existingStructuredData.score,
-          explanation: existingStructuredData.explanation,
-          fullAnalysis: editAnalysis.trim(),
-        };
-      }
-
+      // Preserve existing structuredData as-is since we're only editing the analysis text
+      // Omit structuredData to keep it unchanged (the action will preserve existing data)
       const updateData: UpdateAiScreeningInput = {
         screeningId: selectedScreening.id,
         candidateId,
         analysis: editAnalysis.trim(),
-        structuredData,
+        // Don't include structuredData - action will preserve existing data
       };
 
       const result = await updateAiScreening(updateData);
@@ -292,13 +336,7 @@ export default function CandidateAiScreeningsClient({
               <div className="space-y-2 max-h-[600px] overflow-y-auto">
                 {screeningsWithDates.map((screening) => {
                   const score = getScore(screening);
-
-                  const getScoreColor = (score: number) => {
-                    if (score >= 8) return "text-green-600";
-                    if (score >= 6) return "text-blue-600";
-                    if (score >= 4) return "text-yellow-600";
-                    return "text-red-600";
-                  };
+                  const structuredData = getStructuredData(screening);
 
                   return (
                     <button
@@ -328,8 +366,18 @@ export default function CandidateAiScreeningsClient({
                               <span
                                 className={`text-sm font-semibold ${getScoreColor(score)}`}
                               >
-                                Score: {score}/10
+                                {score}/10
                               </span>
+                              {structuredData?.recommendation && (
+                                <Badge
+                                  variant={getRecommendationVariant(
+                                    structuredData.recommendation
+                                  )}
+                                  className="text-xs"
+                                >
+                                  {structuredData.recommendation}
+                                </Badge>
+                              )}
                             </div>
                           )}
                         </div>
@@ -347,94 +395,380 @@ export default function CandidateAiScreeningsClient({
           </Card>
 
           {/* Selected Screening Details */}
-          {selectedScreening && (
-            <div className="space-y-6">
-              <Card className="flex flex-col h-[600px]">
-                <CardHeader className="shrink-0">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">
-                      Screening Details
-                    </CardTitle>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleEditClick}
-                        disabled={isPending}
-                      >
-                        <Pencil className="h-4 w-4 mr-2" />
-                        Edit
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={handleDeleteClick}
-                        disabled={isPending}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-1 overflow-hidden p-6">
-                  <ScrollArea className="h-full">
-                    <div className="space-y-4 pr-4">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Generated</span>
-                        <span className="font-medium">
-                          {formatDate(selectedScreening.createdAt)}
-                        </span>
-                      </div>
-                      {selectedScreening.model && (
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Model</span>
-                          <span className="font-medium">
-                            {selectedScreening.model}
-                          </span>
-                        </div>
-                      )}
+          {selectedScreening &&
+            (() => {
+              const structuredData = getStructuredData(selectedScreening);
+              const score = getScore(selectedScreening);
 
-                      {(() => {
-                        const score = getScore(selectedScreening);
-                        return score !== null ? (
-                          <div className="pt-4 border-t">
-                            <div className="flex items-center gap-3 mb-4">
-                              <span className="text-sm font-medium text-muted-foreground">
-                                Score:
+              return (
+                <div className="space-y-6">
+                  <Card className="flex flex-col h-[600px]">
+                    <CardHeader className="shrink-0">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base">
+                          Screening Details
+                        </CardTitle>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleEditClick}
+                            disabled={isPending}
+                          >
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={handleDeleteClick}
+                            disabled={isPending}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="flex-1 overflow-hidden p-6">
+                      <ScrollArea className="h-full">
+                        <div className="space-y-6 pr-4">
+                          {/* Metadata */}
+                          <div className="space-y-2 text-sm">
+                            <div className="flex items-center justify-between">
+                              <span className="text-muted-foreground">
+                                Generated
                               </span>
-                              <span
-                                className={`text-2xl font-bold ${
-                                  score >= 8
-                                    ? "text-green-600"
-                                    : score >= 6
-                                      ? "text-blue-600"
-                                      : score >= 4
-                                        ? "text-yellow-600"
-                                        : "text-red-600"
-                                }`}
-                              >
-                                {score}/10
+                              <span className="font-medium">
+                                {formatDate(selectedScreening.createdAt)}
                               </span>
                             </div>
+                            {selectedScreening.model && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-muted-foreground">
+                                  Model
+                                </span>
+                                <span className="font-medium">
+                                  {selectedScreening.model}
+                                </span>
+                              </div>
+                            )}
                           </div>
-                        ) : null;
-                      })()}
 
-                      <div className="pt-4 border-t">
-                        <h3 className="text-sm font-medium mb-3">Analysis</h3>
-                        <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-code:text-foreground prose-pre:text-foreground prose-blockquote:text-foreground prose-li:text-foreground">
-                          <ReactMarkdown>
-                            {selectedScreening.analysis}
-                          </ReactMarkdown>
+                          {/* Overall Assessment */}
+                          {score !== null && (
+                            <div className="pt-4 border-t">
+                              <div className="flex items-center gap-4 mb-4">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium text-muted-foreground">
+                                    Score:
+                                  </span>
+                                  <span
+                                    className={`text-3xl font-bold ${getScoreColor(score)}`}
+                                  >
+                                    {score}/10
+                                  </span>
+                                </div>
+                                {structuredData?.recommendation && (
+                                  <Badge
+                                    variant={getRecommendationVariant(
+                                      structuredData.recommendation
+                                    )}
+                                    className="text-sm px-3 py-1"
+                                  >
+                                    {structuredData.recommendation}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Strengths */}
+                          {structuredData?.strengths &&
+                            structuredData.strengths.length > 0 && (
+                              <Collapsible
+                                defaultOpen
+                                className="border-t pt-4"
+                              >
+                                <CollapsibleTrigger className="flex items-center justify-between w-full text-left group">
+                                  <div className="flex items-center gap-2">
+                                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                    <h3 className="text-sm font-semibold">
+                                      Strengths (
+                                      {structuredData.strengths.length})
+                                    </h3>
+                                  </div>
+                                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                                </CollapsibleTrigger>
+                                <CollapsibleContent className="mt-3 space-y-3">
+                                  {structuredData.strengths.map(
+                                    (strength, idx) => (
+                                      <div
+                                        key={idx}
+                                        className="p-3 bg-green-50 dark:bg-green-950/20 rounded-md border border-green-200 dark:border-green-900/30"
+                                      >
+                                        <h4 className="text-sm font-medium mb-1">
+                                          {strength.title}
+                                        </h4>
+                                        <p className="text-xs text-muted-foreground">
+                                          {strength.description}
+                                        </p>
+                                      </div>
+                                    )
+                                  )}
+                                </CollapsibleContent>
+                              </Collapsible>
+                            )}
+
+                          {/* Concerns */}
+                          {structuredData?.concerns &&
+                            structuredData.concerns.length > 0 && (
+                              <Collapsible
+                                defaultOpen
+                                className="border-t pt-4"
+                              >
+                                <CollapsibleTrigger className="flex items-center justify-between w-full text-left group">
+                                  <div className="flex items-center gap-2">
+                                    <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                                    <h3 className="text-sm font-semibold">
+                                      Concerns ({structuredData.concerns.length}
+                                      )
+                                    </h3>
+                                  </div>
+                                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                                </CollapsibleTrigger>
+                                <CollapsibleContent className="mt-3 space-y-3">
+                                  {structuredData.concerns.map(
+                                    (concern, idx) => (
+                                      <div
+                                        key={idx}
+                                        className="p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-md border border-yellow-200 dark:border-yellow-900/30"
+                                      >
+                                        <div className="flex items-center justify-between mb-1">
+                                          <h4 className="text-sm font-medium">
+                                            {concern.title}
+                                          </h4>
+                                          <Badge
+                                            variant="outline"
+                                            className={`text-xs ${getSeverityColor(concern.severity)}`}
+                                          >
+                                            {concern.severity}
+                                          </Badge>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                          {concern.description}
+                                        </p>
+                                      </div>
+                                    )
+                                  )}
+                                </CollapsibleContent>
+                              </Collapsible>
+                            )}
+
+                          {/* Experience Fit */}
+                          {structuredData?.experienceFit && (
+                            <Collapsible defaultOpen className="border-t pt-4">
+                              <CollapsibleTrigger className="flex items-center justify-between w-full text-left group">
+                                <div className="flex items-center gap-2">
+                                  <TrendingUp className="h-4 w-4 text-blue-600" />
+                                  <h3 className="text-sm font-semibold">
+                                    Experience Fit
+                                  </h3>
+                                  <span
+                                    className={`text-sm font-bold ${getScoreColor(structuredData.experienceFit.score)}`}
+                                  >
+                                    {structuredData.experienceFit.score}/10
+                                  </span>
+                                </div>
+                                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                              </CollapsibleTrigger>
+                              <CollapsibleContent className="mt-3 space-y-3">
+                                <p className="text-xs text-muted-foreground">
+                                  {structuredData.experienceFit.assessment}
+                                </p>
+                                {structuredData.experienceFit.relevantExperience
+                                  .length > 0 && (
+                                  <div>
+                                    <h4 className="text-xs font-medium mb-2">
+                                      Relevant Experience:
+                                    </h4>
+                                    <ul className="space-y-1">
+                                      {structuredData.experienceFit.relevantExperience.map(
+                                        (exp, idx) => (
+                                          <li
+                                            key={idx}
+                                            className="text-xs text-muted-foreground flex items-start gap-2"
+                                          >
+                                            <span className="text-green-600 mt-1">
+                                              •
+                                            </span>
+                                            <span>{exp}</span>
+                                          </li>
+                                        )
+                                      )}
+                                    </ul>
+                                  </div>
+                                )}
+                                {structuredData.experienceFit.gaps.length >
+                                  0 && (
+                                  <div>
+                                    <h4 className="text-xs font-medium mb-2 text-yellow-600">
+                                      Experience Gaps:
+                                    </h4>
+                                    <ul className="space-y-1">
+                                      {structuredData.experienceFit.gaps.map(
+                                        (gap, idx) => (
+                                          <li
+                                            key={idx}
+                                            className="text-xs text-muted-foreground flex items-start gap-2"
+                                          >
+                                            <span className="text-yellow-600 mt-1">
+                                              •
+                                            </span>
+                                            <span>{gap}</span>
+                                          </li>
+                                        )
+                                      )}
+                                    </ul>
+                                  </div>
+                                )}
+                              </CollapsibleContent>
+                            </Collapsible>
+                          )}
+
+                          {/* Skills Fit */}
+                          {structuredData?.skillsFit && (
+                            <Collapsible defaultOpen className="border-t pt-4">
+                              <CollapsibleTrigger className="flex items-center justify-between w-full text-left group">
+                                <div className="flex items-center gap-2">
+                                  <Code className="h-4 w-4 text-purple-600" />
+                                  <h3 className="text-sm font-semibold">
+                                    Skills Fit
+                                  </h3>
+                                  <span
+                                    className={`text-sm font-bold ${getScoreColor(structuredData.skillsFit.score)}`}
+                                  >
+                                    {structuredData.skillsFit.score}/10
+                                  </span>
+                                </div>
+                                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                              </CollapsibleTrigger>
+                              <CollapsibleContent className="mt-3 space-y-3">
+                                <p className="text-xs text-muted-foreground">
+                                  {structuredData.skillsFit.assessment}
+                                </p>
+                                {structuredData.skillsFit.strongSkills.length >
+                                  0 && (
+                                  <div>
+                                    <h4 className="text-xs font-medium mb-2">
+                                      Strong Skills:
+                                    </h4>
+                                    <div className="flex flex-wrap gap-2">
+                                      {structuredData.skillsFit.strongSkills.map(
+                                        (skill, idx) => (
+                                          <Badge
+                                            key={idx}
+                                            variant="secondary"
+                                            className="text-xs"
+                                          >
+                                            {skill}
+                                          </Badge>
+                                        )
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                                {structuredData.skillsFit.developingSkills
+                                  .length > 0 && (
+                                  <div>
+                                    <h4 className="text-xs font-medium mb-2 text-yellow-600">
+                                      Skills to Develop:
+                                    </h4>
+                                    <div className="flex flex-wrap gap-2">
+                                      {structuredData.skillsFit.developingSkills.map(
+                                        (skill, idx) => (
+                                          <Badge
+                                            key={idx}
+                                            variant="outline"
+                                            className="text-xs"
+                                          >
+                                            {skill}
+                                          </Badge>
+                                        )
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </CollapsibleContent>
+                            </Collapsible>
+                          )}
+
+                          {/* Culture Fit */}
+                          {structuredData?.cultureFit && (
+                            <Collapsible defaultOpen className="border-t pt-4">
+                              <CollapsibleTrigger className="flex items-center justify-between w-full text-left group">
+                                <div className="flex items-center gap-2">
+                                  <Users className="h-4 w-4 text-indigo-600" />
+                                  <h3 className="text-sm font-semibold">
+                                    Culture Fit
+                                  </h3>
+                                  <span
+                                    className={`text-sm font-bold ${getScoreColor(structuredData.cultureFit.score)}`}
+                                  >
+                                    {structuredData.cultureFit.score}/10
+                                  </span>
+                                </div>
+                                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                              </CollapsibleTrigger>
+                              <CollapsibleContent className="mt-3 space-y-3">
+                                <p className="text-xs text-muted-foreground">
+                                  {structuredData.cultureFit.assessment}
+                                </p>
+                                {structuredData.cultureFit.indicators.length >
+                                  0 && (
+                                  <div>
+                                    <h4 className="text-xs font-medium mb-2">
+                                      Indicators:
+                                    </h4>
+                                    <ul className="space-y-1">
+                                      {structuredData.cultureFit.indicators.map(
+                                        (indicator, idx) => (
+                                          <li
+                                            key={idx}
+                                            className="text-xs text-muted-foreground flex items-start gap-2"
+                                          >
+                                            <span className="text-indigo-600 mt-1">
+                                              •
+                                            </span>
+                                            <span>{indicator}</span>
+                                          </li>
+                                        )
+                                      )}
+                                    </ul>
+                                  </div>
+                                )}
+                              </CollapsibleContent>
+                            </Collapsible>
+                          )}
+
+                          {/* Full Analysis */}
+                          <div className="pt-4 border-t">
+                            <h3 className="text-sm font-semibold mb-3">
+                              Full Analysis
+                            </h3>
+                            <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-code:text-foreground prose-pre:text-foreground prose-blockquote:text-foreground prose-li:text-foreground">
+                              <ReactMarkdown>
+                                {selectedScreening.analysis}
+                              </ReactMarkdown>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
+                </div>
+              );
+            })()}
         </div>
       )}
 

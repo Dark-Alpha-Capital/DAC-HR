@@ -13,12 +13,7 @@ export interface UpdateAiScreeningInput {
   screeningId: string;
   candidateId: string;
   analysis: string;
-  structuredData?: {
-    verdict: "Strong Hire" | "Hire" | "Neutral / On the Fence" | "Do Not Hire";
-    score: number;
-    explanation: string;
-    fullAnalysis: string;
-  } | null;
+  structuredData?: unknown | null; // Allow any structure to preserve existing data
 }
 
 export const updateAiScreening = async (data: UpdateAiScreeningInput) => {
@@ -48,13 +43,23 @@ export const updateAiScreening = async (data: UpdateAiScreeningInput) => {
       return { error: "AI screening not found" };
     }
 
+    // Only update structuredData if explicitly provided
+    const updateFields: {
+      analysis: string;
+      structuredData?: unknown;
+      updatedAt: Date;
+    } = {
+      analysis: analysis.trim(),
+      updatedAt: new Date(),
+    };
+
+    if (structuredData !== undefined) {
+      updateFields.structuredData = structuredData;
+    }
+
     const [updatedScreening] = await db
       .update(candidateAiScreening)
-      .set({
-        analysis: analysis.trim(),
-        structuredData: structuredData || null,
-        updatedAt: new Date(),
-      })
+      .set(updateFields)
       .where(eq(candidateAiScreening.id, screeningId))
       .returning();
 

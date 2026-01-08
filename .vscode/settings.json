@@ -1,3 +1,7 @@
 {
-  "tailwindCSS.experimental.configFile": "packages/ui/src/styles/globals.css"
+  "yaml.schemaStore.enable": false,
+  "yaml.schemas": {},
+  "yaml.validate": true,
+  "yaml.hover": true,
+  "yaml.completion": true
 }

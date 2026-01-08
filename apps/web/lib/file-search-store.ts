@@ -71,4 +71,3 @@ export async function deleteFileSearchStoreDocument(
     return false;
   }
 }
-

@@ -7,8 +7,11 @@ import {
 import {
   CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME,
   googleGenAI,
+  googleAIClient,
 } from "@/lib/ai/models";
 import { requireAuth } from "@/lib/middleware/auth";
+import { generateText, Output } from "ai";
+import { candidateAiScreeningSchema } from "@/lib/schemas/candidate-ai-screening-schema";
 
 /**
  * AI analysis endpoint
@@ -36,7 +39,9 @@ export async function POST(
     );
 
     if (!candidateId) {
-      console.error("[POST /api/candidate/:id/ai-analysis] Missing candidate ID");
+      console.error(
+        "[POST /api/candidate/:id/ai-analysis] Missing candidate ID"
+      );
       return NextResponse.json(
         { error: "Candidate ID is required" },
         { status: 400 }
@@ -115,49 +120,20 @@ export async function POST(
       );
     }
 
-    // Build a compact structured context for the model
+    // Build minimal structured context for the model
     console.log(
       `[POST /api/candidate/:id/ai-analysis] Building structured context for AI model...`
     );
     const structuredContext = {
       candidate: {
-        id: candidateRecord.id,
-        firstName: candidateRecord.firstName,
-        lastName: candidateRecord.lastName,
+        name: `${candidateRecord.firstName} ${candidateRecord.lastName}`,
         email: candidateRecord.email,
-        phone: candidateRecord.phone,
         location: candidateRecord.location,
-        source: candidateRecord.source,
-        sourceUrl: candidateRecord.sourceUrl,
-        note: candidateRecord.note,
-        createdAt: candidateRecord.createdAt,
-        updatedAt: candidateRecord.updatedAt,
       },
-      focusApplication: targetApplication
+      position: targetPosition
         ? {
-            id: targetApplication.id,
-            status: targetApplication.status,
-            personality: targetApplication.personality,
-            createdAt: targetApplication.createdAt,
-            updatedAt: targetApplication.updatedAt,
-            position: {
-              id: targetApplication.position.id,
-              name: targetApplication.position.name,
-              slug: targetApplication.position.slug,
-              description: targetApplication.position.description,
-            },
-            interviews: (targetApplication.interviews || []).map((iv) => ({
-              id: iv.id,
-              status: iv.status,
-              rating: iv.rating,
-              scheduledAt: iv.scheduledAt,
-              overallFeedback: iv.overallFeedback,
-              roundTemplate: {
-                id: iv.roundTemplate.id,
-                name: iv.roundTemplate.name,
-                description: iv.roundTemplate.description,
-              },
-            })),
+            name: targetPosition.name,
+            description: targetPosition.description,
           }
         : null,
     };
@@ -188,11 +164,6 @@ export async function POST(
 
     const structuredContextJson = JSON.stringify(structuredContext, null, 2);
 
-    // Simplified prompt for candidate suitability analysis
-    console.log(
-      `[POST /api/candidate/:id/ai-analysis] Generating AI analysis prompt...`
-    );
-
     // Build document selection instruction
     let documentInstruction = "";
     if (selectedDocuments.length > 0) {
@@ -200,93 +171,41 @@ export async function POST(
         (doc) => doc.fileSearchDocumentName
       );
       if (documentsWithFileSearch.length > 0) {
-        documentInstruction = `
-IMPORTANT: Focus your analysis on the following specific documents from the file search store:
-${documentsWithFileSearch
-  .map(
-    (doc) =>
-      `- ${doc.name} (fileSearchDocumentName: ${doc.fileSearchDocumentName})`
-  )
-  .join("\n")}
-
-When using the fileSearch tool, prioritize these documents, but you may also reference other documents if relevant.
-`;
-      } else {
-        documentInstruction = `
-NOTE: Specific documents were selected, but they may not be available in the file search store yet.
-Please analyze all available documents for this candidate.
-`;
+        documentInstruction = `Focus on these documents: ${documentsWithFileSearch.map((d) => d.name).join(", ")}`;
       }
     } else {
-      documentInstruction = `
-Use the fileSearch tool to retrieve and read **all** documents for this candidate
-from the \`${CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME}\` store. These may include resume,
-cover letter, case studies, work samples, interview feedback, and internal notes.
-`;
+      documentInstruction = `Search all candidate documents.`;
     }
 
     // Build custom prompt section
     let customPromptSection = "";
     if (customPrompt && customPrompt.trim()) {
-      customPromptSection = `
-
-ADDITIONAL USER REQUIREMENTS:
-The user has provided specific questions or requirements for this analysis:
-${customPrompt.trim()}
-
-Please ensure your analysis addresses these specific requirements while maintaining the overall evaluation framework.
-`;
+      customPromptSection = `\n\nUser requirements: ${customPrompt.trim()}`;
     }
 
-    const prompt = `
-You are an expert buy-side hedge fund recruiter and people manager for DarkAlpha Capital.
-Your task is to evaluate whether the candidate is a strong fit for the specific position,
-using BOTH:
-- the structured candidate + position data I give you, AND
-- the candidate's documents available via the file search tool.
+    // Step 1: Get raw analysis from AI
+    console.log(
+      `[POST /api/candidate/:id/ai-analysis] Step 1: Calling Gemini API for raw analysis...`
+    );
+    const rawAnalysisPrompt =
+      `Evaluate candidate fit for Dark Alpha Capital's position.
 
-FIRST, ${documentInstruction.trim()}
+${documentInstruction.trim()}
 
-Then, based on everything you know, produce a comprehensive markdown analysis report
-covering the candidate's background, skills, experience fit, culture fit, and overall
-suitability for the role.
-
-Important guidelines:
-- Always ground your reasoning in specific facts from the candidate data and documents.
-- If some information is missing, **explicitly say what is missing** instead of guessing.
-- Be concise but concrete; avoid generic HR language.
-
-Here is the structured data about the candidate and position (JSON):
-\`\`\`json
-${structuredContextJson}
-\`\`\`
+Candidate: ${structuredContext.candidate.name} (${structuredContext.candidate.email})${structuredContext.candidate.location ? `, ${structuredContext.candidate.location}` : ""}
+Position: ${structuredContext.position?.name || "General"}
+${structuredContext.position?.description ? `\nJob Description: ${structuredContext.position.description}` : ""}
 ${customPromptSection}
 
-Now perform the full analysis as described above.
-    `.trim();
+Provide concise markdown analysis: background, skills, experience fit, culture fit, suitability. Use facts from documents. State if info is missing.`.trim();
 
-    // Simplified prompt - just ask for score and analysis
-    const enhancedPrompt = `${prompt}
-
-Please provide your analysis in the following format:
-
-**Score:** [A number from 0-10 indicating candidate suitability]
-
-**Analysis:**
-[Your complete markdown analysis report covering candidate background, skills, experience fit, culture fit, and overall suitability]
-
-You can provide the analysis in any format you prefer, but please include a clear score (0-10) and a comprehensive analysis.`;
-
-    console.log(
-      `[POST /api/candidate/:id/ai-analysis] Calling Gemini API for analysis...`
-    );
-    const aiStartTime = Date.now();
-    const response = await googleGenAI.models.generateContent({
+    const rawAnalysisStartTime = Date.now();
+    const rawAnalysisResponse = await googleGenAI.models.generateContent({
       model: "gemini-2.5-flash",
       contents: [
         {
           role: "user",
-          parts: [{ text: enhancedPrompt }],
+          parts: [{ text: rawAnalysisPrompt }],
         },
       ],
       config: {
@@ -300,79 +219,37 @@ You can provide the analysis in any format you prefer, but please include a clea
         ],
       },
     });
-    const aiDuration = Date.now() - aiStartTime;
-    console.log(
-      `[POST /api/candidate/:id/ai-analysis] Gemini API response received in ${aiDuration}ms`
-    );
-
-    // Extract score and analysis from response (flexible parsing)
-    console.log(`[POST /api/candidate/:id/ai-analysis] Parsing AI response...`);
-    let responseText: string = response.text || "";
-
-    // Try to extract score from the response (look for patterns like "Score: 7" or "Score: 7.5" or "**Score:** 8")
-    let score = 5; // Default score if not found
-    const scorePatterns = [
-      /\*\*Score:\*\*\s*(\d+(?:\.\d+)?)/i,
-      /Score:\s*(\d+(?:\.\d+)?)/i,
-      /"score":\s*(\d+(?:\.\d+)?)/i,
-      /score["\s:]*(\d+(?:\.\d+)?)/i,
-    ];
-
-    for (const pattern of scorePatterns) {
-      const match = responseText.match(pattern);
-      if (match && match[1]) {
-        const extractedScore = parseFloat(match[1]);
-        if (
-          !isNaN(extractedScore) &&
-          extractedScore >= 0 &&
-          extractedScore <= 10
-        ) {
-          score = Math.round(extractedScore * 10) / 10; // Round to 1 decimal place
-          console.log(
-            `[POST /api/candidate/:id/ai-analysis] Extracted score: ${score}`
-          );
-          break;
-        }
-      }
-    }
-
-    // Extract analysis - use the full response text, or try to find it after "Analysis:" marker
-    let analysis = responseText.trim();
-    const analysisMarkers = [
-      /\*\*Analysis:\*\*\s*([\s\S]*)/i,
-      /Analysis:\s*([\s\S]*)/i,
-      /"analysis":\s*"([\s\S]*)"/i,
-    ];
-
-    for (const pattern of analysisMarkers) {
-      const match = responseText.match(pattern);
-      if (match && match[1]) {
-        analysis = match[1].trim();
-        break;
-      }
-    }
-
-    // Clean up the analysis text
-    analysis = analysis
-      .replace(/```json\n?/g, "")
-      .replace(/```\n?/g, "")
-      .replace(/^\*\*Score:\*\*\s*\d+(?:\.\d+)?\s*/i, "")
-      .replace(/^Score:\s*\d+(?:\.\d+)?\s*/i, "")
-      .trim();
-
-    // If analysis is empty, use the full response
-    if (!analysis || analysis.length < 50) {
-      analysis = responseText.trim();
-    }
-
-    const candidateAiScreening = {
-      score,
-      analysis,
-    };
+    const rawAnalysisDuration = Date.now() - rawAnalysisStartTime;
+    const rawAnalysisText = rawAnalysisResponse.text || "";
+    console.log("Raw analysis text:", rawAnalysisText);
 
     console.log(
-      `[POST /api/candidate/:id/ai-analysis] AI analysis parsed successfully - Score: ${candidateAiScreening.score}, Analysis length: ${candidateAiScreening.analysis.length} characters`
+      `[POST /api/candidate/:id/ai-analysis] Raw analysis received in ${rawAnalysisDuration}ms (${rawAnalysisText.length} characters)`
     );
+
+    // Step 2: Generate structured data from raw analysis
+    console.log(
+      `[POST /api/candidate/:id/ai-analysis] Step 2: Generating structured data from raw analysis...`
+    );
+    const structuredDataStartTime = Date.now();
+    const { output: structuredData } = await generateText({
+      model: googleAIClient("gemini-3-flash-preview"),
+      output: Output.object({
+        schema: candidateAiScreeningSchema,
+      }),
+      prompt: `Extract structured evaluation from this analysis:
+
+${rawAnalysisText}
+
+Provide: score (0-10), recommendation (Strong Hire/Hire/Neutral/Do Not Hire), markdown analysis, strengths (3-7), concerns (with severity), experience fit (score + assessment + relevant/gaps), skills fit (score + assessment + strong/developing), culture fit (score + assessment + indicators).`.trim(),
+    });
+    const structuredDataDuration = Date.now() - structuredDataStartTime;
+    console.log(
+      `[POST /api/candidate/:id/ai-analysis] Structured data generated in ${structuredDataDuration}ms - Score: ${structuredData.score}, Recommendation: ${structuredData.recommendation}`
+    );
+
+    // Save the complete structured data
+    const candidateAiScreening = structuredData;
 
     // Save the analysis to the database
     console.log(
@@ -382,12 +259,9 @@ You can provide the analysis in any format you prefer, but please include a clea
       candidateId,
       positionId: targetApplication?.position.id || null,
       applicationId: targetApplication?.id || null,
-      analysis: candidateAiScreening.analysis,
-      model: "gemini-2.5-flash",
-      structuredData: {
-        score: candidateAiScreening.score,
-        analysis: candidateAiScreening.analysis,
-      },
+      analysis: rawAnalysisText,
+      model: "gemini-3-flash-preview",
+      structuredData: candidateAiScreening,
     });
 
     if (!savedScreening) {
@@ -406,7 +280,7 @@ You can provide the analysis in any format you prefer, but please include a clea
     );
     return NextResponse.json(
       {
-        analysis: candidateAiScreening.analysis,
+        analysis: rawAnalysisText,
         score: candidateAiScreening.score,
         screeningId: savedScreening?.id || null,
       },
@@ -426,4 +300,3 @@ You can provide the analysis in any format you prefer, but please include a clea
     );
   }
 }
-
