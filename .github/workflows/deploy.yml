@@ -30,43 +30,19 @@ jobs:
               echo "Warning: package-lock.json not found. Run 'npm install' locally first."
             fi
             
-            # Stop and remove existing containers (--volumes removes volumes too)
-            docker compose down --volumes --remove-orphans || true
+            # Stop existing containers
+            docker compose down || true
             
-            # Remove old images to force fresh build
-            docker compose build --no-cache --pull \
+            # Build with build-time arguments for NEXT_PUBLIC_ variables
+            # These are read from the server's environment or .env file
+            docker compose build \
               --build-arg NEXT_PUBLIC_BETTER_AUTH_BASEURL=${NEXT_PUBLIC_BETTER_AUTH_BASEURL:-} \
-              --build-arg NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
-            
-            # Remove dangling images to free up space
-            docker image prune -f || true
             
             # Start containers in detached mode
             docker compose up -d
-            
-            # Wait for container to be healthy (up to 2 minutes)
-            echo "Waiting for application to be healthy..."
-            timeout=120
-            elapsed=0
-            while [ $elapsed -lt $timeout ]; do
-              if docker compose ps | grep -q "healthy"; then
-                echo "Container is healthy!"
-                break
-              fi
-              sleep 5
-              elapsed=$((elapsed + 5))
-              echo "Waiting... ($elapsed/$timeout seconds)"
-            done
             
             # Show container status
             docker compose ps
             
             # Show recent logs
             docker compose logs --tail=50
-            
-            # Clear nginx cache if nginx is installed and running
-            if command -v nginx &> /dev/null; then
-              echo "Clearing nginx cache..."
-              sudo rm -rf /var/cache/nginx/* || true
-              sudo nginx -s reload || true
-            fi
