@@ -36,7 +36,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
-import LocationInputField from "@/components/location-input-field";
 import { authClient } from "@/auth-client";
 import { Session } from "better-auth";
 import { resetCacheForCandidates } from "@/lib/actions/reset-cache";
@@ -100,20 +99,17 @@ const CandidateUploadForm = ({
       startTransition(async () => {
         try {
           // First, create the candidate
-          const response = await fetch(
-            `/api/candidate`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${userSession.token}`,
-              },
-              body: JSON.stringify({
-                ...value,
-                positionId: value.positionId || "",
-              }),
-            }
-          );
+          const response = await fetch(`/api/candidate`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${userSession.token}`,
+            },
+            body: JSON.stringify({
+              ...value,
+              positionId: value.positionId || "",
+            }),
+          });
 
           const result = await response.json();
 
@@ -417,20 +413,16 @@ const CandidateUploadForm = ({
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Location</FieldLabel>
-                  <LocationInputField
+                  <Input
                     id={field.name}
+                    name={field.name}
                     value={field.state.value}
-                    onChange={(value) => {
-                      field.handleChange(value);
-                      field.handleBlur();
-                    }}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    aria-invalid={isInvalid}
                     placeholder="Enter city, state, or country"
-                    className="w-full"
+                    autoComplete="off"
                   />
-                  <FieldDescription>
-                    Start typing to see autocomplete suggestions with city,
-                    state, and country
-                  </FieldDescription>
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>
               );

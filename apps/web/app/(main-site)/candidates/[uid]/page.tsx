@@ -273,11 +273,6 @@ async function CachedCandidatePageContent({
 }
 
 // Component (not cached) reads runtime data
-const DocumentsCountWrapper = async ({ params }: { params: Params }) => {
-  const { uid } = await params;
-  return <CachedDocumentsCount uid={uid} />;
-};
-
 // Cached component receives data as props
 async function CachedDocumentsCount({ uid }: { uid: string }) {
   "use cache";
@@ -291,18 +286,6 @@ async function CachedDocumentsCount({ uid }: { uid: string }) {
     </Badge>
   ) : null;
 }
-
-const DocumentsCount = DocumentsCountWrapper;
-
-// Component (not cached) reads runtime data
-const DisplayCandidateDocumentsWrapper = async ({
-  params,
-}: {
-  params: Params;
-}) => {
-  const { uid } = await params;
-  return <CachedDisplayCandidateDocuments uid={uid} />;
-};
 
 // Cached component receives data as props
 async function CachedDisplayCandidateDocuments({ uid }: { uid: string }) {

@@ -42,15 +42,25 @@ const RoundContainer = ({ rounds }: RoundContainerProps) => {
     });
   };
 
+  const truncateDescription = (
+    description: string | null,
+    maxWords: number = 5
+  ) => {
+    if (!description) return "-";
+    const words = description.split(" ");
+    if (words.length <= maxWords) return description;
+    return words.slice(0, maxWords).join(" ") + "...";
+  };
+
   return (
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead className="py-1.5 px-2 text-xs w-16">#</TableHead>
           <TableHead className="py-1.5 px-2 text-xs">Name</TableHead>
-          <TableHead className="py-1.5 px-2 text-xs">Description</TableHead>
           <TableHead className="py-1.5 px-2 text-xs">Positions</TableHead>
           <TableHead className="py-1.5 px-2 text-xs">Created</TableHead>
+          <TableHead className="py-1.5 px-2 text-xs">Description</TableHead>
           <TableHead className="text-right py-1.5 px-2 text-xs">
             Actions
           </TableHead>
@@ -64,9 +74,6 @@ const RoundContainer = ({ rounds }: RoundContainerProps) => {
             </TableCell>
             <TableCell className="py-1.5 px-2 font-medium text-sm">
               {round.name}
-            </TableCell>
-            <TableCell className="py-1.5 px-2 text-sm">
-              {round.description || "-"}
             </TableCell>
             <TableCell className="py-1.5 px-2 text-sm">
               {round.positions.length > 0 ? (
@@ -87,6 +94,9 @@ const RoundContainer = ({ rounds }: RoundContainerProps) => {
             </TableCell>
             <TableCell className="py-1.5 px-2 text-sm">
               {formatDate(round.createdAt)}
+            </TableCell>
+            <TableCell className="py-1.5 px-2 text-sm text-muted-foreground">
+              {truncateDescription(round.description)}
             </TableCell>
             <TableCell className="text-right py-1.5 px-2">
               <div className="flex items-center justify-end gap-1">

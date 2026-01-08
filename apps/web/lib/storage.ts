@@ -1,136 +1,86 @@
-import { Storage } from "@google-cloud/storage";
+import { uploadFileToNextCloud, getClient } from "./next-cloud";
 
-const storage = new Storage({
-  projectId: process.env.GCLOUD_PROJECT_ID,
-  credentials: {
-    client_email: process.env.GCS_CLIENT_EMAIL,
-    private_key: process.env.GCS_PRIVATE_KEY?.split(String.raw`\n`).join("\n"),
-  },
-});
-
-const BUCKET = process.env.GCLOUD_BUCKET;
-
-export const uploadFile = async (file: File | Blob) => {
+/**
+ * Uploads a file to Nextcloud storage
+ * @param file - The file to upload (File or Blob)
+ * @param folderPath - Optional folder path (defaults to "/Documents")
+ * @returns The URL of the uploaded file
+ */
+export const uploadFile = async (
+  file: File | Blob,
+  folderPath?: string
+): Promise<string | null> => {
   try {
-    const bucket = storage.bucket(BUCKET as string);
-    const fileName = file instanceof File ? file.name : `upload-${Date.now()}`;
-    const blob = bucket.file(fileName);
-    const blobStream = blob.createWriteStream();
+    // Determine folder path based on context if not provided
+    // For candidate documents, use /Candidates folder
+    // For general documents, use /Documents folder
+    const defaultFolderPath = folderPath || "/Documents";
 
-    // Convert File/Blob to Buffer
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const url = await uploadFileToNextCloud(file, defaultFolderPath);
 
-    await new Promise((resolve, reject) => {
-      blobStream.on("error", reject);
-      blobStream.on("finish", resolve);
-      blobStream.end(buffer);
-    });
+    if (!url) {
+      console.error("Failed to upload file to Nextcloud");
+      return null;
+    }
 
-    return blob.publicUrl();
+    return url;
   } catch (error) {
-    console.log("error upload to blob");
-    console.error(error);
+    console.error("Error uploading file to Nextcloud:", error);
     return null;
   }
 };
 
 /**
- * Generates a signed URL for accessing a file in Google Cloud Storage
- * @param fileUrl The public URL or GCS path of the file
- * @param expiresInMinutes How long the signed URL should be valid (default: 60 minutes)
- * @returns A signed URL that allows temporary access to the file
+ * Generates a signed URL for accessing a file in Nextcloud
+ * For Nextcloud, we return the WebDAV download link directly
+ * @param fileUrl The WebDAV URL or file path of the file
+ * @param expiresInMinutes How long the signed URL should be valid (default: 60 minutes) - Not used for Nextcloud
+ * @returns A URL that allows access to the file
  */
 export const getSignedUrl = async (
   fileUrl: string,
   expiresInMinutes: number = 60
 ): Promise<string | null> => {
   try {
-    const bucket = storage.bucket(BUCKET as string);
+    // For Nextcloud, if the URL is already a WebDAV download link, return it as-is
+    // The WebDAV link already includes authentication via Basic Auth
+    if (fileUrl.includes("/remote.php/dav/")) {
+      return fileUrl;
+    }
 
-    // Extract the file path from the URL
-    // Handle both gs:// URLs and https://storage.googleapis.com URLs
-    let fileName: string;
+    // If it's a file path, construct the WebDAV download URL
+    // Extract the file path from the URL if needed
+    const client = getClient();
 
-    if (fileUrl.startsWith("gs://")) {
-      fileName = fileUrl.replace(`gs://${BUCKET}/`, "");
-      // Decode URL encoding in the filename
-      fileName = decodeURIComponent(fileName);
-    } else if (fileUrl.includes("storage.googleapis.com")) {
+    // Try to extract the file path from various URL formats
+    let filePath = fileUrl;
+
+    // If it's a full URL, try to extract the path
+    if (fileUrl.startsWith("http")) {
       try {
-        // Parse the URL properly to handle encoding
         const url = new URL(fileUrl);
-        // Extract the pathname and remove the leading slash and bucket name
-        const pathParts = url.pathname.split("/").filter(Boolean);
-        // Remove the bucket name (first part)
-        if (pathParts[0] === BUCKET) {
-          pathParts.shift();
+        // Extract path after /remote.php/dav/files/{user}/
+        const davPathMatch = url.pathname.match(
+          /\/remote\.php\/dav\/files\/[^/]+\/(.+)/
+        );
+        if (davPathMatch) {
+          filePath = `/${davPathMatch[1]}`;
+        } else {
+          // Fallback: use the pathname directly
+          filePath = url.pathname;
         }
-        // Join the remaining parts and decode
-        fileName = decodeURIComponent(pathParts.join("/"));
       } catch {
-        // Fallback: Extract filename manually if URL parsing fails
-        const urlParts = fileUrl.split("/");
-        const filenamePart = urlParts.slice(4).join("/"); // Skip https:, '', storage.googleapis.com, bucket-name
-        fileName = decodeURIComponent(filenamePart);
+        // If URL parsing fails, assume it's already a path
+        filePath = fileUrl.startsWith("/") ? fileUrl : `/${fileUrl}`;
       }
     } else {
-      // Assume it's just the filename, decode it
-      fileName = decodeURIComponent(fileUrl);
+      // Ensure path starts with /
+      filePath = fileUrl.startsWith("/") ? fileUrl : `/${fileUrl}`;
     }
 
-    console.log(`Looking for file: ${fileName}`);
-
-    let file = bucket.file(fileName);
-
-    // Check if file exists
-    let [exists] = await file.exists();
-
-    // If file not found, try with the original encoded filename from URL
-    // (in case the file was stored with URL-encoded characters)
-    if (!exists && fileUrl.includes("storage.googleapis.com")) {
-      try {
-        const url = new URL(fileUrl);
-        const pathParts = url.pathname.split("/").filter(Boolean);
-        // Remove bucket name if present
-        if (pathParts[0] === BUCKET) {
-          pathParts.shift();
-        }
-        const originalEncoded = pathParts.join("/");
-        console.log(`Trying original encoded filename: ${originalEncoded}`);
-        file = bucket.file(originalEncoded);
-        [exists] = await file.exists();
-      } catch (e) {
-        // If URL parsing fails, try extracting manually
-        const urlParts = fileUrl.split("/");
-        const originalEncoded = urlParts.slice(4).join("/");
-        console.log(
-          `Trying manually extracted encoded filename: ${originalEncoded}`
-        );
-        file = bucket.file(originalEncoded);
-        [exists] = await file.exists();
-      }
-    }
-
-    if (!exists) {
-      console.error(`File not found after trying: ${fileName}`);
-      // Try listing files to debug
-      const prefix = fileName.split("/")[0];
-      const [files] = await bucket.getFiles({ prefix, maxResults: 10 });
-      console.log(
-        `Files with prefix ${prefix}:`,
-        files.map((f) => f.name)
-      );
-      return null;
-    }
-
-    // Generate signed URL valid for specified minutes
-    const [signedUrl] = await file.getSignedUrl({
-      action: "read",
-      expires: Date.now() + expiresInMinutes * 60 * 1000,
-    });
-
-    return signedUrl;
+    // Generate the WebDAV download link
+    const downloadUrl = client.getFileDownloadLink(filePath);
+    return downloadUrl;
   } catch (error) {
     console.error("Error generating signed URL:", error);
     return null;
@@ -138,50 +88,64 @@ export const getSignedUrl = async (
 };
 
 /**
- * Deletes a file from Google Cloud Storage
- * @param fileUrl The public URL or GCS path of the file to delete
+ * Deletes a file from Nextcloud
+ * @param fileUrl The WebDAV URL or file path of the file to delete
  * @returns A promise that resolves to true if deletion was successful
  */
 export const deleteFile = async (fileUrl: string): Promise<boolean> => {
   try {
-    const bucket = storage.bucket(BUCKET as string);
+    const client = getClient();
 
     // Extract the file path from the URL
-    let fileName: string;
+    let filePath: string;
 
-    if (fileUrl.startsWith("gs://")) {
-      fileName = fileUrl.replace(`gs://${BUCKET}/`, "");
-      fileName = decodeURIComponent(fileName);
-    } else if (fileUrl.includes("storage.googleapis.com")) {
+    // If it's a WebDAV URL, extract the path
+    if (fileUrl.includes("/remote.php/dav/files/")) {
       try {
         const url = new URL(fileUrl);
-        const pathParts = url.pathname.split("/").filter(Boolean);
-        if (pathParts[0] === BUCKET) {
-          pathParts.shift();
+        // Extract path after /remote.php/dav/files/{user}/
+        const davPathMatch = url.pathname.match(
+          /\/remote\.php\/dav\/files\/[^/]+\/(.+)/
+        );
+        if (davPathMatch) {
+          filePath = `/${davPathMatch[1]}`;
+        } else {
+          filePath = url.pathname;
         }
-        fileName = decodeURIComponent(pathParts.join("/"));
       } catch {
-        const urlParts = fileUrl.split("/");
-        const filenamePart = urlParts.slice(4).join("/");
-        fileName = decodeURIComponent(filenamePart);
+        // If URL parsing fails, try to extract manually
+        const parts = fileUrl.split("/remote.php/dav/files/");
+        const afterUserPart = parts[1];
+        if (parts.length > 1 && afterUserPart) {
+          const afterUser = afterUserPart.split("/").slice(1).join("/");
+          filePath = `/${afterUser}`;
+        } else {
+          filePath = fileUrl;
+        }
       }
     } else {
-      fileName = decodeURIComponent(fileUrl);
+      // Assume it's already a file path
+      filePath = fileUrl.startsWith("/") ? fileUrl : `/${fileUrl}`;
     }
 
-    const file = bucket.file(fileName);
-    const [exists] = await file.exists();
-
-    if (!exists) {
-      console.warn(`File not found in GCS: ${fileName}`);
-      return false;
+    // Check if file exists
+    try {
+      await client.stat(filePath);
+    } catch (error: any) {
+      if (error?.status === 404 || error?.response?.status === 404) {
+        console.warn(`File not found in Nextcloud: ${filePath}`);
+        return false;
+      }
+      // If it's not a 404, rethrow the error
+      throw error;
     }
 
-    await file.delete();
-    console.log(`✅ File '${fileName}' deleted successfully from GCS.`);
+    // Delete the file
+    await client.deleteFile(filePath);
+    console.log(`✅ File '${filePath}' deleted successfully from Nextcloud.`);
     return true;
   } catch (error) {
-    console.error("Error deleting file from GCS:", error);
+    console.error("Error deleting file from Nextcloud:", error);
     return false;
   }
 };

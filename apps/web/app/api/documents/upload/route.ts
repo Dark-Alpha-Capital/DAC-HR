@@ -56,8 +56,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Upload file to storage
-    const url = await uploadFile(file);
+    // Upload file to storage (use /Documents folder for top-level documents)
+    const url = await uploadFile(file, "/Documents");
 
     if (!url) {
       return NextResponse.json(
