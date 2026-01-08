@@ -27,11 +27,7 @@ const page = async ({ searchParams }: { searchParams: SearchParams }) => {
         <UserIsAdmin />
       </Suspense>
       <div>
-        <h1 className="text-4xl font-bold tracking-tight">Admin Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage positions, questions, and interview rounds for your
-          organization
-        </p>
+        <h1 className="text-4xl font-bold tracking-tight">Admin</h1>
       </div>
 
       <div className="border-t pt-8 mt-4">
