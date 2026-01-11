@@ -86,7 +86,10 @@ async function CachedEditCandidateForm({ uid }: { uid: string }) {
             ...candidate,
             positionId: candidate.positionId || undefined,
           }}
-          positions={positions.map((p) => ({ id: p.id, name: p.name }))}
+          positions={positions.positions.map((p) => ({
+            id: p.id,
+            name: p.name,
+          }))}
         />
       </div>
     </div>

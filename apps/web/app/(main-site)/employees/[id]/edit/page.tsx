@@ -42,7 +42,7 @@ async function DisplayEmployeeEditForm({ params }: { params: Params }) {
     );
   }
 
-  const cleanedPositions = positions.map((position) => ({
+  const cleanedPositions = positions.positions.map((position) => ({
     id: position.id,
     name: position.name,
   }));

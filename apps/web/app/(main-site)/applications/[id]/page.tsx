@@ -36,8 +36,10 @@ import ApplicationPersonalitySelector from "@/components/application-personality
 import { ApplicationDetailSkeleton } from "@/components/skeletons/application-detail-skeleton";
 import { UserAuthenticated } from "@/components/auth-checks";
 import ApplicationTabsContent from "@/components/application-tabs-content";
+import ApplicationBreadcrumb from "@/components/application-breadcrumb";
 import { Metadata } from "next";
 import { cacheLife, cacheTag } from "next/cache";
+import { User, Mail } from "lucide-react";
 
 type Params = Promise<{ id: string }>;
 type SearchParams = Promise<{ interview?: string }>;
@@ -146,6 +148,62 @@ const DisplayApplicationWrapper = async ({
   );
 };
 
+// Helper function to get application status badge
+function getApplicationStatusBadge(status: string) {
+  type StatusConfig = {
+    label: string;
+    variant: "default" | "secondary" | "outline" | "destructive";
+    className: string;
+  };
+
+  const defaultConfig: StatusConfig = {
+    label: "Pending",
+    variant: "outline",
+    className: "border-0",
+  };
+
+  const statusConfig: Record<string, StatusConfig> = {
+    pending: defaultConfig,
+    reviewed: {
+      label: "Reviewed",
+      variant: "secondary",
+      className: "border-0",
+    },
+    shortlisted: {
+      label: "Shortlisted",
+      variant: "default",
+      className: "border-0",
+    },
+    interviewing: {
+      label: "Interviewing",
+      variant: "default",
+      className: "border-0",
+    },
+    hired: {
+      label: "Hired",
+      variant: "default",
+      className: "border-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+    },
+    rejected: {
+      label: "Rejected",
+      variant: "destructive",
+      className: "border-0",
+    },
+    withdrawn: {
+      label: "Withdrawn",
+      variant: "outline",
+      className: "border-0",
+    },
+  };
+
+  const config = statusConfig[status] ?? defaultConfig;
+  return (
+    <Badge variant={config.variant} className={config.className}>
+      {config.label}
+    </Badge>
+  );
+}
+
 // Cached component receives data as props
 async function CachedDisplayApplication({
   applicationId,
@@ -178,35 +236,73 @@ async function CachedDisplayApplication({
     );
   }
 
+  // Fetch candidate information
+  const candidate = await CachedCandidateById(application.candidateId);
+  const candidateName = candidate
+    ? `${candidate.firstName} ${candidate.lastName}`
+    : "Unknown Candidate";
+
   return (
     <div className="space-y-6">
+      {/* Breadcrumb Navigation */}
+      <ApplicationBreadcrumb
+        candidateName={candidateName}
+        positionName={application.position.name}
+        applicationId={applicationId}
+      />
+
       {/* Header */}
-      <div className="space-y-4">
+      <div className="space-y-6">
+        {/* Candidate and Position Info */}
         <div className="flex items-start justify-between gap-4">
-          <div className="space-y-2 flex-1">
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold">
-                {application.position.name}
+          <div className="space-y-4 flex-1">
+            {/* Candidate Name - Prominent */}
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold tracking-tight">
+                {candidateName}
               </h1>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                {candidate?.email && (
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    <span>{candidate.email}</span>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
-              <div className="flex items-center gap-1.5">
-                <Calendar className="h-3 w-3" />
+
+            {/* Position and Status */}
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="space-y-1">
+                <p className="text-lg font-semibold text-foreground">
+                  {application.position.name}
+                </p>
+                {getApplicationStatusBadge(application.status)}
+              </div>
+            </div>
+
+            {/* Metadata */}
+            <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
                 <span>Applied {formatDate(application.createdAt)}</span>
               </div>
               {application.updatedAt &&
                 application.updatedAt.getTime() !==
                   application.createdAt.getTime() && (
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="h-3 w-3" />
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
                     <span>Updated {formatDate(application.updatedAt)}</span>
                   </div>
                 )}
             </div>
           </div>
+
+          {/* Action Buttons */}
           <div className="flex gap-2 shrink-0">
-            <Button size="sm" variant="link" asChild>
+            <Button size="sm" variant="outline" asChild>
               <Link href={`/candidates/${application.candidateId}`}>
+                <User className="h-4 w-4 mr-2" />
                 View Candidate
               </Link>
             </Button>

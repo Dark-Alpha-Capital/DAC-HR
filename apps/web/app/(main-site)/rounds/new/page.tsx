@@ -33,15 +33,19 @@ async function DisplayRoundUploadForm({
   searchParams: SearchParams;
 }) {
   const { position } = await searchParams;
-  const positions = await getPositions();
+  const positionsResult = await getPositions();
   const preSelectedPositionId = position
     ? Array.isArray(position)
       ? position[0]
       : position
     : "";
+  const cleanedPositions = positionsResult.positions.map((position) => ({
+    id: position.id,
+    name: position.name,
+  }));
   return (
     <RoundUploadForm
-      positions={positions}
+      positions={cleanedPositions}
       preSelectedPositionId={preSelectedPositionId || ""}
     />
   );

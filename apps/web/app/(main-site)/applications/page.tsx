@@ -47,7 +47,7 @@ async function CachedPresentFilters() {
   cacheLife("hr-metadata");
   cacheTag("positions");
 
-  const positions = await getPositions();
+  const { positions } = await getPositions();
   const positionTypes = positions.map((position) => ({
     id: position.id,
     name: position.name,

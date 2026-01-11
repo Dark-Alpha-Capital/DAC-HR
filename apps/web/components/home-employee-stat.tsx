@@ -8,7 +8,7 @@ import {
 import { UserCheck } from "lucide-react";
 
 export default async function HomeEmployeeStat() {
-  const employees = await getEmployees();
+  const employeesResult = await getEmployees();
 
   return (
     <Card>
@@ -17,7 +17,7 @@ export default async function HomeEmployeeStat() {
         <UserCheck className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{employees.length}</div>
+        <div className="text-2xl font-bold">{employeesResult.total}</div>
         <p className="text-xs text-muted-foreground mt-1">
           Total employees
         </p>

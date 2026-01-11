@@ -13,6 +13,7 @@ import FilterQuestionPosition from "@/components/filter-question-position";
 import FilterQuestionRound from "@/components/filter-question-round";
 import ClearQuestionFiltersButton from "@/components/clear-question-filters-button";
 import { cacheLife, cacheTag } from "next/cache";
+import PaginationControls from "@/components/pagination-controls";
 
 export const metadata: Metadata = {
   title: "Questions",
@@ -51,6 +52,16 @@ const QuestionsPageContent = async ({
       ? [params.round]
       : [];
 
+  // Extract page number (default to 1)
+  const page = params.page
+    ? typeof params.page === "string"
+      ? parseInt(params.page, 10)
+      : Array.isArray(params.page) && params.page[0]
+        ? parseInt(params.page[0], 10)
+        : 1
+    : 1;
+  const currentPage = isNaN(page) || page < 1 ? 1 : page;
+
   return (
     <div className="container mx-auto py-8 space-y-6">
       <div className="flex items-center justify-between">
@@ -73,6 +84,7 @@ const QuestionsPageContent = async ({
           search={search}
           positionIds={positionIds}
           roundIds={roundIds}
+          currentPage={currentPage}
         />
       </Suspense>
     </div>
@@ -87,7 +99,10 @@ async function CachedFilterControls() {
   cacheTag("positions");
   cacheTag("rounds");
 
-  const [positions, rounds] = await Promise.all([getPositions(), getRounds()]);
+  const [{ positions }, rounds] = await Promise.all([
+    getPositions(),
+    getRounds(),
+  ]);
 
   return (
     <>
@@ -104,16 +119,19 @@ const QuestionsListWrapper = async ({
   search,
   positionIds,
   roundIds,
+  currentPage,
 }: {
   search: string;
   positionIds: string[];
   roundIds: string[];
+  currentPage: number;
 }) => {
   return (
     <CachedQuestionsList
       search={search}
       positionIds={positionIds}
       roundIds={roundIds}
+      currentPage={currentPage}
     />
   );
 };
@@ -123,21 +141,39 @@ async function CachedQuestionsList({
   search,
   positionIds,
   roundIds,
+  currentPage,
 }: {
   search: string;
   positionIds: string[];
   roundIds: string[];
+  currentPage: number;
 }) {
   "use cache";
   cacheLife("hr-data");
   cacheTag("questions");
 
-  const questions = await getQuestionsWithRounds();
+  const limit = 50;
+
+  const { questions, total } = await getQuestionsWithRounds(
+    search || undefined,
+    positionIds.length > 0 ? positionIds : undefined,
+    roundIds.length > 0 ? roundIds : undefined,
+    currentPage,
+    limit
+  );
+
+  const totalPages = Math.ceil(total / limit);
+  const hasNextPage = currentPage < totalPages;
+  const hasPreviousPage = currentPage > 1;
 
   if (questions.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">No questions found.</p>
+        <p className="text-muted-foreground">
+          {search || positionIds.length > 0 || roundIds.length > 0
+            ? "No questions found matching your filters."
+            : "No questions found."}
+        </p>
         <Button asChild className="mt-4">
           <Link href="/questions/new">Add your first question</Link>
         </Button>
@@ -146,11 +182,17 @@ async function CachedQuestionsList({
   }
 
   return (
-    <QuestionContainer
-      questions={questions}
-      search={search}
-      positionIds={positionIds}
-      roundIds={roundIds}
-    />
+    <div className="space-y-6">
+      <QuestionContainer questions={questions} />
+      {totalPages > 1 && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          hasNextPage={hasNextPage}
+          hasPreviousPage={hasPreviousPage}
+          basePath="/questions"
+        />
+      )}
+    </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import {
   Table,
   TableBody,
@@ -34,52 +34,11 @@ type QuestionWithRounds = {
 
 interface QuestionContainerProps {
   questions: QuestionWithRounds[];
-  search: string;
-  positionIds: string[];
-  roundIds: string[];
 }
 
 const QuestionContainer = ({
   questions,
-  search,
-  positionIds,
-  roundIds,
 }: QuestionContainerProps) => {
-  const filteredQuestions = useMemo(() => {
-    return questions.filter((question) => {
-      // Search filter
-      if (search) {
-        const searchLower = search.toLowerCase();
-        if (!question.questionText.toLowerCase().includes(searchLower)) {
-          return false;
-        }
-      }
-
-      // Position filter
-      if (positionIds.length > 0) {
-        const questionPositionIds = question.positions.map((p) => p.id);
-        const hasMatchingPosition = positionIds.some((posId) =>
-          questionPositionIds.includes(posId)
-        );
-        if (!hasMatchingPosition) {
-          return false;
-        }
-      }
-
-      // Round filter
-      if (roundIds.length > 0) {
-        const questionRoundIds = question.rounds.map((r) => r.id);
-        const hasMatchingRound = roundIds.some((roundId) =>
-          questionRoundIds.includes(roundId)
-        );
-        if (!hasMatchingRound) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }, [questions, search, positionIds, roundIds]);
 
   const renderRounds = (question: QuestionWithRounds) => {
     if (!question.rounds || question.rounds.length === 0) {
@@ -117,14 +76,6 @@ const QuestionContainer = ({
     );
   };
 
-  if (filteredQuestions.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">No questions found matching your filters.</p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <Table>
@@ -138,7 +89,7 @@ const QuestionContainer = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredQuestions.map((question, index) => (
+          {questions.map((question, index) => (
             <TableRow key={question.id}>
               <TableCell className="py-3 px-4 text-muted-foreground">
                 {index + 1}

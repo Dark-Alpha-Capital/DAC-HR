@@ -9,6 +9,7 @@ import FilterPositionHireLevel from "@/components/filter-position-hire-level";
 import FilterPositionStatus from "@/components/filter-position-status";
 import ClearPositionFiltersButton from "@/components/clear-position-filters-button";
 import { cacheLife, cacheTag } from "next/cache";
+import PaginationControls from "@/components/pagination-controls";
 
 export const metadata: Metadata = {
   title: "Positions",
@@ -72,8 +73,22 @@ const PositionsListWrapper = async ({
       : [params.status]
     : undefined;
 
+  // Extract page number (default to 1)
+  const page = params.page
+    ? typeof params.page === "string"
+      ? parseInt(params.page, 10)
+      : Array.isArray(params.page) && params.page[0]
+        ? parseInt(params.page[0], 10)
+        : 1
+    : 1;
+  const currentPage = isNaN(page) || page < 1 ? 1 : page;
+
   return (
-    <CachedPositionsList hireLevels={hireLevels} statuses={statuses} />
+    <CachedPositionsList
+      hireLevels={hireLevels}
+      statuses={statuses}
+      currentPage={currentPage}
+    />
   );
 };
 
@@ -81,15 +96,28 @@ const PositionsListWrapper = async ({
 async function CachedPositionsList({
   hireLevels,
   statuses,
+  currentPage,
 }: {
   hireLevels?: string[];
   statuses?: string[];
+  currentPage: number;
 }) {
   "use cache";
   cacheLife("hr-data");
   cacheTag("positions");
 
-  const positions = await getPositions(hireLevels, statuses);
+  const limit = 50;
+
+  const { positions, total } = await getPositions(
+    hireLevels,
+    statuses,
+    currentPage,
+    limit
+  );
+
+  const totalPages = Math.ceil(total / limit);
+  const hasNextPage = currentPage < totalPages;
+  const hasPreviousPage = currentPage > 1;
 
   if (positions.length === 0) {
     return (
@@ -102,5 +130,18 @@ async function CachedPositionsList({
     );
   }
 
-  return <PositionContainer positions={positions} />;
+  return (
+    <div className="space-y-6">
+      <PositionContainer positions={positions} />
+      {totalPages > 1 && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          hasNextPage={hasNextPage}
+          hasPreviousPage={hasPreviousPage}
+          basePath="/positions"
+        />
+      )}
+    </div>
+  );
 }

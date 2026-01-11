@@ -13,7 +13,9 @@ type Params = Promise<{ id: string }>;
 const AddQuestionPage = async ({ params }: { params: Params }) => {
   return (
     <div className="container mx-auto py-8 space-y-6">
-      <BackButton />
+      <Suspense>
+        <BackButton />
+      </Suspense>
       <Suspense fallback={<FormLoadingFallback />}>
         <DisplayAddQuestionForm params={params} />
       </Suspense>
@@ -55,7 +57,10 @@ const DisplayAddQuestionForm = async ({ params }: { params: Params }) => {
   return (
     <div className="space-y-4">
       <QuestionUploadForm
-        positions={positions.map((p) => ({ id: p.id, name: p.name }))}
+        positions={positions.positions.map((position) => ({
+          id: position.id,
+          name: position.name,
+        }))}
         preSelectedPositionId={positionId}
         preSelectedRoundId={id}
       />

@@ -32,17 +32,20 @@ import { ShieldAlert, Calendar, Users, BarChart3, FileText } from "lucide-react"
 import { hasWeeklyCheckinViewerAccess } from "@/lib/config/weekly-checkin-access";
 import { sourcingChannelLabels } from "@/lib/schemas/weekly-checkin-form-schema";
 import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";
+import PaginationControls from "@/components/pagination-controls";
 
 export const metadata: Metadata = {
   title: "Weekly Check-in Records",
   description: "View all submitted weekly recruiting check-ins",
 };
 
-const page = async () => {
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
+
+const page = async ({ searchParams }: { searchParams: SearchParams }) => {
   return (
     <div className="container mx-auto py-6 space-y-8">
       <Suspense fallback={<FormLoadingFallback />}>
-        <DisplayRecords />
+        <DisplayRecords searchParams={searchParams} />
       </Suspense>
     </div>
   );
@@ -50,7 +53,11 @@ const page = async () => {
 
 export default page;
 
-async function DisplayRecords() {
+async function DisplayRecords({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   const userSession = await auth.api.getSession({
     headers: await headers(),
   });
@@ -76,10 +83,27 @@ async function DisplayRecords() {
     );
   }
 
-  const [checkins, positions] = await Promise.all([
-    getWeeklyCheckins(),
+  const params = await searchParams;
+  // Extract page number (default to 1)
+  const page = params.page
+    ? typeof params.page === "string"
+      ? parseInt(params.page, 10)
+      : Array.isArray(params.page) && params.page[0]
+        ? parseInt(params.page[0], 10)
+        : 1
+    : 1;
+  const currentPage = isNaN(page) || page < 1 ? 1 : page;
+
+  const limit = 50;
+
+  const [{ checkins, total }, { positions }] = await Promise.all([
+    getWeeklyCheckins(currentPage, limit),
     getPositions(),
   ]);
+
+  const totalPages = Math.ceil(total / limit);
+  const hasNextPage = currentPage < totalPages;
+  const hasPreviousPage = currentPage > 1;
 
   // Create a map of position IDs to names
   const positionMap = new Map(positions.map((p) => [p.id, p.name]));
@@ -120,8 +144,9 @@ async function DisplayRecords() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
-          {checkins.map((checkin) => (
+        <div className="space-y-6">
+          <div className="space-y-4">
+            {checkins.map((checkin) => (
             <Card key={checkin.id}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
@@ -319,6 +344,16 @@ async function DisplayRecords() {
               </CardContent>
             </Card>
           ))}
+          </div>
+          {totalPages > 1 && (
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              hasNextPage={hasNextPage}
+              hasPreviousPage={hasPreviousPage}
+              basePath="/weekly-checkin/records"
+            />
+          )}
         </div>
       )}
     </div>

@@ -35,8 +35,6 @@ type EmployeeWithPosition = Employee & {
 
 interface EmployeeContainerProps {
   employees: EmployeeWithPosition[];
-  nameFilter?: string;
-  emailFilter?: string;
 }
 
 const DeleteEmployeeIconButton = ({ employeeId }: { employeeId: string }) => {
@@ -103,36 +101,7 @@ const DeleteEmployeeIconButton = ({ employeeId }: { employeeId: string }) => {
 
 const EmployeeContainer = ({
   employees,
-  nameFilter,
-  emailFilter,
 }: EmployeeContainerProps) => {
-  // Filter employees based on name and email
-  const filteredEmployees = employees.filter((employee) => {
-    const fullName = `${employee.firstName} ${employee.lastName}`.toLowerCase();
-    const nameMatch = nameFilter
-      ? fullName.includes(nameFilter.toLowerCase())
-      : true;
-
-    // Note: Email filtering is not available yet as employees don't have an email field in the schema
-    // If email filter is provided but employees don't have email, we ignore the email filter
-    // This will be functional once email is added to the employee schema
-    const emailMatch = emailFilter
-      ? false // No email field available in employee schema, so email filter won't match
-      : true;
-
-    return nameMatch && emailMatch;
-  });
-
-  if (filteredEmployees.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">
-          No employees found matching your search criteria.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <Table>
       <TableHeader>
@@ -147,7 +116,7 @@ const EmployeeContainer = ({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {filteredEmployees.map((employee, index) => {
+        {employees.map((employee, index) => {
           const fullName = `${employee.firstName} ${employee.lastName}`;
           const departmentNames = formatDepartments(employee.department);
           return (

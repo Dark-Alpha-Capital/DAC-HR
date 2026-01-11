@@ -17,6 +17,7 @@ import {
 } from "@workspace/ui/components/tabs";
 import DocumentCategoriesManager from "@/components/document-categories-manager";
 import { cacheLife, cacheTag } from "next/cache";
+import PaginationControls from "@/components/pagination-controls";
 
 export const metadata: Metadata = {
   title: "Documents",
@@ -86,13 +87,23 @@ const PresentFilters = () => {
 async function CachedDocuments(
   categoryFilters?: string[],
   nameSearch?: string,
-  tagsSearch?: string
+  tagsSearch?: string,
+  currentPage?: number
 ) {
   "use cache";
   cacheLife("hr-data");
   cacheTag("documents");
 
-  return await getDocuments(categoryFilters, nameSearch, tagsSearch);
+  const limit = 50;
+  const page = currentPage || 1;
+
+  return await getDocuments(
+    categoryFilters,
+    nameSearch,
+    tagsSearch,
+    page,
+    limit
+  );
 }
 
 // Component (not cached) reads runtime data
@@ -102,7 +113,7 @@ const PresentDocumentsWrapper = async ({
   searchParams: SearchParams;
 }) => {
   const params = await searchParams;
-  const { category, name, tags } = params;
+  const { category, name, tags, page: pageParam } = params;
 
   // Extract category filters from the category parameter
   const categoryFilters = category
@@ -117,11 +128,27 @@ const PresentDocumentsWrapper = async ({
   // Extract tags search
   const tagsSearch = typeof tags === "string" ? tags : undefined;
 
-  const documents = await CachedDocuments(
+  // Extract page number (default to 1)
+  const page = pageParam
+    ? typeof pageParam === "string"
+      ? parseInt(pageParam, 10)
+      : Array.isArray(pageParam) && pageParam[0]
+        ? parseInt(pageParam[0], 10)
+        : 1
+    : 1;
+  const currentPage = isNaN(page) || page < 1 ? 1 : page;
+
+  const { documents, total } = await CachedDocuments(
     categoryFilters,
     nameSearch,
-    tagsSearch
+    tagsSearch,
+    currentPage
   );
+
+  const limit = 50;
+  const totalPages = Math.ceil(total / limit);
+  const hasNextPage = currentPage < totalPages;
+  const hasPreviousPage = currentPage > 1;
 
   if (documents.length === 0) {
     return (
@@ -138,7 +165,20 @@ const PresentDocumentsWrapper = async ({
     );
   }
 
-  return <DocumentContainer documents={documents} />;
+  return (
+    <div className="space-y-6">
+      <DocumentContainer documents={documents as any} />
+      {totalPages > 1 && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          hasNextPage={hasNextPage}
+          hasPreviousPage={hasPreviousPage}
+          basePath="/documents"
+        />
+      )}
+    </div>
+  );
 };
 
 // Cached function for categories

@@ -33,6 +33,7 @@ import InterviewQuestionFeedbackDisplay from "@/components/interview-question-fe
 import InterviewSummaryForm from "@/components/interview-summary-form";
 import InterviewAiAnalysisTab from "@/components/interview-ai-analysis-tab";
 import InterviewScreeningsTab from "@/components/interview-screenings-tab";
+import ApplicationBreadcrumb from "@/components/application-breadcrumb";
 import { UserAuthenticated } from "@/components/auth-checks";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -152,71 +153,91 @@ function DisplayInterview({
   const config = statusConfig[interview.status] || statusConfig.pending;
   const StatusIcon = config.icon;
   const questions = interview.questions || [];
+  const candidateName = candidate
+    ? `${candidate.firstName} ${candidate.lastName}`
+    : undefined;
+  const positionName = application?.position?.name;
 
   return (
     <div className="space-y-6">
-      {/* Navigation */}
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" asChild className="-ml-2">
-          <Link href={`/applications/${application?.id ?? ""}`}>
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Back
-          </Link>
-        </Button>
-        {candidate && (
-          <Button variant="ghost" size="sm" asChild>
-            <Link href={`/candidates/${candidate.id}`}>
-              View Candidate
-              <ExternalLink className="h-3 w-3 ml-1" />
-            </Link>
-          </Button>
-        )}
-      </div>
+      {/* Breadcrumb Navigation */}
+      <ApplicationBreadcrumb
+        candidateName={candidateName}
+        positionName={positionName}
+        interviewRoundName={interview.roundTemplate.name}
+        applicationId={application?.id}
+        interviewId={interview.id}
+      />
 
       {/* Header */}
-      <header className="space-y-4 pb-6 border-b">
+      <header className="space-y-6 pb-6 border-b">
         <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {interview.roundTemplate.name}
-            </h1>
-            {candidate && (
-              <p className="text-muted-foreground">
-                {candidate.firstName} {candidate.lastName}
-              </p>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            {interview.rating && (
-              <Badge
-                variant="secondary"
-                className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0"
-              >
-                <Star className="h-3 w-3 fill-current mr-1" />
-                {interview.rating}/5
-              </Badge>
-            )}
-            <Badge variant={config.variant} className={config.className}>
-              <StatusIcon className="h-3 w-3 mr-1" />
-              {config.label}
-            </Badge>
-          </div>
-        </div>
+          <div className="space-y-4 flex-1">
+            {/* Round Name */}
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold tracking-tight">
+                {interview.roundTemplate.name}
+              </h1>
+              {candidate && (
+                <div className="flex items-center gap-4">
+                  <p className="text-lg text-muted-foreground">
+                    {candidate.firstName} {candidate.lastName}
+                  </p>
+                  {application?.position && (
+                    <>
+                      <span className="text-muted-foreground">•</span>
+                      <p className="text-lg text-muted-foreground">
+                        {application.position.name}
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
 
-        {/* Meta info */}
-        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-          {interview.scheduledAt && (
-            <span className="flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5" />
-              {formatDate(interview.scheduledAt)}
-            </span>
-          )}
-          {interview.interviewer && (
-            <span className="flex items-center gap-1.5">
-              <User className="h-3.5 w-3.5" />
-              {interview.interviewer.name || interview.interviewer.email}
-            </span>
-          )}
+            {/* Meta info */}
+            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+              {interview.scheduledAt && (
+                <span className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  {formatDate(interview.scheduledAt)}
+                </span>
+              )}
+              {interview.interviewer && (
+                <span className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  {interview.interviewer.name || interview.interviewer.email}
+                </span>
+              )}
+            </div>
+          </div>
+          
+          {/* Status and Rating */}
+          <div className="flex flex-col items-end gap-2 shrink-0">
+            <div className="flex items-center gap-2">
+              {interview.rating && (
+                <Badge
+                  variant="secondary"
+                  className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0"
+                >
+                  <Star className="h-3 w-3 fill-current mr-1" />
+                  {interview.rating}/5
+                </Badge>
+              )}
+              <Badge variant={config.variant} className={config.className}>
+                <StatusIcon className="h-3 w-3 mr-1" />
+                {config.label}
+              </Badge>
+            </div>
+            {application && (
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/applications/${application.id}`}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Application
+                </Link>
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 

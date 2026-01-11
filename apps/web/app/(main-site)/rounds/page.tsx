@@ -8,6 +8,7 @@ import ClearParamsButton from "@/components/clear-params-button";
 import { Metadata } from "next";
 import { UserIsAdmin } from "@/components/auth-checks";
 import { cacheLife, cacheTag } from "next/cache";
+import PaginationControls from "@/components/pagination-controls";
 
 export const metadata: Metadata = {
   title: "Rounds",
@@ -48,7 +49,7 @@ async function CachedPresentPositionFilter() {
   cacheLife("hr-metadata");
   cacheTag("positions");
 
-  const positions = await getPositions();
+  const { positions } = await getPositions();
   const positionTypes = positions.map((position) => ({
     id: position.id,
     name: position.name,
@@ -70,22 +71,48 @@ const RoundsListWrapper = async ({
 }: {
   searchParams: SearchParams
 }) => {
-  const { type } = await searchParams;
+  const { type, page: pageParam } = await searchParams;
 
   // Extract position IDs from the type parameter
   // type can be a string (single ID) or string[] (array of IDs)
   const positionIds = type ? (Array.isArray(type) ? type : [type]) : undefined;
 
-  return <CachedRoundsList positionIds={positionIds} />;
+  // Extract page number (default to 1)
+  const page = pageParam
+    ? typeof pageParam === "string"
+      ? parseInt(pageParam, 10)
+      : Array.isArray(pageParam) && pageParam[0]
+        ? parseInt(pageParam[0], 10)
+        : 1
+    : 1;
+  const currentPage = isNaN(page) || page < 1 ? 1 : page;
+
+  return <CachedRoundsList positionIds={positionIds} currentPage={currentPage} />;
 };
 
 // Cached component receives data as props
-async function CachedRoundsList({ positionIds }: { positionIds?: string[] }) {
+async function CachedRoundsList({
+  positionIds,
+  currentPage,
+}: {
+  positionIds?: string[];
+  currentPage: number;
+}) {
   "use cache";
   cacheLife("hr-data");
   cacheTag("rounds");
 
-  const rounds = await getRoundsWithPositions(positionIds);
+  const limit = 50;
+
+  const { rounds, total } = await getRoundsWithPositions(
+    positionIds,
+    currentPage,
+    limit
+  );
+
+  const totalPages = Math.ceil(total / limit);
+  const hasNextPage = currentPage < totalPages;
+  const hasPreviousPage = currentPage > 1;
 
   if (rounds.length === 0) {
     return (
@@ -102,5 +129,18 @@ async function CachedRoundsList({ positionIds }: { positionIds?: string[] }) {
     );
   }
 
-  return <RoundContainer rounds={rounds} />;
+  return (
+    <div className="space-y-6">
+      <RoundContainer rounds={rounds} />
+      {totalPages > 1 && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          hasNextPage={hasNextPage}
+          hasPreviousPage={hasPreviousPage}
+          basePath="/rounds"
+        />
+      )}
+    </div>
+  );
 }

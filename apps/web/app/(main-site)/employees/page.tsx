@@ -7,6 +7,7 @@ import EmployeeContainer from "./employee-container";
 import { EmployeesListSkeleton } from "@/components/skeletons/employees-list-skeleton";
 import { Metadata } from "next";
 import { cacheLife, cacheTag } from "next/cache";
+import PaginationControls from "@/components/pagination-controls";
 
 export const metadata: Metadata = {
   title: "Employees",
@@ -49,7 +50,7 @@ async function CachedPresentFilters() {
   cacheLife("hr-metadata");
   cacheTag("positions");
 
-  const positions = await getPositions();
+  const { positions } = await getPositions();
   const positionTypes = positions.map((position) => ({
     id: position.id,
     name: position.name,
@@ -66,7 +67,7 @@ const EmployeesListWrapper = async ({
 }: {
   searchParams: SearchParams;
 }) => {
-  const { position, department, name, email } = await searchParams;
+  const { position, department, name, email, page: pageParam } = await searchParams;
 
   // Extract position IDs from the position parameter
   const positionIds = position
@@ -82,12 +83,23 @@ const EmployeesListWrapper = async ({
       : [department]
     : undefined;
 
+  // Extract page number (default to 1)
+  const page = pageParam
+    ? typeof pageParam === "string"
+      ? parseInt(pageParam, 10)
+      : Array.isArray(pageParam) && pageParam[0]
+        ? parseInt(pageParam[0], 10)
+        : 1
+    : 1;
+  const currentPage = isNaN(page) || page < 1 ? 1 : page;
+
   return (
     <CachedEmployeesList
       positionIds={positionIds}
       departments={departments}
       name={typeof name === "string" ? name : undefined}
       email={typeof email === "string" ? email : undefined}
+      currentPage={currentPage}
     />
   );
 };
@@ -98,23 +110,38 @@ async function CachedEmployeesList({
   departments,
   name,
   email,
+  currentPage,
 }: {
   positionIds?: string[];
   departments?: string[];
   name?: string;
   email?: string;
+  currentPage: number;
 }) {
   "use cache";
   cacheLife("hr-data");
   cacheTag("employees");
 
-  const employees = await getEmployees(positionIds, departments);
+  const limit = 50;
+
+  const { employees, total } = await getEmployees(
+    positionIds,
+    departments,
+    name,
+    email,
+    currentPage,
+    limit
+  );
+
+  const totalPages = Math.ceil(total / limit);
+  const hasNextPage = currentPage < totalPages;
+  const hasPreviousPage = currentPage > 1;
 
   if (employees.length === 0) {
     return (
       <div className="text-center py-12">
         <p className="text-muted-foreground">
-          {positionIds || departments
+          {positionIds || departments || name || email
             ? "No employees found matching the selected filters."
             : "No employees found."}
         </p>
@@ -132,10 +159,17 @@ async function CachedEmployeesList({
   }
 
   return (
-    <EmployeeContainer
-      employees={employees}
-      nameFilter={name}
-      emailFilter={email}
-    />
+    <div className="space-y-6">
+      <EmployeeContainer employees={employees as any} />
+      {totalPages > 1 && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          hasNextPage={hasNextPage}
+          hasPreviousPage={hasPreviousPage}
+          basePath="/employees"
+        />
+      )}
+    </div>
   );
 }

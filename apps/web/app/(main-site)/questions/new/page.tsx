@@ -50,7 +50,10 @@ async function DisplayQuestionUploadForm({
 
   return (
     <QuestionUploadForm
-      positions={positions}
+      positions={positions.positions.map((position) => ({
+        id: position.id,
+        name: position.name,
+      }))}
       preSelectedPositionId={preSelectedPositionId || ""}
       preSelectedRoundId={preSelectedRoundId || ""}
     />

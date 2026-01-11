@@ -8,6 +8,7 @@ import WeeklyCheckinForm from "@/components/forms/weekly-checkin-form";
 import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
+import { hasWeeklyCheckinViewerAccess } from "@/lib/config/weekly-checkin-access";
 
 export const metadata: Metadata = {
   title: "Weekly Check-in",
@@ -39,8 +40,12 @@ async function DisplayWeeklyCheckinForm() {
     redirect("/login");
   }
 
+  if (!hasWeeklyCheckinViewerAccess(userSession.user.email)) {
+    redirect("/dashboard");
+  }
+
   const positions = await getPositions();
-  const cleanedPositions = positions.map((position) => ({
+  const cleanedPositions = positions.positions.map((position) => ({
     id: position.id,
     name: position.name,
   }));

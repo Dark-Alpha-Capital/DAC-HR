@@ -40,12 +40,26 @@ import {
  * Fetches all positions from the database, optionally filtered by hire level and status
  * @param hireLevels Optional array of hire level values to filter by
  * @param statuses Optional array of status values to filter by
- * @returns An array of positions
+ * @param page Page number (1-indexed) for pagination
+ * @param limit Number of positions per page
+ * @returns An object with positions array and total count
  */
 export const getPositions = async (
   hireLevels?: string[],
-  statuses?: string[]
-) => {
+  statuses?: string[],
+  page: number = 1,
+  limit: number = 50
+): Promise<{
+  positions: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    hireLevel: string | null;
+    status: string;
+  }>;
+  total: number;
+}> => {
   try {
     let query = db
       .select({
@@ -102,10 +116,17 @@ export const getPositions = async (
       query = query.where(and(...conditions)) as typeof query;
     }
 
-    return await query;
+    const allResults = await query;
+    const total = allResults.length;
+
+    // Apply pagination
+    const offset = (page - 1) * limit;
+    const paginatedResults = allResults.slice(offset, offset + limit);
+
+    return { positions: paginatedResults, total };
   } catch (error) {
     console.error("Error fetching positions", error);
-    return [];
+    return { positions: [], total: 0 };
   }
 };
 
@@ -760,8 +781,34 @@ export const getQuestions = async () => {
  * - Each question has:
  *   - rounds: [{ id, name, positions: [{ id, name }] }]
  *   - positions: de-duplicated flat list of all linked positions
+ * @param search Optional search term to filter questions by text
+ * @param positionIds Optional array of position IDs to filter by
+ * @param roundIds Optional array of round IDs to filter by
+ * @param page Page number (1-indexed) for pagination
+ * @param limit Number of questions per page
+ * @returns An object with questions array and total count
  */
-export const getQuestionsWithRounds = async () => {
+export const getQuestionsWithRounds = async (
+  search?: string,
+  positionIds?: string[],
+  roundIds?: string[],
+  page: number = 1,
+  limit: number = 50
+): Promise<{
+  questions: Array<{
+    id: string;
+    questionText: string;
+    createdAt: Date;
+    updatedAt: Date;
+    rounds: Array<{
+      id: string;
+      name: string;
+      positions: Array<{ id: string; name: string }>;
+    }>;
+    positions: Array<{ id: string; name: string }>;
+  }>;
+  total: number;
+}> => {
   try {
     const results = await db
       .select({
@@ -854,10 +901,40 @@ export const getQuestionsWithRounds = async () => {
       }
     }
 
-    return Array.from(questionsMap.values());
+    let allQuestions = Array.from(questionsMap.values());
+
+    // Apply filters
+    if (search && search.trim()) {
+      const searchLower = search.toLowerCase();
+      allQuestions = allQuestions.filter((question) =>
+        question.questionText.toLowerCase().includes(searchLower)
+      );
+    }
+
+    if (positionIds && positionIds.length > 0) {
+      allQuestions = allQuestions.filter((question) => {
+        const questionPositionIds = question.positions.map((p) => p.id);
+        return positionIds.some((posId) => questionPositionIds.includes(posId));
+      });
+    }
+
+    if (roundIds && roundIds.length > 0) {
+      allQuestions = allQuestions.filter((question) => {
+        const questionRoundIds = question.rounds.map((r) => r.id);
+        return roundIds.some((roundId) => questionRoundIds.includes(roundId));
+      });
+    }
+
+    const total = allQuestions.length;
+
+    // Apply pagination
+    const offset = (page - 1) * limit;
+    const paginatedQuestions = allQuestions.slice(offset, offset + limit);
+
+    return { questions: paginatedQuestions, total };
   } catch (error) {
     console.error("Error fetching questions with rounds", error);
-    return [];
+    return { questions: [], total: 0 };
   }
 };
 
@@ -927,9 +1004,25 @@ export const getRounds = async () => {
  *
  * Fetches round templates with their linked positions, optionally filtered by position IDs
  * @param positionIds Optional array of position IDs to filter by
- * @returns An array of round templates with position information
+ * @param page Page number (1-indexed) for pagination
+ * @param limit Number of rounds per page
+ * @returns An object with rounds array and total count
  */
-export const getRoundsWithPositions = async (positionIds?: string[]) => {
+export const getRoundsWithPositions = async (
+  positionIds?: string[],
+  page: number = 1,
+  limit: number = 50
+): Promise<{
+  rounds: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    positions: Array<{ id: string; name: string }>;
+  }>;
+  total: number;
+}> => {
   try {
     // If filtering by position IDs, we need to first get the round IDs that match
     // Then fetch all rounds with all their positions
@@ -945,7 +1038,7 @@ export const getRoundsWithPositions = async (positionIds?: string[]) => {
 
       // If no rounds match, return empty array
       if (filteredRoundIds.length === 0) {
-        return [];
+        return { rounds: [], total: 0 };
       }
     }
 
@@ -1009,10 +1102,17 @@ export const getRoundsWithPositions = async (positionIds?: string[]) => {
       }
     }
 
-    return Array.from(roundsMap.values());
+    const allRounds = Array.from(roundsMap.values());
+    const total = allRounds.length;
+
+    // Apply pagination
+    const offset = (page - 1) * limit;
+    const paginatedRounds = allRounds.slice(offset, offset + limit);
+
+    return { rounds: paginatedRounds, total };
   } catch (error) {
     console.error("Error fetching rounds with positions", error);
-    return [];
+    return { rounds: [], total: 0 };
   }
 };
 
@@ -1420,13 +1520,31 @@ export async function getCandidatesByPositionId(positionId: string) {
  * @param categoryFilters Optional array of category IDs to filter by (new system)
  * @param nameSearch Optional search term for document name
  * @param tagsSearch Optional search term for tags
- * @returns An array of documents with their categories
+ * @param page Page number (1-indexed) for pagination
+ * @param limit Number of documents per page
+ * @returns An object with documents array and total count
  */
 export async function getDocuments(
   categoryFilters?: string[],
   nameSearch?: string,
-  tagsSearch?: string
-) {
+  tagsSearch?: string,
+  page: number = 1,
+  limit: number = 50
+): Promise<{
+  documents: Array<{
+    id: string;
+    name: string;
+    url: string;
+    tags: string[];
+    createdAt: Date;
+    updatedAt: Date;
+    categories: Array<{
+      id: string;
+      name: string;
+    }>;
+  }>;
+  total: number;
+}> {
   try {
     let query = db
       .select({
@@ -1475,25 +1593,31 @@ export async function getDocuments(
       query = query.where(and(...conditions)) as typeof query;
     }
 
-    const results = await query.orderBy(desc(documents.createdAt));
+    const allResults = await query.orderBy(desc(documents.createdAt));
+    const total = allResults.length;
 
-    // Fetch categories for each document
+    // Apply pagination
+    const offset = (page - 1) * limit;
+    const paginatedResults = allResults.slice(offset, offset + limit);
+
+    // Fetch categories for each paginated document
     const documentsWithCategories = await Promise.all(
-      results.map(async (result) => {
+      paginatedResults.map(async (result) => {
         const categories = await getDocumentCategoriesByDocumentId(
           result.document.id
         );
         return {
           ...result.document,
+          tags: result.document.tags || [],
           categories,
         };
       })
     );
 
-    return documentsWithCategories;
+    return { documents: documentsWithCategories, total };
   } catch (error) {
     console.error("Error fetching documents", error);
-    return [];
+    return { documents: [], total: 0 };
   }
 }
 
@@ -1990,8 +2114,26 @@ export const getOrCreateCandidateOnboarding = async (candidateId: string) => {
  */
 export const getEmployees = async (
   positionIds?: string[],
-  departments?: string[]
-) => {
+  departments?: string[],
+  name?: string,
+  email?: string,
+  page: number = 1,
+  limit: number = 50
+): Promise<{
+  employees: Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+    department: string[];
+    positionId: string | null;
+    profileImage: string | null;
+    bio: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    position: { id: string; name: string; slug: string } | null;
+  }>;
+  total: number;
+}> => {
   try {
     let query = db
       .select({
@@ -2026,20 +2168,38 @@ export const getEmployees = async (
         sql`${employee.department} && ${departments}::department[]`
       );
     }
+    if (name && name.trim()) {
+      // Filter by name (search in firstName and lastName)
+      const searchTerm = `%${name.trim()}%`;
+      conditions.push(
+        sql`CONCAT(${employee.firstName}, ' ', ${employee.lastName}) ILIKE ${searchTerm}`
+      );
+    }
+    // Note: Email filtering is not available yet as employees don't have an email field in the schema
+    // This parameter is included for future compatibility
 
     if (conditions.length > 0) {
       query = query.where(and(...conditions)) as typeof query;
     }
 
-    const results = await query.orderBy(asc(employee.createdAt));
+    // Get total count before pagination
+    const allResults = await query.orderBy(asc(employee.createdAt));
+    const total = allResults.length;
 
-    return results.map((result) => ({
-      ...result.employee,
-      position: result.position,
-    }));
+    // Apply pagination
+    const offset = (page - 1) * limit;
+    const paginatedResults = allResults.slice(offset, offset + limit);
+
+    return {
+      employees: paginatedResults.map((result) => ({
+        ...result.employee,
+        position: result.position,
+      })),
+      total,
+    };
   } catch (error) {
     console.error("Error fetching employees", error);
-    return [];
+    return { employees: [], total: 0 };
   }
 };
 
@@ -2691,11 +2851,44 @@ export const deleteInterviewAiAnalysis = async (analysisId: string) => {
 
 /**
  * Fetches all weekly check-ins with user info
- * @returns An array of weekly check-ins with user details
+ * @param page Page number (1-indexed) for pagination
+ * @param limit Number of check-ins per page
+ * @returns An object with check-ins array and total count
  */
-export const getWeeklyCheckins = async () => {
+export const getWeeklyCheckins = async (
+  page: number = 1,
+  limit: number = 50
+): Promise<{
+  checkins: Array<{
+    id: string;
+    userId: string | null;
+    weekStartDate: Date;
+    weekEndDate: Date;
+    recruiterName: string;
+    positionsWorked: string[] | null;
+    candidatesSourced: number | null;
+    candidatesScreened: number | null;
+    candidatesRejected: number | null;
+    candidatesAdvanced2ndRound: number | null;
+    candidatesAdvanced3rdRound: number | null;
+    offersExtended: number | null;
+    offersAccepted: number | null;
+    bestPerformingChannels: string[] | null;
+    avgTimeToScreen: string | null;
+    delaysOrBottlenecks: string | null;
+    concernsOrEscalations: string | null;
+    supportNeeded: string | null;
+    createdAt: Date;
+    user: {
+      id: string;
+      name: string | null;
+      email: string;
+    } | null;
+  }>;
+  total: number;
+}> => {
   try {
-    const results = await db
+    const allResults = await db
       .select({
         id: recruiterWeeklyCheckin.id,
         userId: recruiterWeeklyCheckin.userId,
@@ -2706,8 +2899,10 @@ export const getWeeklyCheckins = async () => {
         candidatesSourced: recruiterWeeklyCheckin.candidatesSourced,
         candidatesScreened: recruiterWeeklyCheckin.candidatesScreened,
         candidatesRejected: recruiterWeeklyCheckin.candidatesRejected,
-        candidatesAdvanced2ndRound: recruiterWeeklyCheckin.candidatesAdvanced2ndRound,
-        candidatesAdvanced3rdRound: recruiterWeeklyCheckin.candidatesAdvanced3rdRound,
+        candidatesAdvanced2ndRound:
+          recruiterWeeklyCheckin.candidatesAdvanced2ndRound,
+        candidatesAdvanced3rdRound:
+          recruiterWeeklyCheckin.candidatesAdvanced3rdRound,
         offersExtended: recruiterWeeklyCheckin.offersExtended,
         offersAccepted: recruiterWeeklyCheckin.offersAccepted,
         bestPerformingChannels: recruiterWeeklyCheckin.bestPerformingChannels,
@@ -2726,9 +2921,15 @@ export const getWeeklyCheckins = async () => {
       .leftJoin(user, eq(recruiterWeeklyCheckin.userId, user.id))
       .orderBy(desc(recruiterWeeklyCheckin.createdAt));
 
-    return results;
+    const total = allResults.length;
+
+    // Apply pagination
+    const offset = (page - 1) * limit;
+    const paginatedResults = allResults.slice(offset, offset + limit);
+
+    return { checkins: paginatedResults, total };
   } catch (error) {
     console.error("Error fetching weekly check-ins", error);
-    return [];
+    return { checkins: [], total: 0 };
   }
 };
