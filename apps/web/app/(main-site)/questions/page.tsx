@@ -1,13 +1,13 @@
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
-import React, { Suspense } from "react";
+import { Suspense } from "react";
 import {
   getQuestionsWithRounds,
   getPositions,
   getRounds,
 } from "@workspace/db/queries";
 import QuestionContainer from "./QuestionContainer";
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import FilterQuestionSearch from "@/components/filter-question-search";
 import FilterQuestionPosition from "@/components/filter-question-position";
 import FilterQuestionRound from "@/components/filter-question-round";
@@ -24,11 +24,7 @@ type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
 const page = async ({ searchParams }: { searchParams: SearchParams }) => {
   return (
-    <Suspense
-      fallback={
-        <div className="container mx-auto py-8 space-y-6">Loading...</div>
-      }
-    >
+    <Suspense fallback={<div className="space-y-6">Loading...</div>}>
       <QuestionsPageContent searchParams={searchParams} />
     </Suspense>
   );
@@ -63,9 +59,9 @@ const QuestionsPageContent = async ({
   const currentPage = isNaN(page) || page < 1 ? 1 : page;
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Questions</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Questions</h1>
         <Button asChild>
           <Link href="/questions/new">New Question</Link>
         </Button>
@@ -159,7 +155,7 @@ async function CachedQuestionsList({
     positionIds.length > 0 ? positionIds : undefined,
     roundIds.length > 0 ? roundIds : undefined,
     currentPage,
-    limit
+    limit,
   );
 
   const totalPages = Math.ceil(total / limit);

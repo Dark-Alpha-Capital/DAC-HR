@@ -1,9 +1,9 @@
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
-import React, { Suspense } from "react";
+import { Suspense } from "react";
 import { getPositions } from "@workspace/db/queries";
 import PositionContainer from "./position-container";
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import { UserIsAdmin } from "@/components/auth-checks";
 import FilterPositionHireLevel from "@/components/filter-position-hire-level";
 import FilterPositionStatus from "@/components/filter-position-status";
@@ -20,13 +20,13 @@ type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
 const page = async ({ searchParams }: { searchParams: SearchParams }) => {
   return (
-    <div className="container py-8 space-y-6">
+    <div className="space-y-6">
       <Suspense>
         <UserIsAdmin />
       </Suspense>
 
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Positions</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Positions</h1>
         <Button asChild>
           <Link href="/positions/new">New Position</Link>
         </Button>
@@ -112,7 +112,7 @@ async function CachedPositionsList({
     hireLevels,
     statuses,
     currentPage,
-    limit
+    limit,
   );
 
   const totalPages = Math.ceil(total / limit);
@@ -121,7 +121,7 @@ async function CachedPositionsList({
 
   if (positions.length === 0) {
     return (
-      <div className="text-center py-12">
+      <div className="rounded-xl border bg-card p-10 text-center">
         <p className="text-muted-foreground">No positions found.</p>
         <Button asChild className="mt-4">
           <Link href="/positions/new">Create your first position</Link>

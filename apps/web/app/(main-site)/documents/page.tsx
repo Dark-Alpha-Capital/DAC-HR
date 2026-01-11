@@ -32,13 +32,13 @@ const DocumentsPage = async ({
   searchParams: SearchParams;
 }) => {
   return (
-    <div className="container mx-auto py-8 space-y-6">
+    <div className="space-y-6">
       <Suspense>
         <UserAuthenticated />
       </Suspense>
 
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Documents</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Documents</h1>
         <Button asChild>
           <Link href="/documents/new">New Document</Link>
         </Button>
@@ -88,7 +88,7 @@ async function CachedDocuments(
   categoryFilters?: string[],
   nameSearch?: string,
   tagsSearch?: string,
-  currentPage?: number
+  currentPage?: number,
 ) {
   "use cache";
   cacheLife("hr-data");
@@ -102,7 +102,7 @@ async function CachedDocuments(
     nameSearch,
     tagsSearch,
     page,
-    limit
+    limit,
   );
 }
 
@@ -142,7 +142,7 @@ const PresentDocumentsWrapper = async ({
     categoryFilters,
     nameSearch,
     tagsSearch,
-    currentPage
+    currentPage,
   );
 
   const limit = 50;
@@ -152,7 +152,7 @@ const PresentDocumentsWrapper = async ({
 
   if (documents.length === 0) {
     return (
-      <div className="text-center py-12">
+      <div className="rounded-xl border bg-card p-10 text-center">
         <p className="text-muted-foreground">
           {categoryFilters || nameSearch || tagsSearch
             ? "No documents found matching the selected filters."

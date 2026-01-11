@@ -22,12 +22,12 @@ type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
 const page = async ({ searchParams }: { searchParams: SearchParams }) => {
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="space-y-6">
       <Suspense>
         <UserAuthenticated />
       </Suspense>
 
-      <h1 className="text-3xl font-bold">Applications</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">Applications</h1>
 
       <Suspense>
         <PresentFilters />
@@ -145,7 +145,7 @@ async function CachedApplicationsList({
     positionIds,
     statuses,
     currentPage,
-    limit
+    limit,
   );
 
   const totalPages = Math.ceil(total / limit);
@@ -154,7 +154,7 @@ async function CachedApplicationsList({
 
   if (applications.length === 0) {
     return (
-      <div className="text-center py-12 border rounded-md">
+      <div className="rounded-xl border bg-card p-10 text-center">
         <Briefcase className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
         <p className="text-muted-foreground mb-1">No applications found.</p>
         <p className="text-sm text-muted-foreground">

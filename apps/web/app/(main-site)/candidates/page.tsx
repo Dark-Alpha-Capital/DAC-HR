@@ -1,6 +1,6 @@
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
-import React, { Suspense } from "react";
+import { Suspense } from "react";
 import {
   getCandidatesWithPositionsFiltered,
   getPositions,
@@ -8,12 +8,10 @@ import {
 import CandidateFilters from "@/components/candidate-filters";
 import CandidateContainer from "./candidate-container";
 import { CandidatesListSkeleton } from "@/components/skeletons/candidates-list-skeleton";
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import { UserAuthenticated } from "@/components/auth-checks";
 import CandidatesPaginationControls from "@/components/candidates-pagination-controls";
 import { cacheLife, cacheTag } from "next/cache";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
 import BulkUploadCandidatesDialog from "@/components/bulk-upload-candidates-dialog";
 
 export const metadata: Metadata = {
@@ -25,13 +23,13 @@ type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
 const page = async ({ searchParams }: { searchParams: SearchParams }) => {
   return (
-    <div className="container mx-auto py-8 space-y-6">
+    <div className="space-y-6">
       <Suspense>
         <UserAuthenticated />
       </Suspense>
 
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Candidates</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Candidates</h1>
         <div className="flex items-center gap-2">
           <BulkUploadCandidatesDialog />
           <Button asChild>
@@ -139,7 +137,7 @@ async function CachedCandidatesList({
     emailSearch,
     positionIds,
     currentPage,
-    limit
+    limit,
   );
 
   const totalPages = Math.ceil(total / limit);
@@ -148,7 +146,7 @@ async function CachedCandidatesList({
 
   if (candidates.length === 0) {
     return (
-      <div className="text-center py-12">
+      <div className="rounded-xl border bg-card p-10 text-center">
         <p className="text-muted-foreground">
           {nameSearch || emailSearch || positionIds
             ? "No candidates found matching the selected filters."

@@ -1,11 +1,11 @@
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
-import React, { Suspense } from "react";
+import { Suspense } from "react";
 import { getEmployees, getPositions } from "@workspace/db/queries";
 import EmployeeFilters from "@/components/employee-filters";
 import EmployeeContainer from "./employee-container";
 import { EmployeesListSkeleton } from "@/components/skeletons/employees-list-skeleton";
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import { cacheLife, cacheTag } from "next/cache";
 import PaginationControls from "@/components/pagination-controls";
 
@@ -18,9 +18,9 @@ type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
 const page = async ({ searchParams }: { searchParams: SearchParams }) => {
   return (
-    <div className="container mx-auto py-8 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Employees</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Employees</h1>
         <Button asChild>
           <Link
             href={{
@@ -67,7 +67,13 @@ const EmployeesListWrapper = async ({
 }: {
   searchParams: SearchParams;
 }) => {
-  const { position, department, name, email, page: pageParam } = await searchParams;
+  const {
+    position,
+    department,
+    name,
+    email,
+    page: pageParam,
+  } = await searchParams;
 
   // Extract position IDs from the position parameter
   const positionIds = position
@@ -130,7 +136,7 @@ async function CachedEmployeesList({
     name,
     email,
     currentPage,
-    limit
+    limit,
   );
 
   const totalPages = Math.ceil(total / limit);
@@ -139,7 +145,7 @@ async function CachedEmployeesList({
 
   if (employees.length === 0) {
     return (
-      <div className="text-center py-12">
+      <div className="rounded-xl border bg-card p-10 text-center">
         <p className="text-muted-foreground">
           {positionIds || departments || name || email
             ? "No employees found matching the selected filters."

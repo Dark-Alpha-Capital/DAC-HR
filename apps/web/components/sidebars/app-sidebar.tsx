@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ChevronDown,
   LayoutDashboard,
   Users,
   HelpCircle,
@@ -11,12 +10,12 @@ import {
   CircleDot,
   Shield,
   Building2,
-  User,
   ScrollText,
   Home,
   ClipboardCheck,
   BookOpen,
   ClipboardList,
+  ShieldCheckIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -29,9 +28,12 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarRail,
+  SidebarSeparator,
 } from "@workspace/ui/components/sidebar";
 
 import { Suspense } from "react";
@@ -48,19 +50,24 @@ const recruitingLinks = [
   { href: "/docs", label: "Documentation", icon: BookOpen },
 ] as const;
 
-// Management links (only for admin users)
-const managementLinks = [
-  { href: "/admin", label: "Admin", icon: Shield },
-  { href: "/admin/audit-logs", label: "Audit Logs", icon: ScrollText },
+const peopleOpsLinks = [
   { href: "/employees", label: "Employees", icon: Building2 },
-  { href: "/weekly-checkin/records", label: "Check-in Records", icon: ClipboardList },
+  {
+    href: "/weekly-checkin/records",
+    label: "Check-in Records",
+    icon: ClipboardList,
+  },
 ] as const;
 
-// Admin links (available to all users)
-const adminLinks = [
+const configurationLinks = [
   { href: "/positions", label: "Positions", icon: Briefcase },
   { href: "/rounds", label: "Rounds", icon: CircleDot },
   { href: "/questions", label: "Questions", icon: HelpCircle },
+] as const;
+
+const adminLinks = [
+  { href: "/admin", label: "Admin", icon: Shield },
+  { href: "/admin/audit-logs", label: "Audit Logs", icon: ScrollText },
 ] as const;
 
 export function AppSidebar() {
@@ -73,53 +80,23 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon" className="bg-background">
-      {/* <SidebarHeader>
+    <Sidebar variant="inset" collapsible="icon">
+      <SidebarHeader className="gap-1">
         <SidebarMenu>
           <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton>
-                  Select Workspace
-                  <ChevronDown className="ml-auto" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-[--radix-popper-anchor-width]">
-                <DropdownMenuItem>
-                  <span>Acme Inc</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <span>Acme Corp.</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <SidebarMenuButton asChild tooltip="DAC HR">
+              <Link href="/" className="gap-2">
+                <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-border">
+                  <ShieldCheckIcon className="size-4" />
+                </span>
+                <span className="font-semibold tracking-tight">DAC HR</span>
+              </Link>
+            </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-      </SidebarHeader> */}
+      </SidebarHeader>
+      <SidebarSeparator />
       <SidebarContent>
-        {/* Admin Section - available to all users */}
-        <SidebarGroup>
-          <SidebarGroupLabel>Admin</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {adminLinks.map((link) => (
-                <SidebarMenuItem key={link.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive(link.href)}
-                    tooltip={link.label}
-                  >
-                    <Link href={{ pathname: link.href }}>
-                      <link.icon />
-                      <span>{link.label}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
         {/* Recruiting Section */}
         <SidebarGroup>
           <SidebarGroupLabel>Recruiting</SidebarGroupLabel>
@@ -143,13 +120,58 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Management Section - only for admin users */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Configuration</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {configurationLinks.map((link) => (
+                <SidebarMenuItem key={link.href}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive(link.href)}
+                    tooltip={link.label}
+                  >
+                    <Link href={{ pathname: link.href }}>
+                      <link.icon />
+                      <span>{link.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
         {isAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel>Management</SidebarGroupLabel>
+            <SidebarGroupLabel>People Ops</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {managementLinks.map((link) => (
+                {peopleOpsLinks.map((link) => (
+                  <SidebarMenuItem key={link.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(link.href)}
+                      tooltip={link.label}
+                    >
+                      <Link href={{ pathname: link.href }}>
+                        <link.icon />
+                        <span>{link.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {adminLinks.map((link) => (
                   <SidebarMenuItem key={link.href}>
                     <SidebarMenuButton
                       asChild
@@ -173,6 +195,7 @@ export function AppSidebar() {
           <SidebarUserNav />
         </Suspense>
       </SidebarFooter>
+      <SidebarRail />
     </Sidebar>
   );
 }

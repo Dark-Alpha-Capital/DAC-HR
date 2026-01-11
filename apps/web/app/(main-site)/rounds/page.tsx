@@ -1,11 +1,11 @@
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
-import React, { Suspense } from "react";
+import { Suspense } from "react";
 import { getPositions, getRoundsWithPositions } from "@workspace/db/queries";
 import RoundContainer from "./round-container";
 import FilterPositionType from "@/components/filter-position-type";
 import ClearParamsButton from "@/components/clear-params-button";
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import { UserIsAdmin } from "@/components/auth-checks";
 import { cacheLife, cacheTag } from "next/cache";
 import PaginationControls from "@/components/pagination-controls";
@@ -19,13 +19,13 @@ type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
 const page = async ({ searchParams }: { searchParams: SearchParams }) => {
   return (
-    <div className="container mx-auto py-8 space-y-6">
+    <div className="space-y-6">
       <Suspense>
         <UserIsAdmin />
       </Suspense>
 
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Rounds</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Rounds</h1>
         <Button asChild>
           <Link href="/rounds/new">New Round</Link>
         </Button>
@@ -69,7 +69,7 @@ const PresentPositionFilter = CachedPresentPositionFilter;
 const RoundsListWrapper = async ({
   searchParams,
 }: {
-  searchParams: SearchParams
+  searchParams: SearchParams;
 }) => {
   const { type, page: pageParam } = await searchParams;
 
@@ -87,7 +87,9 @@ const RoundsListWrapper = async ({
     : 1;
   const currentPage = isNaN(page) || page < 1 ? 1 : page;
 
-  return <CachedRoundsList positionIds={positionIds} currentPage={currentPage} />;
+  return (
+    <CachedRoundsList positionIds={positionIds} currentPage={currentPage} />
+  );
 };
 
 // Cached component receives data as props
@@ -107,7 +109,7 @@ async function CachedRoundsList({
   const { rounds, total } = await getRoundsWithPositions(
     positionIds,
     currentPage,
-    limit
+    limit,
   );
 
   const totalPages = Math.ceil(total / limit);
@@ -116,7 +118,7 @@ async function CachedRoundsList({
 
   if (rounds.length === 0) {
     return (
-      <div className="text-center py-12">
+      <div className="rounded-xl border bg-card p-10 text-center">
         <p className="text-muted-foreground">
           {positionIds && positionIds.length > 0
             ? "No rounds found for the selected position(s)."

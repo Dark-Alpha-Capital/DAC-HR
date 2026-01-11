@@ -20,7 +20,7 @@ import {
   Calendar,
   User,
 } from "lucide-react";
-import { Metadata } from "next";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -104,33 +104,32 @@ const siteLinks = [
 
 export default function DashboardPage() {
   return (
-    <div className="container mx-auto p-6 space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
-          Available links and navigation
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+        <p className="text-sm text-muted-foreground">
+          Quick access to common areas.
         </p>
       </div>
 
-      {/* Links Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {siteLinks.map((link) => {
           const Icon = link.icon;
           return (
             <Link key={link.href} href={{ pathname: link.href }}>
-              <Card className="flex flex-col hover:shadow-lg transition-shadow cursor-pointer h-full">
-                <CardHeader>
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Icon className="h-6 w-6 text-primary" />
+              <Card className="h-full transition-shadow hover:shadow-md">
+                <CardHeader className="gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-border">
+                      <Icon className="size-5" />
                     </div>
-                    <CardTitle className="text-2xl">{link.label}</CardTitle>
+                    <CardTitle className="text-base">{link.label}</CardTitle>
                   </div>
-                  <CardDescription className="text-base">
+                  <CardDescription className="text-sm">
                     {link.description}
                   </CardDescription>
                 </CardHeader>
+                <CardContent />
               </Card>
             </Link>
           );

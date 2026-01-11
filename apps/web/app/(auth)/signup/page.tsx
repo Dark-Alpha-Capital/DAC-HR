@@ -1,27 +1,38 @@
-import React, { Suspense } from "react";
-import GoogleSignInButton from "@/components/google-signin-button";
-import { auth } from "@/auth";
+import { Suspense } from "react";
+import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Metadata } from "next";
+import { redirect } from "next/navigation";
+
+import { Badge } from "@workspace/ui/components/badge";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
+import { Separator } from "@workspace/ui/components/separator";
+import { Skeleton } from "@workspace/ui/components/skeleton";
+import { ShieldCheckIcon, UserPlusIcon } from "lucide-react";
+
+import { auth } from "@/auth";
+import GoogleSignInButton from "@/components/google-signin-button";
 
 export const metadata: Metadata = {
-  title: "Signup - DAC-HR",
-  description: "Signup to your account to continue",
+  title: "Sign up - DAC-HR",
+  description: "Create an account to continue",
 };
 
-const page = async () => {
+export default async function SignupPage() {
   return (
-    <div className="min-h-screen">
-      <Suspense fallback={<AuthLoadingSkeleton />}>
-        <AuthContent />
-      </Suspense>
-    </div>
+    <Suspense fallback={<AuthLoadingSkeleton />}>
+      <AuthContent />
+    </Suspense>
   );
-};
-
-export default page;
+}
 
 async function AuthContent() {
   const session = await auth.api.getSession({
@@ -33,77 +44,66 @@ async function AuthContent() {
   }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Image Placeholder */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary/10 via-primary/5 to-background relative overflow-hidden">
-        <div className="absolute inset-0 flex items-center justify-center p-12">
-          <div className="w-full h-full bg-muted/30 rounded-lg flex items-center justify-center border-2 border-dashed border-muted-foreground/20">
-            <div className="text-center space-y-4 p-8">
-              <div className="w-24 h-24 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-12 h-12 text-primary/40"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                  />
-                </svg>
-              </div>
-              <p className="text-muted-foreground text-sm">
-                Signup Image Placeholder
-              </p>
-            </div>
-          </div>
+    <Card className="w-full border-border/60 bg-card/80 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/60">
+      <CardHeader className="text-center">
+        <CardAction>
+          <Badge variant="secondary" className="gap-1">
+            <ShieldCheckIcon className="size-3.5" />
+            SSO
+          </Badge>
+        </CardAction>
+        <CardTitle className="text-2xl tracking-tight">
+          Create your account
+        </CardTitle>
+        <CardDescription>
+          Use your work Google account to set up access.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <GoogleSignInButton callbackURL="/dashboard" />
+        <div className="mt-6 flex items-center gap-4">
+          <Separator className="flex-1" />
+          <span className="text-xs text-muted-foreground">One step</span>
+          <Separator className="flex-1" />
         </div>
-      </div>
-
-      {/* Right Side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-6 lg:p-12">
-        <div className="w-full max-w-md space-y-8">
-          <div className="space-y-2 text-center md:space-y-4">
-            <h1 className="text-3xl sm:text-4xl font-bold">SIGNUP TO DAC-HR</h1>
-            <p className="text-muted-foreground">
-              Create your account to access your account, save progress, and
-              enjoy more features.
-            </p>
-            <GoogleSignInButton />
-          </div>
-
-          <div className="space-y-6">
-            <div className="text-center text-sm text-muted-foreground">
-              Already have an account?{" "}
-              <Link
-                href="/login"
-                className="font-medium text-primary hover:underline"
-              >
-                Sign in
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          Your account is created automatically after successful Google sign-in.
+        </p>
+      </CardContent>
+      <CardFooter className="justify-center">
+        <p className="text-sm text-muted-foreground">
+          Already have an account?{" "}
+          <Link href="/login" className="text-primary hover:underline">
+            Sign in
+          </Link>
+        </p>
+      </CardFooter>
+    </Card>
   );
 }
 
 function AuthLoadingSkeleton() {
   return (
-    <div className="min-h-screen flex">
-      <div className="hidden lg:flex lg:w-1/2 bg-muted/30 animate-pulse" />
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-6 lg:p-12">
-        <div className="w-full max-w-md space-y-8">
-          <div className="space-y-2">
-            <div className="h-10 w-56 bg-muted animate-pulse rounded" />
-            <div className="h-5 w-72 bg-muted animate-pulse rounded" />
-          </div>
-          <div className="h-10 w-full bg-muted animate-pulse rounded" />
+    <Card className="w-full border-border/60 bg-card/80 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/60">
+      <CardHeader className="text-center">
+        <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-border">
+          <UserPlusIcon className="size-5" />
         </div>
-      </div>
-    </div>
+        <Skeleton className="mx-auto h-7 w-52" />
+        <Skeleton className="mx-auto h-4 w-56" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-11 w-full" />
+        <div className="mt-6 flex items-center gap-4">
+          <Skeleton className="h-px flex-1" />
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-px flex-1" />
+        </div>
+        <Skeleton className="mx-auto mt-4 h-4 w-72" />
+      </CardContent>
+      <CardFooter className="justify-center">
+        <Skeleton className="h-4 w-52" />
+      </CardFooter>
+    </Card>
   );
 }

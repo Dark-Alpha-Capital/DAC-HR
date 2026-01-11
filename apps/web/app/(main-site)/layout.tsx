@@ -5,10 +5,10 @@ import { Toaster } from "@workspace/ui/components/sonner";
 import { Suspense } from "react";
 import {
   SidebarProvider,
-  SidebarTrigger,
   SidebarInset,
 } from "@workspace/ui/components/sidebar";
 import { AppSidebar } from "@/components/sidebars/app-sidebar";
+import { MainSiteTopbar } from "@/components/main-site/topbar";
 
 const fontSans = Geist({
   subsets: ["latin"],
@@ -28,17 +28,21 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${fontSans.variable} ${fontMono.variable} font-geist antialiased`}
+        className={`${fontSans.variable} ${fontMono.variable} font-geist antialiased min-h-svh bg-background`}
       >
         <Providers>
           <SidebarProvider>
             <Suspense fallback={null}>
               <AppSidebar />
             </Suspense>
-            <main className="flex-1 p-4">
-              <SidebarTrigger />
-              {children}
-            </main>
+            <SidebarInset className="bg-muted/20">
+              <MainSiteTopbar />
+              <div className="flex-1">
+                <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6 md:py-8">
+                  {children}
+                </div>
+              </div>
+            </SidebarInset>
           </SidebarProvider>
           <Toaster />
         </Providers>

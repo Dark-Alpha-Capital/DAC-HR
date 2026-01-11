@@ -1,30 +1,38 @@
-import React, { Suspense } from "react";
-import GoogleSignInButton from "@/components/google-signin-button";
-import { auth } from "@/auth";
+import { Suspense } from "react";
+import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Metadata } from "next";
+import { redirect } from "next/navigation";
+
+import { Badge } from "@workspace/ui/components/badge";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
+import { Separator } from "@workspace/ui/components/separator";
+import { Skeleton } from "@workspace/ui/components/skeleton";
+import { LogInIcon, ShieldCheckIcon } from "lucide-react";
+
+import { auth } from "@/auth";
+import GoogleSignInButton from "@/components/google-signin-button";
 
 export const metadata: Metadata = {
   title: "Login - DAC-HR",
   description: "Login to your account to continue",
 };
 
-const page = async () => {
-  console.log("better auth base url", process.env.BETTER_AUTH_URL);
-  console.log("better auth secret", process.env.BETTER_AUTH_SECRET);
-
+export default async function LoginPage() {
   return (
-    <div className="min-h-screen">
-      <Suspense fallback={<AuthLoadingSkeleton />}>
-        <AuthContent />
-      </Suspense>
-    </div>
+    <Suspense fallback={<AuthLoadingSkeleton />}>
+      <AuthContent />
+    </Suspense>
   );
-};
-
-export default page;
+}
 
 async function AuthContent() {
   const session = await auth.api.getSession({
@@ -36,76 +44,65 @@ async function AuthContent() {
   }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Image Placeholder */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary/10 via-primary/5 to-background relative overflow-hidden">
-        <div className="absolute inset-0 flex items-center justify-center p-12">
-          <div className="w-full h-full bg-muted/30 rounded-lg flex items-center justify-center border-2 border-dashed border-muted-foreground/20">
-            <div className="text-center space-y-4 p-8">
-              <div className="w-24 h-24 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-12 h-12 text-primary/40"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-              </div>
-              <p className="text-muted-foreground text-sm">
-                Login Image Placeholder
-              </p>
-            </div>
-          </div>
+    <Card className="w-full border-border/60 bg-card/80 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/60">
+      <CardHeader className="text-center">
+        <CardAction>
+          <Badge variant="secondary" className="gap-1">
+            <ShieldCheckIcon className="size-3.5" />
+            SSO
+          </Badge>
+        </CardAction>
+        <CardTitle className="text-2xl tracking-tight">Welcome back</CardTitle>
+        <CardDescription>
+          Sign in with your work Google account to continue.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <GoogleSignInButton callbackURL="/dashboard" />
+        <div className="mt-6 flex items-center gap-4">
+          <Separator className="flex-1" />
+          <span className="text-xs text-muted-foreground">No password</span>
+          <Separator className="flex-1" />
         </div>
-      </div>
-
-      {/* Right Side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-6 lg:p-12">
-        <div className="w-full max-w-md space-y-8">
-          <div className="space-y-2 text-center">
-            <h1 className="text-3xl sm:text-4xl font-bold">LOGIN TO DAC-HR</h1>
-            <p className="text-muted-foreground">
-              Sign in to your account to continue
-            </p>
-            <GoogleSignInButton />
-          </div>
-
-          <div className="space-y-6">
-            <div className="text-center text-sm text-muted-foreground">
-              Don&apos;t have an account?{" "}
-              <Link
-                href="/signup"
-                className="font-medium text-primary hover:underline"
-              >
-                Sign up
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          We don&apos;t store your password. Authentication is handled by
+          Google.
+        </p>
+      </CardContent>
+      <CardFooter className="justify-center">
+        <p className="text-sm text-muted-foreground">
+          Don&apos;t have an account?{" "}
+          <Link href="/signup" className="text-primary hover:underline">
+            Sign up
+          </Link>
+        </p>
+      </CardFooter>
+    </Card>
   );
 }
 
 function AuthLoadingSkeleton() {
   return (
-    <div className="min-h-screen flex">
-      <div className="hidden lg:flex lg:w-1/2 bg-muted/30 animate-pulse" />
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-6 lg:p-12">
-        <div className="w-full max-w-md space-y-8">
-          <div className="space-y-2">
-            <div className="h-10 w-48 bg-muted animate-pulse rounded" />
-            <div className="h-5 w-64 bg-muted animate-pulse rounded" />
-          </div>
-          <div className="h-10 w-full bg-muted animate-pulse rounded" />
+    <Card className="w-full border-border/60 bg-card/80 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/60">
+      <CardHeader className="text-center">
+        <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-border">
+          <LogInIcon className="size-5" />
         </div>
-      </div>
-    </div>
+        <Skeleton className="mx-auto h-7 w-44" />
+        <Skeleton className="mx-auto h-4 w-60" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-11 w-full" />
+        <div className="mt-6 flex items-center gap-4">
+          <Skeleton className="h-px flex-1" />
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-px flex-1" />
+        </div>
+        <Skeleton className="mx-auto mt-4 h-4 w-72" />
+      </CardContent>
+      <CardFooter className="justify-center">
+        <Skeleton className="h-4 w-56" />
+      </CardFooter>
+    </Card>
   );
 }
