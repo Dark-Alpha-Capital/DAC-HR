@@ -19,8 +19,6 @@ export default function AuthLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const year = new Date().getFullYear();
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -64,7 +62,6 @@ export default function AuthLayout({
                     </div>
 
                     <div className="text-xs text-primary-foreground/80">
-                      <p>© {year} Dark Alpha Capital</p>
                       <p className="mt-1">
                         <Link
                           href="/"

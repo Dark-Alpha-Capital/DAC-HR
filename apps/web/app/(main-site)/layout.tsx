@@ -36,7 +36,9 @@ export default function RootLayout({
               <AppSidebar />
             </Suspense>
             <SidebarInset className="bg-muted/20">
-              <MainSiteTopbar />
+              <Suspense fallback={null}>
+                <MainSiteTopbar />
+              </Suspense>
               <div className="flex-1">
                 <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6 md:py-8">
                   {children}
