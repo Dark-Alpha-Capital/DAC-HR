@@ -3,7 +3,7 @@
 import { db } from "@workspace/db";
 import { roundTemplate, positionRoundTemplates } from "@workspace/db/schema";
 import { RoundFormSchema, roundFormSchema } from "../schemas/round-form-schema";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { after } from "next/server";
@@ -50,6 +50,8 @@ export const createRound = async (data: RoundFormSchema) => {
     });
 
     revalidatePath("/rounds");
+    // Invalidate cache for all applications using this position
+    updateTag(`position-${positionId}`);
 
     after(async () => {
       await insertAuditLog({

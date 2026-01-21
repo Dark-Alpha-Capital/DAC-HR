@@ -50,7 +50,14 @@ async function CachedApplicationForMetadata(applicationId: string) {
   cacheLife("hr-data");
   cacheTag(`application-${applicationId}`);
 
-  return await getApplicationWithInterviews(applicationId);
+  const application = await getApplicationWithInterviews(applicationId);
+  
+  // Add position cache tag to enable invalidation when rounds change
+  if (application) {
+    cacheTag(`position-${application.positionId}`);
+  }
+  
+  return application;
 }
 
 // Cached function for candidate
@@ -221,6 +228,11 @@ async function CachedDisplayApplication({
   cacheTag(`application-${applicationId}`);
 
   const application = await getApplicationWithInterviews(applicationId);
+  
+  // Add position cache tag to enable invalidation when rounds change
+  if (application) {
+    cacheTag(`position-${application.positionId}`);
+  }
 
   if (!application) {
     return (
