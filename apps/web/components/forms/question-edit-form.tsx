@@ -59,7 +59,7 @@ const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
               : "Failed to update question",
             {
               position: "bottom-right",
-            }
+            },
           );
         }
       });
@@ -80,7 +80,7 @@ const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
         <div className="flex items-center gap-3">
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               form.reset({
                 questionText: question.questionText,

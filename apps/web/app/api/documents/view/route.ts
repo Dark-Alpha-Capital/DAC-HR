@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     if (!url) {
       return NextResponse.json(
         { error: "Document URL is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     if (!signedUrl) {
       return NextResponse.json(
         { error: "Failed to generate access URL" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       {
         error: error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

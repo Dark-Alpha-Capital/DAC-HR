@@ -40,7 +40,7 @@ export default async function AddDocumentDialog() {
     return (
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline">Add Document</Button>
+          <Button variant="secondary">Add Document</Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[425px] md:max-w-[600px]">
           <DialogHeader>
@@ -60,7 +60,7 @@ export default async function AddDocumentDialog() {
   return (
     <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>
-        <Button variant="outline">Add Document</Button>
+        <Button variant="secondary">Add Document</Button>
       </DrawerTrigger>
       <DrawerContent>
         <DrawerHeader className="text-left">
@@ -72,7 +72,7 @@ export default async function AddDocumentDialog() {
         <DocumentUploadForm categories={categories} />
         <DrawerFooter className="pt-2">
           <DrawerClose asChild>
-            <Button variant="outline">Cancel</Button>
+            <Button variant="secondary">Cancel</Button>
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>

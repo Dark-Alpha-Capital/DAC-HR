@@ -25,7 +25,7 @@ const FilterEmployeePosition = ({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectedPositions, setSelectedPositions] = useOptimistic(
-    searchParams.getAll("position")
+    searchParams.getAll("position"),
   );
 
   const handleCheckedChange = (value: string, checked: boolean) => {
@@ -53,7 +53,7 @@ const FilterEmployeePosition = ({
     >
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm">
+          <Button variant="secondary" size="sm">
             <Filter className="mr-2 h-4 w-4" />
             Position
             {selectedPositions.length > 0 && (
@@ -84,4 +84,3 @@ const FilterEmployeePosition = ({
 };
 
 export default FilterEmployeePosition;
-

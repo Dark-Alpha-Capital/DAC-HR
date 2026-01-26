@@ -121,7 +121,7 @@ const PositionUploadForm = () => {
         <div className="flex items-center gap-3">
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={() => form.reset()}
             disabled={isPending}
           >
@@ -213,10 +213,11 @@ const PositionUploadForm = () => {
                     <DropdownMenuTrigger asChild>
                       <Button
                         id={field.name}
-                        variant="outline"
+                        variant="secondary"
                         className={cn(
                           "w-full justify-between",
-                          !selectedDepartments.length && "text-muted-foreground"
+                          !selectedDepartments.length &&
+                            "text-muted-foreground",
                         )}
                         aria-invalid={isInvalid}
                       >
@@ -279,7 +280,7 @@ const PositionUploadForm = () => {
                       field.handleChange(
                         value === ""
                           ? undefined
-                          : (value as z.infer<typeof hireLevelEnum>)
+                          : (value as z.infer<typeof hireLevelEnum>),
                       )
                     }
                   >
@@ -287,7 +288,7 @@ const PositionUploadForm = () => {
                       id={field.name}
                       aria-invalid={isInvalid}
                       className={cn(
-                        !field.state.value && "text-muted-foreground"
+                        !field.state.value && "text-muted-foreground",
                       )}
                     >
                       <SelectValue placeholder="Select hire level" />
@@ -317,7 +318,7 @@ const PositionUploadForm = () => {
                     value={field.state.value || "active"}
                     onValueChange={(value) =>
                       field.handleChange(
-                        value as z.infer<typeof positionStatusEnum>
+                        value as z.infer<typeof positionStatusEnum>,
                       )
                     }
                   >

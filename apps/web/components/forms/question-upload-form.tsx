@@ -75,7 +75,7 @@ const QuestionUploadForm = ({
               : "Failed to create question",
             {
               position: "bottom-right",
-            }
+            },
           );
         } else {
           toast.success("Question created successfully", {
@@ -144,7 +144,7 @@ const QuestionUploadForm = ({
         <div className="flex items-center gap-3">
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               form.reset();
               setRounds([]);
@@ -227,7 +227,7 @@ const QuestionUploadForm = ({
                 field.state.meta.isTouched && !field.state.meta.isValid;
               const isDisabled = !positionId || isLoadingRounds;
               const selectedPosition = positions.find(
-                (p) => p.id === positionId
+                (p) => p.id === positionId,
               );
 
               return (

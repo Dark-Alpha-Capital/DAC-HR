@@ -47,10 +47,10 @@ export default function InterviewSummaryForm({
   const router = useRouter();
   const [status, setStatus] = useState<InterviewStatus>(interview.status);
   const [rating, setRating] = useState<string>(
-    interview.rating?.toString() ?? "none"
+    interview.rating?.toString() ?? "none",
   );
   const [overallFeedback, setOverallFeedback] = useState(
-    interview.overallFeedback ?? ""
+    interview.overallFeedback ?? "",
   );
   const [isPending, startTransition] = useTransition();
 
@@ -72,7 +72,7 @@ export default function InterviewSummaryForm({
         toast.error(
           typeof result.error === "string"
             ? result.error
-            : "Failed to update interview"
+            : "Failed to update interview",
         );
         return;
       }
@@ -149,7 +149,7 @@ export default function InterviewSummaryForm({
       <div className="flex items-center justify-end gap-3 pt-2">
         <Button
           type="button"
-          variant="ghost"
+          variant="secondary"
           onClick={() => router.push(`/applications/${applicationId}`)}
           disabled={isPending}
         >

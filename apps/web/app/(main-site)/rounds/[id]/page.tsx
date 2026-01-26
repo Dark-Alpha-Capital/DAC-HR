@@ -162,13 +162,13 @@ const DisplayRound = async ({ params }: { params: Params }) => {
                   : `${positions.length} Positions`}
               </Badge>
             )}
-            <Badge variant="outline" className="text-xs gap-1.5">
+            <Badge variant="secondary" className="text-xs gap-1.5">
               <Calendar className="h-3 w-3" />
               Created {formatDate(round.createdAt)}
             </Badge>
             {round.updatedAt &&
               round.updatedAt.getTime() !== round.createdAt.getTime() && (
-                <Badge variant="outline" className="text-xs gap-1.5">
+                <Badge variant="secondary" className="text-xs gap-1.5">
                   <Clock className="h-3 w-3" />
                   Updated {formatDate(round.updatedAt)}
                 </Badge>
@@ -176,7 +176,7 @@ const DisplayRound = async ({ params }: { params: Params }) => {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="secondary" size="sm" asChild>
             <Link href={`/rounds/${round.id}/edit`}>
               <Pencil className="h-4 w-4 mr-2" />
               Edit
@@ -197,7 +197,7 @@ const DisplayRound = async ({ params }: { params: Params }) => {
             {positions.map((pos) => (
               <Button
                 key={pos.id}
-                variant="outline"
+                variant="secondary"
                 size="sm"
                 asChild
                 className="h-auto py-1.5"
@@ -260,7 +260,7 @@ const DisplayRoundQuestions = async ({ params }: { params: Params }) => {
           <p className="text-muted-foreground mb-4">
             No questions are currently linked to this round.
           </p>
-          <Button variant="outline" asChild>
+          <Button variant="secondary" asChild>
             <Link href={`/rounds/${id}/add-question`}>
               <Plus className="h-4 w-4 mr-2" />
               Add Question
@@ -287,12 +287,12 @@ const DisplayRoundQuestions = async ({ params }: { params: Params }) => {
                 </TableCell>
                 <TableCell>
                   <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" asChild>
+                    <Button variant="secondary" size="sm" asChild>
                       <Link href={`/questions/${question.id}`}>
                         <Eye className="h-4 w-4" />
                       </Link>
                     </Button>
-                    <Button variant="ghost" size="sm" asChild>
+                    <Button variant="secondary" size="sm" asChild>
                       <Link href={`/questions/${question.id}/edit`}>
                         <Pencil className="h-4 w-4" />
                       </Link>

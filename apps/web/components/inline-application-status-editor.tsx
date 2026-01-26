@@ -52,15 +52,15 @@ const statusLabels: Record<ApplicationStatus, string> = {
 
 const statusColors: Record<
   ApplicationStatus,
-  "default" | "secondary" | "outline" | "destructive"
+  "default" | "secondary" | "destructive"
 > = {
-  pending: "outline",
+  pending: "secondary",
   reviewed: "secondary",
   shortlisted: "default",
   interviewing: "default",
   hired: "default",
   rejected: "destructive",
-  withdrawn: "outline",
+  withdrawn: "secondary",
 };
 
 export default function InlineApplicationStatusEditor({
@@ -71,7 +71,7 @@ export default function InlineApplicationStatusEditor({
   const [isPending, startTransition] = useTransition();
   const [showHiredDialog, setShowHiredDialog] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<ApplicationStatus | null>(
-    null
+    null,
   );
 
   const handleStatusChange = (newStatus: ApplicationStatus) => {
@@ -99,7 +99,7 @@ export default function InlineApplicationStatusEditor({
         toast.error(
           typeof result.error === "string"
             ? result.error
-            : "Failed to update application status"
+            : "Failed to update application status",
         );
         return;
       }
@@ -115,7 +115,7 @@ export default function InlineApplicationStatusEditor({
     updateStatus("hired");
     // Redirect to employee form with candidate data
     router.push(
-      `/employees/new?candidateId=${candidateId}&applicationId=${application.id}`
+      `/employees/new?candidateId=${candidateId}&applicationId=${application.id}`,
     );
   };
 
@@ -193,4 +193,3 @@ export default function InlineApplicationStatusEditor({
     </>
   );
 }
-

@@ -48,7 +48,7 @@ export const getPositions = async (
   hireLevels?: string[],
   statuses?: string[],
   page: number = 1,
-  limit: number = 50
+  limit: number = 50,
 ): Promise<{
   positions: Array<{
     id: string;
@@ -79,7 +79,7 @@ export const getPositions = async (
       // Validate hire levels against enum values
       const validHireLevels = hireLevels.filter(
         (
-          level
+          level,
         ): level is
           | "managing-director"
           | "vice-president"
@@ -92,7 +92,7 @@ export const getPositions = async (
             "associate",
             "analyst",
             "intern",
-          ].includes(level)
+          ].includes(level),
       );
       if (validHireLevels.length > 0) {
         conditions.push(inArray(position.hireLevel, validHireLevels));
@@ -104,7 +104,7 @@ export const getPositions = async (
       // Validate statuses against enum values
       const validStatuses = statuses.filter(
         (status): status is "active" | "hold" | "passed" | "upcoming" =>
-          ["active", "hold", "passed", "upcoming"].includes(status)
+          ["active", "hold", "passed", "upcoming"].includes(status),
       );
       if (validStatuses.length > 0) {
         conditions.push(inArray(position.status, validStatuses));
@@ -202,7 +202,7 @@ export const getAllApplications = async () => {
     const applicationsWithInterviews = await Promise.all(
       results.map(async (result) => {
         const interviews = await getInterviewsByApplicationId(
-          result.application.id
+          result.application.id,
         );
         return {
           ...result.application,
@@ -210,7 +210,7 @@ export const getAllApplications = async () => {
           position: result.position,
           interviews,
         };
-      })
+      }),
     );
 
     return applicationsWithInterviews;
@@ -236,7 +236,7 @@ export const getApplicationsFiltered = async (
   positionIds?: string[],
   statuses?: string[],
   page: number = 1,
-  limit: number = 50
+  limit: number = 50,
 ): Promise<{
   applications: Array<{
     id: string;
@@ -303,14 +303,14 @@ export const getApplicationsFiltered = async (
         or(
           sql`LOWER(${candidate.firstName}) LIKE ${`%${searchLower}%`}`,
           sql`LOWER(${candidate.lastName}) LIKE ${`%${searchLower}%`}`,
-          sql`LOWER(CONCAT(${candidate.firstName}, ' ', ${candidate.lastName})) LIKE ${`%${searchLower}%`}`
-        )
+          sql`LOWER(CONCAT(${candidate.firstName}, ' ', ${candidate.lastName})) LIKE ${`%${searchLower}%`}`,
+        ),
       );
     }
 
     if (emailSearch) {
       conditions.push(
-        sql`LOWER(${candidate.email}) LIKE ${`%${emailSearch.toLowerCase()}%`}`
+        sql`LOWER(${candidate.email}) LIKE ${`%${emailSearch.toLowerCase()}%`}`,
       );
     }
 
@@ -330,8 +330,8 @@ export const getApplicationsFiltered = async (
             | "hired"
             | "rejected"
             | "withdrawn"
-          >
-        )
+          >,
+        ),
       );
     }
 
@@ -356,7 +356,7 @@ export const getApplicationsFiltered = async (
     const applicationsWithInterviews = await Promise.all(
       paginatedResults.map(async (result) => {
         const interviews = await getInterviewsByApplicationId(
-          result.application.id
+          result.application.id,
         );
         return {
           ...result.application,
@@ -367,7 +367,7 @@ export const getApplicationsFiltered = async (
             status: interview.status,
           })),
         };
-      })
+      }),
     );
 
     return {
@@ -398,7 +398,7 @@ export const getCandidatesWithPositions = async () => {
       .from(candidate)
       .leftJoin(
         candidatePosition,
-        eq(candidate.id, candidatePosition.candidateId)
+        eq(candidate.id, candidatePosition.candidateId),
       )
       .leftJoin(position, eq(candidatePosition.positionId, position.id));
 
@@ -431,7 +431,7 @@ export const getCandidatesWithPositionsFiltered = async (
   emailSearch?: string,
   positionIds?: string[],
   page: number = 1,
-  limit: number = 50
+  limit: number = 50,
 ): Promise<{
   candidates: Array<{
     id: string;
@@ -474,7 +474,7 @@ export const getCandidatesWithPositionsFiltered = async (
       .from(candidate)
       .leftJoin(
         candidatePosition,
-        eq(candidate.id, candidatePosition.candidateId)
+        eq(candidate.id, candidatePosition.candidateId),
       )
       .leftJoin(position, eq(candidatePosition.positionId, position.id));
 
@@ -487,8 +487,8 @@ export const getCandidatesWithPositionsFiltered = async (
       conditions.push(
         or(
           sql`${candidate.firstName} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`,
-          sql`${candidate.lastName} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`
-        )!
+          sql`${candidate.lastName} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`,
+        )!,
       );
     }
 
@@ -496,7 +496,7 @@ export const getCandidatesWithPositionsFiltered = async (
     if (emailSearch && emailSearch.trim()) {
       const searchTerm = `%${emailSearch.trim()}%`;
       conditions.push(
-        sql`${candidate.email} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`
+        sql`${candidate.email} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`,
       );
     }
 
@@ -548,7 +548,7 @@ export const getCandidatesWithPositionsFiltered = async (
 
     // Convert to array and sort by createdAt descending (already sorted from query)
     const allCandidates = Array.from(candidateMap.values()).sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
     );
 
     // Get total count
@@ -676,7 +676,7 @@ export const getCandidateWithApplications = async (id: string) => {
           ...app,
           interviews,
         };
-      })
+      }),
     );
 
     return {
@@ -725,7 +725,7 @@ export const getCandidateWithApplications = async (id: string) => {
       if (errorAny.internal_position) {
         console.error(
           "PostgreSQL internal position:",
-          errorAny.internal_position
+          errorAny.internal_position,
         );
       }
       if (errorAny.internal_query) {
@@ -793,7 +793,7 @@ export const getQuestionsWithRounds = async (
   positionIds?: string[],
   roundIds?: string[],
   page: number = 1,
-  limit: number = 50
+  limit: number = 50,
 ): Promise<{
   questions: Array<{
     id: string;
@@ -824,15 +824,15 @@ export const getQuestionsWithRounds = async (
       .from(questionBank)
       .leftJoin(
         roundTemplateQuestions,
-        eq(questionBank.id, roundTemplateQuestions.questionId)
+        eq(questionBank.id, roundTemplateQuestions.questionId),
       )
       .leftJoin(
         roundTemplate,
-        eq(roundTemplateQuestions.roundTemplateId, roundTemplate.id)
+        eq(roundTemplateQuestions.roundTemplateId, roundTemplate.id),
       )
       .leftJoin(
         positionRoundTemplates,
-        eq(roundTemplate.id, positionRoundTemplates.roundTemplateId)
+        eq(roundTemplate.id, positionRoundTemplates.roundTemplateId),
       )
       .leftJoin(position, eq(positionRoundTemplates.positionId, position.id));
 
@@ -907,7 +907,7 @@ export const getQuestionsWithRounds = async (
     if (search && search.trim()) {
       const searchLower = search.toLowerCase();
       allQuestions = allQuestions.filter((question) =>
-        question.questionText.toLowerCase().includes(searchLower)
+        question.questionText.toLowerCase().includes(searchLower),
       );
     }
 
@@ -975,7 +975,7 @@ export const getQuestionsByRoundId = async (roundId: string) => {
       .from(roundTemplateQuestions)
       .innerJoin(
         questionBank,
-        eq(roundTemplateQuestions.questionId, questionBank.id)
+        eq(roundTemplateQuestions.questionId, questionBank.id),
       )
       .where(eq(roundTemplateQuestions.roundTemplateId, roundId));
 
@@ -1011,7 +1011,7 @@ export const getRounds = async () => {
 export const getRoundsWithPositions = async (
   positionIds?: string[],
   page: number = 1,
-  limit: number = 50
+  limit: number = 50,
 ): Promise<{
   rounds: Array<{
     id: string;
@@ -1059,13 +1059,13 @@ export const getRoundsWithPositions = async (
       .from(roundTemplate)
       .leftJoin(
         positionRoundTemplates,
-        eq(roundTemplate.id, positionRoundTemplates.roundTemplateId)
+        eq(roundTemplate.id, positionRoundTemplates.roundTemplateId),
       )
       .leftJoin(position, eq(positionRoundTemplates.positionId, position.id))
       .where(
         filteredRoundIds && filteredRoundIds.length > 0
           ? inArray(roundTemplate.id, filteredRoundIds)
-          : undefined
+          : undefined,
       );
 
     // Group rounds by round ID and collect positions
@@ -1140,7 +1140,7 @@ export const getRoundsByPositionId = async (positionId: string) => {
       .from(positionRoundTemplates)
       .innerJoin(
         roundTemplate,
-        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id)
+        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id),
       )
       .where(eq(positionRoundTemplates.positionId, positionId));
 
@@ -1209,7 +1209,7 @@ export const getPositionsByRoundId = async (roundId: string) => {
  * @returns The positionRoundTemplate or null if not found
  */
 export const getPositionRoundTemplateById = async (
-  positionRoundTemplateId: string
+  positionRoundTemplateId: string,
 ) => {
   try {
     const [result] = await db
@@ -1226,7 +1226,7 @@ export const getPositionRoundTemplateById = async (
       .from(positionRoundTemplates)
       .innerJoin(
         roundTemplate,
-        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id)
+        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id),
       )
       .where(eq(positionRoundTemplates.id, positionRoundTemplateId));
     return result || null;
@@ -1271,7 +1271,7 @@ export const getApplicationById = async (applicationId: string) => {
 
     // Get all rounds for this position
     const rounds = await getRoundsByPositionId(
-      appResult.application.positionId
+      appResult.application.positionId,
     );
 
     return {
@@ -1320,11 +1320,11 @@ export const getInterviewsByApplicationId = async (applicationId: string) => {
       .from(interview)
       .innerJoin(
         positionRoundTemplates,
-        eq(interview.positionRoundTemplateId, positionRoundTemplates.id)
+        eq(interview.positionRoundTemplateId, positionRoundTemplates.id),
       )
       .innerJoin(
         roundTemplate,
-        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id)
+        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id),
       )
       .leftJoin(user, eq(interview.interviewerId, user.id))
       .where(eq(interview.applicationId, applicationId));
@@ -1376,11 +1376,11 @@ export const getInterviewById = async (interviewId: string) => {
       .from(interview)
       .innerJoin(
         positionRoundTemplates,
-        eq(interview.positionRoundTemplateId, positionRoundTemplates.id)
+        eq(interview.positionRoundTemplateId, positionRoundTemplates.id),
       )
       .innerJoin(
         roundTemplate,
-        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id)
+        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id),
       )
       .leftJoin(user, eq(interview.interviewerId, user.id))
       .where(eq(interview.id, interviewId));
@@ -1391,7 +1391,7 @@ export const getInterviewById = async (interviewId: string) => {
 
     // Get questions for this round template
     const questions = await getQuestionsByRoundId(
-      interviewResult.roundTemplate.id
+      interviewResult.roundTemplate.id,
     );
 
     // Get feedback for each question
@@ -1409,14 +1409,14 @@ export const getInterviewById = async (interviewId: string) => {
       .from(interviewFeedback)
       .innerJoin(
         questionBank,
-        eq(interviewFeedback.questionId, questionBank.id)
+        eq(interviewFeedback.questionId, questionBank.id),
       )
       .where(eq(interviewFeedback.interviewId, interviewId));
 
     // Map questions with their feedback
     const questionsWithFeedback = questions.map((question) => {
       const feedback = feedbackResults.find(
-        (f) => f.questionId === question.id
+        (f) => f.questionId === question.id,
       );
       return {
         ...question,
@@ -1505,7 +1505,7 @@ export async function getCandidatesByPositionId(positionId: string) {
       .from(candidate)
       .leftJoin(
         candidatePosition,
-        eq(candidate.id, candidatePosition.candidateId)
+        eq(candidate.id, candidatePosition.candidateId),
       )
       .where(eq(candidatePosition.positionId, positionId));
     return results.map((result) => result.candidate);
@@ -1529,7 +1529,7 @@ export async function getDocuments(
   nameSearch?: string,
   tagsSearch?: string,
   page: number = 1,
-  limit: number = 50
+  limit: number = 50,
 ): Promise<{
   documents: Array<{
     id: string;
@@ -1563,7 +1563,7 @@ export async function getDocuments(
           SELECT 1 FROM ${documentCategoryRelations} 
           WHERE ${documentCategoryRelations.documentId} = ${documents.id}
           AND ${documentCategoryRelations.categoryId} = ANY(${sql.raw(`ARRAY[${categoryFilters.map((id) => `'${id.replace(/'/g, "''")}'`).join(",")}]`)})
-        )`
+        )`,
       );
     }
 
@@ -1571,7 +1571,7 @@ export async function getDocuments(
     if (nameSearch && nameSearch.trim()) {
       const searchTerm = `%${nameSearch.trim()}%`;
       conditions.push(
-        sql`${documents.name} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`
+        sql`${documents.name} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`,
       );
     }
 
@@ -1584,7 +1584,7 @@ export async function getDocuments(
         sql`EXISTS (
           SELECT 1 FROM unnest(${documents.tags}) AS tag 
           WHERE LOWER(tag) LIKE ${sql.raw(`'%${searchTerm.replace(/'/g, "''")}%'`)}
-        )`
+        )`,
       );
     }
 
@@ -1604,14 +1604,14 @@ export async function getDocuments(
     const documentsWithCategories = await Promise.all(
       paginatedResults.map(async (result) => {
         const categories = await getDocumentCategoriesByDocumentId(
-          result.document.id
+          result.document.id,
         );
         return {
           ...result.document,
           tags: result.document.tags || [],
           categories,
         };
-      })
+      }),
     );
 
     return { documents: documentsWithCategories, total };
@@ -1656,7 +1656,7 @@ export const getDashboardStats = async () => {
       .select({ count: sql<number>`count(*)::int` })
       .from(candidate)
       .where(
-        sql`${candidate.createdAt} >= NOW() - INTERVAL '60 days' AND ${candidate.createdAt} < NOW() - INTERVAL '30 days'`
+        sql`${candidate.createdAt} >= NOW() - INTERVAL '60 days' AND ${candidate.createdAt} < NOW() - INTERVAL '30 days'`,
       );
     const totalCandidatesLastMonth = totalCandidatesLastMonthResult?.count || 0;
 
@@ -1674,7 +1674,7 @@ export const getDashboardStats = async () => {
       })
       .from(application)
       .where(
-        sql`${application.status} IN ('reviewed', 'shortlisted', 'interviewing')`
+        sql`${application.status} IN ('reviewed', 'shortlisted', 'interviewing')`,
       );
     const activeCandidates = activeCandidatesResult?.count || 0;
 
@@ -1685,7 +1685,7 @@ export const getDashboardStats = async () => {
       })
       .from(application)
       .where(
-        sql`${application.status} IN ('reviewed', 'shortlisted', 'interviewing') AND ${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`
+        sql`${application.status} IN ('reviewed', 'shortlisted', 'interviewing') AND ${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`,
       );
     const activeCandidatesLastMonth =
       activeCandidatesLastMonthResult?.count || 0;
@@ -1713,7 +1713,7 @@ export const getDashboardStats = async () => {
       })
       .from(application)
       .where(
-        sql`${application.status} = 'hired' AND ${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`
+        sql`${application.status} = 'hired' AND ${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`,
       );
     const avgTimeToHireLastMonth = avgTimeToHireLastMonthResult?.avgDays || 0;
 
@@ -1741,7 +1741,7 @@ export const getDashboardStats = async () => {
       .select({ count: sql<number>`count(*)::int` })
       .from(application)
       .where(
-        sql`${application.createdAt} >= NOW() - INTERVAL '60 days' AND ${application.createdAt} < NOW() - INTERVAL '30 days'`
+        sql`${application.createdAt} >= NOW() - INTERVAL '60 days' AND ${application.createdAt} < NOW() - INTERVAL '30 days'`,
       );
     const applicationsLastMonth = applicationsLastMonthResult?.count || 0;
 
@@ -1750,7 +1750,7 @@ export const getDashboardStats = async () => {
       .select({ count: sql<number>`count(*)::int` })
       .from(application)
       .where(
-        sql`${application.status} = 'hired' AND ${application.updatedAt} >= NOW() - INTERVAL '30 days'`
+        sql`${application.status} = 'hired' AND ${application.updatedAt} >= NOW() - INTERVAL '30 days'`,
       );
     const hiredThisMonth = hiredThisMonthResult?.count || 0;
 
@@ -1759,7 +1759,7 @@ export const getDashboardStats = async () => {
       .select({ count: sql<number>`count(*)::int` })
       .from(application)
       .where(
-        sql`${application.status} = 'hired' AND ${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`
+        sql`${application.status} = 'hired' AND ${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`,
       );
     const hiredLastMonth = hiredLastMonthResult?.count || 0;
 
@@ -1791,7 +1791,7 @@ export const getDashboardStats = async () => {
     // Calculate percentage changes
     const calculatePercentageChange = (
       current: number,
-      previous: number
+      previous: number,
     ): number => {
       if (previous === 0) return current > 0 ? 100 : 0;
       return Math.round(((current - previous) / previous) * 100);
@@ -1802,18 +1802,18 @@ export const getDashboardStats = async () => {
       totalCandidatesThisMonth,
       totalCandidatesChange: calculatePercentageChange(
         totalCandidatesThisMonth,
-        totalCandidatesLastMonth
+        totalCandidatesLastMonth,
       ),
       activeCandidates,
       activeCandidatesChange: calculatePercentageChange(
         activeCandidates,
-        activeCandidatesLastMonth
+        activeCandidatesLastMonth,
       ),
       interviewsScheduled,
       avgTimeToHire,
       avgTimeToHireChange: calculatePercentageChange(
         avgTimeToHireLastMonth,
-        avgTimeToHire
+        avgTimeToHire,
       ), // Inverted because lower is better
       totalEmployees,
       totalPositions,
@@ -1821,7 +1821,7 @@ export const getDashboardStats = async () => {
       applicationsLastMonth,
       applicationsChange: calculatePercentageChange(
         applicationsThisMonth,
-        applicationsLastMonth
+        applicationsLastMonth,
       ),
       hiredThisMonth,
       hiredLastMonth,
@@ -1942,18 +1942,18 @@ export const getUpcomingInterviews = async (limit?: number) => {
       .innerJoin(position, eq(application.positionId, position.id))
       .innerJoin(
         positionRoundTemplates,
-        eq(interview.positionRoundTemplateId, positionRoundTemplates.id)
+        eq(interview.positionRoundTemplateId, positionRoundTemplates.id),
       )
       .innerJoin(
         roundTemplate,
-        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id)
+        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id),
       )
       .leftJoin(user, eq(interview.interviewerId, user.id))
       .where(
         and(
           eq(interview.status, "pending"),
-          sql`${interview.scheduledAt} >= NOW()`
-        )
+          sql`${interview.scheduledAt} >= NOW()`,
+        ),
       )
       .orderBy(asc(interview.scheduledAt));
 
@@ -2025,11 +2025,11 @@ export const getRecentActivity = async (limit: number = 10) => {
       .innerJoin(position, eq(application.positionId, position.id))
       .innerJoin(
         positionRoundTemplates,
-        eq(interview.positionRoundTemplateId, positionRoundTemplates.id)
+        eq(interview.positionRoundTemplateId, positionRoundTemplates.id),
       )
       .innerJoin(
         roundTemplate,
-        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id)
+        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id),
       )
       .leftJoin(user, eq(interview.interviewerId, user.id))
       .orderBy(sql`${interview.createdAt} DESC`)
@@ -2118,7 +2118,7 @@ export const getEmployees = async (
   name?: string,
   email?: string,
   page: number = 1,
-  limit: number = 50
+  limit: number = 50,
 ): Promise<{
   employees: Array<{
     id: string;
@@ -2165,14 +2165,14 @@ export const getEmployees = async (
     if (departments && departments.length > 0) {
       // Use PostgreSQL array overlap operator (&&) to check if employee.department array overlaps with filter departments
       conditions.push(
-        sql`${employee.department} && ${departments}::department[]`
+        sql`${employee.department} && ${departments}::department[]`,
       );
     }
     if (name && name.trim()) {
       // Filter by name (search in firstName and lastName)
       const searchTerm = `%${name.trim()}%`;
       conditions.push(
-        sql`CONCAT(${employee.firstName}, ' ', ${employee.lastName}) ILIKE ${searchTerm}`
+        sql`CONCAT(${employee.firstName}, ' ', ${employee.lastName}) ILIKE ${searchTerm}`,
       );
     }
     // Note: Email filtering is not available yet as employees don't have an email field in the schema
@@ -2409,13 +2409,13 @@ export const getAuditLogs = async (options: {
 
     if (action && action.trim()) {
       conditions.push(
-        sql`${auditLog.action} ILIKE ${sql.raw(`'%${action.trim().replace(/'/g, "''")}%'`)}`
+        sql`${auditLog.action} ILIKE ${sql.raw(`'%${action.trim().replace(/'/g, "''")}%'`)}`,
       );
     }
 
     if (entityType && entityType.trim()) {
       conditions.push(
-        sql`${auditLog.entityType} ILIKE ${sql.raw(`'%${entityType.trim().replace(/'/g, "''")}%'`)}`
+        sql`${auditLog.entityType} ILIKE ${sql.raw(`'%${entityType.trim().replace(/'/g, "''")}%'`)}`,
       );
     }
 
@@ -2430,8 +2430,8 @@ export const getAuditLogs = async (options: {
         or(
           sql`${auditLog.action} ILIKE ${sql.raw(`'${searchTerm}'`)}`,
           sql`${auditLog.entityType} ILIKE ${sql.raw(`'${searchTerm}'`)}`,
-          sql`${auditLog.entityId} ILIKE ${sql.raw(`'${searchTerm}'`)}`
-        )!
+          sql`${auditLog.entityId} ILIKE ${sql.raw(`'${searchTerm}'`)}`,
+        )!,
       );
     }
 
@@ -2540,7 +2540,7 @@ export const saveCandidateAiScreening = async (params: {
  */
 export const getCandidateAiScreenings = async (
   candidateId: string,
-  positionId?: string
+  positionId?: string,
 ) => {
   try {
     const conditions = [eq(candidateAiScreening.candidateId, candidateId)];
@@ -2570,7 +2570,7 @@ export const getCandidateAiScreenings = async (
  */
 export const getLatestCandidateAiScreening = async (
   candidateId: string,
-  positionId?: string
+  positionId?: string,
 ) => {
   try {
     const conditions = [eq(candidateAiScreening.candidateId, candidateId)];
@@ -2637,7 +2637,7 @@ export async function getDocumentCategoryById(id: string) {
  */
 export async function createDocumentCategory(
   name: string,
-  description?: string
+  description?: string,
 ) {
   try {
     const [result] = await db
@@ -2664,7 +2664,7 @@ export async function createDocumentCategory(
 export async function updateDocumentCategory(
   id: string,
   name: string,
-  description?: string
+  description?: string,
 ) {
   try {
     const [result] = await db
@@ -2714,7 +2714,7 @@ export async function getDocumentCategoriesByDocumentId(documentId: string) {
       .from(documentCategoryRelations)
       .innerJoin(
         documentCategories,
-        eq(documentCategoryRelations.categoryId, documentCategories.id)
+        eq(documentCategoryRelations.categoryId, documentCategories.id),
       )
       .where(eq(documentCategoryRelations.documentId, documentId));
     return results;
@@ -2731,7 +2731,7 @@ export async function getDocumentCategoriesByDocumentId(documentId: string) {
  */
 export async function setDocumentCategories(
   documentId: string,
-  categoryIds: string[]
+  categoryIds: string[],
 ) {
   try {
     // Delete existing relations
@@ -2745,7 +2745,7 @@ export async function setDocumentCategories(
         categoryIds.map((categoryId) => ({
           documentId,
           categoryId,
-        }))
+        })),
       );
     }
   } catch (error) {
@@ -2795,7 +2795,7 @@ export const saveInterviewAiAnalysis = async (params: {
  * @returns Array of interview AI analysis records, ordered by most recent first
  */
 export const getInterviewAiAnalysesByInterviewId = async (
-  interviewId: string
+  interviewId: string,
 ) => {
   try {
     const results = await db
@@ -2857,7 +2857,7 @@ export const deleteInterviewAiAnalysis = async (analysisId: string) => {
  */
 export const getWeeklyCheckins = async (
   page: number = 1,
-  limit: number = 50
+  limit: number = 50,
 ): Promise<{
   checkins: Array<{
     id: string;

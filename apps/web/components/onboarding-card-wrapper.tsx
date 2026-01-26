@@ -12,5 +12,7 @@ export default function OnboardingCardWrapper({
   onboardingData,
 }: OnboardingCardWrapperProps) {
   if (!onboardingData) return null;
-  return <OnboardingCard candidateId={candidateId} onboardingData={onboardingData} />;
+  return (
+    <OnboardingCard candidateId={candidateId} onboardingData={onboardingData} />
+  );
 }

@@ -38,14 +38,14 @@ export function DocsBreadcrumb() {
     // Handle workflow sub-pages
     if (pathname.startsWith("/docs/workflows/")) {
       const workflowItem = docsNavItems.find((item) =>
-        item.href.startsWith("/docs/workflows")
+        item.href.startsWith("/docs/workflows"),
       );
       if (workflowItem) {
         if (!breadcrumbs.some((b) => b.href === "/docs/workflows")) {
           breadcrumbs.push({ title: "Workflows", href: "/docs/workflows" });
         }
         const subItem = workflowItem.items?.find(
-          (sub) => sub.href === pathname
+          (sub) => sub.href === pathname,
         );
         if (subItem && !breadcrumbs.some((b) => b.href === subItem.href)) {
           breadcrumbs.push({ title: subItem.title, href: subItem.href });

@@ -59,15 +59,15 @@ const statusIcons: Record<ApplicationStatus, typeof Clock> = {
 
 const statusColors: Record<
   ApplicationStatus,
-  "default" | "secondary" | "outline" | "destructive"
+  "default" | "secondary" | "destructive"
 > = {
-  pending: "outline",
+  pending: "secondary",
   reviewed: "secondary",
   shortlisted: "default",
   interviewing: "default",
   hired: "default",
   rejected: "destructive",
-  withdrawn: "outline",
+  withdrawn: "secondary",
 };
 
 export default function ApplicationStatusDisplay({
@@ -89,7 +89,7 @@ export default function ApplicationStatusDisplay({
               {statusLabels[application.status]}
             </Badge>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setIsOpen(true)}>
+          <Button variant="secondary" size="sm" onClick={() => setIsOpen(true)}>
             <Edit className="h-4 w-4 mr-2" />
             Edit
           </Button>

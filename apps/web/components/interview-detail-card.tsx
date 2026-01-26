@@ -52,14 +52,12 @@ export default function InterviewDetailCard({
     }
   };
 
-  const statusColors: Record<
-    string,
-    "default" | "secondary" | "outline" | "destructive"
-  > = {
-    pending: "outline",
-    move_forward: "default",
-    rejected: "destructive",
-  };
+  const statusColors: Record<string, "default" | "secondary" | "destructive"> =
+    {
+      pending: "secondary",
+      move_forward: "default",
+      rejected: "destructive",
+    };
 
   return (
     <div
@@ -73,7 +71,7 @@ export default function InterviewDetailCard({
           {interview.roundTemplate.name}
         </h3>
         <Badge
-          variant={statusColors[interview.status] || "outline"}
+          variant={statusColors[interview.status] || "secondary"}
           className="text-xs"
         >
           {interview.status === "move_forward"
@@ -128,7 +126,7 @@ export default function InterviewDetailCard({
         )}
       </div>
       <div className="pt-2 border-t">
-        <Button size="sm" variant="outline" asChild>
+        <Button size="sm" variant="secondary" asChild>
           <Link href={`/interviews/${interview.id}`}>
             <Eye className="h-3 w-3 mr-2" />
             View Interview

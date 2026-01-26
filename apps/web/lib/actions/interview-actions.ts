@@ -28,7 +28,7 @@ export type InterviewRoundData = {
  * Create or update an interview round
  */
 export async function saveInterviewRound(
-  data: InterviewRoundData & { interviewId?: string }
+  data: InterviewRoundData & { interviewId?: string },
 ) {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -80,8 +80,8 @@ export async function saveInterviewRound(
           .where(
             and(
               eq(interviewFeedback.interviewId, interviewId as string),
-              eq(interviewFeedback.questionId, questionId)
-            )
+              eq(interviewFeedback.questionId, questionId),
+            ),
           )
           .limit(1);
 
@@ -255,7 +255,7 @@ export async function startInterviewRound(data: {
  */
 export async function getInterviewForRound(
   applicationId: string,
-  positionRoundTemplateId: string
+  positionRoundTemplateId: string,
 ) {
   try {
     const [interviewData] = await db
@@ -264,8 +264,8 @@ export async function getInterviewForRound(
       .where(
         and(
           eq(interview.applicationId, applicationId),
-          eq(interview.positionRoundTemplateId, positionRoundTemplateId)
-        )
+          eq(interview.positionRoundTemplateId, positionRoundTemplateId),
+        ),
       )
       .limit(1);
 

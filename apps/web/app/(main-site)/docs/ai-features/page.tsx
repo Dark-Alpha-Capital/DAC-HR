@@ -24,7 +24,8 @@ import {
 
 export const metadata: Metadata = {
   title: "AI Features - Documentation - DAC HR",
-  description: "Learn how to use AI features for candidate screening and interview analysis in DAC HR",
+  description:
+    "Learn how to use AI features for candidate screening and interview analysis in DAC HR",
 };
 
 export default function AiFeaturesDocsPage() {
@@ -41,8 +42,8 @@ export default function AiFeaturesDocsPage() {
           <h1 className="text-4xl font-bold tracking-tight">AI Features</h1>
         </div>
         <p className="text-xl text-muted-foreground">
-          Leverage AI to screen candidates and analyze interviews. Get intelligent
-          insights to make better hiring decisions.
+          Leverage AI to screen candidates and analyze interviews. Get
+          intelligent insights to make better hiring decisions.
         </p>
       </div>
 
@@ -91,14 +92,24 @@ export default function AiFeaturesDocsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground">
-            AI screening analyzes a candidate's documents (primarily their resume)
-            against a position's requirements to provide:
+            AI screening analyzes a candidate's documents (primarily their
+            resume) against a position's requirements to provide:
           </p>
           <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-            <li><strong>Verdict</strong> - Overall recommendation (Strong Yes, Yes, Maybe, No)</li>
-            <li><strong>Score</strong> - Numerical rating (0-10)</li>
-            <li><strong>Explanation</strong> - Brief summary of the assessment</li>
-            <li><strong>Full Analysis</strong> - Detailed breakdown of qualifications</li>
+            <li>
+              <strong>Verdict</strong> - Overall recommendation (Strong Yes,
+              Yes, Maybe, No)
+            </li>
+            <li>
+              <strong>Score</strong> - Numerical rating (0-10)
+            </li>
+            <li>
+              <strong>Explanation</strong> - Brief summary of the assessment
+            </li>
+            <li>
+              <strong>Full Analysis</strong> - Detailed breakdown of
+              qualifications
+            </li>
           </ul>
         </CardContent>
       </Card>
@@ -110,19 +121,33 @@ export default function AiFeaturesDocsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <ol className="list-decimal list-inside space-y-3 text-muted-foreground">
-            <li>Go to the <strong>Candidate's</strong> profile page</li>
-            <li>Make sure the candidate has a <strong>resume uploaded</strong></li>
-            <li>Navigate to the <strong>"Do AI Analysis"</strong> tab</li>
-            <li>Select the <strong>position</strong> to screen against (if applicable)</li>
-            <li>Click <strong>"Run AI Analysis"</strong></li>
+            <li>
+              Go to the <strong>Candidate's</strong> profile page
+            </li>
+            <li>
+              Make sure the candidate has a <strong>resume uploaded</strong>
+            </li>
+            <li>
+              Navigate to the <strong>"Do AI Analysis"</strong> tab
+            </li>
+            <li>
+              Select the <strong>position</strong> to screen against (if
+              applicable)
+            </li>
+            <li>
+              Click <strong>"Run AI Analysis"</strong>
+            </li>
             <li>Wait for the analysis to complete (usually a few seconds)</li>
-            <li>View results in the <strong>"AI Screenings"</strong> tab</li>
+            <li>
+              View results in the <strong>"AI Screenings"</strong> tab
+            </li>
           </ol>
 
           <div className="p-4 bg-muted/50 rounded-lg">
             <p className="text-sm text-muted-foreground">
-              <strong>Requirement:</strong> Candidates must have at least one document
-              uploaded (preferably a resume) for AI screening to work effectively.
+              <strong>Requirement:</strong> Candidates must have at least one
+              document uploaded (preferably a resume) for AI screening to work
+              effectively.
             </p>
           </div>
         </CardContent>
@@ -199,11 +224,23 @@ export default function AiFeaturesDocsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <ol className="list-decimal list-inside space-y-3 text-muted-foreground">
-            <li>Go to the specific <strong>Interview</strong> page</li>
-            <li>Make sure you have <strong>recorded feedback</strong> for questions</li>
-            <li>Navigate to the <strong>"AI Analysis"</strong> tab</li>
-            <li>Optionally add a <strong>custom prompt</strong> for specific questions</li>
-            <li>Click <strong>"Run Analysis"</strong></li>
+            <li>
+              Go to the specific <strong>Interview</strong> page
+            </li>
+            <li>
+              Make sure you have <strong>recorded feedback</strong> for
+              questions
+            </li>
+            <li>
+              Navigate to the <strong>"AI Analysis"</strong> tab
+            </li>
+            <li>
+              Optionally add a <strong>custom prompt</strong> for specific
+              questions
+            </li>
+            <li>
+              Click <strong>"Run Analysis"</strong>
+            </li>
             <li>View the AI-generated insights</li>
           </ol>
 
@@ -228,19 +265,29 @@ export default function AiFeaturesDocsPage() {
           <ul className="space-y-3 text-muted-foreground">
             <li className="flex items-start gap-2">
               <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
-              <span>AI analysis is a tool to assist decision-making, not replace human judgment</span>
+              <span>
+                AI analysis is a tool to assist decision-making, not replace
+                human judgment
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
-              <span>Results quality depends on the quality of input documents and feedback</span>
+              <span>
+                Results quality depends on the quality of input documents and
+                feedback
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
-              <span>Always verify AI recommendations with your own assessment</span>
+              <span>
+                Always verify AI recommendations with your own assessment
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
-              <span>AI may not capture all nuances of a candidate's qualifications</span>
+              <span>
+                AI may not capture all nuances of a candidate's qualifications
+              </span>
             </li>
           </ul>
         </CardContent>
@@ -255,27 +302,40 @@ export default function AiFeaturesDocsPage() {
           <ul className="space-y-3 text-muted-foreground">
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Upload complete, well-formatted resumes for best screening results</span>
+              <span>
+                Upload complete, well-formatted resumes for best screening
+                results
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Run AI screening early in the process to prioritize candidates</span>
+              <span>
+                Run AI screening early in the process to prioritize candidates
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Provide detailed interview feedback before running analysis</span>
+              <span>
+                Provide detailed interview feedback before running analysis
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Use custom prompts to ask specific questions about candidates</span>
+              <span>
+                Use custom prompts to ask specific questions about candidates
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Review AI results alongside other candidate information</span>
+              <span>
+                Review AI results alongside other candidate information
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Save multiple AI screenings to track how candidates improve</span>
+              <span>
+                Save multiple AI screenings to track how candidates improve
+              </span>
             </li>
           </ul>
         </CardContent>

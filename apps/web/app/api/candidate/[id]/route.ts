@@ -15,7 +15,7 @@ import { requireAuth } from "@/lib/middleware/auth";
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const startTime = Date.now();
   try {
@@ -27,14 +27,14 @@ export async function DELETE(
 
     const { id: candidateId } = await params;
     console.log(
-      `[DELETE /api/candidate/:id] Deleting candidate ${candidateId} - User: ${user.email} (${user.id})`
+      `[DELETE /api/candidate/:id] Deleting candidate ${candidateId} - User: ${user.email} (${user.id})`,
     );
 
     if (!candidateId || candidateId.trim() === "") {
       console.error("[DELETE /api/candidate/:id] Missing candidate ID");
       return NextResponse.json(
         { error: "Candidate ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -43,27 +43,27 @@ export async function DELETE(
 
     if (!candidateData) {
       console.error(
-        `[DELETE /api/candidate/:id] Candidate not found - ID: ${candidateId}`
+        `[DELETE /api/candidate/:id] Candidate not found - ID: ${candidateId}`,
       );
       return NextResponse.json(
         { error: "Candidate not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     console.log(
-      `[DELETE /api/candidate/:id] Candidate found - Name: ${candidateData.firstName} ${candidateData.lastName}, Email: ${candidateData.email}`
+      `[DELETE /api/candidate/:id] Candidate found - Name: ${candidateData.firstName} ${candidateData.lastName}, Email: ${candidateData.email}`,
     );
 
     // Get all candidate documents before deletion
     const candidateDocuments = await getDocumentsByCandidateId(candidateId);
     console.log(
-      `[DELETE /api/candidate/:id] Found ${candidateDocuments.length} documents to delete`
+      `[DELETE /api/candidate/:id] Found ${candidateDocuments.length} documents to delete`,
     );
 
     // Delete all documents from GCS and FileSearchStore
     console.log(
-      `[DELETE /api/candidate/:id] Starting deletion of ${candidateDocuments.length} documents from storage...`
+      `[DELETE /api/candidate/:id] Starting deletion of ${candidateDocuments.length} documents from storage...`,
     );
     const deletionPromises = candidateDocuments.map(async (doc) => {
       const promises: Promise<boolean>[] = [];
@@ -71,34 +71,34 @@ export async function DELETE(
       // Delete from Google Cloud Storage (if URL exists)
       if (doc.url) {
         console.log(
-          `[DELETE /api/candidate/:id] Deleting document ${doc.id} from GCS: ${doc.url}`
+          `[DELETE /api/candidate/:id] Deleting document ${doc.id} from GCS: ${doc.url}`,
         );
         promises.push(
           deleteFile(doc.url).catch((error) => {
             console.error(
               `[DELETE /api/candidate/:id] Error deleting file from GCS for document ${doc.id}:`,
-              error
+              error,
             );
             return false;
-          })
+          }),
         );
       }
 
       // Delete from FileSearchStore (if fileSearchDocumentName exists)
       if (doc.fileSearchDocumentName) {
         console.log(
-          `[DELETE /api/candidate/:id] Deleting document ${doc.id} from FileSearchStore: ${doc.fileSearchDocumentName}`
+          `[DELETE /api/candidate/:id] Deleting document ${doc.id} from FileSearchStore: ${doc.fileSearchDocumentName}`,
         );
         promises.push(
           deleteFileSearchStoreDocument(doc.fileSearchDocumentName).catch(
             (error) => {
               console.error(
                 `[DELETE /api/candidate/:id] Error deleting file from FileSearchStore for document ${doc.id}:`,
-                error
+                error,
               );
               return false;
-            }
-          )
+            },
+          ),
         );
       }
 
@@ -108,18 +108,16 @@ export async function DELETE(
     // Wait for all document deletions to complete (don't fail if some fail)
     await Promise.all(deletionPromises);
     console.log(
-      `[DELETE /api/candidate/:id] Completed deletion of all documents from storage`
+      `[DELETE /api/candidate/:id] Completed deletion of all documents from storage`,
     );
 
     // Delete candidate from database (this will cascade delete all related records)
     console.log(
-      `[DELETE /api/candidate/:id] Deleting candidate from database...`
+      `[DELETE /api/candidate/:id] Deleting candidate from database...`,
     );
-    await db
-      .delete(candidateSchema)
-      .where(eq(candidateSchema.id, candidateId));
+    await db.delete(candidateSchema).where(eq(candidateSchema.id, candidateId));
     console.log(
-      `[DELETE /api/candidate/:id] Candidate deleted from database successfully`
+      `[DELETE /api/candidate/:id] Candidate deleted from database successfully`,
     );
 
     // Insert audit log asynchronously
@@ -164,24 +162,21 @@ export async function DELETE(
 
     const duration = Date.now() - startTime;
     console.log(
-      `[DELETE /api/candidate/:id] Request completed successfully in ${duration}ms - Candidate ID: ${candidateId}, Documents deleted: ${candidateDocuments.length}`
+      `[DELETE /api/candidate/:id] Request completed successfully in ${duration}ms - Candidate ID: ${candidateId}, Documents deleted: ${candidateDocuments.length}`,
     );
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error(
       `[DELETE /api/candidate/:id] Error deleting candidate after ${duration}ms:`,
-      error
+      error,
     );
     return NextResponse.json(
       {
         error:
-          error instanceof Error
-            ? error.message
-            : "Failed to delete candidate",
+          error instanceof Error ? error.message : "Failed to delete candidate",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

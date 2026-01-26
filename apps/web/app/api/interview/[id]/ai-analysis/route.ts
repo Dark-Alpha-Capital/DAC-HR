@@ -21,7 +21,7 @@ import { interviewAiAnalysisSchema } from "@/lib/schemas/interview-ai-analysis-s
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const startTime = Date.now();
   try {
@@ -33,13 +33,13 @@ export async function POST(
 
     const { id: interviewId } = await params;
     console.log(
-      `[POST /api/interview/:id/ai-analysis] Starting AI analysis for interview ${interviewId} - User: ${user?.email || "unknown"}`
+      `[POST /api/interview/:id/ai-analysis] Starting AI analysis for interview ${interviewId} - User: ${user?.email || "unknown"}`,
     );
 
     if (!interviewId) {
       return NextResponse.json(
         { error: "Interview ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -53,23 +53,23 @@ export async function POST(
     const { customPrompt } = body;
     if (customPrompt) {
       console.log(
-        `[POST /api/interview/:id/ai-analysis] Custom prompt provided (${customPrompt.length} characters)`
+        `[POST /api/interview/:id/ai-analysis] Custom prompt provided (${customPrompt.length} characters)`,
       );
     }
 
     // Fetch interview with full details
     console.log(
-      `[POST /api/interview/:id/ai-analysis] Fetching interview data...`
+      `[POST /api/interview/:id/ai-analysis] Fetching interview data...`,
     );
     const interview = await getInterviewById(interviewId);
 
     if (!interview) {
       console.error(
-        `[POST /api/interview/:id/ai-analysis] Interview not found - ID: ${interviewId}`
+        `[POST /api/interview/:id/ai-analysis] Interview not found - ID: ${interviewId}`,
       );
       return NextResponse.json(
         { error: "Interview not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -77,16 +77,16 @@ export async function POST(
     const application = await getApplicationById(interview.applicationId);
     if (!application) {
       console.error(
-        `[POST /api/interview/:id/ai-analysis] Application not found for interview`
+        `[POST /api/interview/:id/ai-analysis] Application not found for interview`,
       );
       return NextResponse.json(
         { error: "Application not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     console.log(
-      `[POST /api/interview/:id/ai-analysis] Interview found - Round: ${interview.roundTemplate.name}, Position: ${application.position.name}`
+      `[POST /api/interview/:id/ai-analysis] Interview found - Round: ${interview.roundTemplate.name}, Position: ${application.position.name}`,
     );
 
     // Build interview context for AI
@@ -121,7 +121,7 @@ export async function POST(
 
     // Generate AI analysis
     console.log(
-      `[POST /api/interview/:id/ai-analysis] Calling Gemini API for structured analysis...`
+      `[POST /api/interview/:id/ai-analysis] Calling Gemini API for structured analysis...`,
     );
     const analysisStartTime = Date.now();
 
@@ -149,12 +149,12 @@ export async function POST(
 
     const analysisDuration = Date.now() - analysisStartTime;
     console.log(
-      `[POST /api/interview/:id/ai-analysis] Analysis generated in ${analysisDuration}ms - Score: ${structuredData.score}, Recommendation: ${structuredData.recommendation}`
+      `[POST /api/interview/:id/ai-analysis] Analysis generated in ${analysisDuration}ms - Score: ${structuredData.score}, Recommendation: ${structuredData.recommendation}`,
     );
 
     // Save the analysis to the database
     console.log(
-      `[POST /api/interview/:id/ai-analysis] Saving analysis to database...`
+      `[POST /api/interview/:id/ai-analysis] Saving analysis to database...`,
     );
     const savedAnalysis = await saveInterviewAiAnalysis({
       interviewId,
@@ -168,17 +168,17 @@ export async function POST(
 
     if (!savedAnalysis) {
       console.warn(
-        `[POST /api/interview/:id/ai-analysis] Failed to save analysis to database`
+        `[POST /api/interview/:id/ai-analysis] Failed to save analysis to database`,
       );
     } else {
       console.log(
-        `[POST /api/interview/:id/ai-analysis] Analysis saved - ID: ${savedAnalysis.id}`
+        `[POST /api/interview/:id/ai-analysis] Analysis saved - ID: ${savedAnalysis.id}`,
       );
     }
 
     const duration = Date.now() - startTime;
     console.log(
-      `[POST /api/interview/:id/ai-analysis] Request completed in ${duration}ms`
+      `[POST /api/interview/:id/ai-analysis] Request completed in ${duration}ms`,
     );
 
     return NextResponse.json(
@@ -186,17 +186,17 @@ export async function POST(
         analysis: structuredData,
         analysisId: savedAnalysis?.id || null,
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error(
       `[POST /api/interview/:id/ai-analysis] Error after ${duration}ms:`,
-      error
+      error,
     );
     return NextResponse.json(
       { error: "Failed to analyze interview" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -206,7 +206,7 @@ export async function POST(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const authResult = await requireAuth();
@@ -219,7 +219,7 @@ export async function GET(
     if (!interviewId) {
       return NextResponse.json(
         { error: "Interview ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -230,7 +230,7 @@ export async function GET(
     console.error(`[GET /api/interview/:id/ai-analysis] Error:`, error);
     return NextResponse.json(
       { error: "Failed to fetch analyses" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -240,7 +240,7 @@ export async function GET(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const authResult = await requireAuth();
@@ -254,7 +254,7 @@ export async function DELETE(
     if (!analysisId) {
       return NextResponse.json(
         { error: "Analysis ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -263,7 +263,7 @@ export async function DELETE(
     if (!deleted) {
       return NextResponse.json(
         { error: "Failed to delete analysis" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -272,7 +272,7 @@ export async function DELETE(
     console.error(`[DELETE /api/interview/:id/ai-analysis] Error:`, error);
     return NextResponse.json(
       { error: "Failed to delete analysis" },
-        { status: 500 }
+      { status: 500 },
     );
   }
 }

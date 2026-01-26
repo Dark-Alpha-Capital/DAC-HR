@@ -11,7 +11,7 @@ export const resetCacheForCandidateDocuments = async (candidateId: string) => {
 };
 
 export const resetCacheForCandidateAiScreenings = async (
-  candidateId: string
+  candidateId: string,
 ) => {
   updateTag(`candidate-ai-screenings-${candidateId}`);
 };

@@ -1,7 +1,11 @@
 "use server";
 
 import { db } from "@workspace/db";
-import { interview, interviewFeedback, application } from "@workspace/db/schema";
+import {
+  interview,
+  interviewFeedback,
+  application,
+} from "@workspace/db/schema";
 import { eq } from "@workspace/db";
 import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";

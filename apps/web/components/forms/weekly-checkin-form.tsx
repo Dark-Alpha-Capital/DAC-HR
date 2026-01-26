@@ -116,7 +116,7 @@ export default function WeeklyCheckinForm({
           toast.error(
             error instanceof Error
               ? error.message
-              : "Failed to submit check-in"
+              : "Failed to submit check-in",
           );
         }
       });
@@ -131,7 +131,7 @@ export default function WeeklyCheckinForm({
     setSelectedPositions((prev) =>
       prev.includes(positionId)
         ? prev.filter((id) => id !== positionId)
-        : [...prev, positionId]
+        : [...prev, positionId],
     );
   };
 
@@ -139,7 +139,7 @@ export default function WeeklyCheckinForm({
     setSelectedChannels((prev) =>
       prev.includes(channel)
         ? prev.filter((c) => c !== channel)
-        : [...prev, channel]
+        : [...prev, channel],
     );
   };
 
@@ -157,7 +157,7 @@ export default function WeeklyCheckinForm({
         <div className="flex items-center gap-3">
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               form.reset();
               setSelectedPositions([]);
@@ -167,11 +167,7 @@ export default function WeeklyCheckinForm({
           >
             Reset
           </Button>
-          <Button
-            type="submit"
-            form="weekly-checkin-form"
-            disabled={isPending}
-          >
+          <Button type="submit" form="weekly-checkin-form" disabled={isPending}>
             {isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

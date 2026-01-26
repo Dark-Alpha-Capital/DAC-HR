@@ -25,4 +25,3 @@ const CandidateFilters = ({ positions }: CandidateFiltersProps) => {
 };
 
 export default CandidateFilters;
-

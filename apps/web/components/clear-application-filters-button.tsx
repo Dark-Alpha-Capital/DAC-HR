@@ -21,7 +21,7 @@ const ClearApplicationFiltersButton = () => {
 
   return (
     <Button
-      variant="outline"
+      variant="secondary"
       size="icon"
       onClick={() => {
         const params = new URLSearchParams(searchParams);
@@ -38,9 +38,3 @@ const ClearApplicationFiltersButton = () => {
 };
 
 export default ClearApplicationFiltersButton;
-
-
-
-
-
-

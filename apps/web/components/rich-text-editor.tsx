@@ -198,7 +198,7 @@ export function RichTextEditor({
           "[&_strong]:font-semibold",
           "[&_em]:italic",
           "[&_mark]:bg-yellow-200 dark:[&_mark]:bg-yellow-900",
-          "[&_.is-empty:first-child::before]:content-[attr(data-placeholder)] [&_.is-empty:first-child::before]:text-muted-foreground [&_.is-empty:first-child::before]:float-left [&_.is-empty:first-child::before]:pointer-events-none [&_.is-empty:first-child::before]:h-0"
+          "[&_.is-empty:first-child::before]:content-[attr(data-placeholder)] [&_.is-empty:first-child::before]:text-muted-foreground [&_.is-empty:first-child::before]:float-left [&_.is-empty:first-child::before]:pointer-events-none [&_.is-empty:first-child::before]:h-0",
         ),
       },
     },
@@ -230,7 +230,7 @@ export function RichTextEditor({
     <div
       className={cn(
         "rounded-lg border border-input bg-background shadow-xs",
-        className
+        className,
       )}
     >
       {/* Toolbar */}
@@ -241,7 +241,7 @@ export function RichTextEditor({
             pressed={editor.isActive("bold")}
             onPressedChange={() => editor.chain().focus().toggleBold().run()}
             size="sm"
-            variant="outline"
+            variant="secondary"
             aria-label="Bold"
           >
             <Bold className="h-4 w-4" />
@@ -250,7 +250,7 @@ export function RichTextEditor({
             pressed={editor.isActive("italic")}
             onPressedChange={() => editor.chain().focus().toggleItalic().run()}
             size="sm"
-            variant="outline"
+            variant="secondary"
             aria-label="Italic"
           >
             <Italic className="h-4 w-4" />
@@ -261,7 +261,7 @@ export function RichTextEditor({
               editor.chain().focus().toggleUnderline().run()
             }
             size="sm"
-            variant="outline"
+            variant="secondary"
             aria-label="Underline"
           >
             <UnderlineIcon className="h-4 w-4" />
@@ -270,7 +270,7 @@ export function RichTextEditor({
             pressed={editor.isActive("strike")}
             onPressedChange={() => editor.chain().focus().toggleStrike().run()}
             size="sm"
-            variant="outline"
+            variant="secondary"
             aria-label="Strikethrough"
           >
             <Strikethrough className="h-4 w-4" />
@@ -279,7 +279,7 @@ export function RichTextEditor({
             pressed={editor.isActive("code")}
             onPressedChange={() => editor.chain().focus().toggleCode().run()}
             size="sm"
-            variant="outline"
+            variant="secondary"
             aria-label="Inline Code"
           >
             <Code className="h-4 w-4" />
@@ -290,7 +290,7 @@ export function RichTextEditor({
           {/* Headings */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" aria-label="Heading">
+              <Button variant="secondary" size="sm" aria-label="Heading">
                 <Type className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -300,7 +300,7 @@ export function RichTextEditor({
                   editor.chain().focus().toggleHeading({ level: 1 }).run()
                 }
                 className={cn(
-                  editor.isActive("heading", { level: 1 }) && "bg-accent"
+                  editor.isActive("heading", { level: 1 }) && "bg-accent",
                 )}
               >
                 <Heading1 className="mr-2 h-4 w-4" />
@@ -311,7 +311,7 @@ export function RichTextEditor({
                   editor.chain().focus().toggleHeading({ level: 2 }).run()
                 }
                 className={cn(
-                  editor.isActive("heading", { level: 2 }) && "bg-accent"
+                  editor.isActive("heading", { level: 2 }) && "bg-accent",
                 )}
               >
                 <Heading2 className="mr-2 h-4 w-4" />
@@ -322,7 +322,7 @@ export function RichTextEditor({
                   editor.chain().focus().toggleHeading({ level: 3 }).run()
                 }
                 className={cn(
-                  editor.isActive("heading", { level: 3 }) && "bg-accent"
+                  editor.isActive("heading", { level: 3 }) && "bg-accent",
                 )}
               >
                 <Heading3 className="mr-2 h-4 w-4" />
@@ -346,7 +346,7 @@ export function RichTextEditor({
               editor.chain().focus().toggleBulletList().run()
             }
             size="sm"
-            variant="outline"
+            variant="secondary"
             aria-label="Bullet List"
           >
             <List className="h-4 w-4" />
@@ -357,7 +357,7 @@ export function RichTextEditor({
               editor.chain().focus().toggleOrderedList().run()
             }
             size="sm"
-            variant="outline"
+            variant="secondary"
             aria-label="Ordered List"
           >
             <ListOrdered className="h-4 w-4" />
@@ -368,7 +368,7 @@ export function RichTextEditor({
               editor.chain().focus().toggleBlockquote().run()
             }
             size="sm"
-            variant="outline"
+            variant="secondary"
             aria-label="Blockquote"
           >
             <Quote className="h-4 w-4" />
@@ -379,7 +379,7 @@ export function RichTextEditor({
               editor.chain().focus().toggleCodeBlock().run()
             }
             size="sm"
-            variant="outline"
+            variant="secondary"
             aria-label="Code Block"
           >
             <Code2 className="h-4 w-4" />
@@ -390,7 +390,7 @@ export function RichTextEditor({
           {/* Text Alignment */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" aria-label="Text Alignment">
+              <Button variant="secondary" size="sm" aria-label="Text Alignment">
                 <AlignLeft className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -400,7 +400,7 @@ export function RichTextEditor({
                   editor.chain().focus().setTextAlign("left").run()
                 }
                 className={cn(
-                  editor.isActive({ textAlign: "left" }) && "bg-accent"
+                  editor.isActive({ textAlign: "left" }) && "bg-accent",
                 )}
               >
                 <AlignLeft className="mr-2 h-4 w-4" />
@@ -411,7 +411,7 @@ export function RichTextEditor({
                   editor.chain().focus().setTextAlign("center").run()
                 }
                 className={cn(
-                  editor.isActive({ textAlign: "center" }) && "bg-accent"
+                  editor.isActive({ textAlign: "center" }) && "bg-accent",
                 )}
               >
                 <AlignCenter className="mr-2 h-4 w-4" />
@@ -422,7 +422,7 @@ export function RichTextEditor({
                   editor.chain().focus().setTextAlign("right").run()
                 }
                 className={cn(
-                  editor.isActive({ textAlign: "right" }) && "bg-accent"
+                  editor.isActive({ textAlign: "right" }) && "bg-accent",
                 )}
               >
                 <AlignRight className="mr-2 h-4 w-4" />
@@ -433,7 +433,7 @@ export function RichTextEditor({
                   editor.chain().focus().setTextAlign("justify").run()
                 }
                 className={cn(
-                  editor.isActive({ textAlign: "justify" }) && "bg-accent"
+                  editor.isActive({ textAlign: "justify" }) && "bg-accent",
                 )}
               >
                 <AlignJustify className="mr-2 h-4 w-4" />
@@ -447,7 +447,7 @@ export function RichTextEditor({
           {/* Text Color */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" aria-label="Text Color">
+              <Button variant="secondary" size="sm" aria-label="Text Color">
                 <Palette className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -468,7 +468,7 @@ export function RichTextEditor({
                       "h-8 w-8 rounded-md border-2 border-border hover:scale-110 transition-transform",
                       color.value === "" && "bg-background",
                       editor.getAttributes("textStyle").color === color.value &&
-                        "ring-2 ring-primary ring-offset-2"
+                        "ring-2 ring-primary ring-offset-2",
                     )}
                     style={
                       color.value
@@ -493,7 +493,11 @@ export function RichTextEditor({
           {/* Highlight Color */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" aria-label="Highlight Color">
+              <Button
+                variant="secondary"
+                size="sm"
+                aria-label="Highlight Color"
+              >
                 <Highlighter className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -518,7 +522,7 @@ export function RichTextEditor({
                       "h-8 w-8 rounded-md border-2 border-border hover:scale-110 transition-transform",
                       color.value === "" && "bg-background",
                       editor.getAttributes("highlight").color === color.value &&
-                        "ring-2 ring-primary ring-offset-2"
+                        "ring-2 ring-primary ring-offset-2",
                     )}
                     style={
                       color.value
@@ -547,7 +551,7 @@ export function RichTextEditor({
             pressed={editor.isActive("link")}
             onPressedChange={setLink}
             size="sm"
-            variant="outline"
+            variant="secondary"
             aria-label="Link"
           >
             <LinkIcon className="h-4 w-4" />
@@ -557,7 +561,7 @@ export function RichTextEditor({
 
           {/* History */}
           <Button
-            variant="outline"
+            variant="secondary"
             size="sm"
             onClick={() => editor.chain().focus().undo().run()}
             disabled={!editor.can().undo()}
@@ -566,7 +570,7 @@ export function RichTextEditor({
             <Undo className="h-4 w-4" />
           </Button>
           <Button
-            variant="outline"
+            variant="secondary"
             size="sm"
             onClick={() => editor.chain().focus().redo().run()}
             disabled={!editor.can().redo()}
@@ -581,7 +585,7 @@ export function RichTextEditor({
       <div
         className={cn(
           "overflow-y-auto p-4 rounded-b-lg transition-all",
-          editable && "min-h-[200px] cursor-text"
+          editable && "min-h-[200px] cursor-text",
         )}
         style={{
           minHeight: editable ? minHeight : undefined,

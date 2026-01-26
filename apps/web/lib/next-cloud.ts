@@ -17,7 +17,7 @@ const getNextcloudConfig = () => {
 
   if (!url || !user || !password) {
     throw new Error(
-      "Nextcloud configuration is missing. Please set NEXTCLOUD_URL, NEXTCLOUD_USER, and NEXTCLOUD_PASSWORD environment variables."
+      "Nextcloud configuration is missing. Please set NEXTCLOUD_URL, NEXTCLOUD_USER, and NEXTCLOUD_PASSWORD environment variables.",
     );
   }
 
@@ -43,7 +43,7 @@ export const getClient = () => {
  */
 export async function uploadFileToNextCloud(
   file: File | Blob,
-  folderPath: string = "/Documents"
+  folderPath: string = "/Documents",
 ): Promise<string | null> {
   try {
     const client = getClient();
@@ -79,7 +79,7 @@ export async function uploadFileToNextCloud(
       ) {
         console.warn(
           `Could not create directory ${normalizedFolderPath}:`,
-          error
+          error,
         );
       }
     }
@@ -120,7 +120,7 @@ export async function listDealFiles(folderPath: string): Promise<DealFile[]> {
       {
         username: process.env.NEXTCLOUD_USER,
         password: process.env.NEXTCLOUD_PASSWORD,
-      }
+      },
     );
 
     console.log("Listing files for folder:", { folderPath });

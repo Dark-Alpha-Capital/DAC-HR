@@ -94,7 +94,7 @@ export const createQuestion = async (data: QuestionFormSchema) => {
 
 export const createQuestionForRound = async (
   data: QuestionFormSchema,
-  roundId: string
+  roundId: string,
 ) => {
   const session = await auth.api.getSession({
     headers: await headers(),

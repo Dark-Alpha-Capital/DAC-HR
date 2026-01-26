@@ -13,7 +13,7 @@ export const candidateDocumentFormSchema = z.object({
     .string()
     .refine(
       (val) => val === "" || z.string().url().safeParse(val).success,
-      "Invalid URL format."
+      "Invalid URL format.",
     ),
   tags: z.array(z.string()),
 });
@@ -21,4 +21,3 @@ export const candidateDocumentFormSchema = z.object({
 export type CandidateDocumentFormSchema = z.infer<
   typeof candidateDocumentFormSchema
 >;
-

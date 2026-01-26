@@ -77,59 +77,72 @@ async function seed() {
   const questions = [
     // Frontend Questions
     {
-      questionText: "Explain the virtual DOM and how React uses it for performance optimization",
+      questionText:
+        "Explain the virtual DOM and how React uses it for performance optimization",
       questionType: "technical",
     },
     {
-      questionText: "What are the differences between useState and useRef in React?",
+      questionText:
+        "What are the differences between useState and useRef in React?",
       questionType: "technical",
     },
     {
-      questionText: "How would you optimize a slow-rendering React component? Walk us through your debugging process.",
+      questionText:
+        "How would you optimize a slow-rendering React component? Walk us through your debugging process.",
       questionType: "technical",
     },
     {
-      questionText: "Explain CSS specificity and how you would handle conflicting styles",
+      questionText:
+        "Explain CSS specificity and how you would handle conflicting styles",
       questionType: "technical",
     },
     {
-      questionText: "What is the difference between localStorage and sessionStorage?",
+      questionText:
+        "What is the difference between localStorage and sessionStorage?",
       questionType: "technical",
     },
 
     // Backend Questions
     {
-      questionText: "Explain the difference between SQL and NoSQL databases and when to use each",
+      questionText:
+        "Explain the difference between SQL and NoSQL databases and when to use each",
       questionType: "technical",
     },
     {
-      questionText: "How would you design a RESTful API for a multi-tenant application?",
+      questionText:
+        "How would you design a RESTful API for a multi-tenant application?",
       questionType: "technical",
     },
     {
-      questionText: "What is database indexing and how does it improve query performance?",
+      questionText:
+        "What is database indexing and how does it improve query performance?",
       questionType: "technical",
     },
     {
-      questionText: "Explain the concept of ACID properties in database transactions",
+      questionText:
+        "Explain the concept of ACID properties in database transactions",
       questionType: "technical",
     },
     {
-      questionText: "How would you handle race conditions in a distributed system?",
+      questionText:
+        "How would you handle race conditions in a distributed system?",
       questionType: "technical",
     },
 
     // Fullstack Questions
     {
-      questionText: "Walk us through how you would architect a real-time chat application from scratch",
+      questionText:
+        "Walk us through how you would architect a real-time chat application from scratch",
       questionType: "technical",
     },
     {
-      questionText: "Explain authentication vs authorization and how you would implement both",
+      questionText:
+        "Explain authentication vs authorization and how you would implement both",
       questionType: "technical",
     },
     {
-      questionText: "How do you handle state management in a large-scale application?",
+      questionText:
+        "How do you handle state management in a large-scale application?",
       questionType: "technical",
     },
 
@@ -147,7 +160,8 @@ async function seed() {
       questionType: "behavioral",
     },
     {
-      questionText: "Describe a time when you had to handle a difficult employee situation",
+      questionText:
+        "Describe a time when you had to handle a difficult employee situation",
       questionType: "behavioral",
     },
 
@@ -157,15 +171,18 @@ async function seed() {
       questionType: "technical",
     },
     {
-      questionText: "How would you set up a CI/CD pipeline for a microservices architecture?",
+      questionText:
+        "How would you set up a CI/CD pipeline for a microservices architecture?",
       questionType: "technical",
     },
     {
-      questionText: "What is Infrastructure as Code and what tools have you used for it?",
+      questionText:
+        "What is Infrastructure as Code and what tools have you used for it?",
       questionType: "technical",
     },
     {
-      questionText: "How do you monitor and troubleshoot production applications?",
+      questionText:
+        "How do you monitor and troubleshoot production applications?",
       questionType: "technical",
     },
 
@@ -189,7 +206,8 @@ async function seed() {
 
     // General Behavioral Questions
     {
-      questionText: "Tell me about a challenging project you worked on and how you overcame obstacles",
+      questionText:
+        "Tell me about a challenging project you worked on and how you overcame obstacles",
       questionType: "behavioral",
     },
     {
@@ -220,13 +238,11 @@ async function seed() {
   // Link questions to rounds
   const screeningRound = insertedRounds.find((r) => r.name === "Screening")!;
   const technicalRound = insertedRounds.find((r) => r.name === "Technical")!;
-  const finalRound = insertedRounds.find(
-    (r) => r.name === "Final Executive"
-  )!;
+  const finalRound = insertedRounds.find((r) => r.name === "Final Executive")!;
 
   // Screening round questions (general for all positions)
   const screeningQuestions = insertedQuestions.filter(
-    (q) => q.questionType === "screening"
+    (q) => q.questionType === "screening",
   );
 
   for (const q of screeningQuestions) {
@@ -244,12 +260,24 @@ async function seed() {
 
   // Frontend Developer
   const frontendPos = insertedPositions.find(
-    (p) => p.name === "Frontend Developer"
+    (p) => p.name === "Frontend Developer",
   )!;
   await db.insert(positionRoundTemplates).values([
-    { positionId: frontendPos.id, roundTemplateId: screeningRound.id, stageOrder: 1 },
-    { positionId: frontendPos.id, roundTemplateId: technicalRound.id, stageOrder: 2 },
-    { positionId: frontendPos.id, roundTemplateId: finalRound.id, stageOrder: 3 },
+    {
+      positionId: frontendPos.id,
+      roundTemplateId: screeningRound.id,
+      stageOrder: 1,
+    },
+    {
+      positionId: frontendPos.id,
+      roundTemplateId: technicalRound.id,
+      stageOrder: 2,
+    },
+    {
+      positionId: frontendPos.id,
+      roundTemplateId: finalRound.id,
+      stageOrder: 3,
+    },
   ]);
 
   for (const q of frontendQuestions) {
@@ -261,12 +289,24 @@ async function seed() {
 
   // Backend Developer
   const backendPos = insertedPositions.find(
-    (p) => p.name === "Backend Developer"
+    (p) => p.name === "Backend Developer",
   )!;
   await db.insert(positionRoundTemplates).values([
-    { positionId: backendPos.id, roundTemplateId: screeningRound.id, stageOrder: 1 },
-    { positionId: backendPos.id, roundTemplateId: technicalRound.id, stageOrder: 2 },
-    { positionId: backendPos.id, roundTemplateId: finalRound.id, stageOrder: 3 },
+    {
+      positionId: backendPos.id,
+      roundTemplateId: screeningRound.id,
+      stageOrder: 1,
+    },
+    {
+      positionId: backendPos.id,
+      roundTemplateId: technicalRound.id,
+      stageOrder: 2,
+    },
+    {
+      positionId: backendPos.id,
+      roundTemplateId: finalRound.id,
+      stageOrder: 3,
+    },
   ]);
 
   for (const q of backendQuestions) {
@@ -278,12 +318,24 @@ async function seed() {
 
   // Fullstack Developer
   const fullstackPos = insertedPositions.find(
-    (p) => p.name === "Fullstack Developer"
+    (p) => p.name === "Fullstack Developer",
   )!;
   await db.insert(positionRoundTemplates).values([
-    { positionId: fullstackPos.id, roundTemplateId: screeningRound.id, stageOrder: 1 },
-    { positionId: fullstackPos.id, roundTemplateId: technicalRound.id, stageOrder: 2 },
-    { positionId: fullstackPos.id, roundTemplateId: finalRound.id, stageOrder: 3 },
+    {
+      positionId: fullstackPos.id,
+      roundTemplateId: screeningRound.id,
+      stageOrder: 1,
+    },
+    {
+      positionId: fullstackPos.id,
+      roundTemplateId: technicalRound.id,
+      stageOrder: 2,
+    },
+    {
+      positionId: fullstackPos.id,
+      roundTemplateId: finalRound.id,
+      stageOrder: 3,
+    },
   ]);
 
   for (const q of fullstackQuestions) {
@@ -295,11 +347,19 @@ async function seed() {
 
   // DevOps Engineer
   const devopsPos = insertedPositions.find(
-    (p) => p.name === "DevOps Engineer"
+    (p) => p.name === "DevOps Engineer",
   )!;
   await db.insert(positionRoundTemplates).values([
-    { positionId: devopsPos.id, roundTemplateId: screeningRound.id, stageOrder: 1 },
-    { positionId: devopsPos.id, roundTemplateId: technicalRound.id, stageOrder: 2 },
+    {
+      positionId: devopsPos.id,
+      roundTemplateId: screeningRound.id,
+      stageOrder: 1,
+    },
+    {
+      positionId: devopsPos.id,
+      roundTemplateId: technicalRound.id,
+      stageOrder: 2,
+    },
     { positionId: devopsPos.id, roundTemplateId: finalRound.id, stageOrder: 3 },
   ]);
 
@@ -318,9 +378,9 @@ async function seed() {
     { positionId: hrPos.id, roundTemplateId: finalRound.id, stageOrder: 3 },
   ]);
 
-  const hrQuestions = insertedQuestions.filter(
-    (q) => q.questionType === "behavioral"
-  ).slice(0, 4); // First 4 HR-specific questions
+  const hrQuestions = insertedQuestions
+    .filter((q) => q.questionType === "behavioral")
+    .slice(0, 4); // First 4 HR-specific questions
 
   for (const q of hrQuestions) {
     await db.insert(roundTemplateQuestions).values({
@@ -330,9 +390,9 @@ async function seed() {
   }
 
   // Final round questions (behavioral - same for all)
-  const behavioralQuestions = insertedQuestions.filter(
-    (q) => q.questionType === "behavioral"
-  ).slice(-5); // Last 5 behavioral questions
+  const behavioralQuestions = insertedQuestions
+    .filter((q) => q.questionType === "behavioral")
+    .slice(-5); // Last 5 behavioral questions
 
   for (const q of behavioralQuestions) {
     await db.insert(roundTemplateQuestions).values({

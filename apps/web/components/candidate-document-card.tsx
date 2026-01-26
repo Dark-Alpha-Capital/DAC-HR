@@ -24,7 +24,7 @@ interface CandidateDocumentCardProps {
 const categoryColors = {
   resume: "default",
   "cover-letter": "secondary",
-  portfolio: "outline",
+  portfolio: "secondary",
   other: "destructive",
 } as const;
 
@@ -71,7 +71,7 @@ const CandidateDocumentCard = ({
 
       // For GCS URLs, get a signed URL
       const response = await fetch(
-        `/api/documents/view?url=${encodeURIComponent(document.url)}`
+        `/api/documents/view?url=${encodeURIComponent(document.url)}`,
       );
 
       if (!response.ok) {
@@ -89,7 +89,7 @@ const CandidateDocumentCard = ({
           : "Failed to open document. Please try again.",
         {
           position: "bottom-right",
-        }
+        },
       );
     } finally {
       setIsLoadingViewUrl(false);
@@ -121,7 +121,7 @@ const CandidateDocumentCard = ({
           {document.tags && document.tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {document.tags.map((tag, index) => (
-                <Badge key={index} variant="outline" className="text-xs">
+                <Badge key={index} variant="secondary" className="text-xs">
                   {tag}
                 </Badge>
               ))}
@@ -143,7 +143,7 @@ const CandidateDocumentCard = ({
       <CardFooter className="border-t">
         <div className="flex gap-2 w-full">
           <Button
-            variant="outline"
+            variant="secondary"
             size="sm"
             onClick={handleViewDocument}
             disabled={isLoadingViewUrl}
@@ -155,8 +155,10 @@ const CandidateDocumentCard = ({
             )}
             View
           </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link href={`/candidates/${candidateId}/documents/${document.id}/edit`}>
+          <Button variant="secondary" size="sm" asChild>
+            <Link
+              href={`/candidates/${candidateId}/documents/${document.id}/edit`}
+            >
               <Pencil className="h-4 w-4" />
               Edit
             </Link>
@@ -172,4 +174,3 @@ const CandidateDocumentCard = ({
 };
 
 export default CandidateDocumentCard;
-

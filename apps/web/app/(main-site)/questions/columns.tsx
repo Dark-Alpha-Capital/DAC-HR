@@ -52,7 +52,7 @@ export const columns: ColumnDef<Question>[] = [
     header: ({ column }) => {
       return (
         <Button
-          variant="ghost"
+          variant="secondary"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           Question
@@ -63,9 +63,7 @@ export const columns: ColumnDef<Question>[] = [
     cell: ({ row }) => {
       const questionText = row.getValue("questionText") as string;
       return (
-        <div className="max-w-[500px] truncate font-medium">
-          {questionText}
-        </div>
+        <div className="max-w-[500px] truncate font-medium">{questionText}</div>
       );
     },
   },
@@ -73,16 +71,17 @@ export const columns: ColumnDef<Question>[] = [
     accessorKey: "rounds",
     header: "Rounds",
     cell: ({ row }) => {
-      const rounds = row.getValue("rounds") as Array<{ id: string; name: string }>;
+      const rounds = row.getValue("rounds") as Array<{
+        id: string;
+        name: string;
+      }>;
       if (!rounds || rounds.length === 0) {
-        return (
-          <span className="text-muted-foreground text-sm">No rounds</span>
-        );
+        return <span className="text-muted-foreground text-sm">No rounds</span>;
       }
       return (
         <div className="flex flex-wrap gap-1">
           {rounds.map((round) => (
-            <Badge key={round.id} variant="outline">
+            <Badge key={round.id} variant="secondary">
               {round.name}
             </Badge>
           ))}
@@ -94,7 +93,10 @@ export const columns: ColumnDef<Question>[] = [
     accessorKey: "positions",
     header: "Positions",
     cell: ({ row }) => {
-      const positions = row.getValue("positions") as Array<{ id: string; name: string }>;
+      const positions = row.getValue("positions") as Array<{
+        id: string;
+        name: string;
+      }>;
       if (!positions || positions.length === 0) {
         return (
           <span className="text-muted-foreground text-sm">No positions</span>
@@ -120,7 +122,7 @@ export const columns: ColumnDef<Question>[] = [
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
+            <Button variant="secondary" className="h-8 w-8 p-0">
               <span className="sr-only">Open menu</span>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
@@ -162,4 +164,3 @@ export const columns: ColumnDef<Question>[] = [
     },
   },
 ];
-

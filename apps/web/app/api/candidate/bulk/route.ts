@@ -32,13 +32,13 @@ export async function DELETE(request: NextRequest) {
     } catch (error) {
       console.error(
         "[DELETE /api/candidate/bulk] Invalid request body:",
-        error
+        error,
       );
       return NextResponse.json(
         {
           error: "Invalid request body. Expected JSON with candidateIds array.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -50,16 +50,16 @@ export async function DELETE(request: NextRequest) {
       candidateIds.length === 0
     ) {
       console.error(
-        "[DELETE /api/candidate/bulk] Missing or invalid candidateIds"
+        "[DELETE /api/candidate/bulk] Missing or invalid candidateIds",
       );
       return NextResponse.json(
         { error: "candidateIds array is required and must not be empty" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     console.log(
-      `[DELETE /api/candidate/bulk] Bulk deleting ${candidateIds.length} candidates - User: ${user.email} (${user.id})`
+      `[DELETE /api/candidate/bulk] Bulk deleting ${candidateIds.length} candidates - User: ${user.email} (${user.id})`,
     );
 
     const results: Array<{
@@ -85,7 +85,7 @@ export async function DELETE(request: NextRequest) {
 
         if (!candidateData) {
           console.error(
-            `[DELETE /api/candidate/bulk] Candidate not found - ID: ${candidateId}`
+            `[DELETE /api/candidate/bulk] Candidate not found - ID: ${candidateId}`,
           );
           results.push({
             id: candidateId,
@@ -108,10 +108,10 @@ export async function DELETE(request: NextRequest) {
               deleteFile(doc.url).catch((error) => {
                 console.error(
                   `[DELETE /api/candidate/bulk] Error deleting file from GCS for document ${doc.id}:`,
-                  error
+                  error,
                 );
                 return false;
-              })
+              }),
             );
           }
 
@@ -122,11 +122,11 @@ export async function DELETE(request: NextRequest) {
                 (error) => {
                   console.error(
                     `[DELETE /api/candidate/bulk] Error deleting file from FileSearchStore for document ${doc.id}:`,
-                    error
+                    error,
                   );
                   return false;
-                }
-              )
+                },
+              ),
             );
           }
 
@@ -188,7 +188,7 @@ export async function DELETE(request: NextRequest) {
           error instanceof Error ? error.message : "Failed to delete candidate";
         console.error(
           `[DELETE /api/candidate/bulk] Error deleting candidate ${candidateId}:`,
-          error
+          error,
         );
         results.push({
           id: candidateId,
@@ -203,7 +203,7 @@ export async function DELETE(request: NextRequest) {
 
     const duration = Date.now() - startTime;
     console.log(
-      `[DELETE /api/candidate/bulk] Request completed in ${duration}ms - Success: ${successCount}, Failed: ${failedCount}`
+      `[DELETE /api/candidate/bulk] Request completed in ${duration}ms - Success: ${successCount}, Failed: ${failedCount}`,
     );
 
     return NextResponse.json(
@@ -213,13 +213,13 @@ export async function DELETE(request: NextRequest) {
         failed: failedCount,
         results,
       },
-      { status: failedCount === 0 ? 200 : 207 } // 207 Multi-Status for partial success
+      { status: failedCount === 0 ? 200 : 207 }, // 207 Multi-Status for partial success
     );
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error(
       `[DELETE /api/candidate/bulk] Error processing bulk delete after ${duration}ms:`,
-      error
+      error,
     );
     return NextResponse.json(
       {
@@ -228,7 +228,7 @@ export async function DELETE(request: NextRequest) {
             ? error.message
             : "Failed to process bulk delete",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -20,15 +20,12 @@ export async function deleteCandidate(candidateId: string) {
   }
 
   try {
-    const response = await fetch(
-      `/api/candidate/${candidateId}`,
-      {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${session.session.token}`,
-        },
-      }
-    );
+    const response = await fetch(`/api/candidate/${candidateId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${session.session.token}`,
+      },
+    });
 
     console.log("response", response);
 

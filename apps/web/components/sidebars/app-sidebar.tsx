@@ -86,7 +86,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="DAC HR">
               <Link href="/" className="gap-2">
-                <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-border">
+                <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-foreground">
                   <ShieldCheckIcon className="size-4" />
                 </span>
                 <span className="font-semibold tracking-tight">DAC HR</span>

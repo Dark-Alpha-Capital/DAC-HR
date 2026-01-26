@@ -78,14 +78,14 @@ const DisplayQuestion = async ({ params }: { params: Params }) => {
           <div className="space-y-2 flex-1">
             <CardTitle className="text-3xl">{question.questionText}</CardTitle>
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="outline" className="gap-1.5">
+              <Badge variant="secondary" className="gap-1.5">
                 <Calendar className="h-3 w-3" />
                 Created {formatDate(question.createdAt)}
               </Badge>
               {question.updatedAt &&
                 question.updatedAt.getTime() !==
                   question.createdAt.getTime() && (
-                  <Badge variant="outline" className="gap-1.5">
+                  <Badge variant="secondary" className="gap-1.5">
                     <Clock className="h-3 w-3" />
                     Updated {formatDate(question.updatedAt)}
                   </Badge>
@@ -100,7 +100,7 @@ const DisplayQuestion = async ({ params }: { params: Params }) => {
           <span className="font-medium">ID:</span> {question.id}
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" asChild>
+          <Button variant="secondary" asChild>
             <Link href={`/questions/${question.id}/edit`}>
               <Pencil className="h-4 w-4" />
               Edit

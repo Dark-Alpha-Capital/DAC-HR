@@ -11,7 +11,7 @@ import { insertAuditLog } from "@workspace/db/queries";
 
 export const deleteAiScreening = async (
   screeningId: string,
-  candidateId: string
+  candidateId: string,
 ) => {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -79,4 +79,3 @@ export const deleteAiScreening = async (
     };
   }
 };
-

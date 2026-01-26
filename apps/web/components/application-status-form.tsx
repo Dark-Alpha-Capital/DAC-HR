@@ -72,7 +72,7 @@ export default function ApplicationStatusForm({
         toast.error(
           typeof result.error === "string"
             ? result.error
-            : "Failed to update application status"
+            : "Failed to update application status",
         );
         return;
       }
@@ -112,7 +112,7 @@ export default function ApplicationStatusForm({
       <div className="flex items-center justify-end gap-2 pt-4">
         <Button
           type="button"
-          variant="outline"
+          variant="secondary"
           onClick={() => onSuccess?.()}
           disabled={isPending}
         >
@@ -125,4 +125,3 @@ export default function ApplicationStatusForm({
     </form>
   );
 }
-

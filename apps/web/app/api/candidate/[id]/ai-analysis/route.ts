@@ -23,7 +23,7 @@ import { candidateAiScreeningSchema } from "@/lib/schemas/candidate-ai-screening
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const startTime = Date.now();
   try {
@@ -35,16 +35,16 @@ export async function POST(
 
     const { id: candidateId } = await params;
     console.log(
-      `[POST /api/candidate/:id/ai-analysis] Starting AI analysis for candidate ${candidateId} - User: ${user?.email || "unknown"} (${user?.id || "unknown"})`
+      `[POST /api/candidate/:id/ai-analysis] Starting AI analysis for candidate ${candidateId} - User: ${user?.email || "unknown"} (${user?.id || "unknown"})`,
     );
 
     if (!candidateId) {
       console.error(
-        "[POST /api/candidate/:id/ai-analysis] Missing candidate ID"
+        "[POST /api/candidate/:id/ai-analysis] Missing candidate ID",
       );
       return NextResponse.json(
         { error: "Candidate ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -58,52 +58,52 @@ export async function POST(
     } catch {
       // Ignore JSON parse errors – treat as no body / no positionId
       console.log(
-        "[POST /api/candidate/:id/ai-analysis] No request body provided, proceeding without positionId"
+        "[POST /api/candidate/:id/ai-analysis] No request body provided, proceeding without positionId",
       );
     }
 
     const { positionId, documentIds, customPrompt } = body;
     if (positionId) {
       console.log(
-        `[POST /api/candidate/:id/ai-analysis] Analysis focused on position: ${positionId}`
+        `[POST /api/candidate/:id/ai-analysis] Analysis focused on position: ${positionId}`,
       );
     }
     if (documentIds && documentIds.length > 0) {
       console.log(
-        `[POST /api/candidate/:id/ai-analysis] Analysis focused on ${documentIds.length} specific document(s)`
+        `[POST /api/candidate/:id/ai-analysis] Analysis focused on ${documentIds.length} specific document(s)`,
       );
     }
     if (customPrompt) {
       console.log(
-        `[POST /api/candidate/:id/ai-analysis] Custom prompt provided (${customPrompt.length} characters)`
+        `[POST /api/candidate/:id/ai-analysis] Custom prompt provided (${customPrompt.length} characters)`,
       );
     }
 
     // Fetch candidate with all applications & positions
     console.log(
-      `[POST /api/candidate/:id/ai-analysis] Fetching candidate record with applications...`
+      `[POST /api/candidate/:id/ai-analysis] Fetching candidate record with applications...`,
     );
     const candidateRecord = await getCandidateWithApplications(candidateId);
 
     if (!candidateRecord) {
       console.error(
-        `[POST /api/candidate/:id/ai-analysis] Candidate not found - ID: ${candidateId}`
+        `[POST /api/candidate/:id/ai-analysis] Candidate not found - ID: ${candidateId}`,
       );
       return NextResponse.json(
         { error: "Candidate not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     console.log(
-      `[POST /api/candidate/:id/ai-analysis] Candidate found - Name: ${candidateRecord.firstName} ${candidateRecord.lastName}, Applications: ${candidateRecord.applications.length}`
+      `[POST /api/candidate/:id/ai-analysis] Candidate found - Name: ${candidateRecord.firstName} ${candidateRecord.lastName}, Applications: ${candidateRecord.applications.length}`,
     );
 
     // Choose the relevant application for analysis
     const targetApplication =
       (positionId &&
         candidateRecord.applications.find(
-          (app) => app.position.id === positionId
+          (app) => app.position.id === positionId,
         )) ||
       candidateRecord.applications[0] ||
       null;
@@ -112,17 +112,17 @@ export async function POST(
 
     if (targetApplication) {
       console.log(
-        `[POST /api/candidate/:id/ai-analysis] Using application ${targetApplication.id} for position: ${targetPosition?.name}`
+        `[POST /api/candidate/:id/ai-analysis] Using application ${targetApplication.id} for position: ${targetPosition?.name}`,
       );
     } else {
       console.log(
-        `[POST /api/candidate/:id/ai-analysis] No application found, proceeding with general candidate analysis`
+        `[POST /api/candidate/:id/ai-analysis] No application found, proceeding with general candidate analysis`,
       );
     }
 
     // Build minimal structured context for the model
     console.log(
-      `[POST /api/candidate/:id/ai-analysis] Building structured context for AI model...`
+      `[POST /api/candidate/:id/ai-analysis] Building structured context for AI model...`,
     );
     const structuredContext = {
       candidate: {
@@ -146,7 +146,7 @@ export async function POST(
     }> = [];
     if (documentIds && documentIds.length > 0) {
       console.log(
-        `[POST /api/candidate/:id/ai-analysis] Fetching ${documentIds.length} selected document(s)...`
+        `[POST /api/candidate/:id/ai-analysis] Fetching ${documentIds.length} selected document(s)...`,
       );
       const allDocuments = await getDocumentsByCandidateId(candidateId);
       selectedDocuments = allDocuments
@@ -158,7 +158,7 @@ export async function POST(
         }));
 
       console.log(
-        `[POST /api/candidate/:id/ai-analysis] Found ${selectedDocuments.length} document(s) with fileSearchDocumentName`
+        `[POST /api/candidate/:id/ai-analysis] Found ${selectedDocuments.length} document(s) with fileSearchDocumentName`,
       );
     }
 
@@ -168,7 +168,7 @@ export async function POST(
     let documentInstruction = "";
     if (selectedDocuments.length > 0) {
       const documentsWithFileSearch = selectedDocuments.filter(
-        (doc) => doc.fileSearchDocumentName
+        (doc) => doc.fileSearchDocumentName,
       );
       if (documentsWithFileSearch.length > 0) {
         documentInstruction = `Focus on these documents: ${documentsWithFileSearch.map((d) => d.name).join(", ")}`;
@@ -185,7 +185,7 @@ export async function POST(
 
     // Step 1: Get raw analysis from AI
     console.log(
-      `[POST /api/candidate/:id/ai-analysis] Step 1: Calling Gemini API for raw analysis...`
+      `[POST /api/candidate/:id/ai-analysis] Step 1: Calling Gemini API for raw analysis...`,
     );
     const rawAnalysisPrompt =
       `Evaluate candidate fit for Dark Alpha Capital's position.
@@ -224,12 +224,12 @@ Provide concise markdown analysis: background, skills, experience fit, culture f
     console.log("Raw analysis text:", rawAnalysisText);
 
     console.log(
-      `[POST /api/candidate/:id/ai-analysis] Raw analysis received in ${rawAnalysisDuration}ms (${rawAnalysisText.length} characters)`
+      `[POST /api/candidate/:id/ai-analysis] Raw analysis received in ${rawAnalysisDuration}ms (${rawAnalysisText.length} characters)`,
     );
 
     // Step 2: Generate structured data from raw analysis
     console.log(
-      `[POST /api/candidate/:id/ai-analysis] Step 2: Generating structured data from raw analysis...`
+      `[POST /api/candidate/:id/ai-analysis] Step 2: Generating structured data from raw analysis...`,
     );
     const structuredDataStartTime = Date.now();
     const { output: structuredData } = await generateText({
@@ -245,7 +245,7 @@ Provide: score (0-10), recommendation (Strong Hire/Hire/Neutral/Do Not Hire), ma
     });
     const structuredDataDuration = Date.now() - structuredDataStartTime;
     console.log(
-      `[POST /api/candidate/:id/ai-analysis] Structured data generated in ${structuredDataDuration}ms - Score: ${structuredData.score}, Recommendation: ${structuredData.recommendation}`
+      `[POST /api/candidate/:id/ai-analysis] Structured data generated in ${structuredDataDuration}ms - Score: ${structuredData.score}, Recommendation: ${structuredData.recommendation}`,
     );
 
     // Save the complete structured data
@@ -253,7 +253,7 @@ Provide: score (0-10), recommendation (Strong Hire/Hire/Neutral/Do Not Hire), ma
 
     // Save the analysis to the database
     console.log(
-      `[POST /api/candidate/:id/ai-analysis] Saving AI screening to database...`
+      `[POST /api/candidate/:id/ai-analysis] Saving AI screening to database...`,
     );
     const savedScreening = await saveCandidateAiScreening({
       candidateId,
@@ -266,17 +266,17 @@ Provide: score (0-10), recommendation (Strong Hire/Hire/Neutral/Do Not Hire), ma
 
     if (!savedScreening) {
       console.warn(
-        `[POST /api/candidate/:id/ai-analysis] Failed to save AI screening to database, but analysis was generated successfully`
+        `[POST /api/candidate/:id/ai-analysis] Failed to save AI screening to database, but analysis was generated successfully`,
       );
     } else {
       console.log(
-        `[POST /api/candidate/:id/ai-analysis] AI screening saved to database - Screening ID: ${savedScreening.id}`
+        `[POST /api/candidate/:id/ai-analysis] AI screening saved to database - Screening ID: ${savedScreening.id}`,
       );
     }
 
     const duration = Date.now() - startTime;
     console.log(
-      `[POST /api/candidate/:id/ai-analysis] Request completed successfully in ${duration}ms - Candidate ID: ${candidateId}, Screening ID: ${savedScreening?.id || "none"}`
+      `[POST /api/candidate/:id/ai-analysis] Request completed successfully in ${duration}ms - Candidate ID: ${candidateId}, Screening ID: ${savedScreening?.id || "none"}`,
     );
     return NextResponse.json(
       {
@@ -284,19 +284,19 @@ Provide: score (0-10), recommendation (Strong Hire/Hire/Neutral/Do Not Hire), ma
         score: candidateAiScreening.score,
         screeningId: savedScreening?.id || null,
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error(
       `[POST /api/candidate/:id/ai-analysis] Error during candidate AI analysis after ${duration}ms:`,
-      error
+      error,
     );
     return NextResponse.json(
       {
         error: "Failed to analyze candidate",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

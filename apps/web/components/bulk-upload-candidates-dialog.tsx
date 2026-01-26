@@ -53,7 +53,7 @@ export default function BulkUploadCandidatesDialog() {
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [parsedCandidates, setParsedCandidates] = useState<ParsedCandidate[]>(
-    []
+    [],
   );
   const [validationErrors, setValidationErrors] = useState<
     Map<number, BulkCandidateValidationError[]>
@@ -84,7 +84,7 @@ export default function BulkUploadCandidatesDialog() {
     ) {
       toast.error(
         "Invalid file type. Please upload an Excel file (.xlsx, .xls) or CSV file.",
-        { position: "bottom-right" }
+        { position: "bottom-right" },
       );
       return;
     }
@@ -111,7 +111,7 @@ export default function BulkUploadCandidatesDialog() {
           "Excel file must have at least a header row and one data row.",
           {
             position: "bottom-right",
-          }
+          },
         );
         return;
       }
@@ -174,7 +174,7 @@ export default function BulkUploadCandidatesDialog() {
           const headerKey = findHeaderKey(variations);
           if (headerKey) {
             const headerIndex = headers.findIndex(
-              (h) => h?.toString().trim() === headerKey
+              (h) => h?.toString().trim() === headerKey,
             );
             if (headerIndex >= 0 && row[headerIndex] !== undefined) {
               const value = row[headerIndex]?.toString().trim() || "";
@@ -231,7 +231,7 @@ export default function BulkUploadCandidatesDialog() {
             (c) =>
               c._rowNumber !== rowNumber &&
               c.email?.toLowerCase() === candidate.email?.toLowerCase() &&
-              c.email?.trim() !== ""
+              c.email?.trim() !== "",
           );
 
           if (duplicateInBatch) {
@@ -261,7 +261,7 @@ export default function BulkUploadCandidatesDialog() {
       } else {
         toast.success(
           `Parsed ${candidates.length} candidate(s). ${errors.size} row(s) have errors.`,
-          { position: "bottom-right" }
+          { position: "bottom-right" },
         );
       }
     } catch (error) {
@@ -284,7 +284,7 @@ export default function BulkUploadCandidatesDialog() {
     if (hasErrors) {
       toast.error(
         "Please fix all validation errors before uploading. All candidates must pass validation (all-or-nothing approach).",
-        { position: "bottom-right", duration: 6000 }
+        { position: "bottom-right", duration: 6000 },
       );
       return;
     }
@@ -309,7 +309,7 @@ export default function BulkUploadCandidatesDialog() {
             sourceUrl: c.sourceUrl,
             note: c.note,
             positionId: c.positionId,
-          })
+          }),
         );
 
         const result = await bulkCreateCandidates(candidatesToUpload);
@@ -317,7 +317,7 @@ export default function BulkUploadCandidatesDialog() {
         if (result.success) {
           toast.success(
             `Successfully uploaded all ${result.created} candidate(s).`,
-            { position: "bottom-right" }
+            { position: "bottom-right" },
           );
           setOpen(false);
           resetDialog();
@@ -348,12 +348,12 @@ export default function BulkUploadCandidatesDialog() {
           prev.map((candidate) => {
             const errors = serverErrors.get(candidate._rowNumber);
             return errors ? { ...candidate, _errors: errors } : candidate;
-          })
+          }),
         );
 
         toast.error(
           `Upload failed: ${result.failed} validation error(s) found. No candidates were uploaded (all-or-nothing). Please fix all errors and try again.`,
-          { position: "bottom-right", duration: 7000 }
+          { position: "bottom-right", duration: 7000 },
         );
       } catch (error) {
         console.error("Error uploading candidates:", error);
@@ -361,7 +361,7 @@ export default function BulkUploadCandidatesDialog() {
           error instanceof Error
             ? error.message
             : "Failed to upload candidates. All changes were rolled back.",
-          { position: "bottom-right", duration: 6000 }
+          { position: "bottom-right", duration: 6000 },
         );
       }
     });
@@ -383,14 +383,14 @@ export default function BulkUploadCandidatesDialog() {
   };
 
   const validCandidatesCount = parsedCandidates.filter(
-    (c) => !c._errors || c._errors.length === 0
+    (c) => !c._errors || c._errors.length === 0,
   ).length;
   const errorCount = validationErrors.size;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline">
+        <Button variant="secondary">
           <Upload className="mr-2 h-4 w-4" />
           Bulk Upload
         </Button>
@@ -419,7 +419,7 @@ export default function BulkUploadCandidatesDialog() {
               {(file || parsedCandidates.length > 0) && (
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
                   onClick={resetDialog}
                   disabled={isPending}
@@ -590,7 +590,7 @@ export default function BulkUploadCandidatesDialog() {
 
         <DialogFooter>
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => setOpen(false)}
             disabled={isPending}
           >

@@ -33,17 +33,16 @@ export async function getAuthenticatedUser() {
  */
 export async function requireAuth() {
   const authResult = await getAuthenticatedUser();
-  
+
   if (!authResult) {
     return NextResponse.json(
       {
         success: false,
         message: "Unauthorized",
       },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
   return authResult;
 }
-

@@ -27,4 +27,3 @@ const EmployeeFilters = ({ positions }: EmployeeFiltersProps) => {
 };
 
 export default EmployeeFilters;
-

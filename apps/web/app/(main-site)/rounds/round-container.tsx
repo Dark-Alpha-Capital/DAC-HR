@@ -44,7 +44,7 @@ const RoundContainer = ({ rounds }: RoundContainerProps) => {
 
   const truncateDescription = (
     description: string | null,
-    maxWords: number = 5
+    maxWords: number = 5,
   ) => {
     if (!description) return "-";
     const words = description.split(" ");
@@ -101,7 +101,7 @@ const RoundContainer = ({ rounds }: RoundContainerProps) => {
             <TableCell className="text-right py-1.5 px-2">
               <div className="flex items-center justify-end gap-1">
                 <Button
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
                   className="h-7 w-7 p-0"
                   asChild
@@ -111,7 +111,7 @@ const RoundContainer = ({ rounds }: RoundContainerProps) => {
                   </Link>
                 </Button>
                 <Button
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
                   className="h-7 w-7 p-0"
                   asChild

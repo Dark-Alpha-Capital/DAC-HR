@@ -142,7 +142,7 @@ export type Candidate = InferSelectModel<typeof candidate>;
 
 export const candidateDocumentCategoryEnum = pgEnum(
   "candidate_document_category",
-  ["resume", "cover-letter", "portfolio", "other"]
+  ["resume", "cover-letter", "portfolio", "other"],
 );
 
 export const candidateDocument = pgTable("candidate_document", {
@@ -390,7 +390,7 @@ export const documentCategoryRelations = pgTable(
       .notNull()
       .references(() => documentCategories.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
-  }
+  },
 );
 
 export type DocumentCategoryRelation = InferSelectModel<
@@ -407,7 +407,7 @@ export const candidateOnboarding = pgTable("candidate_onboarding", {
   contractSigned: boolean("contract_signed").default(false).notNull(),
   signedContractDocumentId: text("signed_contract_document_id").references(
     () => candidateDocument.id,
-    { onDelete: "set null" }
+    { onDelete: "set null" },
   ),
   contractSignedAt: timestamp("contract_signed_at"),
   emailProvided: boolean("email_provided").default(false).notNull(),
@@ -546,8 +546,12 @@ export const recruiterWeeklyCheckin = pgTable("recruiter_weekly_checkin", {
   candidatesSourced: integer("candidates_sourced").default(0),
   candidatesScreened: integer("candidates_screened").default(0),
   candidatesRejected: integer("candidates_rejected").default(0),
-  candidatesAdvanced2ndRound: integer("candidates_advanced_2nd_round").default(0),
-  candidatesAdvanced3rdRound: integer("candidates_advanced_3rd_round").default(0),
+  candidatesAdvanced2ndRound: integer("candidates_advanced_2nd_round").default(
+    0,
+  ),
+  candidatesAdvanced3rdRound: integer("candidates_advanced_3rd_round").default(
+    0,
+  ),
   offersExtended: integer("offers_extended").default(0),
   offersAccepted: integer("offers_accepted").default(0),
   bestPerformingChannels: text("best_performing_channels").array(),

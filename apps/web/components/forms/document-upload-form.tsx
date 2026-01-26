@@ -123,7 +123,7 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
             setTagsInput("");
             // Clear file input
             const fileInput = document.getElementById(
-              "file-upload"
+              "file-upload",
             ) as HTMLInputElement;
             if (fileInput) {
               fileInput.value = "";
@@ -137,7 +137,7 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
                 : "Failed to upload document",
               {
                 position: "bottom-right",
-              }
+              },
             );
           }
         } catch (error) {
@@ -147,7 +147,7 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
               : "Failed to upload document",
             {
               position: "bottom-right",
-            }
+            },
           );
         }
       });
@@ -200,14 +200,14 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
         <div className="flex items-center gap-3">
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               form.reset();
               setFile(null);
               setTagsInput("");
               // Clear file input
               const fileInput = document.getElementById(
-                "file-upload"
+                "file-upload",
               ) as HTMLInputElement;
               if (fileInput) {
                 fileInput.value = "";
@@ -339,7 +339,7 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
                     <div className="space-y-2 border rounded-md p-4">
                       {categories.map((category) => {
                         const isChecked = field.state.value.includes(
-                          category.id
+                          category.id,
                         );
                         return (
                           <div
@@ -359,8 +359,8 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
                                 } else {
                                   field.handleChange(
                                     currentIds.filter(
-                                      (id) => id !== category.id
-                                    )
+                                      (id) => id !== category.id,
+                                    ),
                                   );
                                 }
                               }}

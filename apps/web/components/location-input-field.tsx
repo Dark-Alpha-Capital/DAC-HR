@@ -25,7 +25,7 @@ const LocationInputField = ({
     id: "google-map-script",
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
     libraries: ["places"],
-  })
+  });
 
   // Sync input value with prop value
   useEffect(() => {
@@ -38,11 +38,11 @@ const LocationInputField = ({
     (autocomplete: google.maps.places.Autocomplete) => {
       autocompleteRef.current = autocomplete;
     },
-    []
+    [],
   );
 
   const extractLocationComponents = (
-    place: google.maps.places.PlaceResult
+    place: google.maps.places.PlaceResult,
   ): string => {
     let city = "";
     let state = "";
@@ -110,7 +110,7 @@ const LocationInputField = ({
         inputRef.current.value = newValue;
       }
     },
-    [onChange]
+    [onChange],
   );
 
   if (!isLoaded) {

@@ -23,7 +23,7 @@ export default function GoogleSignInButton({
     <Button
       {...props}
       type="button"
-      variant={props.variant ?? "outline"}
+      variant={props.variant ?? "default"}
       size={props.size ?? "lg"}
       disabled={props.disabled ?? isLoading}
       className={cn("w-full", className)}

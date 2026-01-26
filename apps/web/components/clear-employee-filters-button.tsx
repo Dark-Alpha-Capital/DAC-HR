@@ -21,7 +21,7 @@ const ClearEmployeeFiltersButton = () => {
 
   return (
     <Button
-      variant="outline"
+      variant="secondary"
       size="icon"
       onClick={() => {
         const params = new URLSearchParams(searchParams);

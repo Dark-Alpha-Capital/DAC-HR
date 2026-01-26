@@ -27,7 +27,7 @@ const DisplayAddDocumentForm = async ({ params }: { params: Params }) => {
   const { uid } = await params;
   return (
     <div>
-      <Button variant="outline" asChild>
+      <Button variant="secondary" asChild>
         <Link href={`/candidates/${uid}`}>Back to Candidate</Link>
       </Button>
 

@@ -254,21 +254,21 @@ export default function ApplicationsDocsPage() {
             insight:
           </p>
           <div className="flex flex-wrap gap-2">
-            <Badge variant="outline">ENFJ</Badge>
-            <Badge variant="outline">ENFP</Badge>
-            <Badge variant="outline">ENTJ</Badge>
-            <Badge variant="outline">ENTP</Badge>
-            <Badge variant="outline">ESFJ</Badge>
-            <Badge variant="outline">ESFP</Badge>
-            <Badge variant="outline">ESTJ</Badge>
-            <Badge variant="outline">ESTP</Badge>
-            <Badge variant="outline">INFJ</Badge>
-            <Badge variant="outline">INTJ</Badge>
-            <Badge variant="outline">INTP</Badge>
-            <Badge variant="outline">ISFJ</Badge>
-            <Badge variant="outline">ISFP</Badge>
-            <Badge variant="outline">ISTJ</Badge>
-            <Badge variant="outline">ISTP</Badge>
+            <Badge variant="secondary">ENFJ</Badge>
+            <Badge variant="secondary">ENFP</Badge>
+            <Badge variant="secondary">ENTJ</Badge>
+            <Badge variant="secondary">ENTP</Badge>
+            <Badge variant="secondary">ESFJ</Badge>
+            <Badge variant="secondary">ESFP</Badge>
+            <Badge variant="secondary">ESTJ</Badge>
+            <Badge variant="secondary">ESTP</Badge>
+            <Badge variant="secondary">INFJ</Badge>
+            <Badge variant="secondary">INTJ</Badge>
+            <Badge variant="secondary">INTP</Badge>
+            <Badge variant="secondary">ISFJ</Badge>
+            <Badge variant="secondary">ISFP</Badge>
+            <Badge variant="secondary">ISTJ</Badge>
+            <Badge variant="secondary">ISTP</Badge>
           </div>
         </CardContent>
       </Card>

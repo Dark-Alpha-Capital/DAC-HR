@@ -29,7 +29,7 @@ const FilterEmployeeDepartment = () => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectedDepartments, setSelectedDepartments] = useOptimistic(
-    searchParams.getAll("department")
+    searchParams.getAll("department"),
   );
 
   const handleCheckedChange = (value: string, checked: boolean) => {
@@ -57,7 +57,7 @@ const FilterEmployeeDepartment = () => {
     >
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm">
+          <Button variant="secondary" size="sm">
             <Filter className="mr-2 h-4 w-4" />
             Department
             {selectedDepartments.length > 0 && (
@@ -88,4 +88,3 @@ const FilterEmployeeDepartment = () => {
 };
 
 export default FilterEmployeeDepartment;
-

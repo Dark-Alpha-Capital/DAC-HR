@@ -1,4 +1,9 @@
-import { Card, CardContent, CardFooter, CardHeader } from "@workspace/ui/components/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@workspace/ui/components/card";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 
 export const CandidatesListSkeleton = () => {
@@ -36,4 +41,3 @@ export const CandidatesListSkeleton = () => {
     </div>
   );
 };
-

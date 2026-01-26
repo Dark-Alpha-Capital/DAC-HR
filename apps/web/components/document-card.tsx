@@ -23,7 +23,7 @@ interface DocumentCardProps {
 const categoryColors = {
   "job-description": "default",
   onboarding: "secondary",
-  policy: "outline",
+  policy: "secondary",
   "hr-form": "default",
   other: "destructive",
 } as const;
@@ -77,7 +77,7 @@ const DocumentCard = ({ document }: DocumentCardProps) => {
           {document.tags && document.tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {document.tags.map((tag, index) => (
-                <Badge key={index} variant="outline" className="text-xs">
+                <Badge key={index} variant="secondary" className="text-xs">
                   {tag}
                 </Badge>
               ))}
@@ -99,7 +99,7 @@ const DocumentCard = ({ document }: DocumentCardProps) => {
       <CardFooter className="border-t">
         <div className="flex gap-2 w-full">
           <Button
-            variant="outline"
+            variant="secondary"
             size="sm"
             onClick={() => setIsPreviewOpen(true)}
           >

@@ -1,4 +1,4 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { DM_Sans, Geist_Mono } from "next/font/google";
 import "@workspace/ui/globals.css";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@workspace/ui/components/sonner";
@@ -10,7 +10,7 @@ import {
 import { AppSidebar } from "@/components/sidebars/app-sidebar";
 import { MainSiteTopbar } from "@/components/main-site/topbar";
 
-const fontSans = Geist({
+const fontSans = DM_Sans({
   subsets: ["latin"],
   variable: "--font-geist",
 });
@@ -28,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${fontSans.variable} ${fontMono.variable} font-geist antialiased min-h-svh bg-background`}
+        className={`${fontSans.variable} ${fontMono.variable} ${fontSans.className} antialiased min-h-svh bg-background`}
       >
         <Providers>
           <SidebarProvider>

@@ -20,7 +20,7 @@ import { insertAuditLog } from "@workspace/db/queries";
 
 export const updateCandidate = async (
   candidateId: string,
-  data: CandidateFormSchema
+  data: CandidateFormSchema,
 ) => {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -109,8 +109,8 @@ export const updateCandidate = async (
         .where(
           and(
             eq(application.candidateId, candidateId),
-            eq(application.positionId, positionId)
-          )
+            eq(application.positionId, positionId),
+          ),
         )
         .limit(1);
 
@@ -122,8 +122,8 @@ export const updateCandidate = async (
           .where(
             and(
               eq(application.candidateId, candidateId),
-              eq(application.positionId, oldPositionId)
-            )
+              eq(application.positionId, oldPositionId),
+            ),
           )
           .limit(1);
 
@@ -143,12 +143,12 @@ export const updateCandidate = async (
             // Delete pending/scheduled interviews - they're not meaningful for the new position
             // Keep completed interviews for historical purposes (they'll be orphaned but that's acceptable)
             const interviewsToDelete = existingInterviews.filter(
-              (inv) => inv.status === "pending" || inv.status === "scheduled"
+              (inv) => inv.status === "pending" || inv.status === "scheduled",
             );
 
             if (interviewsToDelete.length > 0) {
               const interviewIdsToDelete = interviewsToDelete.map(
-                (inv) => inv.id
+                (inv) => inv.id,
               );
               await db
                 .delete(interview)
@@ -205,8 +205,8 @@ export const updateCandidate = async (
         .where(
           and(
             eq(application.candidateId, candidateId),
-            eq(application.positionId, positionId)
-          )
+            eq(application.positionId, positionId),
+          ),
         )
         .limit(1);
       applicationId = currentApplication?.id;

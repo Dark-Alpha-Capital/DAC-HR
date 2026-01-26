@@ -7,13 +7,13 @@ export const formatDate = (date: Date) => {
 };
 
 const departmentLabels: Record<string, string> = {
-  "management": "Management",
+  management: "Management",
   "capital-markets": "Capital Markets",
   "deal-team": "Deal Team",
-  "legal": "Legal",
-  "operations": "Operations",
-  "origination": "Origination",
-  "pipe": "PIPE",
+  legal: "Legal",
+  operations: "Operations",
+  origination: "Origination",
+  pipe: "PIPE",
   "public-markets": "Public Markets",
 };
 

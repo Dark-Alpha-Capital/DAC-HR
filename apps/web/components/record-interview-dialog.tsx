@@ -59,7 +59,7 @@ export default function RecordInterviewDialog({
   const [positionRoundTemplateId, setPositionRoundTemplateId] = useState(
     initialPositionRoundTemplateId ||
       application.rounds[0]?.positionRoundTemplateId ||
-      ""
+      "",
   );
   const [scheduledAt, setScheduledAt] = useState("");
 
@@ -92,7 +92,7 @@ export default function RecordInterviewDialog({
         toast.error(
           typeof result.error === "string"
             ? result.error
-            : "Failed to record interview"
+            : "Failed to record interview",
         );
       } else {
         toast.success("Interview recorded successfully");
@@ -180,7 +180,7 @@ export default function RecordInterviewDialog({
           <DialogFooter>
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               onClick={() => onOpenChange(false)}
             >
               Cancel

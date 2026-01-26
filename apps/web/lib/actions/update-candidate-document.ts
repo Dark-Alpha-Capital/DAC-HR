@@ -15,5 +15,5 @@ import { insertAuditLog } from "@workspace/db/queries";
 export const updateCandidateDocument = async (
   documentId: string,
   candidateId: string,
-  data: CandidateDocumentFormSchema
+  data: CandidateDocumentFormSchema,
 ) => {};

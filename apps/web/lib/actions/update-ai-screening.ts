@@ -117,4 +117,3 @@ export const updateAiScreening = async (data: UpdateAiScreeningInput) => {
     };
   }
 };
-

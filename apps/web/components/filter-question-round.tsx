@@ -25,7 +25,7 @@ const FilterQuestionRound = ({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectedRounds, setSelectedRounds] = useOptimistic(
-    searchParams.getAll("round")
+    searchParams.getAll("round"),
   );
 
   const handleCheckedChange = (value: string, checked: boolean) => {
@@ -53,7 +53,7 @@ const FilterQuestionRound = ({
     >
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm">
+          <Button variant="secondary" size="sm">
             <Filter className="mr-2 h-4 w-4" />
             Round
             {selectedRounds.length > 0 && (
@@ -90,4 +90,3 @@ const FilterQuestionRound = ({
 };
 
 export default FilterQuestionRound;
-

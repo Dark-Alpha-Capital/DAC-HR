@@ -23,15 +23,15 @@ interface CandidateCardProps {
 
 const applicationStatusColors: Record<
   string,
-  "default" | "secondary" | "outline" | "destructive"
+  "default" | "secondary" | "destructive"
 > = {
-  pending: "outline",
+  pending: "secondary",
   reviewed: "secondary",
   shortlisted: "default",
   interviewing: "default",
   hired: "default",
   rejected: "destructive",
-  withdrawn: "outline",
+  withdrawn: "secondary",
 } as const;
 
 const CandidateCard = ({ candidate }: CandidateCardProps) => {
@@ -46,7 +46,7 @@ const CandidateCard = ({ candidate }: CandidateCardProps) => {
             <Badge
               variant={
                 applicationStatusColors[candidate.applicationStatus] ||
-                "outline"
+                "secondary"
               }
               className="shrink-0 text-xs"
             >
@@ -74,13 +74,13 @@ const CandidateCard = ({ candidate }: CandidateCardProps) => {
       </CardContent>
       <CardFooter className="border-t">
         <div className="flex gap-2 w-full">
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="secondary" size="sm" asChild>
             <Link href={`/candidates/${candidate.id}`}>
               <Eye className="h-4 w-4" />
               View
             </Link>
           </Button>
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="secondary" size="sm" asChild>
             <Link href={`/candidates/${candidate.id}/edit`}>
               <Pencil className="h-4 w-4" />
               Edit

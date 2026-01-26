@@ -20,7 +20,7 @@ const ClearQuestionFiltersButton = () => {
 
   return (
     <Button
-      variant="outline"
+      variant="secondary"
       size="sm"
       onClick={() => {
         const params = new URLSearchParams(searchParams);
@@ -37,9 +37,3 @@ const ClearQuestionFiltersButton = () => {
 };
 
 export default ClearQuestionFiltersButton;
-
-
-
-
-
-

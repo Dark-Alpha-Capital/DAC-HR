@@ -25,7 +25,7 @@ const FilterPositionType = ({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectedTypes, setSelectedTypes] = useOptimistic(
-    searchParams.getAll("type")
+    searchParams.getAll("type"),
   );
 
   const handleCheckedChange = (value: string, checked: boolean) => {
@@ -53,7 +53,7 @@ const FilterPositionType = ({
     >
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm">
+          <Button variant="secondary" size="sm">
             <Filter className="mr-2 h-4 w-4" />
             Position Type
           </Button>

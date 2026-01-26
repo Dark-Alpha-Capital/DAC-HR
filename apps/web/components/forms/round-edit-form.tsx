@@ -65,7 +65,7 @@ const RoundEditForm = ({ round }: RoundEditFormProps) => {
               : "Failed to update round",
             {
               position: "bottom-right",
-            }
+            },
           );
         }
       });
@@ -84,7 +84,7 @@ const RoundEditForm = ({ round }: RoundEditFormProps) => {
         <div className="flex items-center gap-3">
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               form.reset({
                 name: round.name,

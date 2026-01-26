@@ -26,7 +26,7 @@ const FilterPositionHireLevel = () => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectedLevels, setSelectedLevels] = useOptimistic(
-    searchParams.getAll("hireLevel")
+    searchParams.getAll("hireLevel"),
   );
 
   const handleCheckedChange = (value: string, checked: boolean) => {
@@ -54,7 +54,7 @@ const FilterPositionHireLevel = () => {
     >
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm">
+          <Button variant="secondary" size="sm">
             <Filter className="mr-2 h-4 w-4" />
             Hire Level
             {selectedLevels.length > 0 && (
@@ -85,4 +85,3 @@ const FilterPositionHireLevel = () => {
 };
 
 export default FilterPositionHireLevel;
-

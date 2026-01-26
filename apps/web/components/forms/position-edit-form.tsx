@@ -101,7 +101,7 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
       startTransition(async () => {
         const result = await updatePosition(
           position.id,
-          value as PositionFormSchema
+          value as PositionFormSchema,
         );
         if (result.success) {
           toast("Position updated successfully", {
@@ -137,7 +137,7 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
         <div className="flex items-center gap-3">
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               form.reset({
                 name: position.name,
@@ -240,10 +240,11 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
                     <DropdownMenuTrigger asChild>
                       <Button
                         id={field.name}
-                        variant="outline"
+                        variant="secondary"
                         className={cn(
                           "w-full justify-between",
-                          !selectedDepartments.length && "text-muted-foreground"
+                          !selectedDepartments.length &&
+                            "text-muted-foreground",
                         )}
                         aria-invalid={isInvalid}
                       >
@@ -306,7 +307,7 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
                       field.handleChange(
                         value === ""
                           ? undefined
-                          : (value as z.infer<typeof hireLevelEnum>)
+                          : (value as z.infer<typeof hireLevelEnum>),
                       )
                     }
                   >
@@ -314,7 +315,7 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
                       id={field.name}
                       aria-invalid={isInvalid}
                       className={cn(
-                        !field.state.value && "text-muted-foreground"
+                        !field.state.value && "text-muted-foreground",
                       )}
                     >
                       <SelectValue placeholder="Select hire level" />
@@ -344,7 +345,7 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
                     value={field.state.value || "active"}
                     onValueChange={(value) =>
                       field.handleChange(
-                        value as z.infer<typeof positionStatusEnum>
+                        value as z.infer<typeof positionStatusEnum>,
                       )
                     }
                   >

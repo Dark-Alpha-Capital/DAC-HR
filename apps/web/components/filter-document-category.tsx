@@ -1,6 +1,11 @@
 "use client";
 
-import React, { useOptimistic, useTransition, useEffect, useState } from "react";
+import React, {
+  useOptimistic,
+  useTransition,
+  useEffect,
+  useState,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   DropdownMenu,
@@ -22,7 +27,7 @@ const FilterDocumentCategory = () => {
   const [categories, setCategories] = useState<DocumentCategory[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [selectedCategories, setSelectedCategories] = useOptimistic(
-    searchParams.getAll("category")
+    searchParams.getAll("category"),
   );
 
   useEffect(() => {
@@ -66,7 +71,7 @@ const FilterDocumentCategory = () => {
     >
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm">
+          <Button variant="secondary" size="sm">
             <Filter className="mr-2 h-4 w-4" />
             Category
             {selectedCategories.length > 0 && (
@@ -107,33 +112,3 @@ const FilterDocumentCategory = () => {
 };
 
 export default FilterDocumentCategory;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

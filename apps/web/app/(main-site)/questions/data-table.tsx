@@ -42,7 +42,7 @@ export function DataTable<TData, TValue>({
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
 
   const [rowSelection, setRowSelection] = React.useState({});
@@ -75,7 +75,9 @@ export function DataTable<TData, TValue>({
       <div className="flex items-center py-4">
         <Input
           placeholder="Filter questions..."
-          value={(table.getColumn("questionText")?.getFilterValue() as string) ?? ""}
+          value={
+            (table.getColumn("questionText")?.getFilterValue() as string) ?? ""
+          }
           onChange={(event) =>
             table.getColumn("questionText")?.setFilterValue(event.target.value)
           }
@@ -84,7 +86,7 @@ export function DataTable<TData, TValue>({
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
+            <Button variant="secondary" className="ml-auto">
               Columns
             </Button>
           </DropdownMenuTrigger>
@@ -122,7 +124,7 @@ export function DataTable<TData, TValue>({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   );
@@ -141,7 +143,7 @@ export function DataTable<TData, TValue>({
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}
@@ -163,7 +165,7 @@ export function DataTable<TData, TValue>({
 
       <div className="flex items-center justify-end space-x-2 py-4">
         <Button
-          variant="outline"
+          variant="secondary"
           size="sm"
           onClick={() => table.previousPage()}
           disabled={!table.getCanPreviousPage()}
@@ -171,7 +173,7 @@ export function DataTable<TData, TValue>({
           Previous
         </Button>
         <Button
-          variant="outline"
+          variant="secondary"
           size="sm"
           onClick={() => table.nextPage()}
           disabled={!table.getCanNextPage()}
@@ -188,4 +190,3 @@ export function DataTable<TData, TValue>({
     </div>
   );
 }
-

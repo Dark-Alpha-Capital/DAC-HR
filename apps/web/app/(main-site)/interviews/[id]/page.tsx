@@ -88,7 +88,7 @@ const DisplayInterviewWrapper = async ({ params }: { params: Params }) => {
         <p className="text-muted-foreground mt-2">
           This interview doesn't exist or has been removed.
         </p>
-        <Button asChild variant="outline" className="mt-4">
+        <Button asChild variant="secondary" className="mt-4">
           <Link href="/applications">View Applications</Link>
         </Button>
       </div>
@@ -96,7 +96,7 @@ const DisplayInterviewWrapper = async ({ params }: { params: Params }) => {
   }
 
   const application = await CachedApplicationWithInterviews(
-    interview.applicationId
+    interview.applicationId,
   );
   const candidate = application
     ? await CachedCandidateById(application.candidateId)
@@ -135,7 +135,7 @@ const statusConfig = {
   },
   pending: {
     label: "Pending",
-    variant: "outline" as const,
+    variant: "secondary" as const,
     className: "bg-muted text-muted-foreground border-0",
     icon: Circle,
   },
@@ -211,7 +211,7 @@ function DisplayInterview({
               )}
             </div>
           </div>
-          
+
           {/* Status and Rating */}
           <div className="flex flex-col items-end gap-2 shrink-0">
             <div className="flex items-center gap-2">
@@ -230,7 +230,7 @@ function DisplayInterview({
               </Badge>
             </div>
             {application && (
-              <Button variant="outline" size="sm" asChild>
+              <Button variant="secondary" size="sm" asChild>
                 <Link href={`/applications/${application.id}`}>
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Application

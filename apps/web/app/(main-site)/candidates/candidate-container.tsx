@@ -19,15 +19,15 @@ import { Badge } from "@workspace/ui/components/badge";
 import type { Candidate } from "@workspace/db/schema";
 const applicationStatusColors: Record<
   string,
-  "default" | "secondary" | "outline" | "destructive"
+  "default" | "secondary" | "destructive"
 > = {
-  pending: "outline",
+  pending: "secondary",
   reviewed: "secondary",
   shortlisted: "default",
   interviewing: "default",
   hired: "default",
   rejected: "destructive",
-  withdrawn: "outline",
+  withdrawn: "secondary",
 } as const;
 
 type CandidateWithPosition = Candidate & {
@@ -51,12 +51,12 @@ const CandidateContainer = ({
 
   const allCandidateIds = useMemo(
     () => candidates.map((c) => c.id),
-    [candidates]
+    [candidates],
   );
 
   const isAllSelected = useMemo(
     () => candidates.length > 0 && selectedIds.size === candidates.length,
-    [candidates.length, selectedIds.size]
+    [candidates.length, selectedIds.size],
   );
 
   const handleSelectAll = (checked: boolean) => {
@@ -162,7 +162,7 @@ const CandidateContainer = ({
                     <Badge
                       variant={
                         applicationStatusColors[candidate.applicationStatus] ||
-                        "outline"
+                        "secondary"
                       }
                       className="text-xs"
                     >
@@ -176,7 +176,7 @@ const CandidateContainer = ({
                 <TableCell className="text-right py-1.5 px-2">
                   <div className="flex items-center justify-end gap-1">
                     <Button
-                      variant="ghost"
+                      variant="secondary"
                       size="sm"
                       className="h-7 w-7 p-0"
                       asChild
@@ -186,7 +186,7 @@ const CandidateContainer = ({
                       </Link>
                     </Button>
                     <Button
-                      variant="ghost"
+                      variant="secondary"
                       size="sm"
                       className="h-7 w-7 p-0"
                       asChild

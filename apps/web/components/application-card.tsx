@@ -32,15 +32,15 @@ interface ApplicationCardProps {
 
 const applicationStatusColors: Record<
   string,
-  "default" | "secondary" | "outline" | "destructive"
+  "default" | "secondary" | "destructive"
 > = {
-  pending: "outline",
+  pending: "secondary",
   reviewed: "secondary",
   shortlisted: "default",
   interviewing: "default",
   hired: "default",
   rejected: "destructive",
-  withdrawn: "outline",
+  withdrawn: "secondary",
 } as const;
 
 const ApplicationCard = ({ application }: ApplicationCardProps) => {
@@ -59,7 +59,7 @@ const ApplicationCard = ({ application }: ApplicationCardProps) => {
           </div>
         </div>
         <Badge
-          variant={applicationStatusColors[application.status] || "outline"}
+          variant={applicationStatusColors[application.status] || "secondary"}
           className="shrink-0 text-xs"
         >
           {application.status.charAt(0).toUpperCase() +
@@ -87,7 +87,7 @@ const ApplicationCard = ({ application }: ApplicationCardProps) => {
         )}
       </div>
       <div className="pt-2 border-t">
-        <Button variant="outline" size="sm" asChild className="w-full">
+        <Button variant="secondary" size="sm" asChild className="w-full">
           <Link href={`/applications/${application.id}`}>
             <Eye className="h-3 w-3 mr-2" />
             View Details

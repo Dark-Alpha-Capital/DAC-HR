@@ -80,6 +80,7 @@ packages/
 ### Auth Pattern
 
 Uses `better-auth` with shared configuration in `apps/web/auth.ts`:
+
 - Admin roles determined by email whitelist
 - Uses `nextCookies()` plugin for cookie-based auth
 - Session validation: `auth.api.getSession({ headers: await headers() })`
@@ -87,13 +88,15 @@ Uses `better-auth` with shared configuration in `apps/web/auth.ts`:
 ### UI Components
 
 Import from `@workspace/ui/components/{component}`:
+
 ```tsx
-import { Button } from "@workspace/ui/components/button"
+import { Button } from "@workspace/ui/components/button";
 ```
 
 ### Server Action Pattern
 
 Server actions in `apps/web/lib/actions/` follow this pattern:
+
 1. Validate session with `auth.api.getSession()`
 2. Parse input with Zod schemas from `lib/schemas/`
 3. Perform database operation
@@ -103,6 +106,7 @@ Server actions in `apps/web/lib/actions/` follow this pattern:
 ## Environment Variables
 
 Required in `apps/web/.env`:
+
 - `DATABASE_URL` - PostgreSQL connection
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` - OAuth
 - `BETTER_AUTH_SECRET` - Auth encryption
