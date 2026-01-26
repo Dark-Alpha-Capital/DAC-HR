@@ -8,7 +8,7 @@ import { headers } from "next/headers";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     // Check authentication
@@ -28,21 +28,21 @@ export async function GET(
     if (!candidateId) {
       return NextResponse.json(
         { error: "Candidate ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (latest) {
       const screening = await getLatestCandidateAiScreening(
         candidateId,
-        positionId || undefined
+        positionId || undefined,
       );
       return NextResponse.json({ screening }, { status: 200 });
     }
 
     const screenings = await getCandidateAiScreenings(
       candidateId,
-      positionId || undefined
+      positionId || undefined,
     );
 
     return NextResponse.json({ screenings }, { status: 200 });
@@ -50,11 +50,9 @@ export async function GET(
     console.error("Error fetching AI screenings", error);
     return NextResponse.json(
       {
-        error:
-          error instanceof Error ? error.message : "Internal server error",
+        error: error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

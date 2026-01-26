@@ -8,7 +8,7 @@ import { uploadFileToNextCloud, getClient } from "./next-cloud";
  */
 export const uploadFile = async (
   file: File | Blob,
-  folderPath?: string
+  folderPath?: string,
 ): Promise<string | null> => {
   try {
     // Determine folder path based on context if not provided
@@ -39,7 +39,7 @@ export const uploadFile = async (
  */
 export const getSignedUrl = async (
   fileUrl: string,
-  expiresInMinutes: number = 60
+  expiresInMinutes: number = 60,
 ): Promise<string | null> => {
   try {
     // For Nextcloud, if the URL is already a WebDAV download link, return it as-is
@@ -61,7 +61,7 @@ export const getSignedUrl = async (
         const url = new URL(fileUrl);
         // Extract path after /remote.php/dav/files/{user}/
         const davPathMatch = url.pathname.match(
-          /\/remote\.php\/dav\/files\/[^/]+\/(.+)/
+          /\/remote\.php\/dav\/files\/[^/]+\/(.+)/,
         );
         if (davPathMatch) {
           filePath = `/${davPathMatch[1]}`;
@@ -105,7 +105,7 @@ export const deleteFile = async (fileUrl: string): Promise<boolean> => {
         const url = new URL(fileUrl);
         // Extract path after /remote.php/dav/files/{user}/
         const davPathMatch = url.pathname.match(
-          /\/remote\.php\/dav\/files\/[^/]+\/(.+)/
+          /\/remote\.php\/dav\/files\/[^/]+\/(.+)/,
         );
         if (davPathMatch) {
           filePath = `/${davPathMatch[1]}`;

@@ -225,7 +225,7 @@ function AdminUsersPaginationControls({
       </div>
       <div className="flex items-center gap-2">
         <Button
-          variant="outline"
+          variant="secondary"
           size="sm"
           onClick={() => navigateToPage(currentPage - 1)}
           disabled={!hasPreviousPage}
@@ -234,7 +234,7 @@ function AdminUsersPaginationControls({
           Previous
         </Button>
         <Button
-          variant="outline"
+          variant="secondary"
           size="sm"
           onClick={() => navigateToPage(currentPage + 1)}
           disabled={!hasNextPage}
@@ -270,8 +270,8 @@ export function AdminUsersClient({
           revokingSessions: false,
           error: null,
         },
-      ])
-    )
+      ]),
+    ),
   );
 
   // Update users when initialUsers changes (e.g., after router refresh)
@@ -309,18 +309,22 @@ export function AdminUsersClient({
 
   const handleBan = async (userId: string) => {
     updateState(userId, { banning: true, error: null });
-    
+
     // Store previous state for potential rollback
     const previousUser = users.find((u) => u.id === userId);
     if (!previousUser) return;
-    
+
     // Optimistic update
     setUsers((prev) =>
       prev.map((u) =>
         u.id === userId
-          ? { ...u, banned: true, banReason: "Banned by admin from Admin Dashboard" }
-          : u
-      )
+          ? {
+              ...u,
+              banned: true,
+              banReason: "Banned by admin from Admin Dashboard",
+            }
+          : u,
+      ),
     );
 
     try {
@@ -328,21 +332,19 @@ export function AdminUsersClient({
         userId,
         banReason: "Banned by admin from Admin Dashboard",
       });
-      
+
       toast.success("User banned successfully", {
         description: "The user has been banned and cannot access the site.",
       });
-      
+
       // Refresh to get latest data from server
       router.refresh();
     } catch (error) {
       console.error("Error banning user", error);
-      
+
       // Revert optimistic update
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? previousUser : u))
-      );
-      
+      setUsers((prev) => prev.map((u) => (u.id === userId ? previousUser : u)));
+
       updateState(userId, { error: "Failed to ban user. Please try again." });
       toast.error("Failed to ban user", {
         description: "Please try again or check your connection.",
@@ -354,37 +356,35 @@ export function AdminUsersClient({
 
   const handleUnban = async (userId: string) => {
     updateState(userId, { unbanning: true, error: null });
-    
+
     // Store previous state for potential rollback
     const previousUser = users.find((u) => u.id === userId);
     if (!previousUser) return;
-    
+
     // Optimistic update
     setUsers((prev) =>
       prev.map((u) =>
         u.id === userId
           ? { ...u, banned: false, banReason: null, banExpires: null }
-          : u
-      )
+          : u,
+      ),
     );
 
     try {
       await authClient.admin.unbanUser({ userId });
-      
+
       toast.success("User unbanned successfully", {
         description: "The user can now access the site again.",
       });
-      
+
       // Refresh to get latest data from server
       router.refresh();
     } catch (error) {
       console.error("Error unbanning user", error);
-      
+
       // Revert optimistic update
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? previousUser : u))
-      );
-      
+      setUsers((prev) => prev.map((u) => (u.id === userId ? previousUser : u)));
+
       updateState(userId, { error: "Failed to unban user. Please try again." });
       toast.error("Failed to unban user", {
         description: "Please try again or check your connection.",
@@ -396,17 +396,17 @@ export function AdminUsersClient({
 
   const handleRevokeSessions = async (userId: string) => {
     updateState(userId, { revokingSessions: true, error: null });
-    
+
     const user = users.find((u) => u.id === userId);
     const userName = user?.name || user?.email || "User";
 
     try {
       await authClient.admin.revokeUserSessions({ userId });
-      
+
       toast.success("Sessions revoked successfully", {
         description: `${userName}'s active sessions have been revoked. They will need to sign in again.`,
       });
-      
+
       // Refresh to ensure we have latest data
       router.refresh();
     } catch (error) {
@@ -433,7 +433,7 @@ export function AdminUsersClient({
     }
 
     return (
-      <Badge variant="outline" className="flex items-center gap-1">
+      <Badge variant="secondary" className="flex items-center gap-1">
         <CheckCircle2 className="h-3 w-3 text-emerald-500" />
         Active
       </Badge>
@@ -453,7 +453,7 @@ export function AdminUsersClient({
         <div className="flex flex-wrap gap-2">
           <Button
             size="sm"
-            variant={user.banned ? "outline" : "destructive"}
+            variant={user.banned ? "secondary" : "destructive"}
             disabled={state.banning || state.unbanning}
             onClick={() =>
               user.banned ? handleUnban(user.id) : handleBan(user.id)
@@ -473,7 +473,7 @@ export function AdminUsersClient({
 
           <Button
             size="sm"
-            variant="outline"
+            variant="secondary"
             disabled={state.revokingSessions}
             onClick={() => handleRevokeSessions(user.id)}
           >

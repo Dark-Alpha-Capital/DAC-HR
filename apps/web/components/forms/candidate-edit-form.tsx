@@ -53,7 +53,7 @@ const CandidateEditForm = ({
     candidate.source &&
       ["LinkedIn", "Upwork", "Handshake", "Indeed"].includes(candidate.source)
       ? (candidate.source as "LinkedIn" | "Upwork" | "Handshake" | "Indeed")
-      : undefined
+      : undefined,
   );
 
   const form = useForm({
@@ -94,7 +94,7 @@ const CandidateEditForm = ({
               : "Failed to update candidate",
             {
               position: "bottom-right",
-            }
+            },
           );
         } else {
           toast.success("Candidate updated successfully", {
@@ -127,20 +127,20 @@ const CandidateEditForm = ({
         <div className="flex items-center gap-3">
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               form.reset();
               setSelectedSource(
                 candidate.source &&
                   ["LinkedIn", "Upwork", "Handshake", "Indeed"].includes(
-                    candidate.source
+                    candidate.source,
                   )
                   ? (candidate.source as
                       | "LinkedIn"
                       | "Upwork"
                       | "Handshake"
                       | "Indeed")
-                  : undefined
+                  : undefined,
               );
             }}
             disabled={isPending}

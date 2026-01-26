@@ -190,7 +190,11 @@ export function EmployeesByDepartmentChart({
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={chartData} layout="vertical">
           <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-          <XAxis type="number" className="text-xs" tick={{ fill: "currentColor" }} />
+          <XAxis
+            type="number"
+            className="text-xs"
+            tick={{ fill: "currentColor" }}
+          />
           <YAxis
             type="category"
             dataKey="name"

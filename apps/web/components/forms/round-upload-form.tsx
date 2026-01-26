@@ -64,7 +64,7 @@ const RoundUploadForm = ({
               : "Failed to create round",
             {
               position: "bottom-right",
-            }
+            },
           );
         } else {
           toast.success("Round created successfully", {
@@ -99,7 +99,7 @@ const RoundUploadForm = ({
         <div className="flex items-center gap-3">
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={() => form.reset()}
             disabled={isPending}
           >

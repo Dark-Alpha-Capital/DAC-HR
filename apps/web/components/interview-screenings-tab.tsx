@@ -57,15 +57,18 @@ interface StoredAnalysis {
 
 const recommendationConfig = {
   "Strong Hire": {
-    color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+    color:
+      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
     icon: CheckCircle,
   },
   Hire: {
-    color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+    color:
+      "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
     icon: CheckCircle,
   },
   Neutral: {
-    color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+    color:
+      "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
     icon: AlertCircle,
   },
   "Do Not Hire": {
@@ -75,9 +78,11 @@ const recommendationConfig = {
 };
 
 const performanceLevelConfig = {
-  Excellent: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+  Excellent:
+    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
   Good: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  Adequate: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  Adequate:
+    "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
   Poor: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
 };
 
@@ -100,7 +105,8 @@ function ScoreDisplay({ score, label }: { score: number; label: string }) {
 }
 
 function AnalysisDisplay({ analysis }: { analysis: InterviewAiAnalysisData }) {
-  const RecIcon = recommendationConfig[analysis.recommendation]?.icon || AlertCircle;
+  const RecIcon =
+    recommendationConfig[analysis.recommendation]?.icon || AlertCircle;
 
   return (
     <div className="space-y-6">
@@ -111,7 +117,7 @@ function AnalysisDisplay({ analysis }: { analysis: InterviewAiAnalysisData }) {
         <Badge
           className={cn(
             "text-sm px-3 py-1",
-            recommendationConfig[analysis.recommendation]?.color
+            recommendationConfig[analysis.recommendation]?.color,
           )}
         >
           <RecIcon className="h-4 w-4 mr-1.5" />
@@ -240,7 +246,7 @@ function AnalysisDisplay({ analysis }: { analysis: InterviewAiAnalysisData }) {
                     <Badge
                       className={cn(
                         "text-xs shrink-0",
-                        performanceLevelConfig[qa.performanceLevel]
+                        performanceLevelConfig[qa.performanceLevel],
                       )}
                     >
                       {qa.performanceLevel}
@@ -274,7 +280,8 @@ export default function InterviewScreeningsTab({
 }: InterviewScreeningsTabProps) {
   const [isFetching, setIsFetching] = useState(true);
   const [analyses, setAnalyses] = useState<StoredAnalysis[]>([]);
-  const [selectedAnalysis, setSelectedAnalysis] = useState<StoredAnalysis | null>(null);
+  const [selectedAnalysis, setSelectedAnalysis] =
+    useState<StoredAnalysis | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchAnalyses = useCallback(async () => {
@@ -300,7 +307,7 @@ export default function InterviewScreeningsTab({
     try {
       const response = await fetch(
         `/api/interview/${interviewId}/ai-analysis?analysisId=${analysisId}`,
-        { method: "DELETE" }
+        { method: "DELETE" },
       );
 
       if (!response.ok) {
@@ -334,7 +341,7 @@ export default function InterviewScreeningsTab({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <Button
-            variant="ghost"
+            variant="secondary"
             size="sm"
             onClick={() => setSelectedAnalysis(null)}
             className="-ml-2"
@@ -350,7 +357,7 @@ export default function InterviewScreeningsTab({
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   className="text-destructive hover:text-destructive"
                 >
@@ -434,7 +441,7 @@ export default function InterviewScreeningsTab({
                       <Badge
                         className={cn(
                           "text-xs",
-                          recommendationConfig[data.recommendation]?.color
+                          recommendationConfig[data.recommendation]?.color,
                         )}
                       >
                         <RecIcon className="h-3 w-3 mr-1" />
@@ -455,7 +462,7 @@ export default function InterviewScreeningsTab({
               </button>
               <div className="flex items-center gap-2">
                 <Button
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
                   onClick={() => setSelectedAnalysis(a)}
                 >
@@ -465,7 +472,7 @@ export default function InterviewScreeningsTab({
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button
-                      variant="ghost"
+                      variant="secondary"
                       size="sm"
                       className="text-destructive hover:text-destructive"
                     >

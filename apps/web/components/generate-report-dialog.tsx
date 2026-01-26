@@ -82,7 +82,7 @@ export default function GenerateReportDialog() {
     } catch (error) {
       console.error("Error generating report:", error);
       toast.error(
-        error instanceof Error ? error.message : "Failed to generate report"
+        error instanceof Error ? error.message : "Failed to generate report",
       );
     } finally {
       setIsGenerating(false);
@@ -92,7 +92,7 @@ export default function GenerateReportDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2">
+        <Button variant="secondary" className="gap-2">
           <Download className="h-4 w-4" />
           Generate Report
         </Button>
@@ -171,7 +171,7 @@ export default function GenerateReportDialog() {
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="secondary" onClick={() => setOpen(false)}>
             Cancel
           </Button>
           <Button onClick={handleGenerate} disabled={isGenerating}>

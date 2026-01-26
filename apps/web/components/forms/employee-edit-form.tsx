@@ -130,7 +130,7 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
                 : "Failed to update employee",
               {
                 position: "bottom-right",
-              }
+              },
             );
           } else {
             toast.success("Employee updated successfully", {
@@ -152,7 +152,7 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
               : "Failed to update employee",
             {
               position: "bottom-right",
-            }
+            },
           );
         }
       });
@@ -182,7 +182,7 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
       setFile(null);
       // Clear file input
       const fileInput = document.getElementById(
-        "image-upload"
+        "image-upload",
       ) as HTMLInputElement;
       if (fileInput) {
         fileInput.value = "";
@@ -204,7 +204,7 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
         <div className="flex items-center gap-3">
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={() => router.back()}
             disabled={isPending}
           >
@@ -292,10 +292,11 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
                     <DropdownMenuTrigger asChild>
                       <Button
                         id={field.name}
-                        variant="outline"
+                        variant="secondary"
                         className={cn(
                           "w-full justify-between",
-                          !selectedDepartments.length && "text-muted-foreground"
+                          !selectedDepartments.length &&
+                            "text-muted-foreground",
                         )}
                         aria-invalid={isInvalid}
                       >

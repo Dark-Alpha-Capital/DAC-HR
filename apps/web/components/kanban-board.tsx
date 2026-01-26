@@ -35,14 +35,14 @@ function KanbanBoardInner<TItem>({
         "relative w-full overflow-x-auto overflow-y-visible",
         // Allows the board to live inside a sidebar layout without
         // affecting the page-level scroll.
-        className
+        className,
       )}
     >
       <div
         className={cn(
           // On small screens, stack columns vertically and make them full-width.
           // From `sm` and up, use the classic horizontal kanban layout.
-          "flex flex-col sm:flex-row sm:gap-3 min-w-full sm:min-w-max p-2 pb-4"
+          "flex flex-col sm:flex-row sm:gap-3 min-w-full sm:min-w-max p-2 pb-4",
         )}
       >
         {columns.map((column) => (
@@ -52,7 +52,7 @@ function KanbanBoardInner<TItem>({
               // Mobile: take most of the viewport width, full-width stack.
               // Desktop: fixed column width with horizontal scrolling when needed.
               "shrink-0 w-full sm:w-64 sm:max-w-xs lg:w-72 flex flex-col",
-              columnClassName
+              columnClassName,
             )}
           >
             <div className="mb-2 px-1 flex items-center justify-between gap-2">

@@ -36,15 +36,12 @@ const DeleteCandidateButton = ({ candidateId }: { candidateId: string }) => {
 
     startTransition(async () => {
       try {
-        const response = await fetch(
-          `/api/candidate/${candidateId}`,
-          {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${userSession?.session?.token}`,
-            },
-          }
-        );
+        const response = await fetch(`/api/candidate/${candidateId}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${userSession?.session?.token}`,
+          },
+        });
 
         const result = await response.json();
 
@@ -62,7 +59,7 @@ const DeleteCandidateButton = ({ candidateId }: { candidateId: string }) => {
           error instanceof Error ? error.message : "Failed to delete candidate",
           {
             position: "bottom-right",
-          }
+          },
         );
       }
     });

@@ -55,15 +55,32 @@ export default function InterviewsDocsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground">
-            An interview record captures a specific interview session. It includes:
+            An interview record captures a specific interview session. It
+            includes:
           </p>
           <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-            <li><strong>Round Template</strong> - Which interview stage (Phone Screen, Technical, etc.)</li>
-            <li><strong>Interviewer</strong> - Who conducted the interview</li>
-            <li><strong>Status</strong> - The outcome (Pending, Move Forward, Rejected)</li>
-            <li><strong>Rating</strong> - Overall score (1-5)</li>
-            <li><strong>Question Feedback</strong> - Notes and ratings for each question</li>
-            <li><strong>Overall Feedback</strong> - Summary comments about the candidate</li>
+            <li>
+              <strong>Round Template</strong> - Which interview stage (Phone
+              Screen, Technical, etc.)
+            </li>
+            <li>
+              <strong>Interviewer</strong> - Who conducted the interview
+            </li>
+            <li>
+              <strong>Status</strong> - The outcome (Pending, Move Forward,
+              Rejected)
+            </li>
+            <li>
+              <strong>Rating</strong> - Overall score (1-5)
+            </li>
+            <li>
+              <strong>Question Feedback</strong> - Notes and ratings for each
+              question
+            </li>
+            <li>
+              <strong>Overall Feedback</strong> - Summary comments about the
+              candidate
+            </li>
           </ul>
         </CardContent>
       </Card>
@@ -72,9 +89,7 @@ export default function InterviewsDocsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Interview Statuses</CardTitle>
-          <CardDescription>
-            Track the outcome of each interview
-          </CardDescription>
+          <CardDescription>Track the outcome of each interview</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -128,12 +143,24 @@ export default function InterviewsDocsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <ol className="list-decimal list-inside space-y-3 text-muted-foreground">
-            <li>Go to the <strong>Application</strong> page for the candidate</li>
-            <li>Click <strong>"Record Interview"</strong></li>
-            <li>Select the <strong>Round Template</strong> for this interview</li>
-            <li>Select the <strong>Interviewer</strong> (defaults to you)</li>
-            <li>Optionally set a <strong>Scheduled Date</strong></li>
-            <li>Click <strong>"Create Interview"</strong></li>
+            <li>
+              Go to the <strong>Application</strong> page for the candidate
+            </li>
+            <li>
+              Click <strong>"Record Interview"</strong>
+            </li>
+            <li>
+              Select the <strong>Round Template</strong> for this interview
+            </li>
+            <li>
+              Select the <strong>Interviewer</strong> (defaults to you)
+            </li>
+            <li>
+              Optionally set a <strong>Scheduled Date</strong>
+            </li>
+            <li>
+              Click <strong>"Create Interview"</strong>
+            </li>
           </ol>
         </CardContent>
       </Card>
@@ -154,7 +181,8 @@ export default function InterviewsDocsPage() {
                 Questions Tab
               </div>
               <p className="text-sm text-muted-foreground">
-                View all questions from the round template. Add notes and ratings for each question.
+                View all questions from the round template. Add notes and
+                ratings for each question.
               </p>
             </div>
             <div className="p-4 rounded-lg border">
@@ -163,7 +191,8 @@ export default function InterviewsDocsPage() {
                 Summary Tab
               </div>
               <p className="text-sm text-muted-foreground">
-                Set the overall status, rating, and write summary feedback. Make the proceed/reject decision.
+                Set the overall status, rating, and write summary feedback. Make
+                the proceed/reject decision.
               </p>
             </div>
             <div className="p-4 rounded-lg border">
@@ -172,7 +201,8 @@ export default function InterviewsDocsPage() {
                 AI Analysis Tab
               </div>
               <p className="text-sm text-muted-foreground">
-                Run AI analysis on the interview feedback to get insights and recommendations.
+                Run AI analysis on the interview feedback to get insights and
+                recommendations.
               </p>
             </div>
           </div>
@@ -189,27 +219,30 @@ export default function InterviewsDocsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground">
-            Both individual questions and overall interviews use a 1-5 rating scale:
+            Both individual questions and overall interviews use a 1-5 rating
+            scale:
           </p>
           <div className="space-y-2">
             <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-              <Badge variant="outline">1</Badge>
+              <Badge variant="secondary">1</Badge>
               <span className="text-sm">Poor - Does not meet requirements</span>
             </div>
             <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-              <Badge variant="outline">2</Badge>
+              <Badge variant="secondary">2</Badge>
               <span className="text-sm">Below Average - Significant gaps</span>
             </div>
             <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-              <Badge variant="outline">3</Badge>
-              <span className="text-sm">Average - Meets basic requirements</span>
+              <Badge variant="secondary">3</Badge>
+              <span className="text-sm">
+                Average - Meets basic requirements
+              </span>
             </div>
             <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-              <Badge variant="outline">4</Badge>
+              <Badge variant="secondary">4</Badge>
               <span className="text-sm">Good - Exceeds some expectations</span>
             </div>
             <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-              <Badge variant="outline">5</Badge>
+              <Badge variant="secondary">5</Badge>
               <span className="text-sm">Excellent - Exceptional candidate</span>
             </div>
           </div>
@@ -255,27 +288,43 @@ export default function InterviewsDocsPage() {
           <ul className="space-y-3 text-muted-foreground">
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Record feedback immediately after the interview while details are fresh</span>
+              <span>
+                Record feedback immediately after the interview while details
+                are fresh
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Be specific in your notes - include examples and quotes when possible</span>
+              <span>
+                Be specific in your notes - include examples and quotes when
+                possible
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Rate each question individually to identify strengths and weaknesses</span>
+              <span>
+                Rate each question individually to identify strengths and
+                weaknesses
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Use the overall feedback to summarize key points for hiring managers</span>
+              <span>
+                Use the overall feedback to summarize key points for hiring
+                managers
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Set the status promptly so the hiring process can continue</span>
+              <span>
+                Set the status promptly so the hiring process can continue
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Use AI analysis for additional insights on candidate performance</span>
+              <span>
+                Use AI analysis for additional insights on candidate performance
+              </span>
             </li>
           </ul>
         </CardContent>
@@ -288,17 +337,26 @@ export default function InterviewsDocsPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Link href="/docs/rounds" className="flex items-center gap-2 p-3 rounded-lg border hover:bg-accent transition-colors">
+            <Link
+              href="/docs/rounds"
+              className="flex items-center gap-2 p-3 rounded-lg border hover:bg-accent transition-colors"
+            >
               <CircleDot className="h-4 w-4 text-primary" />
               <span>Interview Rounds</span>
               <ArrowRight className="h-4 w-4 ml-auto" />
             </Link>
-            <Link href="/docs/applications" className="flex items-center gap-2 p-3 rounded-lg border hover:bg-accent transition-colors">
+            <Link
+              href="/docs/applications"
+              className="flex items-center gap-2 p-3 rounded-lg border hover:bg-accent transition-colors"
+            >
               <FileText className="h-4 w-4 text-primary" />
               <span>Applications</span>
               <ArrowRight className="h-4 w-4 ml-auto" />
             </Link>
-            <Link href="/docs/ai-features" className="flex items-center gap-2 p-3 rounded-lg border hover:bg-accent transition-colors">
+            <Link
+              href="/docs/ai-features"
+              className="flex items-center gap-2 p-3 rounded-lg border hover:bg-accent transition-colors"
+            >
               <Sparkles className="h-4 w-4 text-primary" />
               <span>AI Features</span>
               <ArrowRight className="h-4 w-4 ml-auto" />

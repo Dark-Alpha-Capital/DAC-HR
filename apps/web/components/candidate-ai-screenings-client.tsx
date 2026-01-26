@@ -96,7 +96,7 @@ interface CandidateAiScreeningsClientProps {
 
 // Helper function to safely extract structured data
 function getStructuredData(
-  screening: CandidateAiScreening
+  screening: CandidateAiScreening,
 ): StructuredScreeningData | null {
   if (
     !screening.structuredData ||
@@ -125,19 +125,19 @@ function getScoreColor(score: number): string {
 
 // Helper to get recommendation badge variant
 function getRecommendationVariant(
-  recommendation?: string
-): "default" | "secondary" | "destructive" | "outline" {
+  recommendation?: string,
+): "default" | "secondary" | "destructive" {
   switch (recommendation) {
     case "Strong Hire":
       return "default";
     case "Hire":
       return "secondary";
     case "Neutral":
-      return "outline";
+      return "secondary";
     case "Do Not Hire":
       return "destructive";
     default:
-      return "outline";
+      return "secondary";
   }
 }
 
@@ -178,7 +178,7 @@ export default function CandidateAiScreeningsClient({
     useState<CandidateAiScreening | null>(
       screeningsWithDates.length > 0
         ? (screeningsWithDates[0] as CandidateAiScreening)
-        : null
+        : null,
     );
 
   const candidateId =
@@ -222,7 +222,7 @@ export default function CandidateAiScreeningsClient({
 
         // Remove deleted screening from list and select next one
         const remainingScreenings = screeningsWithDates.filter(
-          (s) => s.id !== selectedScreening.id
+          (s) => s.id !== selectedScreening.id,
         );
 
         if (remainingScreenings.length > 0) {
@@ -371,7 +371,7 @@ export default function CandidateAiScreeningsClient({
                               {structuredData?.recommendation && (
                                 <Badge
                                   variant={getRecommendationVariant(
-                                    structuredData.recommendation
+                                    structuredData.recommendation,
                                   )}
                                   className="text-xs"
                                 >
@@ -410,7 +410,7 @@ export default function CandidateAiScreeningsClient({
                         </CardTitle>
                         <div className="flex items-center gap-2">
                           <Button
-                            variant="outline"
+                            variant="secondary"
                             size="sm"
                             onClick={handleEditClick}
                             disabled={isPending}
@@ -472,7 +472,7 @@ export default function CandidateAiScreeningsClient({
                                 {structuredData?.recommendation && (
                                   <Badge
                                     variant={getRecommendationVariant(
-                                      structuredData.recommendation
+                                      structuredData.recommendation,
                                     )}
                                     className="text-sm px-3 py-1"
                                   >
@@ -514,7 +514,7 @@ export default function CandidateAiScreeningsClient({
                                           {strength.description}
                                         </p>
                                       </div>
-                                    )
+                                    ),
                                   )}
                                 </CollapsibleContent>
                               </Collapsible>
@@ -549,7 +549,7 @@ export default function CandidateAiScreeningsClient({
                                             {concern.title}
                                           </h4>
                                           <Badge
-                                            variant="outline"
+                                            variant="secondary"
                                             className={`text-xs ${getSeverityColor(concern.severity)}`}
                                           >
                                             {concern.severity}
@@ -559,7 +559,7 @@ export default function CandidateAiScreeningsClient({
                                           {concern.description}
                                         </p>
                                       </div>
-                                    )
+                                    ),
                                   )}
                                 </CollapsibleContent>
                               </Collapsible>
@@ -604,7 +604,7 @@ export default function CandidateAiScreeningsClient({
                                             </span>
                                             <span>{exp}</span>
                                           </li>
-                                        )
+                                        ),
                                       )}
                                     </ul>
                                   </div>
@@ -627,7 +627,7 @@ export default function CandidateAiScreeningsClient({
                                             </span>
                                             <span>{gap}</span>
                                           </li>
-                                        )
+                                        ),
                                       )}
                                     </ul>
                                   </div>
@@ -673,7 +673,7 @@ export default function CandidateAiScreeningsClient({
                                           >
                                             {skill}
                                           </Badge>
-                                        )
+                                        ),
                                       )}
                                     </div>
                                   </div>
@@ -689,12 +689,12 @@ export default function CandidateAiScreeningsClient({
                                         (skill, idx) => (
                                           <Badge
                                             key={idx}
-                                            variant="outline"
+                                            variant="secondary"
                                             className="text-xs"
                                           >
                                             {skill}
                                           </Badge>
-                                        )
+                                        ),
                                       )}
                                     </div>
                                   </div>
@@ -742,7 +742,7 @@ export default function CandidateAiScreeningsClient({
                                             </span>
                                             <span>{indicator}</span>
                                           </li>
-                                        )
+                                        ),
                                       )}
                                     </ul>
                                   </div>
@@ -830,7 +830,7 @@ export default function CandidateAiScreeningsClient({
           </div>
           <DialogFooter>
             <Button
-              variant="outline"
+              variant="secondary"
               onClick={() => setEditDialogOpen(false)}
               disabled={isPending}
             >

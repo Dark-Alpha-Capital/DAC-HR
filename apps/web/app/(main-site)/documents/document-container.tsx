@@ -52,7 +52,7 @@ const DocumentContainer = ({ documents }: DocumentContainerProps) => {
 
       if (!isPublicUrl) {
         const response = await fetch(
-          `/api/documents/view?url=${encodeURIComponent(document.url)}`
+          `/api/documents/view?url=${encodeURIComponent(document.url)}`,
         );
 
         if (!response.ok) {
@@ -84,7 +84,7 @@ const DocumentContainer = ({ documents }: DocumentContainerProps) => {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to download document. Please try again."
+          : "Failed to download document. Please try again.",
       );
     } finally {
       setDownloadingDocId(null);
@@ -150,7 +150,7 @@ const DocumentContainer = ({ documents }: DocumentContainerProps) => {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          variant="ghost"
+                          variant="secondary"
                           size="sm"
                           className="h-7 w-7 p-0"
                           onClick={() => setPreviewDocument(document)}
@@ -163,7 +163,7 @@ const DocumentContainer = ({ documents }: DocumentContainerProps) => {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          variant="ghost"
+                          variant="secondary"
                           size="sm"
                           className="h-7 w-7 p-0"
                           onClick={() => handleDownloadDocument(document)}

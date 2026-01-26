@@ -35,11 +35,13 @@ export default function RoundsDocsPage() {
           <div className="p-2 rounded-lg bg-pink-100 dark:bg-pink-900/30">
             <CircleDot className="h-6 w-6 text-pink-600" />
           </div>
-          <h1 className="text-4xl font-bold tracking-tight">Interview Rounds</h1>
+          <h1 className="text-4xl font-bold tracking-tight">
+            Interview Rounds
+          </h1>
         </div>
         <p className="text-xl text-muted-foreground">
-          Round templates define the stages of your interview process. Create reusable
-          templates and link them to positions.
+          Round templates define the stages of your interview process. Create
+          reusable templates and link them to positions.
         </p>
       </div>
 
@@ -53,10 +55,21 @@ export default function RoundsDocsPage() {
             A round template is a blueprint for an interview stage. It defines:
           </p>
           <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-            <li><strong>Name</strong> - The type of interview (e.g., "Phone Screen", "Technical Interview")</li>
-            <li><strong>Description</strong> - Details about what this round evaluates</li>
-            <li><strong>Questions</strong> - The set of questions to ask candidates</li>
-            <li><strong>Position Links</strong> - Which positions use this round</li>
+            <li>
+              <strong>Name</strong> - The type of interview (e.g., "Phone
+              Screen", "Technical Interview")
+            </li>
+            <li>
+              <strong>Description</strong> - Details about what this round
+              evaluates
+            </li>
+            <li>
+              <strong>Questions</strong> - The set of questions to ask
+              candidates
+            </li>
+            <li>
+              <strong>Position Links</strong> - Which positions use this round
+            </li>
           </ul>
         </CardContent>
       </Card>
@@ -75,7 +88,8 @@ export default function RoundsDocsPage() {
               <div>
                 <div className="font-semibold">Create Round Templates</div>
                 <p className="text-sm text-muted-foreground">
-                  Define your interview stages (Phone Screen, Technical, Cultural Fit, etc.)
+                  Define your interview stages (Phone Screen, Technical,
+                  Cultural Fit, etc.)
                 </p>
               </div>
             </div>
@@ -86,7 +100,8 @@ export default function RoundsDocsPage() {
               <div>
                 <div className="font-semibold">Link to Positions</div>
                 <p className="text-sm text-muted-foreground">
-                  Associate round templates with positions that need those interview stages
+                  Associate round templates with positions that need those
+                  interview stages
                 </p>
               </div>
             </div>
@@ -108,7 +123,8 @@ export default function RoundsDocsPage() {
               <div>
                 <div className="font-semibold">Conduct Interviews</div>
                 <p className="text-sm text-muted-foreground">
-                  When recording an interview, select the round template to use its questions
+                  When recording an interview, select the round template to use
+                  its questions
                 </p>
               </div>
             </div>
@@ -129,7 +145,8 @@ export default function RoundsDocsPage() {
             <div className="p-4 rounded-lg border">
               <div className="font-semibold mb-1">Phone Screen</div>
               <p className="text-sm text-muted-foreground">
-                Initial screening call to assess basic qualifications and interest
+                Initial screening call to assess basic qualifications and
+                interest
               </p>
             </div>
             <div className="p-4 rounded-lg border">
@@ -176,16 +193,25 @@ export default function RoundsDocsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <ol className="list-decimal list-inside space-y-3 text-muted-foreground">
-            <li>Navigate to <strong>Rounds</strong> from the sidebar</li>
-            <li>Click the <strong>"New Round"</strong> button</li>
-            <li>Enter the round details:
+            <li>
+              Navigate to <strong>Rounds</strong> from the sidebar
+            </li>
+            <li>
+              Click the <strong>"New Round"</strong> button
+            </li>
+            <li>
+              Enter the round details:
               <ul className="list-disc list-inside ml-6 mt-2 space-y-1">
                 <li>Name (e.g., "Technical Interview")</li>
                 <li>Description (what this round evaluates)</li>
               </ul>
             </li>
-            <li>Click <strong>"Create Round"</strong> to save</li>
-            <li>After creation, link the round to positions and add questions</li>
+            <li>
+              Click <strong>"Create Round"</strong> to save
+            </li>
+            <li>
+              After creation, link the round to positions and add questions
+            </li>
           </ol>
         </CardContent>
       </Card>
@@ -200,7 +226,8 @@ export default function RoundsDocsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground">
-            A round template must be linked to a position before it can be used for interviews:
+            A round template must be linked to a position before it can be used
+            for interviews:
           </p>
           <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
             <li>Go to the round template's detail page</li>
@@ -210,8 +237,9 @@ export default function RoundsDocsPage() {
           </ol>
           <div className="p-4 bg-muted/50 rounded-lg">
             <p className="text-sm text-muted-foreground">
-              <strong>Note:</strong> The same round template can be linked to multiple positions.
-              For example, a "Phone Screen" round can be used for all open positions.
+              <strong>Note:</strong> The same round template can be linked to
+              multiple positions. For example, a "Phone Screen" round can be
+              used for all open positions.
             </p>
           </div>
         </CardContent>
@@ -227,7 +255,8 @@ export default function RoundsDocsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground">
-            Each round template can have multiple questions from the question bank:
+            Each round template can have multiple questions from the question
+            bank:
           </p>
           <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
             <li>Go to the round template's detail page</li>
@@ -237,8 +266,9 @@ export default function RoundsDocsPage() {
           </ol>
           <div className="p-4 bg-muted/50 rounded-lg">
             <p className="text-sm text-muted-foreground">
-              <strong>Tip:</strong> Create questions in the Question Bank first, then link them
-              to round templates. Questions can be reused across multiple rounds.
+              <strong>Tip:</strong> Create questions in the Question Bank first,
+              then link them to round templates. Questions can be reused across
+              multiple rounds.
             </p>
           </div>
         </CardContent>
@@ -253,23 +283,35 @@ export default function RoundsDocsPage() {
           <ul className="space-y-3 text-muted-foreground">
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Create generic round templates that can be reused across positions</span>
+              <span>
+                Create generic round templates that can be reused across
+                positions
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Use clear, descriptive names that indicate the interview stage</span>
+              <span>
+                Use clear, descriptive names that indicate the interview stage
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Add descriptions to help interviewers understand the round's purpose</span>
+              <span>
+                Add descriptions to help interviewers understand the round's
+                purpose
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Include 5-10 questions per round for comprehensive evaluation</span>
+              <span>
+                Include 5-10 questions per round for comprehensive evaluation
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Set up all rounds for a position before starting interviews</span>
+              <span>
+                Set up all rounds for a position before starting interviews
+              </span>
             </li>
           </ul>
         </CardContent>
@@ -282,12 +324,18 @@ export default function RoundsDocsPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Link href="/docs/questions" className="flex items-center gap-2 p-3 rounded-lg border hover:bg-accent transition-colors">
+            <Link
+              href="/docs/questions"
+              className="flex items-center gap-2 p-3 rounded-lg border hover:bg-accent transition-colors"
+            >
               <HelpCircle className="h-4 w-4 text-primary" />
               <span>Questions</span>
               <ArrowRight className="h-4 w-4 ml-auto" />
             </Link>
-            <Link href="/docs/positions" className="flex items-center gap-2 p-3 rounded-lg border hover:bg-accent transition-colors">
+            <Link
+              href="/docs/positions"
+              className="flex items-center gap-2 p-3 rounded-lg border hover:bg-accent transition-colors"
+            >
               <Briefcase className="h-4 w-4 text-primary" />
               <span>Positions</span>
               <ArrowRight className="h-4 w-4 ml-auto" />

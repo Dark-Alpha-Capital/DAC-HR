@@ -87,7 +87,7 @@ const PositionContainer = ({ positions }: PositionContainerProps) => {
               <TableCell className="py-1.5 px-2 text-sm">
                 {position.status ? (
                   <Badge
-                    variant="outline"
+                    variant="secondary"
                     className={`text-xs ${getStatusColorClass(position.status)}`}
                   >
                     {statusLabels[position.status] || position.status}
@@ -116,7 +116,7 @@ const PositionContainer = ({ positions }: PositionContainerProps) => {
               <TableCell className="text-right py-1.5 px-2">
                 <div className="flex items-center justify-end gap-1">
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="sm"
                     className="h-7 w-7 p-0"
                     asChild
@@ -126,7 +126,7 @@ const PositionContainer = ({ positions }: PositionContainerProps) => {
                     </Link>
                   </Button>
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="sm"
                     className="h-7 w-7 p-0"
                     asChild

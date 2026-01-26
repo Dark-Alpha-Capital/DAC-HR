@@ -5,7 +5,7 @@ export const candidateSourceEnum = z.enum(
   {
     message:
       "Invalid source. Only LinkedIn, Upwork, Handshake, and Indeed are supported as sources.",
-  }
+  },
 );
 
 export const candidateFormSchema = z
@@ -35,7 +35,7 @@ export const candidateFormSchema = z
         {
           message:
             "Please enter a valid phone number (7-15 digits). Format: +1 (555) 123-4567 or 5551234567",
-        }
+        },
       )
       .max(20, "Phone number must be at most 20 characters."),
     location: z.string().max(100, "Location must be at most 100 characters."),
@@ -69,7 +69,7 @@ export const candidateFormSchema = z
       message:
         "Source URL is required when source is selected and must be a valid URL.",
       path: ["sourceUrl"],
-    }
+    },
   );
 
 export type CandidateFormSchema = z.infer<typeof candidateFormSchema>;

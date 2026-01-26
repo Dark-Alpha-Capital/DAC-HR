@@ -159,7 +159,7 @@ const OnboardingCard: React.FC<OnboardingCardProps> = ({
               key={task.id}
               className={cn(
                 "flex items-center gap-2.5 py-2 transition-colors",
-                isChecked && "opacity-60"
+                isChecked && "opacity-60",
               )}
             >
               <Checkbox
@@ -173,14 +173,14 @@ const OnboardingCard: React.FC<OnboardingCardProps> = ({
               <Icon
                 className={cn(
                   "h-3.5 w-3.5 shrink-0",
-                  isChecked ? "text-primary" : "text-muted-foreground"
+                  isChecked ? "text-primary" : "text-muted-foreground",
                 )}
               />
               <label
                 htmlFor={task.id}
                 className={cn(
                   "text-sm cursor-pointer flex-1",
-                  isChecked && "text-muted-foreground line-through"
+                  isChecked && "text-muted-foreground line-through",
                 )}
               >
                 {task.label}
@@ -194,7 +194,7 @@ const OnboardingCard: React.FC<OnboardingCardProps> = ({
             type="submit"
             disabled={isPending || !hasChanges}
             size="sm"
-            variant="outline"
+            variant="secondary"
             className="h-8"
           >
             {isPending ? (

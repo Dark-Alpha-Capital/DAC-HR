@@ -54,7 +54,7 @@ const checkExistingEmails = async (emails: string[]): Promise<Set<string>> => {
 };
 
 export const bulkCreateCandidates = async (
-  candidates: BulkCandidateRow[]
+  candidates: BulkCandidateRow[],
 ): Promise<BulkCandidateResult> => {
   const session = await auth.api.getSession({
     headers: await headers(),

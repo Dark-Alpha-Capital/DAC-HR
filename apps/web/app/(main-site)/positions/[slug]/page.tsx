@@ -115,7 +115,7 @@ const PositionPageContentWrapper = async ({ params }: { params: Params }) => {
           The position you&apos;re looking for doesn&apos;t exist or has been
           removed.
         </p>
-        <Button variant="outline" asChild>
+        <Button variant="secondary" asChild>
           <Link href="/positions">Back to positions</Link>
         </Button>
       </div>
@@ -131,7 +131,7 @@ const PositionPageContentWrapper = async ({ params }: { params: Params }) => {
           <div className="flex items-center gap-2 flex-wrap">
             {position.status && (
               <Badge
-                variant="outline"
+                variant="secondary"
                 className={`text-xs ${
                   position.status === "active"
                     ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
@@ -160,13 +160,13 @@ const PositionPageContentWrapper = async ({ params }: { params: Params }) => {
                 {position.hireLevel === "intern" && "Intern"}
               </Badge>
             )}
-            <Badge variant="outline" className="text-xs gap-1.5">
+            <Badge variant="secondary" className="text-xs gap-1.5">
               <Calendar className="h-3 w-3" />
               Created {formatDate(position.createdAt)}
             </Badge>
             {position.updatedAt &&
               position.updatedAt.getTime() !== position.createdAt.getTime() && (
-                <Badge variant="outline" className="text-xs gap-1.5">
+                <Badge variant="secondary" className="text-xs gap-1.5">
                   <Clock className="h-3 w-3" />
                   Updated {formatDate(position.updatedAt)}
                 </Badge>
@@ -174,7 +174,7 @@ const PositionPageContentWrapper = async ({ params }: { params: Params }) => {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="secondary" size="sm" asChild>
             <Link href={`/positions/${position.slug}/edit`}>
               <Pencil className="h-4 w-4 mr-2" />
               Edit Position
@@ -342,7 +342,7 @@ const RoundsSectionWrapper = async ({ params }: { params: Params }) => {
           <p className="text-sm mb-4">
             No rounds are currently linked to this position.
           </p>
-          <Button size="sm" variant="outline" asChild>
+          <Button size="sm" variant="secondary" asChild>
             <Link href={`/rounds/new?position=${position.id}`}>
               Create a round
             </Link>
@@ -365,7 +365,7 @@ const RoundsSectionWrapper = async ({ params }: { params: Params }) => {
                     </p>
                   )}
                 </div>
-                <Button variant="outline" size="sm" asChild>
+                <Button variant="secondary" size="sm" asChild>
                   <Link href={`/rounds/${round.id}`}>
                     <Eye className="h-3 w-3 mr-1" />
                     View
@@ -405,7 +405,7 @@ const CandidatesSectionWrapper = async ({ params }: { params: Params }) => {
           <p className="text-sm mb-4">
             No candidates have applied for this position yet.
           </p>
-          <Button size="sm" variant="outline" asChild>
+          <Button size="sm" variant="secondary" asChild>
             <Link href={`/candidates/new?position=${position.id}`}>
               Add a candidate
             </Link>
@@ -427,7 +427,7 @@ const CandidatesSectionWrapper = async ({ params }: { params: Params }) => {
                     {candidateData.email}
                   </p>
                 </div>
-                <Button variant="outline" size="sm" asChild>
+                <Button variant="secondary" size="sm" asChild>
                   <Link href={`/candidates/${candidateData.id}`}>
                     <Eye className="h-3 w-3 mr-1" />
                     View

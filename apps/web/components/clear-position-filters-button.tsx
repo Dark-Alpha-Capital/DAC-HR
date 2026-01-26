@@ -18,7 +18,7 @@ const ClearPositionFiltersButton = () => {
 
   return (
     <Button
-      variant="outline"
+      variant="secondary"
       size="sm"
       onClick={() => {
         const params = new URLSearchParams(searchParams);

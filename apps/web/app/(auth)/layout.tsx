@@ -1,15 +1,15 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { DM_Sans, Geist_Mono } from "next/font/google";
 import "@workspace/ui/globals.css";
 import { Providers } from "@/components/providers";
 import Link from "next/link";
 import { ShieldCheckIcon, SparklesIcon } from "lucide-react";
 
-const fontGeist = Geist({
+const fontSans = DM_Sans({
   subsets: ["latin"],
   variable: "--font-geist",
 });
 
-const fontGeistMono = Geist_Mono({
+const fontMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-geist-mono",
 });
@@ -22,19 +22,16 @@ export default function AuthLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${fontGeist.variable} ${fontGeistMono.variable} font-geist antialiased min-h-screen bg-background`}
+        className={`${fontSans.variable} ${fontMono.variable} ${fontSans.className} antialiased min-h-screen bg-background`}
       >
         <Providers>
-          <main className="relative min-h-screen overflow-hidden">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(1200px_circle_at_20%_10%,hsl(var(--primary)/0.16),transparent_45%),radial-gradient(900px_circle_at_80%_30%,hsl(var(--accent)/0.12),transparent_55%)]" />
-            <div className="pointer-events-none absolute inset-0 opacity-30 [background-image:linear-gradient(to_right,hsl(var(--border))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border))_1px,transparent_1px)] [background-size:48px_48px]" />
-
+          <main className="relative min-h-screen">
             <div className="mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center px-4 py-10">
-              <div className="w-full overflow-hidden rounded-2xl border bg-card/70 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-card/60">
+              <div className="w-full overflow-hidden rounded-xl border bg-card shadow-sm">
                 <div className="grid lg:grid-cols-2">
-                  <aside className="relative hidden flex-col justify-between bg-gradient-to-br from-primary/90 via-primary/70 to-primary/50 p-10 text-primary-foreground lg:flex">
+                  <aside className="relative hidden flex-col justify-between bg-primary p-10 text-primary-foreground lg:flex">
                     <div className="flex items-center gap-3">
-                      <div className="flex size-10 items-center justify-center rounded-xl bg-primary-foreground/10 ring-1 ring-primary-foreground/20">
+                      <div className="flex size-10 items-center justify-center rounded-lg bg-primary-foreground/10">
                         <ShieldCheckIcon className="size-5" />
                       </div>
                       <div className="leading-tight">
@@ -76,7 +73,7 @@ export default function AuthLayout({
                   <section className="flex flex-col justify-center p-6 sm:p-10">
                     <div className="mx-auto w-full max-w-sm">
                       <div className="mb-8 flex items-center justify-center gap-2 lg:hidden">
-                        <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-border">
+                        <div className="flex size-9 items-center justify-center rounded-lg bg-muted text-foreground">
                           <ShieldCheckIcon className="size-5" />
                         </div>
                         <div className="leading-tight">

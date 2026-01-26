@@ -159,14 +159,14 @@ async function CachedCandidatePageContent({
         <div className="space-y-2 flex-1">
           <h1 className="text-3xl font-bold">{fullName}</h1>
           <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant="outline" className="text-xs gap-1.5">
+            <Badge variant="secondary" className="text-xs gap-1.5">
               <Calendar className="h-3 w-3" />
               Created {formatDate(candidate.createdAt)}
             </Badge>
             {candidate.updatedAt &&
               candidate.updatedAt.getTime() !==
                 candidate.createdAt.getTime() && (
-                <Badge variant="outline" className="text-xs gap-1.5">
+                <Badge variant="secondary" className="text-xs gap-1.5">
                   <Clock className="h-3 w-3" />
                   Updated {formatDate(candidate.updatedAt)}
                 </Badge>
@@ -174,7 +174,7 @@ async function CachedCandidatePageContent({
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="secondary" size="sm" asChild>
             <Link href={`/candidates/${candidate.id}/edit`}>
               <Pencil className="h-4 w-4 mr-2" />
               Edit Candidate
@@ -301,7 +301,7 @@ async function CachedDisplayCandidateDocuments({ uid }: { uid: string }) {
         <div className="flex items-center gap-2">
           <FileText className="h-4 w-4" />
           <h2 className="text-lg font-semibold">Documents</h2>
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="secondary" size="sm" asChild>
             <Link href={`/candidates/${uid}/add-document`}>Add Document</Link>
           </Button>
         </div>
@@ -482,9 +482,9 @@ const ApplicationsTab = ({
 
   const interviewStatusColors: Record<
     string,
-    "default" | "secondary" | "outline" | "destructive"
+    "default" | "secondary" | "destructive"
   > = {
-    pending: "outline",
+    pending: "secondary",
     move_forward: "default",
     rejected: "destructive",
   } as const;
@@ -542,7 +542,7 @@ const ApplicationsTab = ({
                   </div>
                   {app.personality && (
                     <div>
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="secondary" className="text-xs">
                         Personality: {app.personality}
                       </Badge>
                     </div>
@@ -574,7 +574,7 @@ const ApplicationsTab = ({
                               <Badge
                                 variant={
                                   interviewStatusColors[interview.status] ||
-                                  "outline"
+                                  "secondary"
                                 }
                                 className="text-xs h-4 px-1.5"
                               >
@@ -591,7 +591,7 @@ const ApplicationsTab = ({
                   </div>
                   <div className="pt-2">
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
                       className="w-full"
                       asChild

@@ -52,14 +52,26 @@ export default function DocumentsDocsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground">
-            The documents section allows you to store and organize HR-related files:
+            The documents section allows you to store and organize HR-related
+            files:
           </p>
           <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-            <li><strong>Job descriptions</strong> - Role definitions and requirements</li>
-            <li><strong>Onboarding materials</strong> - New hire documentation</li>
-            <li><strong>Policies</strong> - Company policies and procedures</li>
-            <li><strong>HR forms</strong> - Standard forms and templates</li>
-            <li><strong>Other documents</strong> - Any other relevant files</li>
+            <li>
+              <strong>Job descriptions</strong> - Role definitions and
+              requirements
+            </li>
+            <li>
+              <strong>Onboarding materials</strong> - New hire documentation
+            </li>
+            <li>
+              <strong>Policies</strong> - Company policies and procedures
+            </li>
+            <li>
+              <strong>HR forms</strong> - Standard forms and templates
+            </li>
+            <li>
+              <strong>Other documents</strong> - Any other relevant files
+            </li>
           </ul>
         </CardContent>
       </Card>
@@ -108,7 +120,7 @@ export default function DocumentsDocsPage() {
             </div>
             <div className="p-4 rounded-lg border col-span-full">
               <div className="flex items-center gap-2 mb-2">
-                <Badge variant="outline">other</Badge>
+                <Badge variant="secondary">other</Badge>
               </div>
               <p className="text-sm text-muted-foreground">
                 Any other documents that don't fit the above categories
@@ -128,19 +140,27 @@ export default function DocumentsDocsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground">
-            In addition to built-in categories, you can create custom categories:
+            In addition to built-in categories, you can create custom
+            categories:
           </p>
           <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
-            <li>Go to the <strong>Documents</strong> page</li>
-            <li>Click the <strong>"Categories"</strong> tab</li>
-            <li>Click <strong>"Add Category"</strong></li>
+            <li>
+              Go to the <strong>Documents</strong> page
+            </li>
+            <li>
+              Click the <strong>"Categories"</strong> tab
+            </li>
+            <li>
+              Click <strong>"Add Category"</strong>
+            </li>
             <li>Enter a name and optional description</li>
             <li>Save the new category</li>
           </ol>
           <div className="p-4 bg-muted/50 rounded-lg">
             <p className="text-sm text-muted-foreground">
-              <strong>Tip:</strong> Custom categories help you organize documents
-              in ways that match your organization's structure and needs.
+              <strong>Tip:</strong> Custom categories help you organize
+              documents in ways that match your organization's structure and
+              needs.
             </p>
           </div>
         </CardContent>
@@ -156,9 +176,14 @@ export default function DocumentsDocsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <ol className="list-decimal list-inside space-y-3 text-muted-foreground">
-            <li>Navigate to <strong>Documents</strong> from the sidebar</li>
-            <li>Click the <strong>"New Document"</strong> button</li>
-            <li>Fill in the document details:
+            <li>
+              Navigate to <strong>Documents</strong> from the sidebar
+            </li>
+            <li>
+              Click the <strong>"New Document"</strong> button
+            </li>
+            <li>
+              Fill in the document details:
               <ul className="list-disc list-inside ml-6 mt-2 space-y-1">
                 <li>Name - A descriptive title</li>
                 <li>Description - What the document contains</li>
@@ -167,7 +192,9 @@ export default function DocumentsDocsPage() {
                 <li>File - Upload the actual document</li>
               </ul>
             </li>
-            <li>Click <strong>"Create Document"</strong> to save</li>
+            <li>
+              Click <strong>"Create Document"</strong> to save
+            </li>
           </ol>
         </CardContent>
       </Card>
@@ -294,7 +321,9 @@ export default function DocumentsDocsPage() {
           <ul className="space-y-3 text-muted-foreground">
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Use descriptive names that clearly indicate the document content</span>
+              <span>
+                Use descriptive names that clearly indicate the document content
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
@@ -306,11 +335,15 @@ export default function DocumentsDocsPage() {
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Keep documents up to date by removing outdated versions</span>
+              <span>
+                Keep documents up to date by removing outdated versions
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Use consistent naming conventions across similar documents</span>
+              <span>
+                Use consistent naming conventions across similar documents
+              </span>
             </li>
           </ul>
         </CardContent>

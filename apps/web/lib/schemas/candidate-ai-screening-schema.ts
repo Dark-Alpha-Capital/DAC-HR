@@ -11,13 +11,13 @@ export const candidateAiScreeningSchema = z.object({
     .min(0)
     .max(10)
     .describe(
-      "Overall numerical score from 0-10 indicating candidate suitability for the position. Higher scores indicate stronger fit."
+      "Overall numerical score from 0-10 indicating candidate suitability for the position. Higher scores indicate stronger fit.",
     ),
 
   recommendation: z
     .enum(["Strong Hire", "Hire", "Neutral", "Do Not Hire"])
     .describe(
-      "Overall hiring recommendation based on the comprehensive evaluation"
+      "Overall hiring recommendation based on the comprehensive evaluation",
     ),
 
   // Strengths and weaknesses
@@ -27,18 +27,18 @@ export const candidateAiScreeningSchema = z.object({
         title: z
           .string()
           .describe(
-            "Brief title or category of the strength (e.g., 'Quantitative Skills')"
+            "Brief title or category of the strength (e.g., 'Quantitative Skills')",
           ),
         description: z
           .string()
           .describe(
-            "Detailed description of why this is a strength with specific examples"
+            "Detailed description of why this is a strength with specific examples",
           ),
-      })
+      }),
     )
     .min(0)
     .describe(
-      "List of candidate strengths relevant to the position. Include specific examples from their background."
+      "List of candidate strengths relevant to the position. Include specific examples from their background.",
     ),
 
   concerns: z
@@ -47,21 +47,21 @@ export const candidateAiScreeningSchema = z.object({
         title: z
           .string()
           .describe(
-            "Brief title or category of the concern (e.g., 'Limited Buy-Side Experience')"
+            "Brief title or category of the concern (e.g., 'Limited Buy-Side Experience')",
           ),
         description: z
           .string()
           .describe(
-            "Detailed description of the concern and its potential impact"
+            "Detailed description of the concern and its potential impact",
           ),
         severity: z
           .enum(["Low", "Medium", "High"])
           .describe("Severity level of the concern"),
-      })
+      }),
     )
     .min(0)
     .describe(
-      "List of concerns or potential weaknesses. Be specific and constructive."
+      "List of concerns or potential weaknesses. Be specific and constructive.",
     ),
 
   // Fit assessments
@@ -72,24 +72,24 @@ export const candidateAiScreeningSchema = z.object({
         .min(0)
         .max(10)
         .describe(
-          "Score from 0-10 for how well candidate's experience matches the role"
+          "Score from 0-10 for how well candidate's experience matches the role",
         ),
       assessment: z
         .string()
         .describe(
-          "Detailed assessment of how candidate's experience aligns with position requirements"
+          "Detailed assessment of how candidate's experience aligns with position requirements",
         ),
       relevantExperience: z
         .array(z.string())
         .min(0)
         .describe(
-          "List of relevant experiences that demonstrate fit for the role"
+          "List of relevant experiences that demonstrate fit for the role",
         ),
       gaps: z
         .array(z.string())
         .min(0)
         .describe(
-          "List of experience gaps or areas where candidate lacks relevant experience"
+          "List of experience gaps or areas where candidate lacks relevant experience",
         ),
     })
     .describe("Assessment of candidate's experience fit for the position"),
@@ -101,12 +101,12 @@ export const candidateAiScreeningSchema = z.object({
         .min(0)
         .max(10)
         .describe(
-          "Score from 0-10 for how well candidate's skills match the role requirements"
+          "Score from 0-10 for how well candidate's skills match the role requirements",
         ),
       assessment: z
         .string()
         .describe(
-          "Detailed assessment of candidate's technical and soft skills"
+          "Detailed assessment of candidate's technical and soft skills",
         ),
       strongSkills: z
         .array(z.string())
@@ -118,6 +118,6 @@ export const candidateAiScreeningSchema = z.object({
         .describe("List of skills that need development or are missing"),
     })
     .describe(
-      "Assessment of candidate's skills alignment with position requirements"
+      "Assessment of candidate's skills alignment with position requirements",
     ),
 });

@@ -95,13 +95,13 @@ export default function CandidateAiAnalysis({
     setSelectedDocumentIds((prev) =>
       prev.includes(documentId)
         ? prev.filter((id) => id !== documentId)
-        : [...prev, documentId]
+        : [...prev, documentId],
     );
   };
 
   const handleSelectAll = () => {
     const documentsWithFileSearch = documents.filter(
-      (doc) => doc.fileSearchDocumentName
+      (doc) => doc.fileSearchDocumentName,
     );
     if (selectedDocumentIds.length === documentsWithFileSearch.length) {
       setSelectedDocumentIds([]);
@@ -155,7 +155,7 @@ export default function CandidateAiAnalysis({
               Authorization: `Bearer ${session.token}`,
             },
             body: JSON.stringify(requestBody),
-          }
+          },
         );
 
         if (!response.ok) {
@@ -182,14 +182,14 @@ export default function CandidateAiAnalysis({
         setError(
           err instanceof Error
             ? err.message
-            : "An error occurred during analysis"
+            : "An error occurred during analysis",
         );
       }
     });
   };
 
   const documentsWithFileSearch = documents.filter(
-    (doc) => doc.fileSearchDocumentName
+    (doc) => doc.fileSearchDocumentName,
   );
   const allSelected =
     documentsWithFileSearch.length > 0 &&
@@ -223,7 +223,7 @@ export default function CandidateAiAnalysis({
             </Label>
             {documentsWithFileSearch.length > 0 && (
               <Button
-                variant="ghost"
+                variant="secondary"
                 size="sm"
                 onClick={handleSelectAll}
                 className="h-8 text-xs"
@@ -332,7 +332,7 @@ export default function CandidateAiAnalysis({
               </div>
               <Button
                 type="button"
-                variant="ghost"
+                variant="secondary"
                 size="sm"
                 onClick={() => {
                   setSelectedTemplate("custom");

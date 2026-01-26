@@ -46,7 +46,7 @@ const DeleteCandidateDocumentButton = ({
             headers: {
               Authorization: `Bearer ${session.session.token}`,
             },
-          }
+          },
         );
 
         const result = await response.json();
@@ -60,7 +60,7 @@ const DeleteCandidateDocumentButton = ({
                 : "Failed to delete document",
             {
               position: "bottom-right",
-            }
+            },
           );
         } else {
           toast.success("Document deleted successfully", {
@@ -70,12 +70,10 @@ const DeleteCandidateDocumentButton = ({
         }
       } catch (error) {
         toast.error(
-          error instanceof Error
-            ? error.message
-            : "Failed to delete document",
+          error instanceof Error ? error.message : "Failed to delete document",
           {
             position: "bottom-right",
-          }
+          },
         );
       }
     });
@@ -126,4 +124,3 @@ const DeleteCandidateDocumentButton = ({
 };
 
 export default DeleteCandidateDocumentButton;
-

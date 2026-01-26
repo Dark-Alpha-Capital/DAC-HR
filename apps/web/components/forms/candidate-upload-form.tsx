@@ -122,7 +122,7 @@ const CandidateUploadForm = ({
                   : "Failed to create candidate",
               {
                 position: "bottom-right",
-              }
+              },
             );
             return;
           }
@@ -145,7 +145,7 @@ const CandidateUploadForm = ({
               formData.append("category", "resume");
               formData.append(
                 "description",
-                "Resume uploaded during candidate creation"
+                "Resume uploaded during candidate creation",
               );
 
               const documentResponse = await fetch(
@@ -156,7 +156,7 @@ const CandidateUploadForm = ({
                     Authorization: `Bearer ${userSession.token}`,
                   },
                   body: formData,
-                }
+                },
               );
 
               const documentResult = await documentResponse.json();
@@ -211,7 +211,7 @@ const CandidateUploadForm = ({
           setResumeFile(null);
           // Clear file input
           const fileInput = document.getElementById(
-            "resume-upload"
+            "resume-upload",
           ) as HTMLInputElement;
           if (fileInput) {
             fileInput.value = "";
@@ -224,7 +224,7 @@ const CandidateUploadForm = ({
               : "Failed to create candidate",
             {
               position: "bottom-right",
-            }
+            },
           );
         }
       });
@@ -245,14 +245,14 @@ const CandidateUploadForm = ({
         <div className="flex items-center gap-3">
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               form.reset();
               setSelectedSource(undefined);
               setResumeFile(null);
               // Clear file input
               const fileInput = document.getElementById(
-                "resume-upload"
+                "resume-upload",
               ) as HTMLInputElement;
               if (fileInput) {
                 fileInput.value = "";
@@ -590,7 +590,7 @@ const CandidateUploadForm = ({
                         "Video files are not allowed. Please upload other file types.",
                         {
                           position: "bottom-right",
-                        }
+                        },
                       );
                       e.target.value = "";
                       return;

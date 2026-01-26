@@ -30,7 +30,7 @@ export interface BulkCreateInterviewFeedbackInput {
  * Creates or updates feedback for a single question in an interview
  */
 export const createInterviewFeedback = async (
-  data: CreateInterviewFeedbackInput
+  data: CreateInterviewFeedbackInput,
 ) => {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -50,8 +50,8 @@ export const createInterviewFeedback = async (
       .where(
         and(
           eq(interviewFeedback.interviewId, interviewId),
-          eq(interviewFeedback.questionId, questionId)
-        )
+          eq(interviewFeedback.questionId, questionId),
+        ),
       )
       .limit(1);
 
@@ -138,7 +138,7 @@ export const createInterviewFeedback = async (
  * Creates or updates feedback for multiple questions at once
  */
 export const bulkCreateInterviewFeedback = async (
-  data: BulkCreateInterviewFeedbackInput
+  data: BulkCreateInterviewFeedbackInput,
 ) => {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -161,8 +161,8 @@ export const bulkCreateInterviewFeedback = async (
         .where(
           and(
             eq(interviewFeedback.interviewId, interviewId),
-            eq(interviewFeedback.questionId, item.questionId)
-          )
+            eq(interviewFeedback.questionId, item.questionId),
+          ),
         )
         .limit(1);
 

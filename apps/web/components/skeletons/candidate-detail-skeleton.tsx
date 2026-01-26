@@ -72,7 +72,10 @@ export const CandidateDetailSkeleton = () => {
                   </div>
                   <div className="space-y-1.5">
                     {Array.from({ length: 2 }).map((_, j) => (
-                      <div key={j} className="flex items-center justify-between">
+                      <div
+                        key={j}
+                        className="flex items-center justify-between"
+                      >
                         <Skeleton className="h-3 w-28" />
                         <div className="flex gap-2">
                           <Skeleton className="h-4 w-20" />
@@ -90,4 +93,3 @@ export const CandidateDetailSkeleton = () => {
     </div>
   );
 };
-

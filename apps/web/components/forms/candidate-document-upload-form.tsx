@@ -81,7 +81,7 @@ const CandidateDocumentUploadForm = ({
                 Authorization: `Bearer ${session.session.token}`,
               },
               body: formData,
-            }
+            },
           );
 
           const result = await response.json();
@@ -104,7 +104,7 @@ const CandidateDocumentUploadForm = ({
             setFile(null);
             setTagsInput("");
             const fileInput = document.getElementById(
-              "file-upload"
+              "file-upload",
             ) as HTMLInputElement;
             if (fileInput) fileInput.value = "";
             router.push(`/candidates/${candidateId}`);
@@ -159,13 +159,13 @@ const CandidateDocumentUploadForm = ({
         <div className="flex items-center gap-3">
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               form.reset();
               setFile(null);
               setTagsInput("");
               const fileInput = document.getElementById(
-                "file-upload"
+                "file-upload",
               ) as HTMLInputElement;
               if (fileInput) fileInput.value = "";
             }}
@@ -277,7 +277,11 @@ const CandidateDocumentUploadForm = ({
                   value={field.state.value}
                   onValueChange={(value) =>
                     field.handleChange(
-                      value as "resume" | "cover-letter" | "portfolio" | "other"
+                      value as
+                        | "resume"
+                        | "cover-letter"
+                        | "portfolio"
+                        | "other",
                     )
                   }
                 >

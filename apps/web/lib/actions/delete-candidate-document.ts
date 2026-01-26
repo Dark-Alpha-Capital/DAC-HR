@@ -11,7 +11,7 @@ import { insertAuditLog } from "@workspace/db/queries";
 
 export const deleteCandidateDocument = async (
   documentId: string,
-  candidateId: string
+  candidateId: string,
 ) => {
   const session = await auth.api.getSession({
     headers: await headers(),

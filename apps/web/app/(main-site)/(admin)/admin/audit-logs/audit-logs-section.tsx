@@ -21,7 +21,7 @@ async function fetchAuditLogs(
   page: number = 1,
   limit: number = 20,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
 ): Promise<{ logs: AuditLog[]; total: number }> {
   const result = await getAuditLogs({
     action,
@@ -103,7 +103,7 @@ async function AuditLogsSectionInner({
     currentPage,
     limit,
     startDate,
-    endDate
+    endDate,
   );
 
   const totalPages = Math.ceil(total / limit);

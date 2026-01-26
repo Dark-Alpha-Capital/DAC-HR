@@ -41,7 +41,7 @@ export default function InterviewQuestionFeedbackDisplay({
       <div
         className={cn(
           "rounded-lg border bg-card transition-colors",
-          hasFeedback && "border-l-2 border-l-emerald-500"
+          hasFeedback && "border-l-2 border-l-emerald-500",
         )}
       >
         <div className="p-4">
@@ -64,7 +64,7 @@ export default function InterviewQuestionFeedbackDisplay({
                   <ChevronRight
                     className={cn(
                       "h-4 w-4 text-muted-foreground flex-shrink-0 transition-transform mt-0.5",
-                      isExpanded && "rotate-90"
+                      isExpanded && "rotate-90",
                     )}
                   />
                 </div>
@@ -100,7 +100,7 @@ export default function InterviewQuestionFeedbackDisplay({
                   )}
 
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();

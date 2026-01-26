@@ -18,7 +18,7 @@ export const updateRound = async (
   roundId: string,
   data:
     | RoundFormSchema
-    | { name: string; description: string; positionId?: string }
+    | { name: string; description: string; positionId?: string },
 ) => {
   const session = await auth.api.getSession({
     headers: await headers(),

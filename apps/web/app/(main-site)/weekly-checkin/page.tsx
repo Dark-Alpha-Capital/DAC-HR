@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 const page = async () => {
   return (
     <div className="container max-w-4xl mx-auto py-6 space-y-8">
-      <Button variant="ghost" asChild>
+      <Button variant="secondary" asChild>
         <Link href="/dashboard">Back to Dashboard</Link>
       </Button>
 

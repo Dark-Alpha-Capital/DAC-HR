@@ -12,7 +12,7 @@ import { insertAuditLog } from "@workspace/db/queries";
 export async function toggleOnboardingTask(
   candidateId: string,
   taskKey: keyof typeof candidateOnboarding,
-  value: boolean
+  value: boolean,
 ) {
   const existing = await db
     .select()
@@ -52,7 +52,7 @@ export async function updateOnboardingTasks(
     emailProvided: boolean;
     onboardingPacketSent: boolean;
     companyEmailActivate: boolean;
-  }
+  },
 ) {
   const session = await auth.api.getSession({
     headers: await headers(),

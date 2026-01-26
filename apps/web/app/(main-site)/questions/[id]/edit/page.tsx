@@ -42,4 +42,3 @@ const EditQuestionForm = async ({ params }: { params: Params }) => {
 
   return <QuestionEditForm question={question} />;
 };
-

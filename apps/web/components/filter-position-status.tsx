@@ -25,7 +25,7 @@ const FilterPositionStatus = () => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectedStatuses, setSelectedStatuses] = useOptimistic(
-    searchParams.getAll("status")
+    searchParams.getAll("status"),
   );
 
   const handleCheckedChange = (value: string, checked: boolean) => {
@@ -53,7 +53,7 @@ const FilterPositionStatus = () => {
     >
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm">
+          <Button variant="secondary" size="sm">
             <Filter className="mr-2 h-4 w-4" />
             Status
             {selectedStatuses.length > 0 && (

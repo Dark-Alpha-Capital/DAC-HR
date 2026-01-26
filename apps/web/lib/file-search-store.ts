@@ -11,7 +11,7 @@ import { CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME } from "./ai/models";
  */
 export async function deleteFileSearchStoreDocument(
   fileSearchDocumentName: string,
-  force: boolean = true
+  force: boolean = true,
 ): Promise<boolean> {
   // Extract store ID and document ID from the full path
   // Format: fileSearchStores/{storeId}/documents/{documentId}
@@ -23,7 +23,7 @@ export async function deleteFileSearchStoreDocument(
     parts[2] !== "documents"
   ) {
     console.error(
-      `Invalid fileSearchDocumentName format: ${fileSearchDocumentName}`
+      `Invalid fileSearchDocumentName format: ${fileSearchDocumentName}`,
     );
     return false;
   }
@@ -44,7 +44,7 @@ export async function deleteFileSearchStoreDocument(
   }
 
   console.log(
-    `Attempting to delete document from FileSearchStore: ${documentId}`
+    `Attempting to delete document from FileSearchStore: ${documentId}`,
   );
 
   try {
@@ -54,14 +54,14 @@ export async function deleteFileSearchStoreDocument(
 
     if (response.ok) {
       console.log(
-        `✅ Document '${documentId}' deleted successfully from FileSearchStore.`
+        `✅ Document '${documentId}' deleted successfully from FileSearchStore.`,
       );
       return true;
     } else {
       // Handle API error response
       const errorData = await response.json().catch(() => ({}));
       console.error(
-        `❌ FileSearchStore deletion failed with status: ${response.status}`
+        `❌ FileSearchStore deletion failed with status: ${response.status}`,
       );
       console.error("Error Details:", errorData);
       return false;

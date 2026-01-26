@@ -14,7 +14,7 @@ export const WEEKLY_CHECKIN_VIEWER_EMAILS = [
  * Check if an email has access to view weekly check-in records
  */
 export const hasWeeklyCheckinViewerAccess = (
-  email: string | null | undefined
+  email: string | null | undefined,
 ): boolean => {
   if (!email) return false;
   return WEEKLY_CHECKIN_VIEWER_EMAILS.includes(email.toLowerCase());

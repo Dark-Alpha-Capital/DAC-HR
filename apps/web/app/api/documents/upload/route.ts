@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     if (file.size > maxSize) {
       return NextResponse.json(
         { error: "File size exceeds 500MB limit" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
         {
           error: "Video files are not allowed. Please upload other file types.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     if (!url) {
       return NextResponse.json(
         { error: "Failed to upload file to storage" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       {
         error: error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

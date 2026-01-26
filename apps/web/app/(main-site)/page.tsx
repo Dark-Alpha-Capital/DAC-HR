@@ -76,19 +76,19 @@ async function UserContent() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link href="/positions/new">
-                <Briefcase className="mr-2 size-4" />
-                New position
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="sm">
+            <Button asChild size="sm">
               <Link href="/candidates/new">
                 <Users className="mr-2 size-4" />
                 New candidate
               </Link>
             </Button>
-            <Button asChild variant="outline" size="sm">
+            <Button asChild variant="secondary" size="sm">
+              <Link href="/positions/new">
+                <Briefcase className="mr-2 size-4" />
+                New position
+              </Link>
+            </Button>
+            <Button asChild variant="secondary" size="sm">
               <Link href="/documents/new">
                 <Folders className="mr-2 size-4" />
                 Upload document
@@ -110,13 +110,13 @@ async function UserContent() {
                 <span className="text-muted-foreground">
                   1. Create a position
                 </span>
-                <Button asChild variant="ghost" size="sm">
+                <Button asChild variant="secondary" size="sm">
                   <Link href="/positions">Open</Link>
                 </Button>
               </li>
               <li className="flex items-center justify-between gap-3">
                 <span className="text-muted-foreground">2. Add candidates</span>
-                <Button asChild variant="ghost" size="sm">
+                <Button asChild variant="secondary" size="sm">
                   <Link href="/candidates">Open</Link>
                 </Button>
               </li>
@@ -124,7 +124,7 @@ async function UserContent() {
                 <span className="text-muted-foreground">
                   3. Track applications and rounds
                 </span>
-                <Button asChild variant="ghost" size="sm">
+                <Button asChild variant="secondary" size="sm">
                   <Link href="/applications">Open</Link>
                 </Button>
               </li>
@@ -132,7 +132,7 @@ async function UserContent() {
                 <span className="text-muted-foreground">
                   4. Prepare question bank
                 </span>
-                <Button asChild variant="ghost" size="sm">
+                <Button asChild variant="secondary" size="sm">
                   <Link href="/questions">Open</Link>
                 </Button>
               </li>
@@ -240,9 +240,9 @@ function QuickLink({
 }) {
   return (
     <Link href={href}>
-      <Card className="h-full transition-shadow hover:shadow-md">
+      <Card className="h-full transition-shadow hover:shadow-sm border-border/80">
         <CardHeader className="gap-3">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-border">
+          <div className="flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
             <Icon className="size-5" />
           </div>
           <div className="space-y-1">

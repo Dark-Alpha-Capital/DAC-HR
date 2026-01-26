@@ -50,17 +50,14 @@ const BulkDeleteCandidatesButton = ({
 
     startTransition(async () => {
       try {
-        const response = await fetch(
-          `/api/candidate/bulk`,
-          {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${userSession.session.token}`,
-            },
-            body: JSON.stringify({ candidateIds: selectedIds }),
-          }
-        );
+        const response = await fetch(`/api/candidate/bulk`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${userSession.session.token}`,
+          },
+          body: JSON.stringify({ candidateIds: selectedIds }),
+        });
 
         const result = await response.json();
 
@@ -73,12 +70,9 @@ const BulkDeleteCandidatesButton = ({
 
         if (failedCount === 0) {
           await resetCacheForCandidates();
-          toast.success(
-            `Successfully deleted ${successCount} candidate(s)`,
-            {
-              position: "bottom-right",
-            }
-          );
+          toast.success(`Successfully deleted ${successCount} candidate(s)`, {
+            position: "bottom-right",
+          });
           setOpen(false);
           onDeleteComplete?.();
           router.refresh();
@@ -92,7 +86,7 @@ const BulkDeleteCandidatesButton = ({
             {
               position: "bottom-right",
               duration: 6000,
-            }
+            },
           );
           setOpen(false);
           onDeleteComplete?.();
@@ -105,7 +99,7 @@ const BulkDeleteCandidatesButton = ({
             : "Failed to delete candidates",
           {
             position: "bottom-right",
-          }
+          },
         );
         setOpen(false);
       }
@@ -121,19 +115,21 @@ const BulkDeleteCandidatesButton = ({
       <AlertDialogTrigger asChild>
         <Button variant="destructive" size="sm" disabled={isPending}>
           <Trash2 className="h-4 w-4 mr-2" />
-          {isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-          ) : null}
-          Delete {selectedIds.length} Candidate{selectedIds.length !== 1 ? "s" : ""}
+          {isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+          Delete {selectedIds.length} Candidate
+          {selectedIds.length !== 1 ? "s" : ""}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete {selectedIds.length} candidate(s)?</AlertDialogTitle>
+          <AlertDialogTitle>
+            Delete {selectedIds.length} candidate(s)?
+          </AlertDialogTitle>
           <AlertDialogDescription>
             This action cannot be undone. This will permanently delete{" "}
-            {selectedIds.length} candidate{selectedIds.length !== 1 ? "s" : ""} and all
-            related data from the system, including documents and applications.
+            {selectedIds.length} candidate{selectedIds.length !== 1 ? "s" : ""}{" "}
+            and all related data from the system, including documents and
+            applications.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -151,7 +147,8 @@ const BulkDeleteCandidatesButton = ({
             ) : (
               <>
                 <Trash2 className="h-4 w-4 mr-2" />
-                Delete {selectedIds.length} Candidate{selectedIds.length !== 1 ? "s" : ""}
+                Delete {selectedIds.length} Candidate
+                {selectedIds.length !== 1 ? "s" : ""}
               </>
             )}
           </AlertDialogAction>
@@ -162,4 +159,3 @@ const BulkDeleteCandidatesButton = ({
 };
 
 export default BulkDeleteCandidatesButton;
-

@@ -37,8 +37,8 @@ export default function QuestionsDocsPage() {
           <h1 className="text-4xl font-bold tracking-tight">Questions</h1>
         </div>
         <p className="text-xl text-muted-foreground">
-          The question bank is a central repository of interview questions that can be
-          reused across different interview rounds and positions.
+          The question bank is a central repository of interview questions that
+          can be reused across different interview rounds and positions.
         </p>
       </div>
 
@@ -52,10 +52,18 @@ export default function QuestionsDocsPage() {
             The question bank allows you to:
           </p>
           <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-            <li><strong>Create</strong> standardized interview questions</li>
-            <li><strong>Reuse</strong> questions across multiple round templates</li>
-            <li><strong>Maintain consistency</strong> in candidate evaluation</li>
-            <li><strong>Build</strong> a library of proven questions over time</li>
+            <li>
+              <strong>Create</strong> standardized interview questions
+            </li>
+            <li>
+              <strong>Reuse</strong> questions across multiple round templates
+            </li>
+            <li>
+              <strong>Maintain consistency</strong> in candidate evaluation
+            </li>
+            <li>
+              <strong>Build</strong> a library of proven questions over time
+            </li>
           </ul>
         </CardContent>
       </Card>
@@ -76,7 +84,9 @@ export default function QuestionsDocsPage() {
               </div>
               <div className="flex-1">
                 <div className="font-semibold">Question Bank</div>
-                <p className="text-sm text-muted-foreground">Central repository of all questions</p>
+                <p className="text-sm text-muted-foreground">
+                  Central repository of all questions
+                </p>
               </div>
             </div>
             <div className="flex justify-center">
@@ -88,7 +98,9 @@ export default function QuestionsDocsPage() {
               </div>
               <div className="flex-1">
                 <div className="font-semibold">Round Templates</div>
-                <p className="text-sm text-muted-foreground">Questions are linked to interview rounds</p>
+                <p className="text-sm text-muted-foreground">
+                  Questions are linked to interview rounds
+                </p>
               </div>
             </div>
             <div className="flex justify-center">
@@ -100,7 +112,9 @@ export default function QuestionsDocsPage() {
               </div>
               <div className="flex-1">
                 <div className="font-semibold">Interviews</div>
-                <p className="text-sm text-muted-foreground">Questions appear during interview recording</p>
+                <p className="text-sm text-muted-foreground">
+                  Questions appear during interview recording
+                </p>
               </div>
             </div>
           </div>
@@ -167,15 +181,22 @@ export default function QuestionsDocsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <ol className="list-decimal list-inside space-y-3 text-muted-foreground">
-            <li>Navigate to <strong>Questions</strong> from the sidebar</li>
-            <li>Click the <strong>"New Question"</strong> button</li>
+            <li>
+              Navigate to <strong>Questions</strong> from the sidebar
+            </li>
+            <li>
+              Click the <strong>"New Question"</strong> button
+            </li>
             <li>Enter the question text</li>
-            <li>Click <strong>"Create Question"</strong> to save</li>
+            <li>
+              Click <strong>"Create Question"</strong> to save
+            </li>
           </ol>
           <div className="p-4 bg-muted/50 rounded-lg">
             <p className="text-sm text-muted-foreground">
-              <strong>Tip:</strong> Write questions that are clear and open-ended.
-              Avoid yes/no questions for better candidate evaluation.
+              <strong>Tip:</strong> Write questions that are clear and
+              open-ended. Avoid yes/no questions for better candidate
+              evaluation.
             </p>
           </div>
         </CardContent>
@@ -191,15 +212,20 @@ export default function QuestionsDocsPage() {
             After creating questions, link them to round templates:
           </p>
           <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
-            <li>Go to <strong>Rounds</strong> from the sidebar</li>
+            <li>
+              Go to <strong>Rounds</strong> from the sidebar
+            </li>
             <li>Select the round template you want to add questions to</li>
-            <li>Click <strong>"Add Question"</strong></li>
+            <li>
+              Click <strong>"Add Question"</strong>
+            </li>
             <li>Select questions from the question bank</li>
           </ol>
           <div className="p-4 bg-muted/50 rounded-lg">
             <p className="text-sm text-muted-foreground">
-              <strong>Note:</strong> The same question can be linked to multiple round templates.
-              This is useful for questions that apply across different interview stages.
+              <strong>Note:</strong> The same question can be linked to multiple
+              round templates. This is useful for questions that apply across
+              different interview stages.
             </p>
           </div>
         </CardContent>
@@ -211,9 +237,7 @@ export default function QuestionsDocsPage() {
           <CardTitle>Questions During Interviews</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-muted-foreground">
-            When recording an interview:
-          </p>
+          <p className="text-muted-foreground">When recording an interview:</p>
           <ul className="list-disc list-inside space-y-2 text-muted-foreground">
             <li>Questions from the selected round template are displayed</li>
             <li>Interviewers can add notes for each question</li>
@@ -232,11 +256,16 @@ export default function QuestionsDocsPage() {
           <ul className="space-y-3 text-muted-foreground">
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Write clear, specific questions that elicit detailed responses</span>
+              <span>
+                Write clear, specific questions that elicit detailed responses
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Use open-ended questions starting with "How", "What", "Tell me about"</span>
+              <span>
+                Use open-ended questions starting with "How", "What", "Tell me
+                about"
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
@@ -244,11 +273,16 @@ export default function QuestionsDocsPage() {
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Review and update questions periodically based on effectiveness</span>
+              <span>
+                Review and update questions periodically based on effectiveness
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Build a comprehensive library that covers all evaluation criteria</span>
+              <span>
+                Build a comprehensive library that covers all evaluation
+                criteria
+              </span>
             </li>
           </ul>
         </CardContent>
@@ -265,7 +299,9 @@ export default function QuestionsDocsPage() {
         <CardContent>
           <div className="space-y-4">
             <div>
-              <div className="font-semibold text-sm text-muted-foreground mb-2">Phone Screen</div>
+              <div className="font-semibold text-sm text-muted-foreground mb-2">
+                Phone Screen
+              </div>
               <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
                 <li>"Walk me through your resume and career path."</li>
                 <li>"Why are you interested in this role?"</li>
@@ -273,7 +309,9 @@ export default function QuestionsDocsPage() {
               </ul>
             </div>
             <div>
-              <div className="font-semibold text-sm text-muted-foreground mb-2">Technical</div>
+              <div className="font-semibold text-sm text-muted-foreground mb-2">
+                Technical
+              </div>
               <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
                 <li>"Describe a complex project you've worked on."</li>
                 <li>"How do you approach debugging a difficult issue?"</li>
@@ -281,7 +319,9 @@ export default function QuestionsDocsPage() {
               </ul>
             </div>
             <div>
-              <div className="font-semibold text-sm text-muted-foreground mb-2">Behavioral</div>
+              <div className="font-semibold text-sm text-muted-foreground mb-2">
+                Behavioral
+              </div>
               <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
                 <li>"Tell me about a time you disagreed with a colleague."</li>
                 <li>"Describe a situation where you had to learn quickly."</li>
@@ -299,12 +339,18 @@ export default function QuestionsDocsPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Link href="/docs/rounds" className="flex items-center gap-2 p-3 rounded-lg border hover:bg-accent transition-colors">
+            <Link
+              href="/docs/rounds"
+              className="flex items-center gap-2 p-3 rounded-lg border hover:bg-accent transition-colors"
+            >
               <CircleDot className="h-4 w-4 text-primary" />
               <span>Interview Rounds</span>
               <ArrowRight className="h-4 w-4 ml-auto" />
             </Link>
-            <Link href="/docs/interviews" className="flex items-center gap-2 p-3 rounded-lg border hover:bg-accent transition-colors">
+            <Link
+              href="/docs/interviews"
+              className="flex items-center gap-2 p-3 rounded-lg border hover:bg-accent transition-colors"
+            >
               <Calendar className="h-4 w-4 text-primary" />
               <span>Interviews</span>
               <ArrowRight className="h-4 w-4 ml-auto" />

@@ -19,7 +19,7 @@ import { requireAuth } from "@/lib/middleware/auth";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     // Check authentication
@@ -33,7 +33,7 @@ export async function GET(
     if (!candidateId) {
       return NextResponse.json(
         { error: "Candidate ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -46,7 +46,7 @@ export async function GET(
       {
         error: error instanceof Error ? error.message : "Internal server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -56,11 +56,11 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const startTime = Date.now();
   console.log(
-    `[POST /api/candidate/:id/documents] Request started at ${new Date().toISOString()}`
+    `[POST /api/candidate/:id/documents] Request started at ${new Date().toISOString()}`,
   );
   try {
     const authResult = await requireAuth();
@@ -71,13 +71,13 @@ export async function POST(
 
     const { id: candidateId } = await params;
     console.log(
-      `[POST /api/candidate/:id/documents] Adding document to candidate ${candidateId} - User: ${user.email} (${user.id})`
+      `[POST /api/candidate/:id/documents] Adding document to candidate ${candidateId} - User: ${user.email} (${user.id})`,
     );
     if (!candidateId || candidateId.trim() === "") {
       console.error("[POST /api/candidate/:id/documents] Missing candidate ID");
       return NextResponse.json(
         { error: "Candidate ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -95,7 +95,7 @@ export async function POST(
     const tagsInput = formData.get("tags") as string | null;
 
     console.log(
-      `[POST /api/candidate/:id/documents] Document details - Name: ${name}, Category: ${category}, Has file: ${!!file}, Has URL: ${!!url}`
+      `[POST /api/candidate/:id/documents] Document details - Name: ${name}, Category: ${category}, Has file: ${!!file}, Has URL: ${!!url}`,
     );
 
     // Parse tags
@@ -118,17 +118,17 @@ export async function POST(
 
     if (file) {
       console.log(
-        `[POST /api/candidate/:id/documents] File upload - Name: ${file.name}, Size: ${file.size} bytes, Type: ${file.type}`
+        `[POST /api/candidate/:id/documents] File upload - Name: ${file.name}, Size: ${file.size} bytes, Type: ${file.type}`,
       );
       // Validate file size (max 500MB)
       const maxSize = 500 * 1024 * 1024; // 500MB
       if (file.size > maxSize) {
         console.error(
-          `[POST /api/candidate/:id/documents] File size validation failed - Size: ${file.size} bytes, Max: ${maxSize} bytes`
+          `[POST /api/candidate/:id/documents] File size validation failed - Size: ${file.size} bytes, Max: ${maxSize} bytes`,
         );
         return NextResponse.json(
           { error: "File size exceeds 500MB limit" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -148,33 +148,33 @@ export async function POST(
 
       if (videoTypes.includes(file.type)) {
         console.error(
-          `[POST /api/candidate/:id/documents] Video file rejected - Type: ${file.type}`
+          `[POST /api/candidate/:id/documents] Video file rejected - Type: ${file.type}`,
         );
         return NextResponse.json(
           {
             error:
               "Video files are not allowed. Please upload other file types.",
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
       // Upload file to storage (use /Candidates folder for candidate documents)
       console.log(
-        `[POST /api/candidate/:id/documents] Uploading file to storage...`
+        `[POST /api/candidate/:id/documents] Uploading file to storage...`,
       );
       const uploadedUrl = await uploadFile(file, "/Candidates");
       console.log(
-        `[POST /api/candidate/:id/documents] File uploaded successfully - URL: ${uploadedUrl}`
+        `[POST /api/candidate/:id/documents] File uploaded successfully - URL: ${uploadedUrl}`,
       );
 
       if (!uploadedUrl) {
         console.error(
-          "[POST /api/candidate/:id/documents] File upload failed - no URL returned"
+          "[POST /api/candidate/:id/documents] File upload failed - no URL returned",
         );
         return NextResponse.json(
           { error: "Failed to upload file to storage" },
-          { status: 500 }
+          { status: 500 },
         );
       }
 
@@ -182,27 +182,27 @@ export async function POST(
     } else if (url && url.trim() !== "") {
       // Validate URL format if provided directly
       console.log(
-        `[POST /api/candidate/:id/documents] Using provided URL: ${url}`
+        `[POST /api/candidate/:id/documents] Using provided URL: ${url}`,
       );
       try {
         new URL(url);
         finalUrl = url.trim();
       } catch {
         console.error(
-          `[POST /api/candidate/:id/documents] Invalid URL format: ${url}`
+          `[POST /api/candidate/:id/documents] Invalid URL format: ${url}`,
         );
         return NextResponse.json(
           { error: "Invalid URL format" },
-          { status: 400 }
+          { status: 400 },
         );
       }
     } else {
       console.error(
-        "[POST /api/candidate/:id/documents] Neither file nor URL provided"
+        "[POST /api/candidate/:id/documents] Neither file nor URL provided",
       );
       return NextResponse.json(
         { error: "Please either upload a file or provide a document URL" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -221,11 +221,11 @@ export async function POST(
     if (!validationResult.success) {
       console.error(
         "[POST /api/candidate/:id/documents] Validation failed:",
-        validationResult.error.flatten().fieldErrors
+        validationResult.error.flatten().fieldErrors,
       );
       return NextResponse.json(
         { error: validationResult.error.flatten().fieldErrors },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -240,11 +240,11 @@ export async function POST(
 
       if (!candidateForMetadata) {
         console.error(
-          `[POST /api/candidate/:id/documents] Candidate not found - ID: ${candidateId}`
+          `[POST /api/candidate/:id/documents] Candidate not found - ID: ${candidateId}`,
         );
         return NextResponse.json(
           { error: "Candidate not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -253,7 +253,7 @@ export async function POST(
         CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME.trim() !== ""
       ) {
         console.log(
-          `[POST /api/candidate/:id/documents] Uploading to file search store: ${CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME}`
+          `[POST /api/candidate/:id/documents] Uploading to file search store: ${CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME}`,
         );
         try {
           const customMetadata: Array<{
@@ -269,7 +269,7 @@ export async function POST(
               {
                 key: "candidate_email",
                 stringValue: candidateForMetadata.email,
-              }
+              },
             );
 
             if (candidateForMetadata.location) {
@@ -306,7 +306,7 @@ export async function POST(
 
           // Wait for indexing to complete (critical step)
           console.log(
-            `[POST /api/candidate/:id/documents] Waiting for file search store indexing to complete...`
+            `[POST /api/candidate/:id/documents] Waiting for file search store indexing to complete...`,
           );
           let waitCount = 0;
           while (!operation.done) {
@@ -315,7 +315,7 @@ export async function POST(
             operation = await googleGenAI.operations.get({ operation });
             if (waitCount % 3 === 0) {
               console.log(
-                `[POST /api/candidate/:id/documents] Still waiting for indexing... (${waitCount * 5}s elapsed)`
+                `[POST /api/candidate/:id/documents] Still waiting for indexing... (${waitCount * 5}s elapsed)`,
               );
             }
           }
@@ -324,31 +324,31 @@ export async function POST(
 
           if (fileSearchDocumentName) {
             console.log(
-              `[POST /api/candidate/:id/documents] File uploaded to search store successfully - Document name: ${fileSearchDocumentName}`
+              `[POST /api/candidate/:id/documents] File uploaded to search store successfully - Document name: ${fileSearchDocumentName}`,
             );
           } else {
             console.warn(
-              `[POST /api/candidate/:id/documents] File search store upload completed but no document name returned`
+              `[POST /api/candidate/:id/documents] File search store upload completed but no document name returned`,
             );
           }
         } catch (error) {
           console.error(
             `[POST /api/candidate/:id/documents] Error uploading to file search store:`,
-            error
+            error,
           );
           // Don't fail the entire request if file search store upload fails
           // The document will still be created without file search indexing
         }
       } else {
         console.log(
-          `[POST /api/candidate/:id/documents] Skipping file search store upload - store name not configured`
+          `[POST /api/candidate/:id/documents] Skipping file search store upload - store name not configured`,
         );
       }
     }
 
     // Create the candidate document
     console.log(
-      `[POST /api/candidate/:id/documents] Creating candidate document record in database...`
+      `[POST /api/candidate/:id/documents] Creating candidate document record in database...`,
     );
     const [newCandidateDocument] = await db
       .insert(candidateDocumentSchema)
@@ -370,7 +370,7 @@ export async function POST(
       .returning();
 
     console.log(
-      `[POST /api/candidate/:id/documents] Candidate document created successfully - Document ID: ${newCandidateDocument?.id}`
+      `[POST /api/candidate/:id/documents] Candidate document created successfully - Document ID: ${newCandidateDocument?.id}`,
     );
 
     // Insert audit log asynchronously
@@ -420,11 +420,11 @@ export async function POST(
 
     const duration = Date.now() - startTime;
     console.log(
-      `[POST /api/candidate/:id/documents] ✅ Request completed successfully at ${new Date().toISOString()} - Duration: ${duration}ms - Document ID: ${newCandidateDocument?.id}`
+      `[POST /api/candidate/:id/documents] ✅ Request completed successfully at ${new Date().toISOString()} - Duration: ${duration}ms - Document ID: ${newCandidateDocument?.id}`,
     );
     return NextResponse.json(
       { success: true, data: newCandidateDocument },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     const duration = Date.now() - startTime;
@@ -436,13 +436,13 @@ export async function POST(
         error,
         errorMessage,
         stack: error instanceof Error ? error.stack : undefined,
-      }
+      },
     );
     return NextResponse.json(
       {
         error: errorMessage,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

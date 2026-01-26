@@ -43,7 +43,7 @@ const RoundCard = ({ round }: RoundCardProps) => {
           </div>
         )}
         {round.positions.length === 0 && (
-          <Badge variant="outline" className="mt-2">
+          <Badge variant="secondary" className="mt-2">
             No position linked
           </Badge>
         )}
@@ -61,13 +61,13 @@ const RoundCard = ({ round }: RoundCardProps) => {
       </CardContent>
       <CardFooter className="border-t">
         <div className="flex gap-2 w-full">
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="secondary" size="sm" asChild>
             <Link href={`/rounds/${round.id}`}>
               <Eye className="h-4 w-4" />
               View
             </Link>
           </Button>
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="secondary" size="sm" asChild>
             <Link href={`/rounds/${round.id}/edit`}>
               <Pencil className="h-4 w-4" />
               Edit
@@ -81,4 +81,3 @@ const RoundCard = ({ round }: RoundCardProps) => {
 };
 
 export default RoundCard;
-

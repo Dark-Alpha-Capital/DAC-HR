@@ -11,13 +11,13 @@ export const interviewAiAnalysisSchema = z.object({
     .min(0)
     .max(10)
     .describe(
-      "Overall numerical score from 0-10 indicating candidate's interview performance. Higher scores indicate stronger performance."
+      "Overall numerical score from 0-10 indicating candidate's interview performance. Higher scores indicate stronger performance.",
     ),
 
   recommendation: z
     .enum(["Strong Hire", "Hire", "Neutral", "Do Not Hire"])
     .describe(
-      "Overall hiring recommendation based on the interview evaluation"
+      "Overall hiring recommendation based on the interview evaluation",
     ),
 
   // Interview performance assessment
@@ -31,18 +31,20 @@ export const interviewAiAnalysisSchema = z.object({
       assessment: z
         .string()
         .describe(
-          "Detailed assessment of how the candidate performed during the interview"
+          "Detailed assessment of how the candidate performed during the interview",
         ),
       highlights: z
         .array(z.string())
         .min(0)
         .describe(
-          "Key highlights and strengths demonstrated during the interview"
+          "Key highlights and strengths demonstrated during the interview",
         ),
       concerns: z
         .array(z.string())
         .min(0)
-        .describe("Concerns or areas of weakness observed during the interview"),
+        .describe(
+          "Concerns or areas of weakness observed during the interview",
+        ),
     })
     .describe("Assessment of the candidate's interview performance"),
 
@@ -54,28 +56,28 @@ export const interviewAiAnalysisSchema = z.object({
         .min(0)
         .max(10)
         .describe(
-          "Score from 0-10 for how well the candidate fits the position requirements based on interview responses"
+          "Score from 0-10 for how well the candidate fits the position requirements based on interview responses",
         ),
       assessment: z
         .string()
         .describe(
-          "Detailed assessment of how the interview responses align with position requirements"
+          "Detailed assessment of how the interview responses align with position requirements",
         ),
       alignedRequirements: z
         .array(z.string())
         .min(0)
         .describe(
-          "Position requirements that the candidate demonstrated alignment with"
+          "Position requirements that the candidate demonstrated alignment with",
         ),
       gaps: z
         .array(z.string())
         .min(0)
         .describe(
-          "Position requirements where gaps were identified in the interview"
+          "Position requirements where gaps were identified in the interview",
         ),
     })
     .describe(
-      "Assessment of candidate's fit for the position based on interview"
+      "Assessment of candidate's fit for the position based on interview",
     ),
 
   // Question-by-question analysis
@@ -91,9 +93,9 @@ export const interviewAiAnalysisSchema = z.object({
         notes: z
           .string()
           .describe(
-            "Analysis notes about the candidate's response to this question"
+            "Analysis notes about the candidate's response to this question",
           ),
-      })
+      }),
     )
     .min(0)
     .describe("Question-by-question breakdown of interview performance"),
@@ -102,7 +104,7 @@ export const interviewAiAnalysisSchema = z.object({
   overallSummary: z
     .string()
     .describe(
-      "Comprehensive summary of the interview analysis and recommendation rationale"
+      "Comprehensive summary of the interview analysis and recommendation rationale",
     ),
 });
 

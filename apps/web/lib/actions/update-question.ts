@@ -17,7 +17,7 @@ import { insertAuditLog } from "@workspace/db/queries";
 
 export const updateQuestion = async (
   questionId: string,
-  data: QuestionEditFormSchema
+  data: QuestionEditFormSchema,
 ) => {
   const session = await auth.api.getSession({
     headers: await headers(),

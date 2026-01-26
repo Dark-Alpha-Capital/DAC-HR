@@ -25,7 +25,7 @@ interface CandidateDocumentTableProps {
 const categoryColors = {
   resume: "default",
   "cover-letter": "secondary",
-  portfolio: "outline",
+  portfolio: "secondary",
   other: "destructive",
 } as const;
 
@@ -75,7 +75,7 @@ const CandidateDocumentTableRow = ({
       }
 
       const response = await fetch(
-        `/api/documents/view?url=${encodeURIComponent(document.url)}`
+        `/api/documents/view?url=${encodeURIComponent(document.url)}`,
       );
 
       if (!response.ok) {
@@ -93,7 +93,7 @@ const CandidateDocumentTableRow = ({
           : "Failed to open document. Please try again.",
         {
           position: "bottom-right",
-        }
+        },
       );
     } finally {
       setIsLoadingViewUrl(false);
@@ -111,7 +111,7 @@ const CandidateDocumentTableRow = ({
 
       if (!isPublicUrl) {
         const response = await fetch(
-          `/api/documents/view?url=${encodeURIComponent(document.url)}`
+          `/api/documents/view?url=${encodeURIComponent(document.url)}`,
         );
 
         if (!response.ok) {
@@ -145,7 +145,7 @@ const CandidateDocumentTableRow = ({
           : "Failed to download document. Please try again.",
         {
           position: "bottom-right",
-        }
+        },
       );
     } finally {
       setIsDownloading(false);
@@ -180,7 +180,7 @@ const CandidateDocumentTableRow = ({
       <TableCell className="py-1.5 px-2">
         <div className="flex items-center justify-end gap-1.5">
           <Button
-            variant="ghost"
+            variant="secondary"
             size="icon"
             className="h-7 w-7"
             onClick={handleViewDocument}
@@ -193,7 +193,7 @@ const CandidateDocumentTableRow = ({
             )}
           </Button>
           <Button
-            variant="ghost"
+            variant="secondary"
             size="icon"
             className="h-7 w-7"
             onClick={handleDownloadDocument}

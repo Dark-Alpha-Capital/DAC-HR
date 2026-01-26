@@ -55,7 +55,7 @@ const PositionKanbanCard = ({
               <h4 className="font-medium leading-tight text-sm">{name}</h4>
               {status && (
                 <Badge
-                  variant="outline"
+                  variant="secondary"
                   className={`text-[0.65rem] ${getStatusColorClass(status)}`}
                 >
                   {statusLabels[status] || status}
@@ -72,12 +72,22 @@ const PositionKanbanCard = ({
             <code className="bg-muted px-1.5 py-0.5 rounded">{slug}</code>
           </div>
           <div className="flex items-center gap-1 pt-1.5 border-t">
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" asChild>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="h-6 w-6 p-0"
+              asChild
+            >
               <Link href={`/positions/${slug}`}>
                 <Eye className="h-3 w-3" />
               </Link>
             </Button>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" asChild>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="h-6 w-6 p-0"
+              asChild
+            >
               <Link href={`/positions/${slug}/edit`}>
                 <Pencil className="h-3 w-3" />
               </Link>

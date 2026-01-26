@@ -95,8 +95,8 @@ export default function InterviewsTab({ candidate }: { candidate: Candidate }) {
   const handleStartRound = (roundId: string) => {
     setRounds((prev) =>
       prev.map((r) =>
-        r.id === roundId ? { ...r, status: "in-progress" as const } : r
-      )
+        r.id === roundId ? { ...r, status: "in-progress" as const } : r,
+      ),
     );
   };
 
@@ -111,8 +111,8 @@ export default function InterviewsTab({ candidate }: { candidate: Candidate }) {
 
       setRounds((prev) =>
         prev.map((r) =>
-          r.id === currentRound.id ? { ...r, status: "completed" as const } : r
-        )
+          r.id === currentRound.id ? { ...r, status: "completed" as const } : r,
+        ),
       );
 
       // Show success toast
@@ -144,14 +144,14 @@ export default function InterviewsTab({ candidate }: { candidate: Candidate }) {
                 [questionIndex]: value,
               },
             }
-          : r
-      )
+          : r,
+      ),
     );
   };
 
   const handleFeedbackChange = (value: string) => {
     setRounds((prev) =>
-      prev.map((r) => (r.id === activeRound ? { ...r, feedback: value } : r))
+      prev.map((r) => (r.id === activeRound ? { ...r, feedback: value } : r)),
     );
   };
 
@@ -159,8 +159,8 @@ export default function InterviewsTab({ candidate }: { candidate: Candidate }) {
     const proceed = value === "yes" ? true : value === "no" ? false : null;
     setRounds((prev) =>
       prev.map((r) =>
-        r.id === activeRound ? { ...r, proceedToNextRound: proceed } : r
-      )
+        r.id === activeRound ? { ...r, proceedToNextRound: proceed } : r,
+      ),
     );
   };
 
@@ -182,7 +182,7 @@ export default function InterviewsTab({ candidate }: { candidate: Candidate }) {
       case "in-progress":
         return "secondary";
       default:
-        return "outline";
+        return "secondary";
     }
   };
 

@@ -91,14 +91,14 @@ const DisplayEmployeeWrapper = async ({ params }: { params: Params }) => {
           <div className="space-y-2">
             <h1 className="text-3xl font-bold tracking-tight">{fullName}</h1>
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="outline" className="gap-1.5 text-xs">
+              <Badge variant="secondary" className="gap-1.5 text-xs">
                 <Calendar className="h-3 w-3" />
                 Created {formatDate(employee.createdAt)}
               </Badge>
               {employee.updatedAt &&
                 employee.updatedAt.getTime() !==
                   employee.createdAt.getTime() && (
-                  <Badge variant="outline" className="gap-1.5 text-xs">
+                  <Badge variant="secondary" className="gap-1.5 text-xs">
                     <Clock className="h-3 w-3" />
                     Updated {formatDate(employee.updatedAt)}
                   </Badge>
@@ -107,7 +107,7 @@ const DisplayEmployeeWrapper = async ({ params }: { params: Params }) => {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="secondary" size="sm" asChild>
             <Link href={`/employees/${employee.id}/edit`}>
               <Pencil className="h-4 w-4 mr-2" />
               Edit

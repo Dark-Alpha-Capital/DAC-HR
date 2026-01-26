@@ -36,21 +36,16 @@ interface QuestionContainerProps {
   questions: QuestionWithRounds[];
 }
 
-const QuestionContainer = ({
-  questions,
-}: QuestionContainerProps) => {
-
+const QuestionContainer = ({ questions }: QuestionContainerProps) => {
   const renderRounds = (question: QuestionWithRounds) => {
     if (!question.rounds || question.rounds.length === 0) {
-      return (
-        <span className="text-xs text-muted-foreground">No rounds</span>
-      );
+      return <span className="text-xs text-muted-foreground">No rounds</span>;
     }
 
     return (
       <div className="flex flex-wrap gap-1">
         {question.rounds.map((round) => (
-          <Badge key={round.id} variant="outline" className="text-xs">
+          <Badge key={round.id} variant="secondary" className="text-xs">
             {round.name}
           </Badge>
         ))}
@@ -106,7 +101,7 @@ const QuestionContainer = ({
               <TableCell className="text-right py-3 px-4">
                 <div className="flex items-center justify-end gap-1">
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="sm"
                     className="h-8 w-8 p-0"
                     asChild
@@ -116,7 +111,7 @@ const QuestionContainer = ({
                     </Link>
                   </Button>
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="sm"
                     className="h-8 w-8 p-0"
                     asChild

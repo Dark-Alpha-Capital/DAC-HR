@@ -43,7 +43,7 @@ export default function InterviewQuestionFeedbackForm({
   const router = useRouter();
   const [notes, setNotes] = useState(question.feedback?.notes ?? "");
   const [rating, setRating] = useState<string>(
-    question.feedback?.rating?.toString() ?? "none"
+    question.feedback?.rating?.toString() ?? "none",
   );
   const [isPending, startTransition] = useTransition();
 
@@ -65,7 +65,7 @@ export default function InterviewQuestionFeedbackForm({
         toast.error(
           typeof result.error === "string"
             ? result.error
-            : "Failed to save feedback"
+            : "Failed to save feedback",
         );
         return;
       }
@@ -138,8 +138,6 @@ export default function InterviewQuestionFeedbackForm({
   }
 
   return (
-    <div className="rounded-lg border p-4 shadow-sm space-y-4">
-      {content}
-    </div>
+    <div className="rounded-lg border p-4 shadow-sm space-y-4">{content}</div>
   );
 }

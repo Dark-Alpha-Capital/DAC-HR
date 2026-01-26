@@ -247,7 +247,7 @@ const Header = () => {
             </DropdownMenu>
           ) : (
             <div className="flex items-center gap-2">
-              <Button variant="ghost" asChild>
+              <Button variant="secondary" asChild>
                 <Link href="/signup">Sign In</Link>
               </Button>
             </div>
@@ -315,7 +315,7 @@ const Header = () => {
 
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
+              <Button variant="secondary" size="icon" className="md:hidden">
                 <Menu className="size-5" />
                 <span className="sr-only">Toggle menu</span>
               </Button>

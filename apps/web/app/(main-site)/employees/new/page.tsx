@@ -52,7 +52,7 @@ async function DisplayEmployeeUploadForm({
     candidateData = await getCandidateWithApplications(candidateId);
     if (candidateData && applicationId) {
       applicationData = candidateData.applications.find(
-        (app) => app.id === applicationId
+        (app) => app.id === applicationId,
       );
     }
   }

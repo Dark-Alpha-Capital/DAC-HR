@@ -55,8 +55,9 @@ export default function EmployeesDocsPage() {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            The Employees section is only visible to <strong>admin users</strong>.
-            Regular recruiters do not have access to employee management.
+            The Employees section is only visible to{" "}
+            <strong>admin users</strong>. Regular recruiters do not have access
+            to employee management.
           </p>
         </CardContent>
       </Card>
@@ -71,11 +72,21 @@ export default function EmployeesDocsPage() {
             Each employee record contains:
           </p>
           <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-            <li><strong>Name</strong> - First and last name</li>
-            <li><strong>Department(s)</strong> - Which team(s) they belong to</li>
-            <li><strong>Position</strong> - Their job role (linked to Positions)</li>
-            <li><strong>Profile Image</strong> - Optional photo</li>
-            <li><strong>Bio</strong> - Optional description or notes</li>
+            <li>
+              <strong>Name</strong> - First and last name
+            </li>
+            <li>
+              <strong>Department(s)</strong> - Which team(s) they belong to
+            </li>
+            <li>
+              <strong>Position</strong> - Their job role (linked to Positions)
+            </li>
+            <li>
+              <strong>Profile Image</strong> - Optional photo
+            </li>
+            <li>
+              <strong>Bio</strong> - Optional description or notes
+            </li>
           </ul>
         </CardContent>
       </Card>
@@ -84,23 +95,22 @@ export default function EmployeesDocsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Departments</CardTitle>
-          <CardDescription>
-            Available departments for employees
-          </CardDescription>
+          <CardDescription>Available departments for employees</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
-            <Badge variant="outline">Management</Badge>
-            <Badge variant="outline">Capital Markets</Badge>
-            <Badge variant="outline">Deal Team</Badge>
-            <Badge variant="outline">Legal</Badge>
-            <Badge variant="outline">Operations</Badge>
-            <Badge variant="outline">Origination</Badge>
-            <Badge variant="outline">PIPE</Badge>
-            <Badge variant="outline">Public Markets</Badge>
+            <Badge variant="secondary">Management</Badge>
+            <Badge variant="secondary">Capital Markets</Badge>
+            <Badge variant="secondary">Deal Team</Badge>
+            <Badge variant="secondary">Legal</Badge>
+            <Badge variant="secondary">Operations</Badge>
+            <Badge variant="secondary">Origination</Badge>
+            <Badge variant="secondary">PIPE</Badge>
+            <Badge variant="secondary">Public Markets</Badge>
           </div>
           <p className="text-sm text-muted-foreground mt-4">
-            An employee can belong to multiple departments if they work across teams.
+            An employee can belong to multiple departments if they work across
+            teams.
           </p>
         </CardContent>
       </Card>
@@ -115,9 +125,15 @@ export default function EmployeesDocsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <ol className="list-decimal list-inside space-y-3 text-muted-foreground">
-            <li>Navigate to <strong>Employees</strong> from the sidebar (admin only)</li>
-            <li>Click the <strong>"New Employee"</strong> button</li>
-            <li>Fill in the employee details:
+            <li>
+              Navigate to <strong>Employees</strong> from the sidebar (admin
+              only)
+            </li>
+            <li>
+              Click the <strong>"New Employee"</strong> button
+            </li>
+            <li>
+              Fill in the employee details:
               <ul className="list-disc list-inside ml-6 mt-2 space-y-1">
                 <li>First name and last name (required)</li>
                 <li>Select department(s) (required)</li>
@@ -126,7 +142,9 @@ export default function EmployeesDocsPage() {
                 <li>Add a bio or notes</li>
               </ul>
             </li>
-            <li>Click <strong>"Create Employee"</strong> to save</li>
+            <li>
+              Click <strong>"Create Employee"</strong> to save
+            </li>
           </ol>
         </CardContent>
       </Card>
@@ -138,7 +156,8 @@ export default function EmployeesDocsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground">
-            When a candidate is hired, they become an employee. The typical flow is:
+            When a candidate is hired, they become an employee. The typical flow
+            is:
           </p>
           <div className="space-y-4">
             <div className="flex items-start gap-4 p-4 rounded-lg border">
@@ -157,7 +176,9 @@ export default function EmployeesDocsPage() {
                 2
               </div>
               <div>
-                <div className="font-semibold">Complete Onboarding Checklist</div>
+                <div className="font-semibold">
+                  Complete Onboarding Checklist
+                </div>
                 <p className="text-sm text-muted-foreground">
                   Use the candidate's checklist tab to track onboarding tasks
                 </p>
@@ -177,8 +198,9 @@ export default function EmployeesDocsPage() {
           </div>
           <div className="p-4 bg-muted/50 rounded-lg">
             <p className="text-sm text-muted-foreground">
-              <strong>Note:</strong> Candidate and employee records are separate.
-              Creating an employee doesn't automatically link to or modify the candidate record.
+              <strong>Note:</strong> Candidate and employee records are
+              separate. Creating an employee doesn't automatically link to or
+              modify the candidate record.
             </p>
           </div>
         </CardContent>
@@ -194,9 +216,15 @@ export default function EmployeesDocsPage() {
             Find employees using the available filters:
           </p>
           <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-            <li><strong>Name search</strong> - Search by employee name</li>
-            <li><strong>Position filter</strong> - Filter by job position</li>
-            <li><strong>Department filter</strong> - Filter by department</li>
+            <li>
+              <strong>Name search</strong> - Search by employee name
+            </li>
+            <li>
+              <strong>Position filter</strong> - Filter by job position
+            </li>
+            <li>
+              <strong>Department filter</strong> - Filter by department
+            </li>
           </ul>
         </CardContent>
       </Card>
@@ -234,9 +262,7 @@ export default function EmployeesDocsPage() {
                 <Briefcase className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium">Position</span>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Their job role
-              </p>
+              <p className="text-sm text-muted-foreground">Their job role</p>
             </div>
             <div className="p-3 rounded-lg border">
               <div className="flex items-center gap-2 mb-1">
@@ -260,15 +286,21 @@ export default function EmployeesDocsPage() {
           <ul className="space-y-3 text-muted-foreground">
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Create employee records promptly after hiring decisions</span>
+              <span>
+                Create employee records promptly after hiring decisions
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Keep department assignments up to date as employees move teams</span>
+              <span>
+                Keep department assignments up to date as employees move teams
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-              <span>Link employees to positions to track headcount per role</span>
+              <span>
+                Link employees to positions to track headcount per role
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />

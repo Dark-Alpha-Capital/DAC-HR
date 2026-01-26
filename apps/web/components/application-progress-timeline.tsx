@@ -133,14 +133,14 @@ export default function ApplicationProgressTimeline({
   const router = useRouter();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [interviewToDelete, setInterviewToDelete] = useState<string | null>(
-    null
+    null,
   );
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Group interviews by round
   const interviewsByRound = useMemo(() => {
     const grouped = new Map<string, Interview[]>();
-    
+
     // Initialize with all rounds
     rounds.forEach((round) => {
       grouped.set(round.positionRoundTemplateId, []);
@@ -148,7 +148,8 @@ export default function ApplicationProgressTimeline({
 
     // Add interviews to their respective rounds
     interviews.forEach((interview) => {
-      const roundInterviews = grouped.get(interview.positionRoundTemplateId) || [];
+      const roundInterviews =
+        grouped.get(interview.positionRoundTemplateId) || [];
       roundInterviews.push(interview);
       grouped.set(interview.positionRoundTemplateId, roundInterviews);
     });
@@ -160,7 +161,7 @@ export default function ApplicationProgressTimeline({
   const stats = useMemo(() => {
     const totalInterviews = interviews.length;
     const roundsWithInterviews = Array.from(interviewsByRound.values()).filter(
-      (roundInterviews) => roundInterviews.length > 0
+      (roundInterviews) => roundInterviews.length > 0,
     ).length;
     const pendingRounds = rounds.length - roundsWithInterviews;
 
@@ -212,7 +213,10 @@ export default function ApplicationProgressTimeline({
               {stats.roundsWithInterviews}/{stats.totalRounds} rounds completed
             </span>
             {stats.totalInterviews > 0 && (
-              <span>• {stats.totalInterviews} interview{stats.totalInterviews !== 1 ? "s" : ""}</span>
+              <span>
+                • {stats.totalInterviews} interview
+                {stats.totalInterviews !== 1 ? "s" : ""}
+              </span>
             )}
           </div>
         </div>
@@ -243,7 +247,8 @@ export default function ApplicationProgressTimeline({
       ) : (
         <div className="space-y-4">
           {rounds.map((round) => {
-            const roundInterviews = interviewsByRound.get(round.positionRoundTemplateId) || [];
+            const roundInterviews =
+              interviewsByRound.get(round.positionRoundTemplateId) || [];
             const hasInterviews = roundInterviews.length > 0;
 
             return (
@@ -261,7 +266,8 @@ export default function ApplicationProgressTimeline({
                       )}
                     </div>
                     <Badge variant="secondary" className="text-xs shrink-0">
-                      {roundInterviews.length} interview{roundInterviews.length !== 1 ? "s" : ""}
+                      {roundInterviews.length} interview
+                      {roundInterviews.length !== 1 ? "s" : ""}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -281,11 +287,19 @@ export default function ApplicationProgressTimeline({
                       <Table>
                         <TableHeader>
                           <TableRow className="bg-muted/30">
-                            <TableHead className="font-medium">Interviewer</TableHead>
+                            <TableHead className="font-medium">
+                              Interviewer
+                            </TableHead>
                             <TableHead className="font-medium">Date</TableHead>
-                            <TableHead className="font-medium">Status</TableHead>
-                            <TableHead className="font-medium">Rating</TableHead>
-                            <TableHead className="text-right font-medium">Actions</TableHead>
+                            <TableHead className="font-medium">
+                              Status
+                            </TableHead>
+                            <TableHead className="font-medium">
+                              Rating
+                            </TableHead>
+                            <TableHead className="text-right font-medium">
+                              Actions
+                            </TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -300,7 +314,8 @@ export default function ApplicationProgressTimeline({
                             >
                               <TableCell>
                                 {interview.interviewer
-                                  ? interview.interviewer.name || interview.interviewer.email
+                                  ? interview.interviewer.name ||
+                                    interview.interviewer.email
                                   : "-"}
                               </TableCell>
                               <TableCell>
@@ -310,21 +325,27 @@ export default function ApplicationProgressTimeline({
                                     ? formatDate(interview.createdAt)
                                     : "-"}
                               </TableCell>
-                              <TableCell>{getStatusBadge(interview.status)}</TableCell>
+                              <TableCell>
+                                {getStatusBadge(interview.status)}
+                              </TableCell>
                               <TableCell>
                                 {interview.rating ? (
                                   <div className="flex items-center gap-1">
                                     <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
-                                    <span className="text-sm">{interview.rating}/5</span>
+                                    <span className="text-sm">
+                                      {interview.rating}/5
+                                    </span>
                                   </div>
                                 ) : (
-                                  <span className="text-muted-foreground">-</span>
+                                  <span className="text-muted-foreground">
+                                    -
+                                  </span>
                                 )}
                               </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex items-center justify-end gap-1">
                                   <Button
-                                    variant="ghost"
+                                    variant="secondary"
                                     size="sm"
                                     className="h-8 w-8 p-0"
                                     asChild
@@ -334,10 +355,12 @@ export default function ApplicationProgressTimeline({
                                     </Link>
                                   </Button>
                                   <Button
-                                    variant="ghost"
+                                    variant="secondary"
                                     size="sm"
                                     className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                    onClick={() => handleDeleteClick(interview.id)}
+                                    onClick={() =>
+                                      handleDeleteClick(interview.id)
+                                    }
                                   >
                                     <Trash2 className="h-4 w-4" />
                                   </Button>

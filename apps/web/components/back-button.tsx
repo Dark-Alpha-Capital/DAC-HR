@@ -11,7 +11,7 @@ const BackButton = () => {
     router.back();
   };
   return (
-    <Button variant="outline" size="sm" onClick={handleBack}>
+    <Button variant="secondary" size="sm" onClick={handleBack}>
       <ArrowLeft className="h-4 w-4" />
       Back
     </Button>

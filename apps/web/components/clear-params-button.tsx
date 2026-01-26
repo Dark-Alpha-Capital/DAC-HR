@@ -10,7 +10,7 @@ const ClearParamsButton = () => {
   const router = useRouter();
   return (
     <Button
-      variant="outline"
+      variant="secondary"
       size="icon"
       onClick={() => {
         const params = new URLSearchParams(searchParams);

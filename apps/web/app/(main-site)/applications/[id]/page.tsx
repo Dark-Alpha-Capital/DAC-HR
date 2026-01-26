@@ -51,12 +51,12 @@ async function CachedApplicationForMetadata(applicationId: string) {
   cacheTag(`application-${applicationId}`);
 
   const application = await getApplicationWithInterviews(applicationId);
-  
+
   // Add position cache tag to enable invalidation when rounds change
   if (application) {
     cacheTag(`position-${application.positionId}`);
   }
-  
+
   return application;
 }
 
@@ -159,13 +159,13 @@ const DisplayApplicationWrapper = async ({
 function getApplicationStatusBadge(status: string) {
   type StatusConfig = {
     label: string;
-    variant: "default" | "secondary" | "outline" | "destructive";
+    variant: "default" | "secondary" | "destructive";
     className: string;
   };
 
   const defaultConfig: StatusConfig = {
     label: "Pending",
-    variant: "outline",
+    variant: "secondary",
     className: "border-0",
   };
 
@@ -189,7 +189,8 @@ function getApplicationStatusBadge(status: string) {
     hired: {
       label: "Hired",
       variant: "default",
-      className: "border-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+      className:
+        "border-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
     },
     rejected: {
       label: "Rejected",
@@ -198,7 +199,7 @@ function getApplicationStatusBadge(status: string) {
     },
     withdrawn: {
       label: "Withdrawn",
-      variant: "outline",
+      variant: "secondary",
       className: "border-0",
     },
   };
@@ -228,7 +229,7 @@ async function CachedDisplayApplication({
   cacheTag(`application-${applicationId}`);
 
   const application = await getApplicationWithInterviews(applicationId);
-  
+
   // Add position cache tag to enable invalidation when rounds change
   if (application) {
     cacheTag(`position-${application.positionId}`);
@@ -312,7 +313,7 @@ async function CachedDisplayApplication({
 
           {/* Action Buttons */}
           <div className="flex gap-2 shrink-0">
-            <Button size="sm" variant="outline" asChild>
+            <Button size="sm" variant="secondary" asChild>
               <Link href={`/candidates/${application.candidateId}`}>
                 <User className="h-4 w-4 mr-2" />
                 View Candidate

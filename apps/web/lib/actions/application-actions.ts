@@ -25,7 +25,7 @@ type ApplicationStatus =
 
 export async function updateApplicationStatus(
   applicationId: string,
-  status: ApplicationStatus
+  status: ApplicationStatus,
 ) {
   const session = await auth.api.getSession({
     headers: await headers(),

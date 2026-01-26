@@ -28,7 +28,7 @@ export const createCategory = async (name: string, description?: string) => {
   try {
     const newCategory = await createDocumentCategory(
       name.trim(),
-      description?.trim() || undefined
+      description?.trim() || undefined,
     );
 
     revalidatePath("/documents");
@@ -85,7 +85,7 @@ export const createCategory = async (name: string, description?: string) => {
 export const updateCategory = async (
   id: string,
   name: string,
-  description?: string
+  description?: string,
 ) => {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -103,7 +103,7 @@ export const updateCategory = async (
     const updatedCategory = await updateDocumentCategory(
       id,
       name.trim(),
-      description?.trim() || undefined
+      description?.trim() || undefined,
     );
 
     revalidatePath("/documents");

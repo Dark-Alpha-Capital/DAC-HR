@@ -67,7 +67,7 @@ const PositionCard = ({
           <div className="flex flex-col items-end gap-1">
             {status && (
               <Badge
-                variant="outline"
+                variant="secondary"
                 className={`text-xs ${getStatusColorClass(status)}`}
               >
                 {statusLabels[status] || status}
@@ -84,13 +84,13 @@ const PositionCard = ({
 
       <CardFooter className="border-t">
         <div className="flex gap-2 w-full">
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="secondary" size="sm" asChild>
             <Link href={`/positions/${positionSlug}`}>
               <Eye className="h-4 w-4" />
               <span className="sr-only">View</span>
             </Link>
           </Button>
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="secondary" size="sm" asChild>
             <Link href={`/positions/${positionSlug}/edit`}>
               <Pencil className="h-4 w-4" />
               <span className="sr-only">Edit</span>

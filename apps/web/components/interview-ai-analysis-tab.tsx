@@ -22,11 +22,16 @@ export default function InterviewAiAnalysisTab({
   const runAnalysis = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/interview/${interviewId}/ai-analysis`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customPrompt: customPrompt.trim() || undefined }),
-      });
+      const response = await fetch(
+        `/api/interview/${interviewId}/ai-analysis`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            customPrompt: customPrompt.trim() || undefined,
+          }),
+        },
+      );
 
       if (!response.ok) {
         const error = await response.json();
@@ -38,7 +43,9 @@ export default function InterviewAiAnalysisTab({
       onAnalysisComplete?.();
     } catch (error) {
       console.error("Error running analysis:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to run analysis");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to run analysis",
+      );
     } finally {
       setIsLoading(false);
     }

@@ -34,7 +34,7 @@ const EmployeeProfileImage = ({
       // For GCS URLs, get a signed URL
       try {
         const response = await fetch(
-          `/api/documents/view?url=${encodeURIComponent(imageUrl)}`
+          `/api/documents/view?url=${encodeURIComponent(imageUrl)}`,
         );
 
         if (!response.ok) {

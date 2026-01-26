@@ -154,7 +154,7 @@ const EmployeeUploadForm = ({
                 : "Failed to create employee",
               {
                 position: "bottom-right",
-              }
+              },
             );
           } else {
             toast.success("Employee created successfully", {
@@ -171,7 +171,7 @@ const EmployeeUploadForm = ({
             setFile(null);
             // Clear file input
             const fileInput = document.getElementById(
-              "image-upload"
+              "image-upload",
             ) as HTMLInputElement;
             if (fileInput) {
               fileInput.value = "";
@@ -187,7 +187,7 @@ const EmployeeUploadForm = ({
               : "Failed to create employee",
             {
               position: "bottom-right",
-            }
+            },
           );
         }
       });
@@ -228,7 +228,7 @@ const EmployeeUploadForm = ({
       setFile(null);
       // Clear file input
       const fileInput = document.getElementById(
-        "image-upload"
+        "image-upload",
       ) as HTMLInputElement;
       if (fileInput) {
         fileInput.value = "";
@@ -241,7 +241,9 @@ const EmployeeUploadForm = ({
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2">
           <h2 className="text-2xl font-semibold tracking-tight">
-            {candidateData ? "Add Hired Candidate to Employee Directory" : "Add New Employee"}
+            {candidateData
+              ? "Add Hired Candidate to Employee Directory"
+              : "Add New Employee"}
           </h2>
           <p className="text-sm text-muted-foreground">
             {candidateData
@@ -252,12 +254,12 @@ const EmployeeUploadForm = ({
         <div className="flex items-center gap-3">
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               form.reset();
               setFile(null);
               const fileInput = document.getElementById(
-                "image-upload"
+                "image-upload",
               ) as HTMLInputElement;
               if (fileInput) {
                 fileInput.value = "";
@@ -355,10 +357,11 @@ const EmployeeUploadForm = ({
                     <DropdownMenuTrigger asChild>
                       <Button
                         id={field.name}
-                        variant="outline"
+                        variant="secondary"
                         className={cn(
                           "w-full justify-between",
-                          !selectedDepartments.length && "text-muted-foreground"
+                          !selectedDepartments.length &&
+                            "text-muted-foreground",
                         )}
                         aria-invalid={isInvalid}
                       >

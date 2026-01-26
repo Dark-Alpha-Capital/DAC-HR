@@ -142,14 +142,14 @@ export default function PositionsDocsPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
-            <Badge variant="outline">Management</Badge>
-            <Badge variant="outline">Capital Markets</Badge>
-            <Badge variant="outline">Deal Team</Badge>
-            <Badge variant="outline">Legal</Badge>
-            <Badge variant="outline">Operations</Badge>
-            <Badge variant="outline">Origination</Badge>
-            <Badge variant="outline">PIPE</Badge>
-            <Badge variant="outline">Public Markets</Badge>
+            <Badge variant="secondary">Management</Badge>
+            <Badge variant="secondary">Capital Markets</Badge>
+            <Badge variant="secondary">Deal Team</Badge>
+            <Badge variant="secondary">Legal</Badge>
+            <Badge variant="secondary">Operations</Badge>
+            <Badge variant="secondary">Origination</Badge>
+            <Badge variant="secondary">PIPE</Badge>
+            <Badge variant="secondary">Public Markets</Badge>
           </div>
         </CardContent>
       </Card>

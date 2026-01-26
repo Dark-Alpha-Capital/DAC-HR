@@ -215,14 +215,14 @@ export default function CandidatesDocsPage() {
           <div className="p-4 bg-muted/50 rounded-lg">
             <p className="text-sm font-medium mb-2">CSV Template Columns:</p>
             <div className="flex flex-wrap gap-2">
-              <Badge variant="outline">firstName</Badge>
-              <Badge variant="outline">lastName</Badge>
-              <Badge variant="outline">email</Badge>
-              <Badge variant="outline">phone</Badge>
-              <Badge variant="outline">location</Badge>
-              <Badge variant="outline">source</Badge>
-              <Badge variant="outline">sourceUrl</Badge>
-              <Badge variant="outline">note</Badge>
+              <Badge variant="secondary">firstName</Badge>
+              <Badge variant="secondary">lastName</Badge>
+              <Badge variant="secondary">email</Badge>
+              <Badge variant="secondary">phone</Badge>
+              <Badge variant="secondary">location</Badge>
+              <Badge variant="secondary">source</Badge>
+              <Badge variant="secondary">sourceUrl</Badge>
+              <Badge variant="secondary">note</Badge>
             </div>
           </div>
         </CardContent>

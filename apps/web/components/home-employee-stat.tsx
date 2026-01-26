@@ -18,11 +18,8 @@ export default async function HomeEmployeeStat() {
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{employeesResult.total}</div>
-        <p className="text-xs text-muted-foreground mt-1">
-          Total employees
-        </p>
+        <p className="text-xs text-muted-foreground mt-1">Total employees</p>
       </CardContent>
     </Card>
   );
 }
-

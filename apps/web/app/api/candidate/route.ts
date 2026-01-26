@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     const { user } = authResult;
 
     console.log(
-      `[POST /api/candidate] Creating candidate - User: ${user.email} (${user.id})`
+      `[POST /api/candidate] Creating candidate - User: ${user.email} (${user.id})`,
     );
     const body = await request.json();
     console.log("[POST /api/candidate] Request body:", {
@@ -36,11 +36,11 @@ export async function POST(request: NextRequest) {
     if (!result.success) {
       console.error(
         "[POST /api/candidate] Validation failed:",
-        result.error.flatten().fieldErrors
+        result.error.flatten().fieldErrors,
       );
       return NextResponse.json(
         { error: result.error.flatten().fieldErrors },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -72,22 +72,22 @@ export async function POST(request: NextRequest) {
 
     if (!newCandidate) {
       console.error(
-        "[POST /api/candidate] Failed to create candidate - no data returned from database"
+        "[POST /api/candidate] Failed to create candidate - no data returned from database",
       );
       return NextResponse.json(
         { error: "Failed to create candidate" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     console.log(
-      `[POST /api/candidate] Candidate created successfully - ID: ${newCandidate.id}, Email: ${newCandidate.email}`
+      `[POST /api/candidate] Candidate created successfully - ID: ${newCandidate.id}, Email: ${newCandidate.email}`,
     );
 
     // Automatically create an application and link to position if a position is selected
     if (positionId && positionId.trim() !== "") {
       console.log(
-        `[POST /api/candidate] Creating application for candidate ${newCandidate.id} and position ${positionId}`
+        `[POST /api/candidate] Creating application for candidate ${newCandidate.id} and position ${positionId}`,
       );
       // Create the application record
       await db.insert(applicationSchema).values({
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
         positionId,
       });
       console.log(
-        `[POST /api/candidate] Application and position link created successfully`
+        `[POST /api/candidate] Application and position link created successfully`,
       );
     }
 
@@ -154,24 +154,24 @@ export async function POST(request: NextRequest) {
 
     const duration = Date.now() - startTime;
     console.log(
-      `[POST /api/candidate] Request completed successfully in ${duration}ms - Candidate ID: ${newCandidate.id}`
+      `[POST /api/candidate] Request completed successfully in ${duration}ms - Candidate ID: ${newCandidate.id}`,
     );
     return NextResponse.json(
       { success: true, data: newCandidate },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error(
       `[POST /api/candidate] Error creating candidate after ${duration}ms:`,
-      error
+      error,
     );
     return NextResponse.json(
       {
         error:
           error instanceof Error ? error.message : "Failed to create candidate",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

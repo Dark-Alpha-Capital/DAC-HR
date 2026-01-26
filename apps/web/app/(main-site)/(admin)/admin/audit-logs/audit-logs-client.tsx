@@ -420,7 +420,7 @@ function ClearFilters() {
 
   return (
     <Button
-      variant="ghost"
+      variant="secondary"
       size="sm"
       onClick={handleClear}
       className="h-8 px-2 lg:px-3"
@@ -465,7 +465,7 @@ function AuditLogsPaginationControls({
       </div>
       <div className="flex items-center gap-2">
         <Button
-          variant="outline"
+          variant="secondary"
           size="sm"
           onClick={() => navigateToPage(currentPage - 1)}
           disabled={!hasPreviousPage}
@@ -474,7 +474,7 @@ function AuditLogsPaginationControls({
           Previous
         </Button>
         <Button
-          variant="outline"
+          variant="secondary"
           size="sm"
           onClick={() => navigateToPage(currentPage + 1)}
           disabled={!hasNextPage}
@@ -488,8 +488,8 @@ function AuditLogsPaginationControls({
 }
 
 function getActionBadgeVariant(
-  action: string
-): "default" | "secondary" | "destructive" | "outline" {
+  action: string,
+): "default" | "secondary" | "destructive" {
   if (action.toLowerCase().includes("create")) {
     return "default";
   }
@@ -499,7 +499,7 @@ function getActionBadgeVariant(
   if (action.toLowerCase().includes("delete")) {
     return "destructive";
   }
-  return "outline";
+  return "secondary";
 }
 
 export function AuditLogsClient({

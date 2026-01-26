@@ -23,13 +23,13 @@ const QuestionCard = ({ question }: QuestionCardProps) => {
       </CardHeader>
       <CardFooter className="border-t">
         <div className="flex gap-2 w-full">
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="secondary" size="sm" asChild>
             <Link href={`/questions/${question.id}`}>
               <Eye className="h-4 w-4" />
               View
             </Link>
           </Button>
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="secondary" size="sm" asChild>
             <Link href={`/questions/${question.id}/edit`}>
               <Pencil className="h-4 w-4" />
               Edit

@@ -87,7 +87,7 @@ const ApplicationContainer = ({
               </TableCell>
               <TableCell className="text-right py-1.5 px-2">
                 <Button
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
                   className="h-7 w-7 p-0"
                   asChild

@@ -21,14 +21,14 @@ const CandidatesPaginationControls = ({
 
   const navigateToPage = (page: number) => {
     const params = new URLSearchParams(searchParams);
-    
+
     // Remove page param if going to page 1
     if (page === 1) {
       params.delete("page");
     } else {
       params.set("page", page.toString());
     }
-    
+
     router.push(`/candidates?${params.toString()}`);
   };
 
@@ -39,7 +39,7 @@ const CandidatesPaginationControls = ({
       </div>
       <div className="flex items-center gap-2">
         <Button
-          variant="outline"
+          variant="secondary"
           size="sm"
           onClick={() => navigateToPage(currentPage - 1)}
           disabled={!hasPreviousPage}
@@ -48,7 +48,7 @@ const CandidatesPaginationControls = ({
           Previous
         </Button>
         <Button
-          variant="outline"
+          variant="secondary"
           size="sm"
           onClick={() => navigateToPage(currentPage + 1)}
           disabled={!hasNextPage}
@@ -62,4 +62,3 @@ const CandidatesPaginationControls = ({
 };
 
 export default CandidatesPaginationControls;
-

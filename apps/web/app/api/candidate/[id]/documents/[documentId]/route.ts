@@ -11,7 +11,7 @@ import { requireAuth } from "@/lib/middleware/auth";
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string; documentId: string }> }
+  { params }: { params: Promise<{ id: string; documentId: string }> },
 ) {
   const startTime = Date.now();
   try {
@@ -23,26 +23,26 @@ export async function DELETE(
 
     const { id: candidateId, documentId } = await params;
     console.log(
-      `[DELETE /api/candidate/:id/documents/:documentId] Deleting document ${documentId} for candidate ${candidateId} - User: ${user.email} (${user.id})`
+      `[DELETE /api/candidate/:id/documents/:documentId] Deleting document ${documentId} for candidate ${candidateId} - User: ${user.email} (${user.id})`,
     );
 
     if (!candidateId || candidateId.trim() === "") {
       console.error(
-        "[DELETE /api/candidate/:id/documents/:documentId] Missing candidate ID"
+        "[DELETE /api/candidate/:id/documents/:documentId] Missing candidate ID",
       );
       return NextResponse.json(
         { error: "Candidate ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!documentId || documentId.trim() === "") {
       console.error(
-        "[DELETE /api/candidate/:id/documents/:documentId] Missing document ID"
+        "[DELETE /api/candidate/:id/documents/:documentId] Missing document ID",
       );
       return NextResponse.json(
         { error: "Document ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -55,54 +55,54 @@ export async function DELETE(
 
     if (!documentData) {
       console.error(
-        `[DELETE /api/candidate/:id/documents/:documentId] Document not found - Document ID: ${documentId}`
+        `[DELETE /api/candidate/:id/documents/:documentId] Document not found - Document ID: ${documentId}`,
       );
       return NextResponse.json(
         { error: "Document not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     // Verify the document belongs to the candidate
     if (documentData.candidateId !== candidateId) {
       console.error(
-        `[DELETE /api/candidate/:id/documents/:documentId] Document ownership mismatch - Document candidate ID: ${documentData.candidateId}, Request candidate ID: ${candidateId}`
+        `[DELETE /api/candidate/:id/documents/:documentId] Document ownership mismatch - Document candidate ID: ${documentData.candidateId}, Request candidate ID: ${candidateId}`,
       );
       return NextResponse.json(
         { error: "Document does not belong to this candidate" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     console.log(
-      `[DELETE /api/candidate/:id/documents/:documentId] Document found - Name: ${documentData.name}, URL: ${documentData.url}, Has fileSearchDocumentName: ${!!documentData.fileSearchDocumentName}`
+      `[DELETE /api/candidate/:id/documents/:documentId] Document found - Name: ${documentData.name}, URL: ${documentData.url}, Has fileSearchDocumentName: ${!!documentData.fileSearchDocumentName}`,
     );
 
     // Delete from database first
     console.log(
-      `[DELETE /api/candidate/:id/documents/:documentId] Deleting document from database...`
+      `[DELETE /api/candidate/:id/documents/:documentId] Deleting document from database...`,
     );
     await db
       .delete(candidateDocumentSchema)
       .where(eq(candidateDocumentSchema.id, documentId));
     console.log(
-      `[DELETE /api/candidate/:id/documents/:documentId] Document deleted from database`
+      `[DELETE /api/candidate/:id/documents/:documentId] Document deleted from database`,
     );
 
     // Delete from Google Cloud Storage (if URL exists)
     if (documentData.url) {
       console.log(
-        `[DELETE /api/candidate/:id/documents/:documentId] Deleting file from GCS: ${documentData.url}`
+        `[DELETE /api/candidate/:id/documents/:documentId] Deleting file from GCS: ${documentData.url}`,
       );
       try {
         await deleteFile(documentData.url);
         console.log(
-          `[DELETE /api/candidate/:id/documents/:documentId] File deleted from GCS successfully`
+          `[DELETE /api/candidate/:id/documents/:documentId] File deleted from GCS successfully`,
         );
       } catch (error) {
         console.error(
           `[DELETE /api/candidate/:id/documents/:documentId] Error deleting file from GCS:`,
-          error
+          error,
         );
         // Continue even if GCS deletion fails - document is already deleted from DB
       }
@@ -111,19 +111,19 @@ export async function DELETE(
     // Delete from FileSearchStore (if fileSearchDocumentName exists)
     if (documentData.fileSearchDocumentName) {
       console.log(
-        `[DELETE /api/candidate/:id/documents/:documentId] Deleting file from FileSearchStore: ${documentData.fileSearchDocumentName}`
+        `[DELETE /api/candidate/:id/documents/:documentId] Deleting file from FileSearchStore: ${documentData.fileSearchDocumentName}`,
       );
       try {
         await deleteFileSearchStoreDocument(
-          documentData.fileSearchDocumentName
+          documentData.fileSearchDocumentName,
         );
         console.log(
-          `[DELETE /api/candidate/:id/documents/:documentId] File deleted from FileSearchStore successfully`
+          `[DELETE /api/candidate/:id/documents/:documentId] File deleted from FileSearchStore successfully`,
         );
       } catch (error) {
         console.error(
           `[DELETE /api/candidate/:id/documents/:documentId] Error deleting file from FileSearchStore:`,
-          error
+          error,
         );
         // Continue even if FileSearchStore deletion fails - document is already deleted from DB
       }
@@ -162,14 +162,14 @@ export async function DELETE(
 
     const duration = Date.now() - startTime;
     console.log(
-      `[DELETE /api/candidate/:id/documents/:documentId] Request completed successfully in ${duration}ms - Document ID: ${documentId}`
+      `[DELETE /api/candidate/:id/documents/:documentId] Request completed successfully in ${duration}ms - Document ID: ${documentId}`,
     );
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error(
       `[DELETE /api/candidate/:id/documents/:documentId] Error deleting candidate document after ${duration}ms:`,
-      error
+      error,
     );
     return NextResponse.json(
       {
@@ -178,7 +178,7 @@ export async function DELETE(
             ? error.message
             : "Failed to delete candidate document",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

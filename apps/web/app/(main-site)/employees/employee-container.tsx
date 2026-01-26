@@ -99,9 +99,7 @@ const DeleteEmployeeIconButton = ({ employeeId }: { employeeId: string }) => {
   );
 };
 
-const EmployeeContainer = ({
-  employees,
-}: EmployeeContainerProps) => {
+const EmployeeContainer = ({ employees }: EmployeeContainerProps) => {
   return (
     <Table>
       <TableHeader>
@@ -142,7 +140,7 @@ const EmployeeContainer = ({
               <TableCell className="text-right py-1.5 px-2">
                 <div className="flex items-center justify-end gap-1">
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="sm"
                     className="h-7 w-7 p-0"
                     asChild
@@ -152,7 +150,7 @@ const EmployeeContainer = ({
                     </Link>
                   </Button>
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="sm"
                     className="h-7 w-7 p-0"
                     asChild

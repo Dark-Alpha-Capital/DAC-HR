@@ -14,7 +14,7 @@ export function DocsSidebar() {
     <>
       {/* Mobile toggle button */}
       <Button
-        variant="outline"
+        variant="secondary"
         size="icon"
         className="fixed bottom-4 right-4 z-50 lg:hidden shadow-lg"
         onClick={() => setIsOpen(!isOpen)}
@@ -34,7 +34,7 @@ export function DocsSidebar() {
       <aside
         className={cn(
           "fixed top-0 left-0 z-40 h-screen w-64 border-r bg-background transition-transform lg:sticky lg:top-0 lg:translate-x-0",
-          isOpen ? "translate-x-0" : "-translate-x-full"
+          isOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         <div className="flex h-14 items-center border-b px-4">

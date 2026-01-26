@@ -14,7 +14,7 @@ async function fetchNonAdminUsers(
   nameSearch?: string,
   emailSearch?: string,
   page: number = 1,
-  limit: number = 10
+  limit: number = 10,
 ): Promise<{ users: AdminUser[]; total: number }> {
   const offset = (page - 1) * limit;
 
@@ -25,7 +25,7 @@ async function fetchNonAdminUsers(
   if (nameSearch && nameSearch.trim()) {
     const searchTerm = `%${nameSearch.trim()}%`;
     conditions.push(
-      sql`${user.name} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`
+      sql`${user.name} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`,
     );
   }
 
@@ -33,7 +33,7 @@ async function fetchNonAdminUsers(
   if (emailSearch && emailSearch.trim()) {
     const searchTerm = `%${emailSearch.trim()}%`;
     conditions.push(
-      sql`${user.email} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`
+      sql`${user.email} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`,
     );
   }
 
@@ -114,7 +114,7 @@ async function AdminUsersSectionInner({
     nameSearch,
     emailSearch,
     currentPage,
-    limit
+    limit,
   );
 
   const totalPages = Math.ceil(total / limit);

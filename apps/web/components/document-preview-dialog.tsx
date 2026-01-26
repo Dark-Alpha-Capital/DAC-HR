@@ -51,7 +51,7 @@ async function getSignedUrl(url: string): Promise<string> {
 
   // For GCS URLs, get a signed URL
   const response = await fetch(
-    `/api/documents/view?url=${encodeURIComponent(url)}`
+    `/api/documents/view?url=${encodeURIComponent(url)}`,
   );
 
   if (!response.ok) {
@@ -112,7 +112,7 @@ export default function DocumentPreviewDialog({
     } catch (err) {
       console.error("Error loading preview:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to load document preview"
+        err instanceof Error ? err.message : "Failed to load document preview",
       );
       toast.error("Failed to load document preview");
     } finally {
@@ -174,7 +174,7 @@ export default function DocumentPreviewDialog({
               <div className="text-center max-w-md">
                 <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
                 <p className="text-sm text-muted-foreground mb-4">{error}</p>
-                <Button onClick={handleDownload} variant="outline" size="sm">
+                <Button onClick={handleDownload} variant="secondary" size="sm">
                   <Download className="h-4 w-4 mr-2" />
                   Download Instead
                 </Button>
@@ -214,14 +214,14 @@ export default function DocumentPreviewDialog({
                         window.open(
                           officeViewerUrl,
                           "_blank",
-                          "noopener,noreferrer"
+                          "noopener,noreferrer",
                         );
                       }}
                       variant="default"
                     >
                       View in Office Online
                     </Button>
-                    <Button onClick={handleDownload} variant="outline">
+                    <Button onClick={handleDownload} variant="secondary">
                       <Download className="h-4 w-4 mr-2" />
                       Download
                     </Button>
@@ -250,7 +250,7 @@ export default function DocumentPreviewDialog({
         </div>
 
         <div className="flex justify-end gap-2 pt-4 border-t">
-          <Button onClick={handleDownload} variant="outline" size="sm">
+          <Button onClick={handleDownload} variant="secondary" size="sm">
             <Download className="h-4 w-4 mr-2" />
             Download
           </Button>

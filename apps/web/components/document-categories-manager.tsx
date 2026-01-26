@@ -84,7 +84,7 @@ export default function DocumentCategoriesManager({
       try {
         const result = await createCategory(
           formData.name,
-          formData.description || undefined
+          formData.description || undefined,
         );
 
         if (result.success && result.data) {
@@ -110,15 +110,15 @@ export default function DocumentCategoriesManager({
         const result = await updateCategory(
           selectedCategory.id,
           formData.name,
-          formData.description || undefined
+          formData.description || undefined,
         );
 
         if (result.success && result.data) {
           const updatedCategory = result.data;
           setCategories(
             categories.map((cat) =>
-              cat.id === selectedCategory.id ? updatedCategory : cat
-            )
+              cat.id === selectedCategory.id ? updatedCategory : cat,
+            ),
           );
           setIsEditDialogOpen(false);
           setSelectedCategory(null);
@@ -142,7 +142,7 @@ export default function DocumentCategoriesManager({
 
         if (result.success) {
           setCategories(
-            categories.filter((cat) => cat.id !== selectedCategory.id)
+            categories.filter((cat) => cat.id !== selectedCategory.id),
           );
           setIsDeleteDialogOpen(false);
           setSelectedCategory(null);
@@ -219,7 +219,7 @@ export default function DocumentCategoriesManager({
               <DialogFooter>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="secondary"
                   onClick={() => setIsAddDialogOpen(false)}
                   disabled={isPending}
                 >
@@ -270,7 +270,7 @@ export default function DocumentCategoriesManager({
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
                     <Button
-                      variant="ghost"
+                      variant="secondary"
                       size="sm"
                       onClick={() => handleEditCategory(category)}
                       disabled={isPending}
@@ -278,7 +278,7 @@ export default function DocumentCategoriesManager({
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <Button
-                      variant="ghost"
+                      variant="secondary"
                       size="sm"
                       onClick={() => handleDeleteCategory(category)}
                       disabled={isPending}
@@ -336,7 +336,7 @@ export default function DocumentCategoriesManager({
             <DialogFooter>
               <Button
                 type="button"
-                variant="outline"
+                variant="secondary"
                 onClick={() => setIsEditDialogOpen(false)}
                 disabled={isPending}
               >
@@ -371,7 +371,7 @@ export default function DocumentCategoriesManager({
           <DialogFooter>
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               onClick={() => setIsDeleteDialogOpen(false)}
               disabled={isPending}
             >

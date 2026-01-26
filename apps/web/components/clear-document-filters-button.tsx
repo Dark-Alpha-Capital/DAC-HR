@@ -8,10 +8,10 @@ import { X } from "lucide-react";
 const ClearDocumentFiltersButton = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
-  
-  const hasFilters = 
-    searchParams.has("category") || 
-    searchParams.has("name") || 
+
+  const hasFilters =
+    searchParams.has("category") ||
+    searchParams.has("name") ||
     searchParams.has("tags");
 
   if (!hasFilters) {
@@ -20,7 +20,7 @@ const ClearDocumentFiltersButton = () => {
 
   return (
     <Button
-      variant="outline"
+      variant="secondary"
       size="icon"
       onClick={() => {
         const params = new URLSearchParams(searchParams);
@@ -36,38 +36,3 @@ const ClearDocumentFiltersButton = () => {
 };
 
 export default ClearDocumentFiltersButton;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
