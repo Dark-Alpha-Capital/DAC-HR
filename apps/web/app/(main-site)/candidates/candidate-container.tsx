@@ -21,11 +21,12 @@ const applicationStatusColors: Record<
   string,
   "default" | "secondary" | "destructive"
 > = {
-  pending: "secondary",
-  reviewed: "secondary",
-  shortlisted: "default",
-  interviewing: "default",
-  hired: "default",
+  ai_screening: "secondary",
+  first_round_recruiter_call: "default",
+  second_round_technical_screening: "default",
+  third_round_final_ceo: "default",
+  contract_offer: "default",
+  onboarding: "default",
   rejected: "destructive",
   withdrawn: "secondary",
 } as const;

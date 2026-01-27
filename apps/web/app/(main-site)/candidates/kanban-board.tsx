@@ -6,11 +6,12 @@ import ApplicationCard from "@/components/application-card";
 import { toast } from "sonner";
 
 type ApplicationStatus =
-  | "pending"
-  | "reviewed"
-  | "shortlisted"
-  | "interviewing"
-  | "hired"
+  | "ai_screening"
+  | "first_round_recruiter_call"
+  | "second_round_technical_screening"
+  | "third_round_final_ceo"
+  | "contract_offer"
+  | "onboarding"
   | "rejected"
   | "withdrawn";
 
@@ -42,21 +43,23 @@ interface KanbanBoardProps {
 }
 
 const APPLICATION_STATUSES: ApplicationStatus[] = [
-  "pending",
-  "reviewed",
-  "shortlisted",
-  "interviewing",
-  "hired",
+  "ai_screening",
+  "first_round_recruiter_call",
+  "second_round_technical_screening",
+  "third_round_final_ceo",
+  "contract_offer",
+  "onboarding",
   "rejected",
   "withdrawn",
 ];
 
 const STATUS_LABELS: Record<ApplicationStatus, string> = {
-  pending: "Pending",
-  reviewed: "Reviewed",
-  shortlisted: "Shortlisted",
-  interviewing: "Interviewing",
-  hired: "Hired",
+  ai_screening: "AI Screening",
+  first_round_recruiter_call: "1st Round Recruiter Call",
+  second_round_technical_screening: "2nd Round Technical Screening",
+  third_round_final_ceo: "3rd Round Final Round with CEO",
+  contract_offer: "Contract/Offer",
+  onboarding: "Onboarding",
   rejected: "Rejected",
   withdrawn: "Withdrawn",
 };
@@ -65,33 +68,36 @@ const STATUS_COLORS: Record<
   ApplicationStatus,
   "default" | "secondary" | "destructive"
 > = {
-  pending: "secondary",
-  reviewed: "secondary",
-  shortlisted: "default",
-  interviewing: "default",
-  hired: "default",
+  ai_screening: "secondary",
+  first_round_recruiter_call: "default",
+  second_round_technical_screening: "default",
+  third_round_final_ceo: "default",
+  contract_offer: "default",
+  onboarding: "default",
   rejected: "destructive",
   withdrawn: "secondary",
 };
 
 // Column header colors matching the image design
 const COLUMN_COLORS: Record<ApplicationStatus, string> = {
-  pending: "bg-slate-500",
-  reviewed: "bg-blue-500",
-  shortlisted: "bg-green-500",
-  interviewing: "bg-purple-500",
-  hired: "bg-emerald-500",
+  ai_screening: "bg-indigo-500",
+  first_round_recruiter_call: "bg-blue-500",
+  second_round_technical_screening: "bg-purple-500",
+  third_round_final_ceo: "bg-amber-500",
+  contract_offer: "bg-green-500",
+  onboarding: "bg-emerald-500",
   rejected: "bg-red-500",
   withdrawn: "bg-gray-500",
 };
 
 // Card left-edge color bars matching column colors
 const CARD_BORDER_COLORS: Record<ApplicationStatus, string> = {
-  pending: "border-l-slate-500",
-  reviewed: "border-l-blue-500",
-  shortlisted: "border-l-green-500",
-  interviewing: "border-l-purple-500",
-  hired: "border-l-emerald-500",
+  ai_screening: "border-l-indigo-500",
+  first_round_recruiter_call: "border-l-blue-500",
+  second_round_technical_screening: "border-l-purple-500",
+  third_round_final_ceo: "border-l-amber-500",
+  contract_offer: "border-l-green-500",
+  onboarding: "border-l-emerald-500",
   rejected: "border-l-red-500",
   withdrawn: "border-l-gray-500",
 };

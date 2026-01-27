@@ -175,7 +175,7 @@ export const bulkCreateCandidates = async (
             tx.insert(application).values({
               candidateId: newCandidate.id,
               positionId,
-              status: "pending",
+              status: "ai_screening",
             }),
             tx.insert(candidatePosition).values({
               candidateId: newCandidate.id,

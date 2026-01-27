@@ -14,11 +14,12 @@ import { Button } from "@workspace/ui/components/button";
 import { Filter } from "lucide-react";
 
 const statuses = [
-  { value: "pending", label: "Pending" },
-  { value: "reviewed", label: "Reviewed" },
-  { value: "shortlisted", label: "Shortlisted" },
-  { value: "interviewing", label: "Interviewing" },
-  { value: "hired", label: "Hired" },
+  { value: "ai_screening", label: "AI Screening" },
+  { value: "first_round_recruiter_call", label: "1st Round Recruiter Call" },
+  { value: "second_round_technical_screening", label: "2nd Round Technical Screening" },
+  { value: "third_round_final_ceo", label: "3rd Round Final Round with CEO" },
+  { value: "contract_offer", label: "Contract/Offer" },
+  { value: "onboarding", label: "Onboarding" },
   { value: "rejected", label: "Rejected" },
   { value: "withdrawn", label: "Withdrawn" },
 ];

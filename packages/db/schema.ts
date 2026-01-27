@@ -249,11 +249,12 @@ export const interviewStatusEnum = pgEnum("interview_status", [
 ]);
 
 export const applicationStatusEnum = pgEnum("application_status", [
-  "pending",
-  "reviewed",
-  "shortlisted",
-  "interviewing",
-  "hired",
+  "ai_screening",
+  "first_round_recruiter_call",
+  "second_round_technical_screening",
+  "third_round_final_ceo",
+  "contract_offer",
+  "onboarding",
   "rejected",
   "withdrawn",
 ]);
@@ -286,7 +287,7 @@ export const application = pgTable("application", {
   positionId: text("position_id")
     .notNull()
     .references(() => position.id, { onDelete: "cascade" }),
-  status: applicationStatusEnum("status").default("pending").notNull(),
+  status: applicationStatusEnum("status").default("ai_screening").notNull(),
   personality: personalityEnum("personality"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")

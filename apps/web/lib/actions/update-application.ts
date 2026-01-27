@@ -12,11 +12,12 @@ import { insertAuditLog } from "@workspace/db/queries";
 export interface UpdateApplicationInput {
   applicationId: string;
   status?:
-    | "pending"
-    | "reviewed"
-    | "shortlisted"
-    | "interviewing"
-    | "hired"
+    | "ai_screening"
+    | "first_round_recruiter_call"
+    | "second_round_technical_screening"
+    | "third_round_final_ceo"
+    | "contract_offer"
+    | "onboarding"
     | "rejected"
     | "withdrawn";
   personality?:
