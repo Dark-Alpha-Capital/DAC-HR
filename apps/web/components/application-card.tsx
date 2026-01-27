@@ -1,9 +1,7 @@
-import React from "react";
 import Link from "next/link";
 import { Button } from "@workspace/ui/components/button";
-import { Badge } from "@workspace/ui/components/badge";
-import { Eye, Calendar, User, Users } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { Eye, Users, Pencil } from "lucide-react";
+import DeleteCandidateButton from "./delete-candidate-button";
 
 interface ApplicationCardProps {
   application: {
@@ -28,71 +26,93 @@ interface ApplicationCardProps {
       status: string;
     }>;
   };
+  status?: string;
 }
 
-const applicationStatusColors: Record<
-  string,
-  "default" | "secondary" | "destructive"
-> = {
-  pending: "secondary",
-  reviewed: "secondary",
-  shortlisted: "default",
-  interviewing: "default",
-  hired: "default",
-  rejected: "destructive",
-  withdrawn: "secondary",
-} as const;
+// Card left-edge color bars matching column colors
+const CARD_BORDER_COLORS: Record<string, string> = {
+  pending: "border-l-slate-500",
+  reviewed: "border-l-blue-500",
+  shortlisted: "border-l-green-500",
+  interviewing: "border-l-purple-500",
+  hired: "border-l-emerald-500",
+  rejected: "border-l-red-500",
+  withdrawn: "border-l-gray-500",
+};
 
-const ApplicationCard = ({ application }: ApplicationCardProps) => {
+const getTimeAgo = (date: Date): string => {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffHours / 24);
+  const diffWeeks = Math.floor(diffDays / 7);
+
+  if (diffWeeks > 0) return `- ${diffWeeks} week${diffWeeks > 1 ? "s" : ""}`;
+  if (diffDays > 0) return `- ${diffDays} day${diffDays > 1 ? "s" : ""}`;
+  if (diffHours > 0) return `- ${diffHours} hour${diffHours > 1 ? "s" : ""}`;
+  return "- just now";
+};
+
+const ApplicationCard = ({
+  application,
+  status,
+}: ApplicationCardProps) => {
+  const cardStatus = status || application.status;
+  const borderColor = CARD_BORDER_COLORS[cardStatus] || "border-l-gray-500";
+  const timeAgo = getTimeAgo(application.updatedAt);
+
   return (
-    <div className="border rounded-md p-4 hover:bg-accent/50 transition-colors space-y-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-sm mb-1.5 truncate">
-            {application.position.name}
-          </h3>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <User className="h-3 w-3 shrink-0" />
-            <span className="truncate">
-              {application.candidate.firstName} {application.candidate.lastName}
-            </span>
-          </div>
-        </div>
-        <Badge
-          variant={applicationStatusColors[application.status] || "secondary"}
-          className="shrink-0 text-xs"
-        >
-          {application.status.charAt(0).toUpperCase() +
-            application.status.slice(1)}
-        </Badge>
+    <div
+      className={`bg-white dark:bg-card border border-border rounded-md p-3 hover:shadow-md transition-all ${borderColor} border-l-4`}
+    >
+      {/* Candidate Name and Position */}
+      <div className="mb-3">
+        <h3 className="font-semibold text-sm leading-tight mb-1">
+          {application.candidate.firstName} {application.candidate.lastName} -{" "}
+          {application.position.name}
+        </h3>
       </div>
-      {application.position.description && (
-        <p className="text-xs text-muted-foreground line-clamp-2">
-          {application.position.description}
-        </p>
-      )}
-      <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-        <div className="flex items-center gap-1.5">
-          <Calendar className="h-3 w-3" />
-          <span>{formatDate(application.createdAt)}</span>
-        </div>
+
+      {/* Time Badge */}
+      <div className="mb-3">
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+          {timeAgo}
+        </span>
+      </div>
+
+      {/* Bottom Actions */}
+      <div className="flex items-center gap-2 pt-2 border-t border-border/50">
         {application.interviews.length > 0 && (
-          <div className="flex items-center gap-1.5">
-            <Users className="h-3 w-3" />
-            <span>
-              {application.interviews.length} interview
-              {application.interviews.length !== 1 ? "s" : ""}
+          <div className="flex items-center gap-1">
+            <Users className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">
+              {application.interviews.length}
             </span>
           </div>
         )}
-      </div>
-      <div className="pt-2 border-t">
-        <Button variant="secondary" size="sm" asChild className="w-full">
-          <Link href={`/applications/${application.id}`}>
-            <Eye className="h-3 w-3 mr-2" />
-            View Details
-          </Link>
-        </Button>
+        <div className="ml-auto flex items-center gap-1">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="h-7 w-7 p-0"
+            asChild
+          >
+            <Link href={`/candidates/${application.candidate.id}`}>
+              <Eye className="h-3.5 w-3.5" />
+            </Link>
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="h-7 w-7 p-0"
+            asChild
+          >
+            <Link href={`/candidates/${application.candidate.id}/edit`}>
+              <Pencil className="h-3.5 w-3.5" />
+            </Link>
+          </Button>
+          <DeleteCandidateButton candidateId={application.candidate.id} />
+        </div>
       </div>
     </div>
   );

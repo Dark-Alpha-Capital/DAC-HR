@@ -44,7 +44,6 @@ const recruitingLinks = [
   { href: "/", label: "Home", icon: Home },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/candidates", label: "Candidates", icon: Users },
-  { href: "/applications", label: "Applications", icon: FileText },
   { href: "/documents", label: "Documents", icon: Folders },
   { href: "/weekly-checkin", label: "Weekly Check-in", icon: ClipboardCheck },
   { href: "/docs", label: "Documentation", icon: BookOpen },
@@ -80,7 +79,7 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar variant="inset" collapsible="icon">
+    <Sidebar collapsible="icon">
       <SidebarHeader className="gap-1">
         <SidebarMenu>
           <SidebarMenuItem>

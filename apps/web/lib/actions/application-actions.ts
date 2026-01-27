@@ -56,8 +56,10 @@ export async function updateApplicationStatus(
 
     updateTag(`application-${applicationId}`);
     updateTag(`candidate-applications-${updatedApplication.candidateId}`);
+    updateTag("candidates");
     revalidatePath(`/applications/${applicationId}`);
     revalidatePath(`/candidates/${updatedApplication.candidateId}`);
+    revalidatePath("/candidates");
 
     after(async () => {
       await insertAuditLog({
