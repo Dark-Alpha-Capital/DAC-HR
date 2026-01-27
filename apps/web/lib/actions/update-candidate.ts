@@ -181,7 +181,7 @@ export const updateCandidate = async (
           await db.insert(application).values({
             candidateId,
             positionId,
-            status: "pending",
+            status: "ai_screening",
           });
         }
       } else if (!oldPositionId) {
@@ -190,7 +190,7 @@ export const updateCandidate = async (
           await db.insert(application).values({
             candidateId,
             positionId,
-            status: "pending",
+            status: "ai_screening",
           });
         }
       }

@@ -3,16 +3,16 @@ import Link from "next/link";
 import { Suspense } from "react";
 import {
   getCandidatesWithPositionsFiltered,
+  getApplicationsFiltered,
   getPositions,
 } from "@workspace/db/queries";
 import CandidateFilters from "@/components/candidate-filters";
-import CandidateContainer from "./candidate-container";
 import { CandidatesListSkeleton } from "@/components/skeletons/candidates-list-skeleton";
 import type { Metadata } from "next";
 import { UserAuthenticated } from "@/components/auth-checks";
-import CandidatesPaginationControls from "@/components/candidates-pagination-controls";
 import { cacheLife, cacheTag } from "next/cache";
 import BulkUploadCandidatesDialog from "@/components/bulk-upload-candidates-dialog";
+import CandidatesViewWrapper from "./candidates-view-wrapper";
 
 export const metadata: Metadata = {
   title: "Candidates",
@@ -23,12 +23,12 @@ type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
 const page = async ({ searchParams }: { searchParams: SearchParams }) => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full overflow-x-hidden">
       <Suspense>
         <UserAuthenticated />
       </Suspense>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight">Candidates</h1>
         <div className="flex items-center gap-2">
           <BulkUploadCandidatesDialog />
@@ -105,7 +105,7 @@ const CandidatesListWrapper = async ({
   const currentPage = isNaN(page) || page < 1 ? 1 : page;
 
   return (
-    <CachedCandidatesList
+    <CachedCandidatesAndApplicationsList
       nameSearch={nameSearch}
       emailSearch={emailSearch}
       positionIds={positionIds}
@@ -115,7 +115,7 @@ const CandidatesListWrapper = async ({
 };
 
 // Cached component receives data as props
-async function CachedCandidatesList({
+async function CachedCandidatesAndApplicationsList({
   nameSearch,
   emailSearch,
   positionIds,
@@ -132,19 +132,34 @@ async function CachedCandidatesList({
 
   const limit = 50;
 
-  const { candidates, total } = await getCandidatesWithPositionsFiltered(
-    nameSearch,
-    emailSearch,
-    positionIds,
-    currentPage,
-    limit,
-  );
+  const [candidatesResult, applicationsResult] = await Promise.all([
+    getCandidatesWithPositionsFiltered(
+      nameSearch,
+      emailSearch,
+      positionIds,
+      currentPage,
+      limit,
+    ),
+    getApplicationsFiltered(
+      nameSearch,
+      emailSearch,
+      positionIds,
+      undefined,
+      currentPage,
+      limit,
+    ),
+  ]);
 
-  const totalPages = Math.ceil(total / limit);
+  const { candidates, total: candidatesTotal } = candidatesResult;
+  const { applications, total: applicationsTotal } = applicationsResult;
+
+  const totalPages = Math.ceil(
+    Math.max(candidatesTotal, applicationsTotal) / limit,
+  );
   const hasNextPage = currentPage < totalPages;
   const hasPreviousPage = currentPage > 1;
 
-  if (candidates.length === 0) {
+  if (candidates.length === 0 && applications.length === 0) {
     return (
       <div className="rounded-xl border bg-card p-10 text-center">
         <p className="text-muted-foreground">
@@ -160,20 +175,13 @@ async function CachedCandidatesList({
   }
 
   return (
-    <div className="space-y-6">
-      <CandidateContainer
-        candidates={candidates}
-        currentPage={currentPage}
-        limit={limit}
-      />
-      {totalPages > 1 && (
-        <CandidatesPaginationControls
-          currentPage={currentPage}
-          totalPages={totalPages}
-          hasNextPage={hasNextPage}
-          hasPreviousPage={hasPreviousPage}
-        />
-      )}
-    </div>
+    <CandidatesViewWrapper
+      candidates={candidates}
+      applications={applications}
+      currentPage={currentPage}
+      totalPages={totalPages}
+      hasNextPage={hasNextPage}
+      hasPreviousPage={hasPreviousPage}
+    />
   );
 }

@@ -24,11 +24,12 @@ import { toast } from "sonner";
 import { ChevronDown } from "lucide-react";
 
 type ApplicationStatus =
-  | "pending"
-  | "reviewed"
-  | "shortlisted"
-  | "interviewing"
-  | "hired"
+  | "ai_screening"
+  | "first_round_recruiter_call"
+  | "second_round_technical_screening"
+  | "third_round_final_ceo"
+  | "contract_offer"
+  | "onboarding"
   | "rejected"
   | "withdrawn";
 
@@ -41,11 +42,12 @@ interface InlineApplicationStatusEditorProps {
 }
 
 const statusLabels: Record<ApplicationStatus, string> = {
-  pending: "Pending",
-  reviewed: "Reviewed",
-  shortlisted: "Shortlisted",
-  interviewing: "Interviewing",
-  hired: "Hired",
+  ai_screening: "AI Screening",
+  first_round_recruiter_call: "1st Round Recruiter Call",
+  second_round_technical_screening: "2nd Round Technical Screening",
+  third_round_final_ceo: "3rd Round Final Round with CEO",
+  contract_offer: "Contract/Offer",
+  onboarding: "Onboarding",
   rejected: "Rejected",
   withdrawn: "Withdrawn",
 };
@@ -54,11 +56,12 @@ const statusColors: Record<
   ApplicationStatus,
   "default" | "secondary" | "destructive"
 > = {
-  pending: "secondary",
-  reviewed: "secondary",
-  shortlisted: "default",
-  interviewing: "default",
-  hired: "default",
+  ai_screening: "secondary",
+  first_round_recruiter_call: "default",
+  second_round_technical_screening: "default",
+  third_round_final_ceo: "default",
+  contract_offer: "default",
+  onboarding: "default",
   rejected: "destructive",
   withdrawn: "secondary",
 };
@@ -77,8 +80,8 @@ export default function InlineApplicationStatusEditor({
   const handleStatusChange = (newStatus: ApplicationStatus) => {
     if (newStatus === application.status) return;
 
-    // If changing to "hired" and candidateId is available, show dialog
-    if (newStatus === "hired" && candidateId) {
+    // If changing to "onboarding" and candidateId is available, show dialog
+    if (newStatus === "onboarding" && candidateId) {
       setPendingStatus(newStatus);
       setShowHiredDialog(true);
       return;
@@ -112,14 +115,14 @@ export default function InlineApplicationStatusEditor({
   const handleAddToEmployeeDirectory = () => {
     setShowHiredDialog(false);
     // Update status first, then redirect
-    updateStatus("hired");
+    updateStatus("onboarding");
     // Redirect to employee form with candidate data
     router.push(
       `/employees/new?candidateId=${candidateId}&applicationId=${application.id}`,
     );
   };
 
-  const handleMarkAsHiredOnly = () => {
+  const handleMarkAsOnboardingOnly = () => {
     setShowHiredDialog(false);
     if (pendingStatus) {
       updateStatus(pendingStatus);
@@ -175,14 +178,14 @@ export default function InlineApplicationStatusEditor({
           <AlertDialogHeader>
             <AlertDialogTitle>Add to Employee Directory?</AlertDialogTitle>
             <AlertDialogDescription>
-              This candidate has been marked as HIRED. Would you like to add
+              This candidate has been marked as ONBOARDING. Would you like to add
               them to the DAC Employee Directory? You can fill in additional
               information like their picture and bio.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleMarkAsHiredOnly}>
-              No, Mark as Hired
+            <AlertDialogCancel onClick={handleMarkAsOnboardingOnly}>
+              No, Mark as Onboarding
             </AlertDialogCancel>
             <AlertDialogAction onClick={handleAddToEmployeeDirectory}>
               Yes, Add to Directory

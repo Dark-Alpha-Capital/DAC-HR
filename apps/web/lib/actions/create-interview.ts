@@ -56,11 +56,11 @@ export const createInterview = async (data: CreateInterviewInput) => {
       return { error: "Failed to create interview" };
     }
 
-    // Update application status to "interviewing" if it's still pending/reviewed
-    if (app.status === "pending" || app.status === "reviewed") {
+    // Update application status to "second_round_technical_screening" if it's still in AI screening
+    if (app.status === "ai_screening") {
       await db
         .update(application)
-        .set({ status: "interviewing" })
+        .set({ status: "second_round_technical_screening" })
         .where(eq(application.id, applicationId));
     }
 

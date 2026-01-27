@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
       await db.insert(applicationSchema).values({
         candidateId: newCandidate.id,
         positionId,
-        status: "pending",
+        status: "ai_screening",
       });
 
       // Link candidate to position in candidatePosition table for tracking

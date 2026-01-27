@@ -164,30 +164,35 @@ function getApplicationStatusBadge(status: string) {
   };
 
   const defaultConfig: StatusConfig = {
-    label: "Pending",
+    label: "AI Screening",
     variant: "secondary",
     className: "border-0",
   };
 
   const statusConfig: Record<string, StatusConfig> = {
-    pending: defaultConfig,
-    reviewed: {
-      label: "Reviewed",
-      variant: "secondary",
-      className: "border-0",
-    },
-    shortlisted: {
-      label: "Shortlisted",
+    ai_screening: defaultConfig,
+    first_round_recruiter_call: {
+      label: "1st Round Recruiter Call",
       variant: "default",
       className: "border-0",
     },
-    interviewing: {
-      label: "Interviewing",
+    second_round_technical_screening: {
+      label: "2nd Round Technical Screening",
       variant: "default",
       className: "border-0",
     },
-    hired: {
-      label: "Hired",
+    third_round_final_ceo: {
+      label: "3rd Round Final Round with CEO",
+      variant: "default",
+      className: "border-0",
+    },
+    contract_offer: {
+      label: "Contract/Offer",
+      variant: "default",
+      className: "border-0",
+    },
+    onboarding: {
+      label: "Onboarding",
       variant: "default",
       className:
         "border-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",

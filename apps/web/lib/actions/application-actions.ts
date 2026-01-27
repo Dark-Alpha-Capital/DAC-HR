@@ -15,11 +15,12 @@ import { after } from "next/server";
 import { insertAuditLog } from "@workspace/db/queries";
 
 type ApplicationStatus =
-  | "pending"
-  | "reviewed"
-  | "shortlisted"
-  | "interviewing"
-  | "hired"
+  | "ai_screening"
+  | "first_round_recruiter_call"
+  | "second_round_technical_screening"
+  | "third_round_final_ceo"
+  | "contract_offer"
+  | "onboarding"
   | "rejected"
   | "withdrawn";
 
@@ -56,8 +57,10 @@ export async function updateApplicationStatus(
 
     updateTag(`application-${applicationId}`);
     updateTag(`candidate-applications-${updatedApplication.candidateId}`);
+    updateTag("candidates");
     revalidatePath(`/applications/${applicationId}`);
     revalidatePath(`/candidates/${updatedApplication.candidateId}`);
+    revalidatePath("/candidates");
 
     after(async () => {
       await insertAuditLog({

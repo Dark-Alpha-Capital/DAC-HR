@@ -13,20 +13,23 @@ import {
 import { Edit } from "lucide-react";
 import ApplicationStatusForm from "./application-status-form";
 import {
-  Clock,
-  Eye,
+  Sparkles,
+  Phone,
+  Code,
+  UserCircle,
+  FileText,
   CheckCircle2,
   XCircle,
-  UserCheck,
   UserX,
 } from "lucide-react";
 
 type ApplicationStatus =
-  | "pending"
-  | "reviewed"
-  | "shortlisted"
-  | "interviewing"
-  | "hired"
+  | "ai_screening"
+  | "first_round_recruiter_call"
+  | "second_round_technical_screening"
+  | "third_round_final_ceo"
+  | "contract_offer"
+  | "onboarding"
   | "rejected"
   | "withdrawn";
 
@@ -38,21 +41,23 @@ interface ApplicationStatusDisplayProps {
 }
 
 const statusLabels: Record<ApplicationStatus, string> = {
-  pending: "Pending",
-  reviewed: "Reviewed",
-  shortlisted: "Shortlisted",
-  interviewing: "Interviewing",
-  hired: "Hired",
+  ai_screening: "AI Screening",
+  first_round_recruiter_call: "1st Round Recruiter Call",
+  second_round_technical_screening: "2nd Round Technical Screening",
+  third_round_final_ceo: "3rd Round Final Round with CEO",
+  contract_offer: "Contract/Offer",
+  onboarding: "Onboarding",
   rejected: "Rejected",
   withdrawn: "Withdrawn",
 };
 
-const statusIcons: Record<ApplicationStatus, typeof Clock> = {
-  pending: Clock,
-  reviewed: Eye,
-  shortlisted: CheckCircle2,
-  interviewing: UserCheck,
-  hired: CheckCircle2,
+const statusIcons: Record<ApplicationStatus, typeof Sparkles> = {
+  ai_screening: Sparkles,
+  first_round_recruiter_call: Phone,
+  second_round_technical_screening: Code,
+  third_round_final_ceo: UserCircle,
+  contract_offer: FileText,
+  onboarding: CheckCircle2,
   rejected: XCircle,
   withdrawn: UserX,
 };
@@ -61,11 +66,12 @@ const statusColors: Record<
   ApplicationStatus,
   "default" | "secondary" | "destructive"
 > = {
-  pending: "secondary",
-  reviewed: "secondary",
-  shortlisted: "default",
-  interviewing: "default",
-  hired: "default",
+  ai_screening: "secondary",
+  first_round_recruiter_call: "default",
+  second_round_technical_screening: "default",
+  third_round_final_ceo: "default",
+  contract_offer: "default",
+  onboarding: "default",
   rejected: "destructive",
   withdrawn: "secondary",
 };

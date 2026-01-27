@@ -15,11 +15,12 @@ import { updateApplication } from "@/lib/actions/update-application";
 import { toast } from "sonner";
 
 type ApplicationStatus =
-  | "pending"
-  | "reviewed"
-  | "shortlisted"
-  | "interviewing"
-  | "hired"
+  | "ai_screening"
+  | "first_round_recruiter_call"
+  | "second_round_technical_screening"
+  | "third_round_final_ceo"
+  | "contract_offer"
+  | "onboarding"
   | "rejected"
   | "withdrawn";
 
@@ -32,21 +33,23 @@ interface ApplicationStatusFormProps {
 }
 
 const statusLabels: Record<ApplicationStatus, string> = {
-  pending: "Pending",
-  reviewed: "Reviewed",
-  shortlisted: "Shortlisted",
-  interviewing: "Interviewing",
-  hired: "Hired",
+  ai_screening: "AI Screening",
+  first_round_recruiter_call: "1st Round Recruiter Call",
+  second_round_technical_screening: "2nd Round Technical Screening",
+  third_round_final_ceo: "3rd Round Final Round with CEO",
+  contract_offer: "Contract/Offer",
+  onboarding: "Onboarding",
   rejected: "Rejected",
   withdrawn: "Withdrawn",
 };
 
 const statusDescriptions: Record<ApplicationStatus, string> = {
-  pending: "Application is pending initial review",
-  reviewed: "Application has been reviewed",
-  shortlisted: "Candidate has been shortlisted",
-  interviewing: "Candidate is in the interview process",
-  hired: "Candidate has been hired",
+  ai_screening: "AI analysis is being performed on the candidate",
+  first_round_recruiter_call: "First round interview with recruiter",
+  second_round_technical_screening: "Second round technical screening interview",
+  third_round_final_ceo: "Final round interview with CEO",
+  contract_offer: "Contract has been requested or sent",
+  onboarding: "Candidate is in the onboarding process",
   rejected: "Application has been rejected",
   withdrawn: "Application has been withdrawn",
 };

@@ -68,9 +68,17 @@ const DeleteCandidateButton = ({ candidateId }: { candidateId: string }) => {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="destructive" size="sm" disabled={isPending}>
-          <Trash2 className="h-4 w-4" />
-          {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+        <Button
+          variant="destructive"
+          size="sm"
+          className="h-7 w-7 p-0"
+          disabled={isPending}
+        >
+          {isPending ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Trash2 className="h-3.5 w-3.5" />
+          )}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>

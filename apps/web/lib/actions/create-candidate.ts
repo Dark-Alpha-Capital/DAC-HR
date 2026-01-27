@@ -67,7 +67,7 @@ export const createCandidate = async (data: CandidateFormSchema) => {
       await db.insert(application).values({
         candidateId: newCandidate.id,
         positionId,
-        status: "pending",
+        status: "ai_screening",
       });
 
       // Link candidate to position in candidatePosition table for tracking
