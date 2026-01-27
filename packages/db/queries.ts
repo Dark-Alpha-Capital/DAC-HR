@@ -323,11 +323,12 @@ export const getApplicationsFiltered = async (
         inArray(
           application.status,
           statuses as Array<
-            | "pending"
-            | "reviewed"
-            | "shortlisted"
-            | "interviewing"
-            | "hired"
+            | "ai_screening"
+            | "first_round_recruiter_call"
+            | "second_round_technical_screening"
+            | "third_round_final_ceo"
+            | "contract_offer"
+            | "onboarding"
             | "rejected"
             | "withdrawn"
           >,
@@ -406,9 +407,9 @@ export const getCandidatesWithPositions = async () => {
       ...result.candidate,
       position: result.position?.id
         ? {
-            id: result.position.id,
-            name: result.position.name,
-          }
+          id: result.position.id,
+          name: result.position.name,
+        }
         : null,
     }));
   } catch (error) {
@@ -538,9 +539,9 @@ export const getCandidatesWithPositionsFiltered = async (
           ...result.candidate,
           position: result.position?.id
             ? {
-                id: result.position.id,
-                name: result.position.name,
-              }
+              id: result.position.id,
+              name: result.position.name,
+            }
             : null,
         });
       }
@@ -1422,10 +1423,10 @@ export const getInterviewById = async (interviewId: string) => {
         ...question,
         feedback: feedback
           ? {
-              id: feedback.id,
-              notes: feedback.notes,
-              rating: feedback.rating,
-            }
+            id: feedback.id,
+            notes: feedback.notes,
+            rating: feedback.rating,
+          }
           : null,
       };
     });
@@ -1697,13 +1698,13 @@ export const getDashboardStats = async () => {
       .where(eq(interview.status, "pending"));
     const interviewsScheduled = interviewsScheduledResult?.count || 0;
 
-    // Average time to hire (in days) - from application created to hired status
+    // Average time to hire (in days) - from application created to onboarding status
     const [avgTimeToHireResult] = await db
       .select({
         avgDays: sql<number>`AVG(EXTRACT(EPOCH FROM (${application.updatedAt} - ${application.createdAt})) / 86400)::int`,
       })
       .from(application)
-      .where(eq(application.status, "hired"));
+      .where(eq(application.status, "onboarding"));
     const avgTimeToHire = avgTimeToHireResult?.avgDays || 0;
 
     // Average time to hire last month
@@ -1713,7 +1714,7 @@ export const getDashboardStats = async () => {
       })
       .from(application)
       .where(
-        sql`${application.status} = 'hired' AND ${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`,
+        sql`${application.status} = 'onboarding' AND ${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`,
       );
     const avgTimeToHireLastMonth = avgTimeToHireLastMonthResult?.avgDays || 0;
 
@@ -1750,7 +1751,7 @@ export const getDashboardStats = async () => {
       .select({ count: sql<number>`count(*)::int` })
       .from(application)
       .where(
-        sql`${application.status} = 'hired' AND ${application.updatedAt} >= NOW() - INTERVAL '30 days'`,
+        sql`${application.status} = 'onboarding' AND ${application.updatedAt} >= NOW() - INTERVAL '30 days'`,
       );
     const hiredThisMonth = hiredThisMonthResult?.count || 0;
 
@@ -1759,7 +1760,7 @@ export const getDashboardStats = async () => {
       .select({ count: sql<number>`count(*)::int` })
       .from(application)
       .where(
-        sql`${application.status} = 'hired' AND ${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`,
+        sql`${application.status} = 'onboarding' AND ${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`,
       );
     const hiredLastMonth = hiredLastMonthResult?.count || 0;
 
