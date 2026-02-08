@@ -17,3 +17,11 @@ export const emailQueue = new Queue("email-queue", {
         backoff: { type: "exponential", delay: 1000 },
     },
 });
+
+export const bulkResumeQueue = new Queue("bulk-resume-queue", {
+    connection: redis,
+    defaultJobOptions: {
+        attempts: 3,
+        backoff: { type: "exponential", delay: 2000 },
+    },
+});

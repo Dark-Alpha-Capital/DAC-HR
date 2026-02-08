@@ -21,6 +21,8 @@ import {
   candidateAiScreening,
   interviewAiAnalysis,
   recruiterWeeklyCheckin,
+  bulkResumeUploadBatch,
+  bulkResumeUploadJob,
 } from "./schema";
 import {
   eq,
@@ -2933,4 +2935,123 @@ export const getWeeklyCheckins = async (
     console.error("Error fetching weekly check-ins", error);
     return { checkins: [], total: 0 };
   }
+};
+
+export const createBulkResumeBatch = async (params: {
+  userId: string;
+  totalCount: number;
+}) => {
+  const [batch] = await db
+    .insert(bulkResumeUploadBatch)
+    .values({
+      userId: params.userId,
+      totalCount: params.totalCount,
+      status: "pending",
+    })
+    .returning();
+  return batch ?? null;
+};
+
+export const getBulkResumeBatchById = async (batchId: string) => {
+  const [batch] = await db
+    .select()
+    .from(bulkResumeUploadBatch)
+    .where(eq(bulkResumeUploadBatch.id, batchId));
+  return batch ?? null;
+};
+
+export const getBulkResumeBatchesByUserId = async (userId: string) => {
+  return db
+    .select()
+    .from(bulkResumeUploadBatch)
+    .where(eq(bulkResumeUploadBatch.userId, userId))
+    .orderBy(desc(bulkResumeUploadBatch.createdAt));
+};
+
+export const getBulkResumeJobsByBatchId = async (batchId: string) => {
+  return db
+    .select()
+    .from(bulkResumeUploadJob)
+    .where(eq(bulkResumeUploadJob.batchId, batchId))
+    .orderBy(asc(bulkResumeUploadJob.jobIndex));
+};
+
+export const createBulkResumeJobs = async (
+  batchId: string,
+  jobs: Array<{ jobIndex: number; fileName: string }>,
+) => {
+  const rows = await db
+    .insert(bulkResumeUploadJob)
+    .values(
+      jobs.map((j) => ({
+        batchId,
+        jobIndex: j.jobIndex,
+        fileName: j.fileName,
+        status: "pending" as const,
+      })),
+    )
+    .returning();
+  return rows;
+};
+
+export const updateBulkResumeJobStatus = async (
+  jobId: string,
+  params: {
+    status: "processing" | "completed" | "failed";
+    candidateId?: string;
+    errorMessage?: string;
+  },
+) => {
+  const [updated] = await db
+    .update(bulkResumeUploadJob)
+    .set({
+      ...params,
+      updatedAt: new Date(),
+    })
+    .where(eq(bulkResumeUploadJob.id, jobId))
+    .returning();
+  return updated ?? null;
+};
+
+export const incrementBulkResumeBatchCounts = async (
+  batchId: string,
+  type: "completed" | "failed",
+) => {
+  const batch = await getBulkResumeBatchById(batchId);
+  if (!batch) return null;
+  const completedCount =
+    type === "completed"
+      ? (batch.completedCount ?? 0) + 1
+      : batch.completedCount ?? 0;
+  const failedCount =
+    type === "failed" ? (batch.failedCount ?? 0) + 1 : batch.failedCount ?? 0;
+  const totalDone = completedCount + failedCount;
+  const status =
+    totalDone >= batch.totalCount
+      ? failedCount > 0
+        ? "partial"
+        : "completed"
+      : "processing";
+  const [updated] = await db
+    .update(bulkResumeUploadBatch)
+    .set({
+      completedCount,
+      failedCount,
+      status,
+    })
+    .where(eq(bulkResumeUploadBatch.id, batchId))
+    .returning();
+  return updated ?? null;
+};
+
+export const setBulkResumeBatchStatus = async (
+  batchId: string,
+  status: "pending" | "processing" | "completed" | "partial",
+) => {
+  const [updated] = await db
+    .update(bulkResumeUploadBatch)
+    .set({ status })
+    .where(eq(bulkResumeUploadBatch.id, batchId))
+    .returning();
+  return updated ?? null;
 };

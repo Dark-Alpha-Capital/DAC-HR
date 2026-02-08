@@ -110,6 +110,81 @@ export async function uploadFileToNextCloud(
 }
 
 /**
+ * Uploads a file to Nextcloud and returns both the download URL and the WebDAV path.
+ * The path can be used by workers to fetch file contents via getFileContents(path).
+ */
+export async function uploadFileToNextCloudWithPath(
+  file: File | Blob,
+  folderPath: string = "/Documents",
+): Promise<{ url: string; path: string } | null> {
+  try {
+    const client = getClient();
+
+    const fileName =
+      file instanceof File
+        ? file.name
+        : `upload-${Date.now()}.${file.type.split("/")[1] || "bin"}`;
+
+    const sanitizedFileName = fileName
+      .replace(/[^a-zA-Z0-9._-]/g, "_")
+      .replace(/_{2,}/g, "_");
+
+    const normalizedFolderPath = folderPath.startsWith("/")
+      ? folderPath
+      : `/${folderPath}`;
+
+    const filePath = `${normalizedFolderPath}/${sanitizedFileName}`;
+
+    try {
+      await client.createDirectory(normalizedFolderPath, { recursive: true });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      if (
+        !err?.message?.includes("405") &&
+        !err?.message?.includes("exists")
+      ) {
+        console.warn(
+          `Could not create directory ${normalizedFolderPath}:`,
+          error,
+        );
+      }
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    await client.putFileContents(filePath, buffer, {
+      overwrite: true,
+      contentLength: buffer.length,
+    });
+
+    const downloadUrl = client.getFileDownloadLink(filePath);
+    return { url: downloadUrl, path: filePath };
+  } catch (error) {
+    console.error("Error uploading file to Nextcloud:", error);
+    return null;
+  }
+}
+
+/**
+ * Reads file contents from Nextcloud by WebDAV path.
+ */
+export async function getFileContentsFromNextCloud(
+  filePath: string,
+): Promise<Buffer | null> {
+  try {
+    const client = getClient();
+    const contents = await client.getFileContents(filePath);
+    return Buffer.isBuffer(contents)
+      ? contents
+      : Buffer.from(contents as ArrayBuffer);
+  } catch (error) {
+    console.error("Error reading file from Nextcloud:", error);
+    return null;
+  }
+}
+
+/**
  * Lists all files in a specific Deal folder.
  * @param folderPath - The path relative to the user's root, e.g., "/Deals/Deal_Alpha"
  */

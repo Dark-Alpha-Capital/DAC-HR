@@ -12,6 +12,7 @@ import type { Metadata } from "next";
 import { UserAuthenticated } from "@/components/auth-checks";
 import { cacheLife, cacheTag } from "next/cache";
 import BulkUploadCandidatesDialog from "@/components/bulk-upload-candidates-dialog";
+import BulkUploadResumeDialog from "@/components/bulk-upload-resume-dialog";
 import CandidatesViewWrapper from "./candidates-view-wrapper";
 
 export const metadata: Metadata = {
@@ -30,12 +31,23 @@ const page = async ({ searchParams }: { searchParams: SearchParams }) => {
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight">Candidates</h1>
-        <div className="flex items-center gap-2">
-          <BulkUploadCandidatesDialog />
-          <Button asChild>
-            <Link href="/candidates/new">New Candidate</Link>
-          </Button>
-        </div>
+        <Suspense
+          fallback={
+            <div className="flex gap-2">
+              <Button variant="secondary" disabled>
+                Bulk Upload
+              </Button>
+              <Button variant="secondary" disabled>
+                Bulk Upload Resumes
+              </Button>
+              <Button asChild>
+                <Link href="/candidates/new">New Candidate</Link>
+              </Button>
+            </div>
+          }
+        >
+          <CandidatesHeaderActions />
+        </Suspense>
       </div>
 
       <Suspense>
@@ -50,6 +62,20 @@ const page = async ({ searchParams }: { searchParams: SearchParams }) => {
 };
 
 export default page;
+
+async function CandidatesHeaderActions() {
+  const { positions } = await getPositions();
+  const positionTypes = positions.map((p) => ({ id: p.id, name: p.name }));
+  return (
+    <div className="flex items-center gap-2">
+      <BulkUploadCandidatesDialog />
+      <BulkUploadResumeDialog positions={positionTypes} />
+      <Button asChild>
+        <Link href="/candidates/new">New Candidate</Link>
+      </Button>
+    </div>
+  );
+}
 
 async function CachedPresentFilters() {
   const { positions } = await getPositions();
@@ -134,7 +160,7 @@ async function CachedCandidatesAndApplicationsList({
       emailSearch,
       positionIds,
       currentPage,
-      limit,
+      limit
     ),
     getApplicationsFiltered(
       nameSearch,
@@ -142,7 +168,7 @@ async function CachedCandidatesAndApplicationsList({
       positionIds,
       undefined,
       currentPage,
-      limit,
+      limit
     ),
   ]);
 
@@ -150,7 +176,7 @@ async function CachedCandidatesAndApplicationsList({
   const { applications, total: applicationsTotal } = applicationsResult;
 
   const totalPages = Math.ceil(
-    Math.max(candidatesTotal, applicationsTotal) / limit,
+    Math.max(candidatesTotal, applicationsTotal) / limit
   );
   const hasNextPage = currentPage < totalPages;
   const hasPreviousPage = currentPage > 1;

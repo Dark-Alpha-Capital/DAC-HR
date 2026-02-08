@@ -570,3 +570,57 @@ export const recruiterWeeklyCheckin = pgTable("recruiter_weekly_checkin", {
 export type RecruiterWeeklyCheckin = InferSelectModel<
   typeof recruiterWeeklyCheckin
 >;
+
+export const bulkResumeBatchStatusEnum = pgEnum(
+  "bulk_resume_batch_status",
+  ["pending", "processing", "completed", "partial"],
+);
+
+export const bulkResumeJobStatusEnum = pgEnum("bulk_resume_job_status", [
+  "pending",
+  "processing",
+  "completed",
+  "failed",
+]);
+
+export const bulkResumeUploadBatch = pgTable("bulk_resume_upload_batch", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  totalCount: integer("total_count").notNull(),
+  completedCount: integer("completed_count").default(0).notNull(),
+  failedCount: integer("failed_count").default(0).notNull(),
+  status: bulkResumeBatchStatusEnum("status").default("pending").notNull(),
+});
+
+export type BulkResumeUploadBatch = InferSelectModel<
+  typeof bulkResumeUploadBatch
+>;
+
+export const bulkResumeUploadJob = pgTable("bulk_resume_upload_job", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  batchId: text("batch_id")
+    .notNull()
+    .references(() => bulkResumeUploadBatch.id, { onDelete: "cascade" }),
+  jobIndex: integer("job_index").notNull(),
+  fileName: text("file_name").notNull(),
+  status: bulkResumeJobStatusEnum("status").default("pending").notNull(),
+  candidateId: text("candidate_id").references(() => candidate.id, {
+    onDelete: "set null",
+  }),
+  errorMessage: text("error_message"),
+  bullmqJobId: text("bullmq_job_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+export type BulkResumeUploadJob = InferSelectModel<typeof bulkResumeUploadJob>;
