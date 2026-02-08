@@ -12,31 +12,31 @@ import { insertAuditLog } from "@workspace/db/queries";
 export interface UpdateApplicationInput {
   applicationId: string;
   status?:
-    | "ai_screening"
-    | "first_round_recruiter_call"
-    | "second_round_technical_screening"
-    | "third_round_final_ceo"
-    | "contract_offer"
-    | "onboarding"
-    | "rejected"
-    | "withdrawn";
+  | "ai_screening"
+  | "first_round_recruiter_call"
+  | "second_round_technical_screening"
+  | "third_round_final_ceo"
+  | "contract_offer"
+  | "onboarding"
+  | "rejected"
+  | "withdrawn";
   personality?:
-    | "ENFJ"
-    | "ENFP"
-    | "ENTJ"
-    | "ENTP"
-    | "ESFJ"
-    | "ESFP"
-    | "ESTJ"
-    | "ESTP"
-    | "INFJ"
-    | "INTJ"
-    | "INTP"
-    | "ISFJ"
-    | "ISFP"
-    | "ISTJ"
-    | "ISTP"
-    | null;
+  | "ENFJ"
+  | "ENFP"
+  | "ENTJ"
+  | "ENTP"
+  | "ESFJ"
+  | "ESFP"
+  | "ESTJ"
+  | "ESTP"
+  | "INFJ"
+  | "INTJ"
+  | "INTP"
+  | "ISFJ"
+  | "ISFP"
+  | "ISTJ"
+  | "ISTP"
+  | null;
 }
 
 export const updateApplication = async (data: UpdateApplicationInput) => {
@@ -65,6 +65,7 @@ export const updateApplication = async (data: UpdateApplicationInput) => {
       return { error: "Application not found" };
     }
 
+    updateTag(`candidates`);
     updateTag(`application-${applicationId}`);
     if (updatedApplication.candidateId) {
       updateTag(`candidate-applications-${updatedApplication.candidateId}`);

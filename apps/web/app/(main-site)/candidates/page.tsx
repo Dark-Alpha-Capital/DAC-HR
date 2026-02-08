@@ -52,10 +52,6 @@ const page = async ({ searchParams }: { searchParams: SearchParams }) => {
 export default page;
 
 async function CachedPresentFilters() {
-  "use cache";
-  cacheLife("hr-metadata");
-  cacheTag("positions");
-
   const { positions } = await getPositions();
   const positionTypes = positions.map((position) => ({
     id: position.id,

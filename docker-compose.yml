@@ -65,6 +65,20 @@ services:
       retries: 3
       start_period: 40s
 
+  redis:
+    image: redis:7-alpine
+    container_name: hr-automation-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - hr-automation-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
 networks:
   hr-automation-network:
     driver: bridge

@@ -3,6 +3,8 @@ import {
   getCandidateWithApplications,
   getDocumentsByCandidateId,
   getCandidateAiScreenings,
+  getApplicationWithInterviews,
+  getUsers,
 } from "@workspace/db/queries";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
@@ -26,12 +28,7 @@ import {
   Phone,
   MapPin,
   Briefcase,
-  CheckCircle2,
-  Circle,
-  XCircle,
-  Users,
   Plus,
-  Eye,
   FileText,
   Link as LinkIcon,
   User,
@@ -45,7 +42,9 @@ import { SectionSkeleton } from "@/components/skeletons/section-skeleton";
 import CandidateDocumentTable from "@/components/candidate-document-table";
 import CandidateOnboardingSection from "@/components/candidate-onboarding-section";
 import { UserAuthenticated } from "@/components/auth-checks";
-import InlineApplicationStatusEditor from "@/components/inline-application-status-editor";
+import ApplicationStatusDisplay from "@/components/application-status-display";
+import ApplicationPersonalitySelector from "@/components/application-personality-selector";
+import ApplicationProgressTimeline from "@/components/application-progress-timeline";
 import CandidateAiScreeningsTab from "@/components/candidate-ai-screenings-tab";
 import CandidateAiAnalysis from "@/components/candidate-ai-analysis";
 import CandidateTabsClient from "@/components/candidate-tabs-client";
@@ -118,16 +117,32 @@ const CandidatePageContentWrapper = async ({ params }: { params: Params }) => {
   if (!session?.user) {
     redirect("/login");
   }
-  return <CachedCandidatePageContent uid={uid} session={session.session} />;
+  const users = await getUsers();
+  return (
+    <CachedCandidatePageContent
+      uid={uid}
+      session={session.session}
+      users={users}
+      currentUser={session?.user ?? null}
+    />
+  );
 };
 
 // Cached component receives data as props
 async function CachedCandidatePageContent({
   uid,
   session,
+  users,
+  currentUser,
 }: {
   uid: string;
   session: Session;
+  users: Awaited<ReturnType<typeof getUsers>>;
+  currentUser: {
+    id: string;
+    email?: string | null;
+    name?: string | null;
+  } | null;
 }) {
   "use cache";
   cacheLife("hr-data");
@@ -235,7 +250,11 @@ async function CachedCandidatePageContent({
 
         <TabsContent value="applications" className="mt-6">
           <Suspense fallback={<SectionSkeleton />}>
-            <ApplicationsTab candidate={candidate} />
+            <ApplicationsTab
+              candidate={candidate}
+              users={users}
+              currentUser={currentUser}
+            />
           </Suspense>
         </TabsContent>
 
@@ -322,6 +341,74 @@ async function CachedDisplayCandidateDocuments({ uid }: { uid: string }) {
       ) : (
         <CandidateDocumentTable documents={documents} candidateId={uid} />
       )}
+    </div>
+  );
+}
+
+// Cached: full application data with rounds for Applications tab
+async function CachedApplicationDetails({
+  applicationId,
+}: {
+  applicationId: string;
+}) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag(`application-${applicationId}`);
+
+  const application = await getApplicationWithInterviews(applicationId);
+  if (application) {
+    cacheTag(`position-${application.positionId}`);
+  }
+  return application;
+}
+
+// Renders one application's status, personality, and timeline (Record Interview lives in timeline header)
+async function ApplicationDetailSection({
+  applicationId,
+  positionName,
+  users,
+  currentUser,
+}: {
+  applicationId: string;
+  positionName: string;
+  users: Awaited<ReturnType<typeof getUsers>>;
+  currentUser: {
+    id: string;
+    email?: string | null;
+    name?: string | null;
+  } | null;
+}) {
+  const application = await CachedApplicationDetails({ applicationId });
+  if (!application) return null;
+
+  return (
+    <div className="space-y-6">
+      <h3 className="text-lg font-semibold">{positionName}</h3>
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium text-muted-foreground">
+            Application Status
+          </h4>
+          <ApplicationStatusDisplay application={application} />
+        </div>
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium text-muted-foreground">
+            Personality Type
+          </h4>
+          <ApplicationPersonalitySelector
+            applicationId={applicationId}
+            currentPersonality={application.personality}
+          />
+        </div>
+      </div>
+      <ApplicationProgressTimeline
+        rounds={application.rounds}
+        interviews={application.interviews}
+        applicationId={applicationId}
+        currentUser={currentUser}
+        users={users}
+        application={application}
+      />
     </div>
   );
 }
@@ -475,30 +562,18 @@ async function ScreeningsCount({ uid }: { uid: string }) {
 
 const ApplicationsTab = ({
   candidate,
+  users,
+  currentUser,
 }: {
   candidate: Awaited<ReturnType<typeof getCandidateWithApplications>>;
+  users: Awaited<ReturnType<typeof getUsers>>;
+  currentUser: {
+    id: string;
+    email?: string | null;
+    name?: string | null;
+  } | null;
 }) => {
   if (!candidate) return null;
-
-  const interviewStatusColors: Record<
-    string,
-    "default" | "secondary" | "destructive"
-  > = {
-    pending: "secondary",
-    move_forward: "default",
-    rejected: "destructive",
-  } as const;
-
-  const getInterviewStatusIcon = (status: string) => {
-    switch (status) {
-      case "move_forward":
-        return <CheckCircle2 className="h-3 w-3" />;
-      case "rejected":
-        return <XCircle className="h-3 w-3" />;
-      default:
-        return <Circle className="h-3 w-3" />;
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -515,96 +590,23 @@ const ApplicationsTab = ({
           <p className="text-sm">No applications found for this candidate.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="space-y-6">
           {candidate.applications.map((app) => (
-            <Card
+            <Suspense
               key={app.id}
-              className="flex flex-col transition-colors hover:shadow-md"
+              fallback={
+                <div className="py-8">
+                  <SectionSkeleton />
+                </div>
+              }
             >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-base mb-2 line-clamp-2">
-                      {app.position.name}
-                    </CardTitle>
-                  </div>
-                  <InlineApplicationStatusEditor
-                    application={{ id: app.id, status: app.status }}
-                    candidateId={candidate.id}
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                    <Calendar className="h-3 w-3 shrink-0" />
-                    <span>Applied {formatDate(app.createdAt)}</span>
-                  </div>
-                  {app.personality && (
-                    <div>
-                      <Badge variant="secondary" className="text-xs">
-                        Personality: {app.personality}
-                      </Badge>
-                    </div>
-                  )}
-                  <div className="pt-2 space-y-2">
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                      <Users className="h-3 w-3" />
-                      <span>Interviews ({app.interviews?.length || 0})</span>
-                    </div>
-                    {app.interviews && app.interviews.length > 0 && (
-                      <div className="space-y-1.5 pl-5">
-                        {app.interviews.map((interview) => (
-                          <div
-                            key={interview.id}
-                            className="flex items-center justify-between text-xs p-2 rounded-md hover:bg-accent/50 transition-colors"
-                          >
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              {getInterviewStatusIcon(interview.status)}
-                              <span className="truncate">
-                                {interview.roundTemplate.name}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {interview.scheduledAt && (
-                                <span className="text-muted-foreground text-[10px]">
-                                  {formatDate(interview.scheduledAt)}
-                                </span>
-                              )}
-                              <Badge
-                                variant={
-                                  interviewStatusColors[interview.status] ||
-                                  "secondary"
-                                }
-                                className="text-xs h-4 px-1.5"
-                              >
-                                {interview.status === "move_forward"
-                                  ? "Move Forward"
-                                  : interview.status.charAt(0).toUpperCase() +
-                                    interview.status.slice(1)}
-                              </Badge>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="pt-2">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="w-full"
-                      asChild
-                    >
-                      <Link href={`/applications/${app.id}`}>
-                        <Eye className="h-3 w-3 mr-2" />
-                        View Application
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              <ApplicationDetailSection
+                applicationId={app.id}
+                positionName={app.position.name}
+                users={users}
+                currentUser={currentUser}
+              />
+            </Suspense>
           ))}
         </div>
       )}

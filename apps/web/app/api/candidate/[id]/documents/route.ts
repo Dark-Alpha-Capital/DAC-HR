@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import { db, eq } from "@workspace/db";
 import { candidateDocument as candidateDocumentSchema } from "@workspace/db/schema";
 import {
@@ -231,122 +232,7 @@ export async function POST(
 
     const validatedData = validationResult.data;
 
-    // Only upload to file search store if a file is provided
-    let fileSearchDocumentName: string | null = null;
-
-    if (file) {
-      // Fetch candidate details for richer metadata
-      const candidateForMetadata = await getCandidateById(candidateId);
-
-      if (!candidateForMetadata) {
-        console.error(
-          `[POST /api/candidate/:id/documents] Candidate not found - ID: ${candidateId}`,
-        );
-        return NextResponse.json(
-          { error: "Candidate not found" },
-          { status: 404 },
-        );
-      }
-
-      if (
-        CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME &&
-        CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME.trim() !== ""
-      ) {
-        console.log(
-          `[POST /api/candidate/:id/documents] Uploading to file search store: ${CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME}`,
-        );
-        try {
-          const customMetadata: Array<{
-            key: string;
-            stringValue?: string;
-          }> = [{ key: "candidate_id", stringValue: String(candidateId) }];
-
-          if (candidateForMetadata) {
-            const fullName = `${candidateForMetadata.firstName} ${candidateForMetadata.lastName}`;
-
-            customMetadata.push(
-              { key: "candidate_full_name", stringValue: fullName },
-              {
-                key: "candidate_email",
-                stringValue: candidateForMetadata.email,
-              },
-            );
-
-            if (candidateForMetadata.location) {
-              customMetadata.push({
-                key: "candidate_location",
-                stringValue: candidateForMetadata.location,
-              });
-            }
-
-            if (candidateForMetadata.source) {
-              customMetadata.push({
-                key: "candidate_source",
-                stringValue: candidateForMetadata.source,
-              });
-            }
-
-            if (candidateForMetadata.sourceUrl) {
-              customMetadata.push({
-                key: "candidate_source_url",
-                stringValue: candidateForMetadata.sourceUrl,
-              });
-            }
-          }
-
-          let operation =
-            await googleGenAI.fileSearchStores.uploadToFileSearchStore({
-              file: file as Blob,
-              fileSearchStoreName: CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME,
-              config: {
-                displayName: name,
-                customMetadata,
-              },
-            });
-
-          // Wait for indexing to complete (critical step)
-          console.log(
-            `[POST /api/candidate/:id/documents] Waiting for file search store indexing to complete...`,
-          );
-          let waitCount = 0;
-          while (!operation.done) {
-            waitCount++;
-            await new Promise((resolve) => setTimeout(resolve, 5000));
-            operation = await googleGenAI.operations.get({ operation });
-            if (waitCount % 3 === 0) {
-              console.log(
-                `[POST /api/candidate/:id/documents] Still waiting for indexing... (${waitCount * 5}s elapsed)`,
-              );
-            }
-          }
-
-          fileSearchDocumentName = operation.response?.documentName || null;
-
-          if (fileSearchDocumentName) {
-            console.log(
-              `[POST /api/candidate/:id/documents] File uploaded to search store successfully - Document name: ${fileSearchDocumentName}`,
-            );
-          } else {
-            console.warn(
-              `[POST /api/candidate/:id/documents] File search store upload completed but no document name returned`,
-            );
-          }
-        } catch (error) {
-          console.error(
-            `[POST /api/candidate/:id/documents] Error uploading to file search store:`,
-            error,
-          );
-          // Don't fail the entire request if file search store upload fails
-          // The document will still be created without file search indexing
-        }
-      } else {
-        console.log(
-          `[POST /api/candidate/:id/documents] Skipping file search store upload - store name not configured`,
-        );
-      }
-    }
-
-    // Create the candidate document
+    // Create the candidate document immediately (don't wait for file search indexing)
     console.log(
       `[POST /api/candidate/:id/documents] Creating candidate document record in database...`,
     );
@@ -365,7 +251,7 @@ export async function POST(
           validatedData.tags && validatedData.tags.length > 0
             ? validatedData.tags
             : null,
-        fileSearchDocumentName: fileSearchDocumentName || null,
+        fileSearchDocumentName: null, // Will be updated after background indexing
       })
       .returning();
 
@@ -373,49 +259,167 @@ export async function POST(
       `[POST /api/candidate/:id/documents] Candidate document created successfully - Document ID: ${newCandidateDocument?.id}`,
     );
 
-    // Insert audit log asynchronously
-    insertAuditLog({
-      userId: user.id,
-      action: "create_candidate_document",
-      entityType: "candidate_document",
-      entityId: newCandidateDocument?.id || "",
-      details: {
-        candidateDocument: {
-          id: newCandidateDocument?.id || "",
-          candidateId: newCandidateDocument?.candidateId || "",
-          name: newCandidateDocument?.name || "",
-          description: newCandidateDocument?.description || "",
-          category: newCandidateDocument?.category || "",
-          url: newCandidateDocument?.url || "",
-          tags: newCandidateDocument?.tags || [],
-          createdAt: newCandidateDocument?.createdAt.toISOString() || "",
-          updatedAt: newCandidateDocument?.updatedAt.toISOString() || "",
-        },
-        input: {
-          candidateId,
-          name: validatedData.name,
-          description:
-            validatedData.description && validatedData.description.trim() !== ""
-              ? validatedData.description
-              : null,
-          category: validatedData.category || "other",
-          url: validatedData.url,
-          tags:
-            validatedData.tags && validatedData.tags.length > 0
-              ? validatedData.tags
-              : null,
-        },
-        createdBy: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        },
-        metadata: {
-          timestamp: new Date().toISOString(),
-        },
-      },
-    }).catch((error) => {
-      console.error("Error inserting audit log:", error);
+    // Schedule non-blocking background tasks using after()
+    after(async () => {
+      const documentId = newCandidateDocument?.id;
+
+      // Run audit log and file search indexing in parallel
+      const backgroundTasks: Promise<void>[] = [];
+
+      // Audit log task
+      backgroundTasks.push(
+        insertAuditLog({
+          userId: user.id,
+          action: "create_candidate_document",
+          entityType: "candidate_document",
+          entityId: documentId || "",
+          details: {
+            candidateDocument: {
+              id: documentId || "",
+              candidateId: newCandidateDocument?.candidateId || "",
+              name: newCandidateDocument?.name || "",
+              description: newCandidateDocument?.description || "",
+              category: newCandidateDocument?.category || "",
+              url: newCandidateDocument?.url || "",
+              tags: newCandidateDocument?.tags || [],
+              createdAt: newCandidateDocument?.createdAt.toISOString() || "",
+              updatedAt: newCandidateDocument?.updatedAt.toISOString() || "",
+            },
+            input: {
+              candidateId,
+              name: validatedData.name,
+              description:
+                validatedData.description &&
+                  validatedData.description.trim() !== ""
+                  ? validatedData.description
+                  : null,
+              category: validatedData.category || "other",
+              url: validatedData.url,
+              tags:
+                validatedData.tags && validatedData.tags.length > 0
+                  ? validatedData.tags
+                  : null,
+            },
+            createdBy: {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+            },
+            metadata: {
+              timestamp: new Date().toISOString(),
+            },
+          },
+        })
+          .then(() => undefined)
+          .catch((error) => {
+            console.error("Error inserting audit log:", error);
+          }),
+      );
+
+      // File search store indexing task (only if file was provided)
+      if (
+        file &&
+        documentId &&
+        CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME &&
+        CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME.trim() !== ""
+      ) {
+        backgroundTasks.push(
+          (async () => {
+            try {
+              console.log(
+                `[BACKGROUND] Starting file search store indexing for document ${documentId}`,
+              );
+
+              // Fetch candidate metadata
+              const candidateForMetadata = await getCandidateById(candidateId);
+              if (!candidateForMetadata) {
+                console.warn(
+                  `[BACKGROUND] Candidate not found for metadata: ${candidateId}`,
+                );
+                return;
+              }
+
+              const customMetadata: Array<{
+                key: string;
+                stringValue?: string;
+              }> = [{ key: "candidate_id", stringValue: String(candidateId) }];
+
+              const fullName = `${candidateForMetadata.firstName} ${candidateForMetadata.lastName}`;
+              customMetadata.push(
+                { key: "candidate_full_name", stringValue: fullName },
+                {
+                  key: "candidate_email",
+                  stringValue: candidateForMetadata.email,
+                },
+              );
+
+              if (candidateForMetadata.location) {
+                customMetadata.push({
+                  key: "candidate_location",
+                  stringValue: candidateForMetadata.location,
+                });
+              }
+              if (candidateForMetadata.source) {
+                customMetadata.push({
+                  key: "candidate_source",
+                  stringValue: candidateForMetadata.source,
+                });
+              }
+              if (candidateForMetadata.sourceUrl) {
+                customMetadata.push({
+                  key: "candidate_source_url",
+                  stringValue: candidateForMetadata.sourceUrl,
+                });
+              }
+
+              let operation =
+                await googleGenAI.fileSearchStores.uploadToFileSearchStore({
+                  file: file as Blob,
+                  fileSearchStoreName: CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME,
+                  config: {
+                    displayName: name,
+                    customMetadata,
+                  },
+                });
+
+              // Poll for indexing completion
+              let waitCount = 0;
+              while (!operation.done) {
+                waitCount++;
+                await new Promise((resolve) => setTimeout(resolve, 5000));
+                operation = await googleGenAI.operations.get({ operation });
+                if (waitCount % 3 === 0) {
+                  console.log(
+                    `[BACKGROUND] Still indexing document ${documentId}... (${waitCount * 5}s elapsed)`,
+                  );
+                }
+              }
+
+              const fileSearchDocumentName =
+                operation.response?.documentName || null;
+
+              // Update the document record with the file search name
+              if (fileSearchDocumentName) {
+                await db
+                  .update(candidateDocumentSchema)
+                  .set({ fileSearchDocumentName })
+                  .where(eq(candidateDocumentSchema.id, documentId));
+
+                console.log(
+                  `[BACKGROUND] File search indexing completed for document ${documentId}: ${fileSearchDocumentName}`,
+                );
+              }
+            } catch (error) {
+              console.error(
+                `[BACKGROUND] Error during file search indexing for document ${documentId}:`,
+                error,
+              );
+            }
+          })(),
+        );
+      }
+
+      await Promise.all(backgroundTasks);
     });
 
     const duration = Date.now() - startTime;

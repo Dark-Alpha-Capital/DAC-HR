@@ -46,7 +46,8 @@ const statusLabels: Record<ApplicationStatus, string> = {
 const statusDescriptions: Record<ApplicationStatus, string> = {
   ai_screening: "AI analysis is being performed on the candidate",
   first_round_recruiter_call: "First round interview with recruiter",
-  second_round_technical_screening: "Second round technical screening interview",
+  second_round_technical_screening:
+    "Second round technical screening interview",
   third_round_final_ceo: "Final round interview with CEO",
   contract_offer: "Contract has been requested or sent",
   onboarding: "Candidate is in the onboarding process",
@@ -75,7 +76,7 @@ export default function ApplicationStatusForm({
         toast.error(
           typeof result.error === "string"
             ? result.error
-            : "Failed to update application status",
+            : "Failed to update application status"
         );
         return;
       }

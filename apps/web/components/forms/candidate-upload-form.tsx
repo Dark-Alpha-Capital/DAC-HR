@@ -32,11 +32,9 @@ import {
   Select,
   SelectContent,
   SelectItem,
-  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
-import { authClient } from "@/auth-client";
 import { Session } from "better-auth";
 import { resetCacheForCandidates } from "@/lib/actions/reset-cache";
 
@@ -57,6 +55,7 @@ const CandidateUploadForm = ({
     "LinkedIn" | "Upwork" | "Handshake" | "Indeed" | undefined
   >(undefined);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Get the pre-selected position from URL params
   const preSelectedPositionId = searchParams.get("position");
@@ -209,12 +208,9 @@ const CandidateUploadForm = ({
           form.reset();
           setSelectedSource(undefined);
           setResumeFile(null);
-          // Clear file input
-          const fileInput = document.getElementById(
-            "resume-upload",
-          ) as HTMLInputElement;
-          if (fileInput) {
-            fileInput.value = "";
+          // Clear file input via ref
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
           }
           router.push(`/candidates`);
         } catch (error) {
@@ -250,12 +246,9 @@ const CandidateUploadForm = ({
               form.reset();
               setSelectedSource(undefined);
               setResumeFile(null);
-              // Clear file input
-              const fileInput = document.getElementById(
-                "resume-upload",
-              ) as HTMLInputElement;
-              if (fileInput) {
-                fileInput.value = "";
+              // Clear file input via ref
+              if (fileInputRef.current) {
+                fileInputRef.current.value = "";
               }
             }}
             disabled={isPending}
@@ -557,6 +550,7 @@ const CandidateUploadForm = ({
             <div className="space-y-2">
               <Input
                 id="resume-upload"
+                ref={fileInputRef}
                 type="file"
                 onChange={(e) => {
                   const selectedFile = e.target.files?.[0];
