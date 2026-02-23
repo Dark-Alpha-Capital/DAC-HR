@@ -1,9 +1,12 @@
+import { Suspense } from "react";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getBulkResumeBatchesByUserId } from "@workspace/db/queries";
 import { Button } from "@workspace/ui/components/button";
+import { UserAuthenticated } from "@/components/auth-checks";
+import { cacheLife, cacheTag } from "next/cache";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -11,16 +14,88 @@ export const metadata: Metadata = {
   description: "Track bulk resume upload batches",
 };
 
-export default async function BulkResumeUploadsPage() {
+function BatchesListSkeleton() {
+  return (
+    <ul className="space-y-3">
+      {[1, 2, 3].map((i) => (
+        <li key={i} className="h-20 rounded-lg border bg-card animate-pulse" />
+      ))}
+    </ul>
+  );
+}
+
+async function CachedBulkResumeBatchesList({ userId }: { userId: string }) {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag("bulk-resume-uploads");
+  cacheTag(`bulk-resume-uploads-${userId}`);
+
+  const batches = await getBulkResumeBatchesByUserId(userId);
+
+  if (batches.length === 0) {
+    return (
+      <div className="rounded-xl border bg-card p-10 text-center text-muted-foreground">
+        <p>No bulk upload batches yet.</p>
+        <Button asChild className="mt-4">
+          <Link href="/candidates">Upload Resumes</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <ul className="space-y-3">
+      {batches.map((b) => (
+        <li key={b.id}>
+          <Link
+            href={
+              ("/candidates/bulk-resume-uploads/" +
+                b.id) as import("next").Route
+            }
+            className="block rounded-lg border bg-card p-4 hover:bg-muted/50 transition-colors"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-medium">
+                {b.totalCount} resume{b.totalCount !== 1 ? "s" : ""} ·{" "}
+                {new Date(b.createdAt).toLocaleString()}
+              </span>
+              <span
+                className={`text-sm ${
+                  b.status === "completed"
+                    ? "text-green-600"
+                    : b.status === "partial"
+                      ? "text-amber-600"
+                      : "text-muted-foreground"
+                }`}
+              >
+                {b.status}
+              </span>
+            </div>
+            <div className="mt-1 text-sm text-muted-foreground">
+              {b.completedCount} completed, {b.failedCount} failed
+            </div>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+async function BulkResumeBatchesContent() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) {
     redirect("/login");
   }
+  return <CachedBulkResumeBatchesList userId={session.user.id} />;
+}
 
-  const batches = await getBulkResumeBatchesByUserId(session.user.id);
-
+export default async function BulkResumeUploadsPage() {
   return (
     <div className="space-y-6 w-full">
+      <Suspense>
+        <UserAuthenticated />
+      </Suspense>
+
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">
           Bulk Resume Uploads
@@ -30,49 +105,9 @@ export default async function BulkResumeUploadsPage() {
         </Button>
       </div>
 
-      {batches.length === 0 ? (
-        <div className="rounded-xl border bg-card p-10 text-center text-muted-foreground">
-          <p>No bulk upload batches yet.</p>
-          <Button asChild className="mt-4">
-            <Link href="/candidates">Upload Resumes</Link>
-          </Button>
-        </div>
-      ) : (
-        <ul className="space-y-3">
-          {batches.map((b) => (
-            <li key={b.id}>
-              <Link
-                href={{
-                  pathname: "/candidates/bulk-resume-uploads/[batchId]",
-                  query: { batchId: b.id },
-                }}
-                className="block rounded-lg border bg-card p-4 hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-medium">
-                    {b.totalCount} resume{b.totalCount !== 1 ? "s" : ""} ·{" "}
-                    {new Date(b.createdAt).toLocaleString()}
-                  </span>
-                  <span
-                    className={`text-sm ${
-                      b.status === "completed"
-                        ? "text-green-600"
-                        : b.status === "partial"
-                          ? "text-amber-600"
-                          : "text-muted-foreground"
-                    }`}
-                  >
-                    {b.status}
-                  </span>
-                </div>
-                <div className="mt-1 text-sm text-muted-foreground">
-                  {b.completedCount} completed, {b.failedCount} failed
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+      <Suspense fallback={<BatchesListSkeleton />}>
+        <BulkResumeBatchesContent />
+      </Suspense>
     </div>
   );
 }
