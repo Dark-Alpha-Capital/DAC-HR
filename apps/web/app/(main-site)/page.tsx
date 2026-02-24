@@ -31,8 +31,6 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
-  console.log("Page");
-
   return (
     <Suspense fallback={<HomeLoading />}>
       <UserContent />
@@ -48,6 +46,8 @@ async function UserContent() {
   if (!session) {
     redirect("/login");
   }
+
+  console.log("inside user content page");
 
   return (
     <div className="space-y-8">
