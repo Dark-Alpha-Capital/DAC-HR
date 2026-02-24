@@ -26,16 +26,16 @@ jobs:
             git pull origin main
             
             # Stop and remove old containers/images
-            docker compose down || true
-            docker image prune -f
+            sudo docker compose down || true
+            sudo docker image prune -f
             
             # Build without cache (docker-compose.yml handles all build args automatically)
-            docker compose build --no-cache
+            sudo docker compose build --no-cache
             
             # Start containers
-            docker compose up -d --force-recreate
+            sudo docker compose up -d --force-recreate
             
             # Show status
             sleep 3
-            docker compose ps
-            docker compose logs --tail=30
+            sudo docker compose ps
+            sudo docker compose logs --tail=30
