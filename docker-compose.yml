@@ -2,8 +2,6 @@ networks:
   default:
     external: true
     name: bridge
-  hr-automation-network:
-    driver: bridge
 
 services:
   app:
@@ -52,8 +50,6 @@ services:
       # All other variables (DATABASE_URL, BETTER_AUTH_SECRET, etc.)
       # are loaded from ./apps/web/.env via env_file above
     restart: unless-stopped
-    networks:
-      - hr-automation-network
     # DNS configuration (optional - uncomment if you have DNS issues)
     # dns:
     #   - 8.8.8.8
