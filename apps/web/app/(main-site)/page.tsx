@@ -31,10 +31,20 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
+  console.log("inside home page");
+
   return (
-    <Suspense fallback={<HomeLoading />}>
-      <UserContent />
-    </Suspense>
+    <div>
+      <div className="space-y-2">
+        <p className="text-sm text-muted-foreground">
+          Manage recruiting, onboarding, and HR operations from one place.
+        </p>
+      </div>
+
+      <Suspense fallback={<HomeLoading />}>
+        <UserContent />
+      </Suspense>
+    </div>
   );
 }
 
@@ -47,19 +57,8 @@ async function UserContent() {
     redirect("/login");
   }
 
-  console.log("inside user content page");
-
   return (
     <div className="space-y-8">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Welcome, {session.user.name ?? "there"}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Manage recruiting, onboarding, and HR operations from one place.
-        </p>
-      </div>
-
       <div className="grid gap-4 md:grid-cols-3">
         <Suspense fallback={<StatsCardSkeleton />}>
           <HomeStatsCards />
