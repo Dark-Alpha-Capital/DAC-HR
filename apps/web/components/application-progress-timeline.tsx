@@ -12,12 +12,6 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -238,53 +232,46 @@ export default function ApplicationProgressTimeline({
 
       {/* Rounds and Interviews */}
       {rounds.length === 0 ? (
-        <div className="text-center py-12 border rounded-lg bg-muted/20">
-          <MessageSquare className="h-8 w-8 mx-auto mb-3 text-muted-foreground opacity-50" />
-          <p className="text-sm text-muted-foreground mb-1">
-            No interview rounds configured for this position.
-          </p>
+        <div className="py-12 text-center text-muted-foreground">
+          <MessageSquare className="h-8 w-8 mx-auto mb-3 opacity-50" />
+          <p className="text-sm">No interview rounds configured for this position.</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="divide-y divide-border">
           {rounds.map((round) => {
             const roundInterviews =
               interviewsByRound.get(round.positionRoundTemplateId) || [];
             const hasInterviews = roundInterviews.length > 0;
 
             return (
-              <Card key={round.id} className="overflow-hidden">
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-1 flex-1">
-                      <CardTitle className="text-base font-semibold">
-                        {round.name}
-                      </CardTitle>
-                      {round.description && (
-                        <p className="text-sm text-muted-foreground">
-                          {round.description}
-                        </p>
-                      )}
-                    </div>
-                    <Badge variant="secondary" className="text-xs shrink-0">
-                      {roundInterviews.length} interview
-                      {roundInterviews.length !== 1 ? "s" : ""}
-                    </Badge>
+              <section key={round.id} className="py-5 first:pt-0">
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="space-y-0.5 flex-1">
+                    <h3 className="text-base font-medium">{round.name}</h3>
+                    {round.description && (
+                      <p className="text-sm text-muted-foreground">
+                        {round.description}
+                      </p>
+                    )}
                   </div>
-                </CardHeader>
-                <CardContent>
-                  {!hasInterviews ? (
-                    <div className="text-center py-8 border border-dashed rounded-lg bg-muted/20">
-                      <Circle className="h-8 w-8 mx-auto mb-3 text-muted-foreground opacity-50" />
-                      <p className="text-sm text-muted-foreground mb-1">
-                        No interviews recorded for this round yet.
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Click "Record Interview" to add an interview.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="border rounded-lg overflow-hidden">
-                      <Table>
+                  <Badge variant="secondary" className="text-xs shrink-0">
+                    {roundInterviews.length} interview
+                    {roundInterviews.length !== 1 ? "s" : ""}
+                  </Badge>
+                </div>
+                {!hasInterviews ? (
+                  <div className="py-8 text-center text-muted-foreground">
+                    <Circle className="h-8 w-8 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm mb-1">
+                      No interviews recorded for this round yet.
+                    </p>
+                    <p className="text-xs">
+                      Click "Record Interview" to add an interview.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-hidden rounded-md border">
+                    <Table>
                         <TableHeader>
                           <TableRow className="bg-muted/30">
                             <TableHead className="font-medium">
@@ -371,9 +358,8 @@ export default function ApplicationProgressTimeline({
                         </TableBody>
                       </Table>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                )}
+              </section>
             );
           })}
         </div>

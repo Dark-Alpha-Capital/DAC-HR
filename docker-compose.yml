@@ -18,7 +18,6 @@ services:
         - NEXT_PUBLIC_BETTER_AUTH_BASEURL=${NEXT_PUBLIC_BETTER_AUTH_BASEURL:-}
         - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
     container_name: hr-automation-${DEPLOY_ID:-latest}
-    network_mode: bridge
     ports:
       - "3007:3000"  # 3001 held by stuck container; update proxy to 3007
 
@@ -46,6 +45,8 @@ services:
       # All other variables (DATABASE_URL, BETTER_AUTH_SECRET, etc.)
       # are loaded from ./apps/web/.env via env_file above
     restart: unless-stopped
+    depends_on:
+      - redis
     # DNS configuration (optional - uncomment if you have DNS issues)
     # dns:
     #   - 8.8.8.8
@@ -63,3 +64,16 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+  redis:
+    image: redis:7-alpine
+    container_name: hr-automation-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  redis_data:

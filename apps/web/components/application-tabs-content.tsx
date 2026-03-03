@@ -7,12 +7,6 @@ import {
   TabsTrigger,
   TabsContent,
 } from "@workspace/ui/components/tabs";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
 import { FileText, MessageSquare } from "lucide-react";
 import ApplicationProgressTimeline from "@/components/application-progress-timeline";
 import ApplicationStatusDisplay from "@/components/application-status-display";
@@ -47,27 +41,22 @@ export default function ApplicationTabsContent({
       </TabsList>
 
       <TabsContent value="overview" className="mt-6">
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Application Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ApplicationStatusDisplay application={application} />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Personality Type</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ApplicationPersonalitySelector
-                applicationId={applicationId}
-                currentPersonality={application.personality}
-              />
-            </CardContent>
-          </Card>
+        <div className="space-y-8">
+          <section>
+            <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
+              Application Status
+            </h3>
+            <ApplicationStatusDisplay application={application} />
+          </section>
+          <section>
+            <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
+              Personality Type
+            </h3>
+            <ApplicationPersonalitySelector
+              applicationId={applicationId}
+              currentPersonality={application.personality}
+            />
+          </section>
         </div>
       </TabsContent>
 

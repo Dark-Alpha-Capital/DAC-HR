@@ -1,10 +1,5 @@
 import React, { Suspense } from "react";
-import {
-  getCandidateWithApplications,
-  getDocumentsByCandidateId,
-  getCandidateAiScreenings,
-  getUsers,
-} from "@workspace/db/queries";
+import { getCandidateAiScreenings, getUsers } from "@workspace/db/queries";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
 import {
@@ -12,12 +7,6 @@ import {
   TabsTrigger,
   TabsContent,
 } from "@workspace/ui/components/tabs";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
 import Link from "next/link";
 import {
   Pencil,
@@ -34,6 +23,7 @@ import {
   User,
   ClipboardCheck,
   Sparkles,
+  ChevronDown,
 } from "lucide-react";
 import DeleteCandidateButton from "@/components/delete-candidate-button";
 import { formatDate } from "@/lib/utils";
@@ -48,22 +38,13 @@ import CandidateAiAnalysis from "@/components/candidate-ai-analysis";
 import CandidateTabsClient from "@/components/candidate-tabs-client";
 import ApplicationDetailInline from "@/components/application-detail-inline";
 import { Metadata } from "next";
-import { cacheLife, cacheTag } from "next/cache";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { Session } from "better-auth";
 import { headers } from "next/headers";
+import { getCachedCandidate, getCachedDocuments } from "@/lib/cache/candidate";
 type Params = Promise<{ uid: string }>;
 type SearchParams = Promise<{ tab?: string; application?: string }>;
-
-async function CachedCandidateForMetadata(uid: string) {
-  "use cache";
-  cacheLife("hr-data");
-  cacheTag("candidates");
-  cacheTag(`candidate-applications-${uid}`);
-
-  return await getCandidateWithApplications(uid);
-}
 
 export async function generateMetadata({
   params,
@@ -71,7 +52,7 @@ export async function generateMetadata({
   params: Params;
 }): Promise<Metadata> {
   const { uid } = await params;
-  const candidate = await CachedCandidateForMetadata(uid);
+  const candidate = await getCachedCandidate(uid);
 
   if (!candidate) {
     return {
@@ -106,7 +87,10 @@ const CandidatePage = async ({
   return (
     <div className="container mx-auto py-6 space-y-6">
       <Suspense fallback={<CandidateDetailSkeleton />}>
-        <CandidatePageContentWrapper params={params} searchParams={searchParams} />
+        <CandidatePageContentWrapper
+          params={params}
+          searchParams={searchParams}
+        />
       </Suspense>
     </div>
   );
@@ -124,45 +108,19 @@ const CandidatePageContentWrapper = async ({
 }) => {
   const { uid } = await params;
   const { application } = await searchParams;
-  const sessionResult = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const requestHeaders = await headers();
+
+  const [sessionResult, users, candidate] = await Promise.all([
+    auth.api.getSession({
+      headers: requestHeaders,
+    }),
+    getUsers(),
+    getCachedCandidate(uid),
+  ]);
+
   if (!sessionResult?.user) {
     redirect("/login");
   }
-  const users = await getUsers();
-
-  return (
-    <CachedCandidatePageContent
-      uid={uid}
-      session={sessionResult.session}
-      currentUser={sessionResult.user}
-      users={users}
-      initialApplicationId={application ?? undefined}
-    />
-  );
-};
-
-// Cached component receives data as props
-async function CachedCandidatePageContent({
-  uid,
-  session,
-  currentUser,
-  users,
-  initialApplicationId,
-}: {
-  uid: string;
-  session: Session;
-  currentUser: { id: string; email?: string | null; name?: string | null };
-  users: Awaited<ReturnType<typeof getUsers>>;
-  initialApplicationId?: string;
-}) {
-  "use cache";
-  cacheLife("hr-data");
-  cacheTag("candidates");
-  cacheTag(`candidate-applications-${uid}`);
-
-  const candidate = await getCandidateWithApplications(uid);
 
   if (!candidate) {
     return (
@@ -178,6 +136,33 @@ async function CachedCandidatePageContent({
     );
   }
 
+  return (
+    <CandidatePageContent
+      uid={uid}
+      candidate={candidate}
+      session={sessionResult.session}
+      currentUser={sessionResult.user}
+      users={users}
+      initialApplicationId={application ?? undefined}
+    />
+  );
+};
+
+const CandidatePageContent = ({
+  uid,
+  candidate,
+  session,
+  currentUser,
+  users,
+  initialApplicationId,
+}: {
+  uid: string;
+  candidate: NonNullable<Awaited<ReturnType<typeof getCachedCandidate>>>;
+  session: Session;
+  currentUser: { id: string; email?: string | null; name?: string | null };
+  users: Awaited<ReturnType<typeof getUsers>>;
+  initialApplicationId?: string;
+}) => {
   const fullName = `${candidate.firstName} ${candidate.lastName}`;
 
   return (
@@ -256,20 +241,16 @@ async function CachedCandidatePageContent({
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <Suspense fallback={<SectionSkeleton />}>
-            <OverviewTab candidate={candidate} />
-          </Suspense>
+          <OverviewTab candidate={candidate} />
         </TabsContent>
 
         <TabsContent value="applications" className="mt-6">
-          <Suspense fallback={<SectionSkeleton />}>
-            <ApplicationsTab
-              candidate={candidate}
-              users={users}
-              initialApplicationId={initialApplicationId}
-              currentUser={currentUser}
-            />
-          </Suspense>
+          <ApplicationsTab
+            candidate={candidate}
+            users={users}
+            initialApplicationId={initialApplicationId}
+            currentUser={currentUser}
+          />
         </TabsContent>
 
         <TabsContent value="documents" className="mt-6">
@@ -288,7 +269,7 @@ async function CachedCandidatePageContent({
         </TabsContent>
         <TabsContent value="ai-analysis" className="mt-6">
           <Suspense fallback={<SectionSkeleton />}>
-            <CachedCandidateAiAnalysis
+            <CandidateAiAnalysisWrapper
               candidateId={uid}
               positionId={candidate.applications[0]?.position.id ?? ""}
               session={session}
@@ -303,16 +284,10 @@ async function CachedCandidatePageContent({
       </CandidateTabsClient>
     </div>
   );
-}
+};
 
-// Component (not cached) reads runtime data
-// Cached component receives data as props
 async function CachedDocumentsCount({ uid }: { uid: string }) {
-  "use cache";
-  cacheLife("hr-data");
-  cacheTag(`candidate-documents-${uid}`);
-
-  const documents = await getDocumentsByCandidateId(uid);
+  const documents = await getCachedDocuments(uid);
   return documents.length > 0 ? (
     <Badge variant="secondary" className="ml-2 h-5 min-w-5 px-1.5 text-xs">
       {documents.length}
@@ -320,13 +295,8 @@ async function CachedDocumentsCount({ uid }: { uid: string }) {
   ) : null;
 }
 
-// Cached component receives data as props
 async function CachedDisplayCandidateDocuments({ uid }: { uid: string }) {
-  "use cache";
-  cacheLife("hr-data");
-  cacheTag(`candidate-documents-${uid}`);
-
-  const documents = await getDocumentsByCandidateId(uid);
+  const documents = await getCachedDocuments(uid);
 
   return (
     <div className="space-y-4">
@@ -342,7 +312,7 @@ async function CachedDisplayCandidateDocuments({ uid }: { uid: string }) {
       </div>
 
       {documents.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground border rounded-md">
+        <div className="py-12 text-center text-muted-foreground">
           <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
           <p className="text-sm mb-4">No documents found for this candidate.</p>
           <Button size="sm" asChild>
@@ -359,8 +329,7 @@ async function CachedDisplayCandidateDocuments({ uid }: { uid: string }) {
   );
 }
 
-// Cached component for AI Analysis - fetches documents
-async function CachedCandidateAiAnalysis({
+async function CandidateAiAnalysisWrapper({
   candidateId,
   positionId,
   session,
@@ -369,11 +338,7 @@ async function CachedCandidateAiAnalysis({
   positionId: string;
   session: Session;
 }) {
-  "use cache";
-  cacheLife("hr-data");
-  cacheTag(`candidate-documents-${candidateId}`);
-
-  const documents = await getDocumentsByCandidateId(candidateId);
+  const documents = await getCachedDocuments(candidateId);
 
   return (
     <CandidateAiAnalysis
@@ -388,110 +353,95 @@ async function CachedCandidateAiAnalysis({
 const OverviewTab = ({
   candidate,
 }: {
-  candidate: Awaited<ReturnType<typeof getCandidateWithApplications>>;
+  candidate: Awaited<ReturnType<typeof getCachedCandidate>>;
 }) => {
   if (!candidate) return null;
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Contact Information Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Contact Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
+    <div className="space-y-10">
+      <section>
+        <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">
+          Contact
+        </h3>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <a
+              href={`mailto:${candidate.email}`}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {candidate.email}
+            </a>
+          </div>
+          {candidate.phone && (
+            <div className="flex items-center gap-3">
+              <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <a
+                href={`tel:${candidate.phone}`}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {candidate.phone}
+              </a>
+            </div>
+          )}
+          {candidate.location && (
+            <div className="flex items-center gap-3">
+              <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                {candidate.location}
+              </span>
+            </div>
+          )}
+          {candidate.source && (
+            <div className="flex items-center gap-3">
+              <LinkIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+              {candidate.sourceUrl ? (
                 <a
-                  href={`mailto:${candidate.email}`}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  href={candidate.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors underline"
                 >
-                  {candidate.email}
+                  {candidate.source}
                 </a>
-              </div>
-              {candidate.phone && (
-                <div className="flex items-center gap-3">
-                  <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <a
-                    href={`tel:${candidate.phone}`}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {candidate.phone}
-                  </a>
-                </div>
-              )}
-              {candidate.location && (
-                <div className="flex items-center gap-3">
-                  <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">
-                    {candidate.location}
-                  </span>
-                </div>
-              )}
-              {candidate.source && (
-                <div className="flex items-center gap-3">
-                  <LinkIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  {candidate.sourceUrl ? (
-                    <a
-                      href={candidate.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors underline"
-                    >
-                      {candidate.source}
-                    </a>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">
-                      {candidate.source}
-                    </span>
-                  )}
-                </div>
+              ) : (
+                <span className="text-sm text-muted-foreground">
+                  {candidate.source}
+                </span>
               )}
             </div>
+          )}
+        </div>
+        {candidate.note && (
+          <div className="mt-6 pt-6 border-t">
+            <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
+              Notes
+            </h4>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+              {candidate.note}
+            </p>
+          </div>
+        )}
+        <div className="mt-6 pt-6 border-t">
+          <span className="text-xs text-muted-foreground">
+            <span className="font-medium">ID</span>{" "}
+            <span className="font-mono">{candidate.id}</span>
+          </span>
+        </div>
+      </section>
 
-            {candidate.note && (
-              <div className="pt-4 border-t">
-                <h3 className="text-sm font-medium mb-2">Notes</h3>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                  {candidate.note}
-                </p>
-              </div>
-            )}
-
-            <div className="pt-4 border-t">
-              <div className="text-xs text-muted-foreground">
-                <span className="font-medium">ID:</span>{" "}
-                <span className="font-mono">{candidate.id}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Quick Stats Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Stats</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <Briefcase className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Total Applications</p>
-                  <p className="text-xs text-muted-foreground">
-                    Across all positions
-                  </p>
-                </div>
-              </div>
-              <Badge variant="secondary" className="text-base font-semibold">
-                {candidate.applications.length}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <section>
+        <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
+          Applications
+        </h3>
+        <div className="flex items-center gap-3">
+          <Briefcase className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm">
+            <span className="font-medium">{candidate.applications.length}</span>{" "}
+            <span className="text-muted-foreground">total</span>
+          </span>
+        </div>
+      </section>
     </div>
   );
 };
@@ -512,7 +462,7 @@ const ApplicationsTab = ({
   initialApplicationId,
   currentUser,
 }: {
-  candidate: Awaited<ReturnType<typeof getCandidateWithApplications>>;
+  candidate: Awaited<ReturnType<typeof getCachedCandidate>>;
   users: Awaited<ReturnType<typeof getUsers>>;
   initialApplicationId?: string;
   currentUser: { id: string; email?: string | null; name?: string | null };
@@ -529,56 +479,55 @@ const ApplicationsTab = ({
         <Badge variant="secondary">{candidate.applications.length}</Badge>
       </div>
       {candidate.applications.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground border rounded-md">
+        <div className="py-12 text-center text-muted-foreground">
           <Briefcase className="h-8 w-8 mx-auto mb-2 opacity-50" />
           <p className="text-sm">No applications found for this candidate.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="divide-y divide-border">
           {candidate.applications.map((app, index) => (
             <details
               key={app.id}
-              className="group rounded-md border bg-card"
+              className="group py-4 first:pt-0 [&[open]_summary_svg]:rotate-180"
               open={
                 initialApplicationId
                   ? app.id === initialApplicationId
                   : index === 0
               }
             >
-              <summary className="flex cursor-pointer items-start justify-between gap-3 px-4 py-3">
-                <div className="flex-1 min-w-0 space-y-1">
+              <summary className="flex cursor-pointer list-none items-start justify-between gap-3 [&::-webkit-details-marker]:hidden">
+                <div className="flex-1 min-w-0 space-y-1.5">
                   <div className="flex items-center justify-between gap-3">
-                    <CardTitle className="text-base line-clamp-2">
+                    <h3 className="text-base font-medium line-clamp-2">
                       {app.position.name}
-                    </CardTitle>
+                    </h3>
                     <InlineApplicationStatusEditor
                       application={{ id: app.id, status: app.status }}
                       candidateId={candidate.id}
                     />
                   </div>
                   <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-1.5">
                       <Calendar className="h-3 w-3 shrink-0" />
-                      <span>Applied {formatDate(app.createdAt)}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
+                      Applied {formatDate(app.createdAt)}
+                    </span>
+                    <span className="flex items-center gap-1.5">
                       <Users className="h-3 w-3 shrink-0" />
-                      <span>
-                        {app.interviews?.length || 0}{" "}
-                        {app.interviews?.length === 1
-                          ? "interview"
-                          : "interviews"}
-                      </span>
-                    </div>
+                      {app.interviews?.length || 0}{" "}
+                      {app.interviews?.length === 1
+                        ? "interview"
+                        : "interviews"}
+                    </span>
                     {app.personality && (
                       <Badge variant="secondary" className="text-xs">
-                        Personality: {app.personality}
+                        {app.personality}
                       </Badge>
                     )}
                   </div>
                 </div>
+                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform" />
               </summary>
-              <div className="border-t px-4 py-4">
+              <div className="mt-4 pl-0">
                 <Suspense fallback={<SectionSkeleton />}>
                   <ApplicationDetailInline
                     applicationId={app.id}

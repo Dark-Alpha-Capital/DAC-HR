@@ -1,18 +1,17 @@
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import { Suspense } from "react";
-import {
-  getCandidatesWithPositionsFiltered,
-  getApplicationsFiltered,
-  getPositions,
-} from "@workspace/db/queries";
 import CandidateFilters from "@/components/candidate-filters";
 import { CandidatesListSkeleton } from "@/components/skeletons/candidates-list-skeleton";
 import type { Metadata } from "next";
 import { UserAuthenticated } from "@/components/auth-checks";
-import { cacheLife, cacheTag } from "next/cache";
 import BulkUploadCandidatesDialog from "@/components/bulk-upload-candidates-dialog";
 import CandidatesViewWrapper from "./candidates-view-wrapper";
+import {
+  getCachedApplicationsFiltered,
+  getCachedCandidatesWithPositionsFiltered,
+  getCachedPositions,
+} from "@/lib/cache/candidate";
 
 export const metadata: Metadata = {
   title: "Candidates",
@@ -51,12 +50,8 @@ const page = async ({ searchParams }: { searchParams: SearchParams }) => {
 
 export default page;
 
-async function CachedPresentFilters() {
-  "use cache";
-  cacheLife("hr-metadata");
-  cacheTag("positions");
-
-  const { positions } = await getPositions();
+async function PresentFilters() {
+  const { positions } = await getCachedPositions();
   const positionTypes = positions.map((position) => ({
     id: position.id,
     name: position.name,
@@ -64,8 +59,6 @@ async function CachedPresentFilters() {
 
   return <CandidateFilters positions={positionTypes} />;
 }
-
-const PresentFilters = CachedPresentFilters;
 
 // Component (not cached) reads runtime data
 const CandidatesListWrapper = async ({
@@ -105,7 +98,7 @@ const CandidatesListWrapper = async ({
   const currentPage = isNaN(page) || page < 1 ? 1 : page;
 
   return (
-    <CachedCandidatesAndApplicationsList
+    <CandidatesListView
       nameSearch={nameSearch}
       emailSearch={emailSearch}
       positionIds={positionIds}
@@ -114,8 +107,7 @@ const CandidatesListWrapper = async ({
   );
 };
 
-// Cached component receives data as props
-async function CachedCandidatesAndApplicationsList({
+async function CandidatesListView({
   nameSearch,
   emailSearch,
   positionIds,
@@ -126,21 +118,17 @@ async function CachedCandidatesAndApplicationsList({
   positionIds?: string[];
   currentPage: number;
 }) {
-  "use cache";
-  cacheLife("hr-data");
-  cacheTag("candidates");
-
   const limit = 50;
 
   const [candidatesResult, applicationsResult] = await Promise.all([
-    getCandidatesWithPositionsFiltered(
+    getCachedCandidatesWithPositionsFiltered(
       nameSearch,
       emailSearch,
       positionIds,
       currentPage,
       limit,
     ),
-    getApplicationsFiltered(
+    getCachedApplicationsFiltered(
       nameSearch,
       emailSearch,
       positionIds,

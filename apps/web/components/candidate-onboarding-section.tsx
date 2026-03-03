@@ -1,27 +1,10 @@
 import React from "react";
-import {
-  getCandidateWithApplications,
-  getOrCreateCandidateOnboarding,
-} from "@workspace/db/queries";
+import { getOrCreateCandidateOnboarding } from "@workspace/db/queries";
 import OnboardingCard from "./onboarding-card";
-import { cacheLife, cacheTag } from "next/cache";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
-import { Briefcase } from "lucide-react";
+import { getCachedCandidate } from "@/lib/cache/candidate";
 
-// Cached component receives data as props
 async function CachedCandidateOnboardingSection({ uid }: { uid: string }) {
-  "use cache";
-  cacheLife("hr-data");
-  cacheTag("candidates");
-  cacheTag(`candidate-applications-${uid}`);
-
-  // Fetch candidate to check if they have a hired application
-  const candidate = await getCandidateWithApplications(uid);
+  const candidate = await getCachedCandidate(uid);
 
   if (!candidate) {
     return null;
@@ -31,16 +14,14 @@ async function CachedCandidateOnboardingSection({ uid }: { uid: string }) {
 
   if (!rawData) {
     return (
-      <Card className="mt-4 md:mt-6 lg:mt-8">
-        <CardHeader>
-          <CardTitle className="text-lg">Checklist</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <p className="text-sm text-muted-foreground">
-            Checklist enabled, but no data available.
-          </p>
-        </CardContent>
-      </Card>
+      <div className="mt-4 md:mt-6 lg:mt-8">
+        <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
+          Checklist
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Checklist enabled, but no data available.
+        </p>
+      </div>
     );
   }
 
