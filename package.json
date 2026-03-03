@@ -2,7 +2,7 @@
   "name": "shadcn-ui-monorepo",
   "version": "0.0.1",
   "private": true,
-  "packageManager": "npm@10.8.2",
+  "packageManager": "bun@1.1.38",
   "workspaces": [
     "apps/*",
     "packages/*"

@@ -70,8 +70,6 @@ const adminLinks = [
 ] as const;
 
 export function AppSidebar() {
-  console.log("inside app sidebar");
-
   const pathname = usePathname();
   const { data: session } = authClient.useSession();
   const isAdmin = session?.user?.role === "admin";

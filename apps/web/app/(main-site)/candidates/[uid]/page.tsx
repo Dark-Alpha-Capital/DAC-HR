@@ -3,6 +3,7 @@ import {
   getCandidateWithApplications,
   getDocumentsByCandidateId,
   getCandidateAiScreenings,
+  getUsers,
 } from "@workspace/db/queries";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
@@ -26,12 +27,8 @@ import {
   Phone,
   MapPin,
   Briefcase,
-  CheckCircle2,
-  Circle,
-  XCircle,
   Users,
   Plus,
-  Eye,
   FileText,
   Link as LinkIcon,
   User,
@@ -49,6 +46,7 @@ import InlineApplicationStatusEditor from "@/components/inline-application-statu
 import CandidateAiScreeningsTab from "@/components/candidate-ai-screenings-tab";
 import CandidateAiAnalysis from "@/components/candidate-ai-analysis";
 import CandidateTabsClient from "@/components/candidate-tabs-client";
+import ApplicationDetailInline from "@/components/application-detail-inline";
 import { Metadata } from "next";
 import { cacheLife, cacheTag } from "next/cache";
 import { auth } from "@/auth";
@@ -56,6 +54,7 @@ import { redirect } from "next/navigation";
 import { Session } from "better-auth";
 import { headers } from "next/headers";
 type Params = Promise<{ uid: string }>;
+type SearchParams = Promise<{ tab?: string; application?: string }>;
 
 async function CachedCandidateForMetadata(uid: string) {
   "use cache";
@@ -97,11 +96,17 @@ export async function generateMetadata({
   };
 }
 
-const CandidatePage = async ({ params }: { params: Params }) => {
+const CandidatePage = async ({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams: SearchParams;
+}) => {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <Suspense fallback={<CandidateDetailSkeleton />}>
-        <CandidatePageContentWrapper params={params} />
+        <CandidatePageContentWrapper params={params} searchParams={searchParams} />
       </Suspense>
     </div>
   );
@@ -110,24 +115,47 @@ const CandidatePage = async ({ params }: { params: Params }) => {
 export default CandidatePage;
 
 // Component (not cached) reads runtime data
-const CandidatePageContentWrapper = async ({ params }: { params: Params }) => {
+const CandidatePageContentWrapper = async ({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams: SearchParams;
+}) => {
   const { uid } = await params;
-  const session = await auth.api.getSession({
+  const { application } = await searchParams;
+  const sessionResult = await auth.api.getSession({
     headers: await headers(),
   });
-  if (!session?.user) {
+  if (!sessionResult?.user) {
     redirect("/login");
   }
-  return <CachedCandidatePageContent uid={uid} session={session.session} />;
+  const users = await getUsers();
+
+  return (
+    <CachedCandidatePageContent
+      uid={uid}
+      session={sessionResult.session}
+      currentUser={sessionResult.user}
+      users={users}
+      initialApplicationId={application ?? undefined}
+    />
+  );
 };
 
 // Cached component receives data as props
 async function CachedCandidatePageContent({
   uid,
   session,
+  currentUser,
+  users,
+  initialApplicationId,
 }: {
   uid: string;
   session: Session;
+  currentUser: { id: string; email?: string | null; name?: string | null };
+  users: Awaited<ReturnType<typeof getUsers>>;
+  initialApplicationId?: string;
 }) {
   "use cache";
   cacheLife("hr-data");
@@ -235,7 +263,12 @@ async function CachedCandidatePageContent({
 
         <TabsContent value="applications" className="mt-6">
           <Suspense fallback={<SectionSkeleton />}>
-            <ApplicationsTab candidate={candidate} />
+            <ApplicationsTab
+              candidate={candidate}
+              users={users}
+              initialApplicationId={initialApplicationId}
+              currentUser={currentUser}
+            />
           </Suspense>
         </TabsContent>
 
@@ -475,30 +508,16 @@ async function ScreeningsCount({ uid }: { uid: string }) {
 
 const ApplicationsTab = ({
   candidate,
+  users,
+  initialApplicationId,
+  currentUser,
 }: {
   candidate: Awaited<ReturnType<typeof getCandidateWithApplications>>;
+  users: Awaited<ReturnType<typeof getUsers>>;
+  initialApplicationId?: string;
+  currentUser: { id: string; email?: string | null; name?: string | null };
 }) => {
   if (!candidate) return null;
-
-  const interviewStatusColors: Record<
-    string,
-    "default" | "secondary" | "destructive"
-  > = {
-    pending: "secondary",
-    move_forward: "default",
-    rejected: "destructive",
-  } as const;
-
-  const getInterviewStatusIcon = (status: string) => {
-    switch (status) {
-      case "move_forward":
-        return <CheckCircle2 className="h-3 w-3" />;
-      case "rejected":
-        return <XCircle className="h-3 w-3" />;
-      default:
-        return <Circle className="h-3 w-3" />;
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -515,96 +534,60 @@ const ApplicationsTab = ({
           <p className="text-sm">No applications found for this candidate.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {candidate.applications.map((app) => (
-            <Card
+        <div className="space-y-3">
+          {candidate.applications.map((app, index) => (
+            <details
               key={app.id}
-              className="flex flex-col transition-colors hover:shadow-md"
+              className="group rounded-md border bg-card"
+              open={
+                initialApplicationId
+                  ? app.id === initialApplicationId
+                  : index === 0
+              }
             >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-base mb-2 line-clamp-2">
+              <summary className="flex cursor-pointer items-start justify-between gap-3 px-4 py-3">
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <CardTitle className="text-base line-clamp-2">
                       {app.position.name}
                     </CardTitle>
+                    <InlineApplicationStatusEditor
+                      application={{ id: app.id, status: app.status }}
+                      candidateId={candidate.id}
+                    />
                   </div>
-                  <InlineApplicationStatusEditor
-                    application={{ id: app.id, status: app.status }}
-                    candidateId={candidate.id}
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                    <Calendar className="h-3 w-3 shrink-0" />
-                    <span>Applied {formatDate(app.createdAt)}</span>
-                  </div>
-                  {app.personality && (
-                    <div>
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="h-3 w-3 shrink-0" />
+                      <span>Applied {formatDate(app.createdAt)}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Users className="h-3 w-3 shrink-0" />
+                      <span>
+                        {app.interviews?.length || 0}{" "}
+                        {app.interviews?.length === 1
+                          ? "interview"
+                          : "interviews"}
+                      </span>
+                    </div>
+                    {app.personality && (
                       <Badge variant="secondary" className="text-xs">
                         Personality: {app.personality}
                       </Badge>
-                    </div>
-                  )}
-                  <div className="pt-2 space-y-2">
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                      <Users className="h-3 w-3" />
-                      <span>Interviews ({app.interviews?.length || 0})</span>
-                    </div>
-                    {app.interviews && app.interviews.length > 0 && (
-                      <div className="space-y-1.5 pl-5">
-                        {app.interviews.map((interview) => (
-                          <div
-                            key={interview.id}
-                            className="flex items-center justify-between text-xs p-2 rounded-md hover:bg-accent/50 transition-colors"
-                          >
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              {getInterviewStatusIcon(interview.status)}
-                              <span className="truncate">
-                                {interview.roundTemplate.name}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {interview.scheduledAt && (
-                                <span className="text-muted-foreground text-[10px]">
-                                  {formatDate(interview.scheduledAt)}
-                                </span>
-                              )}
-                              <Badge
-                                variant={
-                                  interviewStatusColors[interview.status] ||
-                                  "secondary"
-                                }
-                                className="text-xs h-4 px-1.5"
-                              >
-                                {interview.status === "move_forward"
-                                  ? "Move Forward"
-                                  : interview.status.charAt(0).toUpperCase() +
-                                    interview.status.slice(1)}
-                              </Badge>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
                     )}
                   </div>
-                  <div className="pt-2">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="w-full"
-                      asChild
-                    >
-                      <Link href={`/applications/${app.id}`}>
-                        <Eye className="h-3 w-3 mr-2" />
-                        View Application
-                      </Link>
-                    </Button>
-                  </div>
                 </div>
-              </CardContent>
-            </Card>
+              </summary>
+              <div className="border-t px-4 py-4">
+                <Suspense fallback={<SectionSkeleton />}>
+                  <ApplicationDetailInline
+                    applicationId={app.id}
+                    currentUser={currentUser}
+                    users={users}
+                  />
+                </Suspense>
+              </div>
+            </details>
           ))}
         </div>
       )}
