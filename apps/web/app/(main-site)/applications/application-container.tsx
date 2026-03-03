@@ -85,18 +85,7 @@ const ApplicationContainer = ({
               <TableCell className="py-1.5 px-2 text-sm">
                 {application.interviews.length}
               </TableCell>
-              <TableCell className="text-right py-1.5 px-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="h-7 w-7 p-0"
-                  asChild
-                >
-                  <Link href={`/applications/${application.id}`}>
-                    <Eye className="h-3.5 w-3.5" />
-                  </Link>
-                </Button>
-              </TableCell>
+              <TableCell className="text-right py-1.5 px-2"></TableCell>
             </TableRow>
           );
         })}

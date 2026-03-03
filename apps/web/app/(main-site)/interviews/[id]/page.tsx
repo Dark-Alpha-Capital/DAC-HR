@@ -229,14 +229,6 @@ function DisplayInterview({
                 {config.label}
               </Badge>
             </div>
-            {application && (
-              <Button variant="secondary" size="sm" asChild>
-                <Link href={`/applications/${application.id}`}>
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Application
-                </Link>
-              </Button>
-            )}
           </div>
         </div>
       </header>

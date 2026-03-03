@@ -150,7 +150,7 @@ export default function InterviewSummaryForm({
         <Button
           type="button"
           variant="secondary"
-          onClick={() => router.push(`/applications/${applicationId}`)}
+          onClick={() => router.back()}
           disabled={isPending}
         >
           Cancel
