@@ -8,10 +8,18 @@ declare global {
   var __redisClient: RedisClient | undefined;
 }
 
-const DEFAULT_REDIS_URL = "redis://localhost:6379";
+const LOCAL_DEFAULT_REDIS_URL = "redis://localhost:6379";
 
 export function getRedisUrl(): string {
-  return process.env.REDIS_URL ?? DEFAULT_REDIS_URL;
+  if (process.env.REDIS_URL) {
+    return process.env.REDIS_URL;
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("REDIS_URL must be set in production environments.");
+  }
+
+  return LOCAL_DEFAULT_REDIS_URL;
 }
 
 function createRedisClient(
@@ -35,6 +43,15 @@ function createRedisClient(
   return client;
 }
 
+function getTestRedisOptions(): RedisOptions {
+  return {
+    maxRetriesPerRequest: 1,
+    enableOfflineQueue: false,
+    connectTimeout: 5_000,
+    retryStrategy: () => null,
+  };
+}
+
 /**
  * Returns a singleton Redis client. Safe to use in server-side
  * code (Node/Next.js). Avoid using this in browser/client code.
@@ -45,7 +62,10 @@ export function getRedis(): RedisClient {
   }
 
   if (!globalThis.__redisClient) {
-    globalThis.__redisClient = createRedisClient();
+    globalThis.__redisClient = createRedisClient(
+      getRedisUrl(),
+      process.env.NODE_ENV === "test" ? getTestRedisOptions() : undefined,
+    );
   }
 
   return globalThis.__redisClient;
@@ -59,5 +79,17 @@ export function createRedisForBullMQ(
   url: string = getRedisUrl(),
   options?: RedisOptions,
 ): RedisClient {
-  return createRedisClient(url, options);
+  return createRedisClient(url, {
+    maxRetriesPerRequest: null,
+    ...options,
+  });
+}
+
+export async function resetRedisForTests(): Promise<void> {
+  if (!globalThis.__redisClient) {
+    return;
+  }
+
+  await globalThis.__redisClient.quit();
+  globalThis.__redisClient = undefined;
 }

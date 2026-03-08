@@ -2087,6 +2087,19 @@ export async function getCandidateOnboarding(candidateId: string) {
 }
 
 export const getOrCreateCandidateOnboarding = async (candidateId: string) => {
+  const [newOnboarding] = await db
+    .insert(candidateOnboarding)
+    .values({ candidateId })
+    .onConflictDoNothing({
+      target: candidateOnboarding.candidateId,
+    })
+    .returning()
+    .execute();
+
+  if (newOnboarding) {
+    return newOnboarding;
+  }
+
   const [existingOnboarding] = await db
     .select()
     .from(candidateOnboarding)
@@ -2094,17 +2107,7 @@ export const getOrCreateCandidateOnboarding = async (candidateId: string) => {
     .limit(1)
     .execute();
 
-  if (existingOnboarding) {
-    return existingOnboarding;
-  }
-
-  const [newOnboarding] = await db
-    .insert(candidateOnboarding)
-    .values({ candidateId })
-    .returning()
-    .execute();
-
-  return newOnboarding;
+  return existingOnboarding;
 };
 
 /**

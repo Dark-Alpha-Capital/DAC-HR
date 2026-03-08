@@ -42,11 +42,13 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - HOSTNAME=0.0.0.0
+      - REDIS_URL=redis://redis:6379
       # All other variables (DATABASE_URL, BETTER_AUTH_SECRET, etc.)
       # are loaded from ./apps/web/.env via env_file above
     restart: unless-stopped
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     # DNS configuration (optional - uncomment if you have DNS issues)
     # dns:
     #   - 8.8.8.8
@@ -68,12 +70,17 @@ services:
   redis:
     image: redis:7-alpine
     container_name: hr-automation-redis
-    ports:
-      - "6379:6379"
     command: ["redis-server", "--appendonly", "yes"]
+    expose:
+      - "6379"
     volumes:
       - redis_data:/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
 volumes:
   redis_data:

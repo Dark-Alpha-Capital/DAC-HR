@@ -404,6 +404,7 @@ export const candidateOnboarding = pgTable("candidate_onboarding", {
     .default(sql`gen_random_uuid()`),
   candidateId: text("candidate_id")
     .notNull()
+    .unique()
     .references(() => candidate.id, { onDelete: "cascade" }),
   contractSigned: boolean("contract_signed").default(false).notNull(),
   signedContractDocumentId: text("signed_contract_document_id").references(

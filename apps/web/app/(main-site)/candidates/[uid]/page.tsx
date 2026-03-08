@@ -110,17 +110,15 @@ const CandidatePageContentWrapper = async ({
   const { application } = await searchParams;
   const requestHeaders = await headers();
 
-  const [sessionResult, users, candidate] = await Promise.all([
-    auth.api.getSession({
-      headers: requestHeaders,
-    }),
-    getUsers(),
-    getCachedCandidate(uid),
-  ]);
+  const sessionResult = await auth.api.getSession({
+    headers: requestHeaders,
+  });
 
   if (!sessionResult?.user) {
     redirect("/login");
   }
+
+  const [users, candidate] = await Promise.all([getUsers(), getCachedCandidate(uid)]);
 
   if (!candidate) {
     return (
