@@ -1,6 +1,6 @@
 import React from "react";
 import { cacheLife, cacheTag } from "next/cache";
-import { getApplicationWithInterviews } from "@workspace/db/queries";
+import { getApplicationWithInterviews } from "@workspace/db/repositories/interview-repository";
 import ApplicationTabsContent from "@/components/application-tabs-content";
 
 interface ApplicationDetailInlineProps {

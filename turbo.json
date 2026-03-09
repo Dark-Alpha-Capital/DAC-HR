@@ -30,7 +30,10 @@
         "GCS_PRIVATE_KEY",
         "GCLOUD_BUCKET",
         "NEXT_PUBLIC_BETTER_AUTH_BASEURL",
-        "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY"
+        "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY",
+        "NEXTCLOUD_URL",
+        "NEXTCLOUD_USER",
+        "NEXTCLOUD_PASSWORD"
       ],
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
@@ -41,6 +44,11 @@
     },
     "check-types": {
       "dependsOn": ["^check-types"]
+    },
+    "test": {
+      "dependsOn": ["^test"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": []
     },
     "dev": {
       "cache": false,

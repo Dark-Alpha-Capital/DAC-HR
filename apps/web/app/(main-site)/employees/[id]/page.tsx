@@ -171,10 +171,13 @@ const DisplayEmployeeWrapper = async ({ params }: { params: Params }) => {
         </TabsContent>
 
         <TabsContent value="bio" className="mt-6">
-          <div
-            className="narrow-container prose prose-sm max-w-none dark:prose-invert prose-headings:font-semibold prose-p:text-foreground prose-a:text-primary prose-strong:text-foreground prose-code:text-foreground prose-pre:bg-muted prose-pre:border prose-pre:border-border prose-pre:rounded-lg prose-pre:p-4"
-            dangerouslySetInnerHTML={{ __html: employee.bio || "" }}
-          />
+          {employee.bio ? (
+            <div className="narrow-container max-w-none text-sm leading-6 text-foreground whitespace-pre-line break-words">
+              {employee.bio}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No bio provided.</p>
+          )}
         </TabsContent>
       </Tabs>
     </div>

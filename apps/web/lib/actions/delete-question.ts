@@ -8,7 +8,7 @@ import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "@workspace/db";
 import { after } from "next/server";
-import { insertAuditLog } from "@workspace/db/queries";
+import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { getQuestionById } from "@workspace/db/queries";
 
 export const deleteQuestion = async (id: string) => {

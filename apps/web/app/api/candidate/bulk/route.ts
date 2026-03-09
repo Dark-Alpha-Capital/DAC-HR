@@ -1,14 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, eq } from "@workspace/db";
-import { candidate as candidateSchema } from "@workspace/db/schema";
-import {
-  getCandidateById,
-  getDocumentsByCandidateId,
-  insertAuditLog,
-} from "@workspace/db/queries";
-import { deleteFile } from "@/lib/storage";
-import { deleteFileSearchStoreDocument } from "@/lib/file-search-store";
+import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { requireAuth } from "@/lib/middleware/auth";
+import { deleteCandidateWithAssets } from "@/lib/application/candidate-service";
 
 /**
  * Bulk delete candidates endpoint
@@ -80,10 +73,8 @@ export async function DELETE(request: NextRequest) {
           continue;
         }
 
-        // Get candidate data before deletion for audit log
-        const candidateData = await getCandidateById(candidateId);
-
-        if (!candidateData) {
+        const deleteResult = await deleteCandidateWithAssets(candidateId);
+        if (!deleteResult) {
           console.error(
             `[DELETE /api/candidate/bulk] Candidate not found - ID: ${candidateId}`,
           );
@@ -95,51 +86,8 @@ export async function DELETE(request: NextRequest) {
           continue;
         }
 
-        // Get all candidate documents before deletion
-        const candidateDocuments = await getDocumentsByCandidateId(candidateId);
-
-        // Delete all documents from GCS and FileSearchStore
-        const deletionPromises = candidateDocuments.map(async (doc) => {
-          const promises: Promise<boolean>[] = [];
-
-          // Delete from Google Cloud Storage (if URL exists)
-          if (doc.url) {
-            promises.push(
-              deleteFile(doc.url).catch((error) => {
-                console.error(
-                  `[DELETE /api/candidate/bulk] Error deleting file from GCS for document ${doc.id}:`,
-                  error,
-                );
-                return false;
-              }),
-            );
-          }
-
-          // Delete from FileSearchStore (if fileSearchDocumentName exists)
-          if (doc.fileSearchDocumentName) {
-            promises.push(
-              deleteFileSearchStoreDocument(doc.fileSearchDocumentName).catch(
-                (error) => {
-                  console.error(
-                    `[DELETE /api/candidate/bulk] Error deleting file from FileSearchStore for document ${doc.id}:`,
-                    error,
-                  );
-                  return false;
-                },
-              ),
-            );
-          }
-
-          return Promise.all(promises);
-        });
-
-        // Wait for all document deletions to complete
-        await Promise.all(deletionPromises);
-
-        // Delete candidate from database (this will cascade delete all related records)
-        await db
-          .delete(candidateSchema)
-          .where(eq(candidateSchema.id, candidateId));
+        const { candidate: candidateData, deletedDocuments: candidateDocuments } =
+          deleteResult;
 
         // Insert audit log asynchronously
         insertAuditLog({

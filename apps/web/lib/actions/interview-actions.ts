@@ -11,7 +11,7 @@ import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { after } from "next/server";
-import { insertAuditLog } from "@workspace/db/queries";
+import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export type InterviewRoundData = {
   applicationId: string;
@@ -41,9 +41,18 @@ export async function saveInterviewRound(
   try {
     let interviewId = data.interviewId;
 
-    // If interview doesn't exist, create it
-    if (!interviewId) {
-      const [newInterview] = await db
+    if (interviewId) {
+      // Update existing interview
+      await db
+        .update(interview)
+        .set({
+          overallFeedback: data.overallFeedback,
+          proceedToNextRound: data.proceedToNextRound,
+          status: "pending",
+        })
+        .where(eq(interview.id, interviewId));
+    } else {
+      const [upsertedInterview] = await db
         .insert(interview)
         .values({
           applicationId: data.applicationId,
@@ -54,51 +63,36 @@ export async function saveInterviewRound(
           overallFeedback: data.overallFeedback,
           proceedToNextRound: data.proceedToNextRound,
         })
+        .onConflictDoUpdate({
+          target: [interview.applicationId, interview.positionRoundTemplateId],
+          set: {
+            interviewerId: data.interviewerId,
+            scheduledAt: data.scheduledAt,
+            status: "pending",
+            overallFeedback: data.overallFeedback,
+            proceedToNextRound: data.proceedToNextRound,
+          },
+        })
         .returning();
 
-      interviewId = newInterview?.id;
-    } else {
-      // Update existing interview
-      await db
-        .update(interview)
-        .set({
-          overallFeedback: data.overallFeedback,
-          proceedToNextRound: data.proceedToNextRound,
-          status: "pending",
-        })
-        .where(eq(interview.id, interviewId));
+      interviewId = upsertedInterview?.id;
     }
 
     // Save responses as interview feedback
     for (const [index, response] of Object.entries(data.responses)) {
       const questionId = data.questionIds[parseInt(index)];
       if (questionId && response) {
-        // Check if feedback already exists
-        const existingFeedback = await db
-          .select()
-          .from(interviewFeedback)
-          .where(
-            and(
-              eq(interviewFeedback.interviewId, interviewId as string),
-              eq(interviewFeedback.questionId, questionId),
-            ),
-          )
-          .limit(1);
-
-        if (existingFeedback.length > 0) {
-          // Update existing feedback
-          await db
-            .update(interviewFeedback)
-            .set({ notes: response })
-            .where(eq(interviewFeedback.id, existingFeedback[0]?.id as string));
-        } else {
-          // Insert new feedback
-          await db.insert(interviewFeedback).values({
+        await db
+          .insert(interviewFeedback)
+          .values({
             interviewId: interviewId as string,
             questionId,
             notes: response,
+          })
+          .onConflictDoUpdate({
+            target: [interviewFeedback.interviewId, interviewFeedback.questionId],
+            set: { notes: response },
           });
-        }
       }
     }
 
@@ -189,6 +183,14 @@ export async function startInterviewRound(data: {
         interviewerId: data.interviewerId,
         status: "pending",
         scheduledAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: [interview.applicationId, interview.positionRoundTemplateId],
+        set: {
+          interviewerId: data.interviewerId,
+          status: "pending",
+          scheduledAt: new Date(),
+        },
       })
       .returning();
 

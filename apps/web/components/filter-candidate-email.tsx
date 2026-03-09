@@ -51,6 +51,7 @@ const FilterCandidateEmail = () => {
         defaultValue={searchParams.get("email") || ""}
         onChange={(e) => handleSearch(e.target.value)}
         className="pl-9"
+        aria-label="Filter candidates by email"
       />
     </div>
   );

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, eq } from "@workspace/db";
 import { candidateDocument as candidateDocumentSchema } from "@workspace/db/schema";
-import { insertAuditLog } from "@workspace/db/queries";
+import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
+import { deleteFileSearchDocument } from "@workspace/file-search";
 import { deleteFile } from "@/lib/storage";
-import { deleteFileSearchStoreDocument } from "@/lib/file-search-store";
 import { requireAuth } from "@/lib/middleware/auth";
 
 /**
@@ -114,9 +114,9 @@ export async function DELETE(
         `[DELETE /api/candidate/:id/documents/:documentId] Deleting file from FileSearchStore: ${documentData.fileSearchDocumentName}`,
       );
       try {
-        await deleteFileSearchStoreDocument(
-          documentData.fileSearchDocumentName,
-        );
+        await deleteFileSearchDocument({
+          fileSearchDocumentName: documentData.fileSearchDocumentName,
+        });
         console.log(
           `[DELETE /api/candidate/:id/documents/:documentId] File deleted from FileSearchStore successfully`,
         );

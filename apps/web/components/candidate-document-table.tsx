@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Download, Eye, Loader2, Pencil } from "lucide-react";
-import Link from "next/link";
+import { Download, Eye, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
@@ -41,6 +40,12 @@ interface CandidateDocumentTableRowProps {
   candidateId: string;
 }
 
+const documentDateFormatter = new Intl.DateTimeFormat(undefined, {
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+});
+
 const CandidateDocumentTableRow = ({
   document,
   candidateId,
@@ -53,13 +58,7 @@ const CandidateDocumentTableRow = ({
   const categoryLabel =
     categoryLabels[document.category] || categoryLabels.other;
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
+  const formatDate = (date: Date) => documentDateFormatter.format(new Date(date));
 
   const handleViewDocument = async () => {
     setIsLoadingViewUrl(true);
@@ -185,6 +184,7 @@ const CandidateDocumentTableRow = ({
             className="h-7 w-7"
             onClick={handleViewDocument}
             disabled={isLoadingViewUrl}
+            aria-label={`View ${document.name}`}
           >
             {isLoadingViewUrl ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -198,6 +198,7 @@ const CandidateDocumentTableRow = ({
             className="h-7 w-7"
             onClick={handleDownloadDocument}
             disabled={isDownloading}
+            aria-label={`Download ${document.name}`}
           >
             {isDownloading ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />

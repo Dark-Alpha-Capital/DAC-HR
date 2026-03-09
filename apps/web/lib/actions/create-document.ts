@@ -1,4 +1,7 @@
 "use server";
+
+
+
 import { db } from "@workspace/db";
 import { documents } from "@workspace/db/schema";
 import slugify from "slugify";
@@ -10,7 +13,8 @@ import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { after } from "next/server";
-import { insertAuditLog, setDocumentCategories } from "@workspace/db/queries";
+import { setDocumentCategories } from "@workspace/db/repositories/document-repository";
+import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const createDocument = async (data: DocumentFormSchema) => {
   console.log("in create document");

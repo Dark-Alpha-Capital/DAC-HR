@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
-import { getAuditLogs } from "@workspace/db/queries";
+import { getAuditLogs } from "@workspace/db/repositories/audit-repository";
 import jsPDF from "jspdf";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - jspdf-autotable doesn't have complete TypeScript types
@@ -18,8 +18,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if user is admin (you might want to add this check)
-    // For now, we'll allow any authenticated user
+    if (session.user.role !== "admin") {
+      return NextResponse.json(
+        { error: "Only admins are allowed to generate audit reports" },
+        { status: 403 },
+      );
+    }
 
     const body = await request.json();
     const { startDate, endDate, reportType } = body;

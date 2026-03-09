@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  getCandidateWithApplications,
-  getDocumentsByCandidateId,
   saveCandidateAiScreening,
 } from "@workspace/db/queries";
+import { getCandidateWithApplications } from "@workspace/db/repositories/candidate-repository";
+import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
+import {
+  createFileSearchClient,
+  generateContentWithFileSearch,
+} from "@workspace/file-search";
 import {
   CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME,
-  googleGenAI,
   googleAIClient,
 } from "@/lib/ai/models";
 import { requireAuth } from "@/lib/middleware/auth";
@@ -162,8 +165,6 @@ export async function POST(
       );
     }
 
-    const structuredContextJson = JSON.stringify(structuredContext, null, 2);
-
     // Build document selection instruction
     let documentInstruction = "";
     if (selectedDocuments.length > 0) {
@@ -200,24 +201,13 @@ ${customPromptSection}
 Provide concise markdown analysis: background, skills, experience fit, culture fit, suitability. Use facts from documents. State if info is missing.`.trim();
 
     const rawAnalysisStartTime = Date.now();
-    const rawAnalysisResponse = await googleGenAI.models.generateContent({
+    const fileSearchClient = createFileSearchClient();
+    const rawAnalysisResponse = await generateContentWithFileSearch({
+      client: fileSearchClient,
       model: "gemini-2.5-flash",
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: rawAnalysisPrompt }],
-        },
-      ],
-      config: {
-        tools: [
-          {
-            fileSearch: {
-              fileSearchStoreNames: [CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME],
-              metadataFilter: `candidate_id="${candidateId}"`,
-            },
-          },
-        ],
-      },
+      prompt: rawAnalysisPrompt,
+      fileSearchStoreNames: [CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME],
+      metadataFilter: `candidate_id="${candidateId}"`,
     });
     const rawAnalysisDuration = Date.now() - rawAnalysisStartTime;
     const rawAnalysisText = rawAnalysisResponse.text || "";

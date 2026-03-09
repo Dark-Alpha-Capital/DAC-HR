@@ -97,7 +97,10 @@ const ApplicationCard = ({
             className="h-7 w-7 p-0"
             asChild
           >
-            <Link href={`/candidates/${application.candidate.id}`}>
+            <Link
+              href={`/candidates/${application.candidate.id}`}
+              aria-label={`View ${application.candidate.firstName} ${application.candidate.lastName}`}
+            >
               <Eye className="h-3.5 w-3.5" />
             </Link>
           </Button>
@@ -107,7 +110,10 @@ const ApplicationCard = ({
             className="h-7 w-7 p-0"
             asChild
           >
-            <Link href={`/candidates/${application.candidate.id}/edit`}>
+            <Link
+              href={`/candidates/${application.candidate.id}/edit`}
+              aria-label={`Edit ${application.candidate.firstName} ${application.candidate.lastName}`}
+            >
               <Pencil className="h-3.5 w-3.5" />
             </Link>
           </Button>

@@ -26,6 +26,16 @@ const isAdminEmail = (email: string): boolean => {
   return ADMIN_EMAILS.includes(email.toLowerCase());
 };
 
+const redactEmail = (email: string | null | undefined): string => {
+  if (!email) return "unknown";
+  const atIndex = email.indexOf("@");
+  if (atIndex <= 0 || atIndex === email.length - 1) return "***";
+  const localPart = email.slice(0, atIndex);
+  const domainPart = email.slice(atIndex + 1);
+  const visible = localPart.slice(0, 2);
+  return `${visible}${"*".repeat(Math.max(localPart.length - 2, 1))}@${domainPart}`;
+};
+
 const ALLOWED_DOMAIN = "darkalphacapital.com";
 
 const isAllowedEmail = (email: string | null | undefined): boolean => {
@@ -80,12 +90,15 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (userData) => {
-          console.log("[auth] databaseHooks.user.create.before", {
-            email: userData.email,
+          console.info("[auth] user.create.before", {
+            emailRedacted: redactEmail(userData.email),
             path: "user.create",
           });
           if (!isAllowedEmail(userData.email)) {
-            console.log("[auth] BLOCKED: user create - non-allowed email", userData.email);
+            console.warn("[auth] blocked.user.create", {
+              emailRedacted: redactEmail(userData.email),
+              reason: "email_domain_not_allowed",
+            });
             throw new APIError("BAD_REQUEST", {
               message: UNAUTHORIZED_MESSAGE,
             });
@@ -110,7 +123,7 @@ export const auth = betterAuth({
     session: {
       create: {
         before: async (sessionData) => {
-          console.log("[auth] databaseHooks.session.create.before", {
+          console.info("[auth] session.create.before", {
             userId: sessionData.userId,
           });
           const [userRow] = await db
@@ -120,13 +133,19 @@ export const auth = betterAuth({
             .limit(1);
           const user = userRow ? { email: userRow.email } : null;
           if (!user) {
-            console.log("[auth] session.create: user not found", sessionData.userId);
+            console.warn("[auth] blocked.session.create", {
+              userId: sessionData.userId,
+              reason: "user_not_found",
+            });
             throw new APIError("BAD_REQUEST", {
               message: UNAUTHORIZED_MESSAGE,
             });
           }
           if (!isAllowedEmail(user.email)) {
-            console.log("[auth] BLOCKED: session create - non-allowed email", user.email);
+            console.warn("[auth] blocked.session.create", {
+              emailRedacted: redactEmail(user.email),
+              reason: "email_domain_not_allowed",
+            });
             throw new APIError("BAD_REQUEST", {
               message: UNAUTHORIZED_MESSAGE,
             });
@@ -139,11 +158,18 @@ export const auth = betterAuth({
 
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
-      console.log("[auth] hooks.before", { path: ctx.path, bodyKeys: ctx.body ? Object.keys(ctx.body) : [] });
+      console.info("[auth] hooks.before", {
+        path: ctx.path,
+        bodyKeys: ctx.body ? Object.keys(ctx.body) : [],
+      });
       const emailPaths = ["/sign-in/email", "/sign-up/email"];
       if (emailPaths.includes(ctx.path) && ctx.body?.email) {
         if (!isAllowedEmail(ctx.body.email as string)) {
-          console.log("[auth] BLOCKED: before hook - non-allowed email", ctx.body.email);
+          console.warn("[auth] blocked.hooks.before", {
+            path: ctx.path,
+            emailRedacted: redactEmail(ctx.body.email as string),
+            reason: "email_domain_not_allowed",
+          });
           throw new APIError("BAD_REQUEST", {
             message: UNAUTHORIZED_MESSAGE,
           });
@@ -151,7 +177,7 @@ export const auth = betterAuth({
       }
     }),
     after: createAuthMiddleware(async (ctx) => {
-      console.log("[auth] hooks.after", {
+      console.info("[auth] hooks.after", {
         path: ctx.path,
         hasNewSession: !!ctx.context.newSession,
       });
@@ -160,14 +186,18 @@ export const auth = betterAuth({
       if ((isCallback || isSignInSocial) && ctx.context.newSession) {
         const newSession = ctx.context.newSession;
         const signedInUser = newSession.user;
-        console.log("[auth] after hook - session created", {
+        console.info("[auth] hooks.after.session_created", {
           path: ctx.path,
-          email: signedInUser.email,
+          emailRedacted: redactEmail(signedInUser.email),
           isAllowed: isAllowedEmail(signedInUser.email),
         });
         if (!isAllowedEmail(signedInUser.email)) {
           const sessionId = newSession.session?.id;
-          console.log("[auth] BLOCKED: after hook - deleting session", sessionId);
+          console.warn("[auth] blocked.hooks.after", {
+            path: ctx.path,
+            sessionId,
+            reason: "email_domain_not_allowed",
+          });
           if (sessionId) {
             await db.delete(sessionsTable).where(eq(sessionsTable.id, sessionId));
           }

@@ -12,6 +12,7 @@ const ClearParamsButton = () => {
     <Button
       variant="secondary"
       size="icon"
+      aria-label="Clear type filter"
       onClick={() => {
         const params = new URLSearchParams(searchParams);
         params.delete("type");

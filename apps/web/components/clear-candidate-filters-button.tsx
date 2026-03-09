@@ -22,6 +22,7 @@ const ClearCandidateFiltersButton = () => {
     <Button
       variant="secondary"
       size="icon"
+      aria-label="Clear candidate filters"
       onClick={() => {
         const params = new URLSearchParams(searchParams);
         params.delete("name");

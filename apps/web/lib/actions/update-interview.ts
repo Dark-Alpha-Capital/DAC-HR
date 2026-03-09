@@ -6,9 +6,9 @@ import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "@workspace/db";
-import { getInterviewById } from "@workspace/db/queries";
+import { getInterviewById } from "@workspace/db/repositories/interview-repository";
 import { after } from "next/server";
-import { insertAuditLog } from "@workspace/db/queries";
+import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export interface UpdateInterviewInput {
   interviewId: string;

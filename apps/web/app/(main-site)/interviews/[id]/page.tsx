@@ -1,9 +1,9 @@
 import React, { Suspense } from "react";
+import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
 import {
   getApplicationWithInterviews,
-  getCandidateById,
   getInterviewById,
-} from "@workspace/db/queries";
+} from "@workspace/db/repositories/interview-repository";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
 import {
@@ -21,8 +21,6 @@ import {
   Circle,
   XCircle,
   Clock,
-  ArrowLeft,
-  ExternalLink,
   MessageSquare,
   FileText,
   Sparkles,

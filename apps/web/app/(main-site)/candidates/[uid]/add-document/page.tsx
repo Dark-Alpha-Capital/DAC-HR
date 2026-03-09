@@ -10,9 +10,7 @@ type Params = Promise<{ uid: string }>;
 const AddDocumentPage = async ({ params }: { params: Params }) => {
   return (
     <div className="narrow-container mx-auto py-8 space-y-6">
-      <Suspense>
-        <UserAuthenticated />
-      </Suspense>
+      <UserAuthenticated />
 
       <Suspense fallback={<FormLoadingFallback />}>
         <DisplayAddDocumentForm params={params} />

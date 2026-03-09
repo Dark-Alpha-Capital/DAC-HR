@@ -7,7 +7,7 @@ import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { after } from "next/server";
-import { insertAuditLog } from "@workspace/db/queries";
+import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const createRound = async (data: RoundFormSchema) => {
   const session = await auth.api.getSession({

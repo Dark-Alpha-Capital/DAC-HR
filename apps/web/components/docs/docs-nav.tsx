@@ -18,6 +18,7 @@ import {
   UserCheck,
   Search,
   MessageSquare,
+  RefreshCcw,
 } from "lucide-react";
 
 export interface NavItem {
@@ -81,6 +82,11 @@ export const docsNavItems: NavItem[] = [
         title: "AI Features",
         href: "/docs/ai-features",
         icon: Sparkles,
+      },
+      {
+        title: "What's New",
+        href: "/docs/whats-new",
+        icon: RefreshCcw,
       },
     ],
   },

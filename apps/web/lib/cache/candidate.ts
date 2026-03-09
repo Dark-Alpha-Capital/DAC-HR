@@ -1,7 +1,7 @@
 import { cacheLife, cacheTag } from "next/cache";
+import { getCandidateWithApplications } from "@workspace/db/repositories/candidate-repository";
+import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
 import {
-  getCandidateWithApplications,
-  getDocumentsByCandidateId,
   getPositions,
   getCandidatesWithPositionsFiltered,
   getApplicationsFiltered,
@@ -73,4 +73,3 @@ export async function getCachedApplicationsFiltered(
     limit,
   );
 }
-

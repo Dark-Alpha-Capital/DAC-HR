@@ -12,10 +12,12 @@
   "exports": {
     ".": "./index.ts",
     "./queries": "./queries.ts",
+    "./repositories/*": "./repositories/*.ts",
     "./schema": "./schema.ts",
     "./index": "./index.ts"
   },
   "scripts": {
+    "test": "bun test --pass-with-no-tests",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "npx tsx migrate.ts",
     "db:studio": "drizzle-kit studio",

@@ -2843,13 +2843,63 @@ export const getLatestInterviewAiAnalysis = async (interviewId: string) => {
  */
 export const deleteInterviewAiAnalysis = async (analysisId: string) => {
   try {
-    await db
+    const deletedRows = await db
       .delete(interviewAiAnalysis)
-      .where(eq(interviewAiAnalysis.id, analysisId));
-    return true;
+      .where(eq(interviewAiAnalysis.id, analysisId))
+      .returning({ id: interviewAiAnalysis.id });
+    return deletedRows.length > 0;
   } catch (error) {
     console.error("Error deleting interview AI analysis", error);
     return false;
+  }
+};
+
+/**
+ * Deletes an interview AI analysis by analysis ID scoped to interview ID
+ * @param interviewId The interview ID from route context
+ * @param analysisId The analysis ID to delete
+ * @returns Deletion result with reason for non-delete cases
+ */
+export const deleteInterviewAiAnalysisForInterview = async (
+  interviewId: string,
+  analysisId: string,
+): Promise<{ deleted: boolean; reason?: "not_found" | "mismatch" }> => {
+  try {
+    const [analysisRecord] = await db
+      .select({
+        id: interviewAiAnalysis.id,
+        interviewId: interviewAiAnalysis.interviewId,
+      })
+      .from(interviewAiAnalysis)
+      .where(eq(interviewAiAnalysis.id, analysisId))
+      .limit(1);
+
+    if (!analysisRecord) {
+      return { deleted: false, reason: "not_found" };
+    }
+
+    if (analysisRecord.interviewId !== interviewId) {
+      return { deleted: false, reason: "mismatch" };
+    }
+
+    const deletedRows = await db
+      .delete(interviewAiAnalysis)
+      .where(
+        and(
+          eq(interviewAiAnalysis.id, analysisId),
+          eq(interviewAiAnalysis.interviewId, interviewId),
+        ),
+      )
+      .returning({ id: interviewAiAnalysis.id });
+
+    if (deletedRows.length === 0) {
+      return { deleted: false, reason: "not_found" };
+    }
+
+    return { deleted: true };
+  } catch (error) {
+    console.error("Error deleting scoped interview AI analysis", error);
+    return { deleted: false };
   }
 };
 

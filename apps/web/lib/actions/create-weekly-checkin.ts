@@ -5,7 +5,7 @@ import { recruiterWeeklyCheckin } from "@workspace/db/schema";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { after } from "next/server";
-import { insertAuditLog } from "@workspace/db/queries";
+import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import {
   weeklyCheckinFormSchema,
   type WeeklyCheckinFormSchema,

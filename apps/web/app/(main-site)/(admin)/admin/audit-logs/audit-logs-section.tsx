@@ -1,6 +1,6 @@
 import React from "react";
 import { Suspense } from "react";
-import { getAuditLogs } from "@workspace/db/queries";
+import { getAuditLogs } from "@workspace/db/repositories/audit-repository";
 import { AuditLogsClient, AuditLog } from "./audit-logs-client";
 
 type SearchParams = Promise<{

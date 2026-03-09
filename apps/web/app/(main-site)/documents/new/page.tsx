@@ -5,7 +5,7 @@ import { Metadata } from "next";
 import { UserAuthenticated } from "@/components/auth-checks";
 import { Button } from "@workspace/ui/components/button";
 import { ArrowLeft } from "lucide-react";
-import { getDocumentCategories } from "@workspace/db/queries";
+import { getDocumentCategories } from "@workspace/db/repositories/document-repository";
 import { cacheLife, cacheTag } from "next/cache";
 
 export const metadata: Metadata = {

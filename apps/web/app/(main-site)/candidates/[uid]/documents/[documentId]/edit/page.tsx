@@ -2,7 +2,7 @@ import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleto
 import React, { Suspense } from "react";
 import BackButton from "@/components/back-button";
 import CandidateDocumentEditForm from "@/components/forms/candidate-document-edit-form";
-import { getDocumentsByCandidateId } from "@workspace/db/queries";
+import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
 import {
   Card,
   CardContent,

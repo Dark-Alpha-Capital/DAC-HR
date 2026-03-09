@@ -1,13 +1,12 @@
 "use client";
 
-import { useTransition, useState } from "react";
+import { useRef, useTransition, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
 import {
   Field,
   FieldDescription,
-  FieldError,
   FieldGroup,
   FieldLabel,
 } from "@workspace/ui/components/field";
@@ -28,8 +27,6 @@ import {
 } from "@workspace/ui/components/select";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { authClient } from "@/auth-client";
-import { resetCacheForCandidateDocuments } from "@/lib/actions/reset-cache";
 
 const CandidateDocumentUploadForm = ({
   candidateId,
@@ -38,9 +35,9 @@ const CandidateDocumentUploadForm = ({
 }) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const { data: session } = authClient.useSession();
   const [file, setFile] = useState<File | null>(null);
   const [tagsInput, setTagsInput] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const form = useForm({
     defaultValues: {
@@ -52,11 +49,6 @@ const CandidateDocumentUploadForm = ({
     onSubmit: async ({ value }) => {
       if (!file) {
         toast.error("Please upload a file");
-        return;
-      }
-
-      if (!session?.session?.token) {
-        toast.error("You must be logged in to upload a document");
         return;
       }
 
@@ -73,16 +65,10 @@ const CandidateDocumentUploadForm = ({
             formData.append("tags", JSON.stringify(value.tags));
           }
 
-          const response = await fetch(
-            `/api/candidate/${candidateId}/documents`,
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${session.session.token}`,
-              },
-              body: formData,
-            },
-          );
+          const response = await fetch(`/api/candidate/${candidateId}/documents`, {
+            method: "POST",
+            body: formData,
+          });
 
           const result = await response.json();
 
@@ -99,14 +85,12 @@ const CandidateDocumentUploadForm = ({
 
           if (result.success) {
             toast.success("Document uploaded successfully");
-            await resetCacheForCandidateDocuments(candidateId);
             form.reset();
             setFile(null);
             setTagsInput("");
-            const fileInput = document.getElementById(
-              "file-upload",
-            ) as HTMLInputElement;
-            if (fileInput) fileInput.value = "";
+            if (fileInputRef.current) {
+              fileInputRef.current.value = "";
+            }
             router.push(`/candidates/${candidateId}`);
           } else {
             const errorMessage =
@@ -164,10 +148,9 @@ const CandidateDocumentUploadForm = ({
               form.reset();
               setFile(null);
               setTagsInput("");
-              const fileInput = document.getElementById(
-                "file-upload",
-              ) as HTMLInputElement;
-              if (fileInput) fileInput.value = "";
+              if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+              }
             }}
             disabled={isPending}
           >
@@ -203,6 +186,7 @@ const CandidateDocumentUploadForm = ({
             <div className="rounded-lg border p-4">
               <div className="space-y-2.5">
                 <Input
+                  ref={fileInputRef}
                   id="file-upload"
                   type="file"
                   onChange={handleFileChange}

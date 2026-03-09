@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  getInterviewById,
   getApplicationById,
   saveInterviewAiAnalysis,
   getInterviewAiAnalysesByInterviewId,
-  deleteInterviewAiAnalysis,
 } from "@workspace/db/queries";
+import {
+  getInterviewById,
+  deleteInterviewAiAnalysisForInterview,
+} from "@workspace/db/repositories/interview-repository";
 import { googleAIClient } from "@/lib/ai/models";
 import { requireAuth } from "@/lib/middleware/auth";
 import { generateText, Output } from "ai";
@@ -248,6 +250,14 @@ export async function DELETE(
       return authResult;
     }
 
+    const { id: interviewId } = await params;
+    if (!interviewId) {
+      return NextResponse.json(
+        { error: "Interview ID is required" },
+        { status: 400 },
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const analysisId = searchParams.get("analysisId");
 
@@ -258,9 +268,26 @@ export async function DELETE(
       );
     }
 
-    const deleted = await deleteInterviewAiAnalysis(analysisId);
+    const deletionResult = await deleteInterviewAiAnalysisForInterview(
+      interviewId,
+      analysisId,
+    );
 
-    if (!deleted) {
+    if (deletionResult.reason === "mismatch") {
+      return NextResponse.json(
+        { error: "Analysis ID does not belong to this interview" },
+        { status: 400 },
+      );
+    }
+
+    if (deletionResult.reason === "not_found") {
+      return NextResponse.json(
+        { error: "Analysis not found" },
+        { status: 404 },
+      );
+    }
+
+    if (!deletionResult.deleted) {
       return NextResponse.json(
         { error: "Failed to delete analysis" },
         { status: 500 },

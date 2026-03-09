@@ -6,6 +6,7 @@ import {
   pgEnum,
   integer,
   json,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { sql, type InferSelectModel } from "drizzle-orm";
 
@@ -169,22 +170,31 @@ export const candidateDocument = pgTable("candidate_document", {
 
 export type CandidateDocument = InferSelectModel<typeof candidateDocument>;
 
-export const candidatePosition = pgTable("candidate_position", {
-  id: text("id")
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  candidateId: text("candidate_id")
-    .notNull()
-    .references(() => candidate.id, { onDelete: "cascade" }),
-  positionId: text("position_id")
-    .notNull()
-    .references(() => position.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
-    .notNull(),
-});
+export const candidatePosition = pgTable(
+  "candidate_position",
+  {
+    id: text("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    candidateId: text("candidate_id")
+      .notNull()
+      .references(() => candidate.id, { onDelete: "cascade" }),
+    positionId: text("position_id")
+      .notNull()
+      .references(() => position.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => ({
+    candidatePositionUnique: uniqueIndex("candidate_position_unique").on(
+      table.candidateId,
+      table.positionId,
+    ),
+  }),
+);
 
 export const questionBank = pgTable("question_bank", {
   id: text("id")
@@ -297,42 +307,60 @@ export const application = pgTable("application", {
 });
 
 // An *instance* of a candidate's application in a specific round
-export const interview = pgTable("interview", {
-  id: text("id")
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  applicationId: text("application_id")
-    .notNull()
-    .references(() => application.id, { onDelete: "cascade" }),
-  // This links to the round template for this position
-  positionRoundTemplateId: text("position_round_template_id")
-    .notNull()
-    .references(() => positionRoundTemplates.id, { onDelete: "cascade" }),
-  interviewerId: text("interviewer_id") // The User who is conducting it
-    .notNull()
-    .references(() => user.id, { onDelete: "set null" }),
-  status: interviewStatusEnum("status").default("pending").notNull(),
-  rating: integer("rating"), // Rating from 1 to 5
-  scheduledAt: timestamp("scheduled_at"),
-  overallFeedback: text("overall_feedback"), // Interviewer's final summary
-  proceedToNextRound: boolean("proceed_to_next_round"), // Whether candidate should proceed to next round (for screening and technical rounds)
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const interview = pgTable(
+  "interview",
+  {
+    id: text("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    applicationId: text("application_id")
+      .notNull()
+      .references(() => application.id, { onDelete: "cascade" }),
+    // This links to the round template for this position
+    positionRoundTemplateId: text("position_round_template_id")
+      .notNull()
+      .references(() => positionRoundTemplates.id, { onDelete: "cascade" }),
+    interviewerId: text("interviewer_id") // The User who is conducting it
+      .notNull()
+      .references(() => user.id, { onDelete: "set null" }),
+    status: interviewStatusEnum("status").default("pending").notNull(),
+    rating: integer("rating"), // Rating from 1 to 5
+    scheduledAt: timestamp("scheduled_at"),
+    overallFeedback: text("overall_feedback"), // Interviewer's final summary
+    proceedToNextRound: boolean("proceed_to_next_round"), // Whether candidate should proceed to next round (for screening and technical rounds)
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    interviewRoundUnique: uniqueIndex("interview_round_unique").on(
+      table.applicationId,
+      table.positionRoundTemplateId,
+    ),
+  }),
+);
 
 // The *specific feedback* for each question asked in that interview
-export const interviewFeedback = pgTable("interview_feedback", {
-  id: text("id")
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  interviewId: text("interview_id")
-    .notNull()
-    .references(() => interview.id, { onDelete: "cascade" }),
-  questionId: text("question_id") // The question from the bank
-    .notNull()
-    .references(() => questionBank.id, { onDelete: "cascade" }),
-  notes: text("notes"), // The interviewer's notes on the answer
-  rating: integer("rating"), // Optional score, e.g., 1-5
-});
+export const interviewFeedback = pgTable(
+  "interview_feedback",
+  {
+    id: text("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    interviewId: text("interview_id")
+      .notNull()
+      .references(() => interview.id, { onDelete: "cascade" }),
+    questionId: text("question_id") // The question from the bank
+      .notNull()
+      .references(() => questionBank.id, { onDelete: "cascade" }),
+    notes: text("notes"), // The interviewer's notes on the answer
+    rating: integer("rating"), // Optional score, e.g., 1-5
+  },
+  (table) => ({
+    interviewFeedbackUnique: uniqueIndex("interview_feedback_unique").on(
+      table.interviewId,
+      table.questionId,
+    ),
+  }),
+);
 
 export const documentCategoryEnum = pgEnum("document_category", [
   "job-description",

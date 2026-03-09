@@ -11,7 +11,7 @@ import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "@workspace/db";
 import { after } from "next/server";
-import { insertAuditLog } from "@workspace/db/queries";
+import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const updateEmployee = async (
   employeeId: string,
@@ -32,6 +32,7 @@ export const updateEmployee = async (
 
   const { firstName, lastName, department, positionId, profileImage, bio } =
     result.data;
+  const normalizedBio = bio?.trim() || null;
 
   try {
     const [updatedEmployee] = await db
@@ -42,7 +43,7 @@ export const updateEmployee = async (
         department,
         positionId: positionId || null,
         profileImage: profileImage || null,
-        bio: bio || null,
+        bio: normalizedBio,
       })
       .where(eq(employee.id, employeeId))
       .returning();
@@ -79,7 +80,7 @@ export const updateEmployee = async (
             department,
             positionId: positionId || null,
             profileImage: profileImage || null,
-            bio: bio || null,
+            bio: normalizedBio,
           },
           updatedBy: {
             id: session.user.id,

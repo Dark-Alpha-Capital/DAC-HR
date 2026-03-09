@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -40,7 +40,10 @@ function getFileType(url: string): FileType {
 }
 
 // Helper function to get signed URL
-async function getSignedUrl(url: string): Promise<string> {
+async function getSignedUrl(
+  url: string,
+  signal?: AbortSignal,
+): Promise<string> {
   // Check if URL is already a public URL (not GCS)
   const isPublicUrl =
     !url.includes("storage.googleapis.com") && !url.startsWith("gs://");
@@ -52,6 +55,7 @@ async function getSignedUrl(url: string): Promise<string> {
   // For GCS URLs, get a signed URL
   const response = await fetch(
     `/api/documents/view?url=${encodeURIComponent(url)}`,
+    { signal },
   );
 
   if (!response.ok) {
@@ -72,33 +76,31 @@ export default function DocumentPreviewDialog({
   const [textContent, setTextContent] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const previewRequestIdRef = useRef(0);
   const fileType = getFileType(document.url);
 
-  useEffect(() => {
-    if (open && document.url) {
-      loadPreview();
-    } else {
-      // Reset state when dialog closes
-      setPreviewUrl(null);
-      setTextContent(null);
-      setError(null);
-    }
-  }, [open, document.url]);
-
-  const loadPreview = async () => {
+  const loadPreview = useCallback(async (requestId: number, signal: AbortSignal) => {
     setIsLoading(true);
     setError(null);
+    setPreviewUrl(null);
+    setTextContent(null);
 
     try {
-      const signedUrl = await getSignedUrl(document.url);
+      const signedUrl = await getSignedUrl(document.url, signal);
+      if (signal.aborted || previewRequestIdRef.current !== requestId) {
+        return;
+      }
 
       if (fileType === "txt") {
         // Fetch and display text content
-        const response = await fetch(signedUrl);
+        const response = await fetch(signedUrl, { signal });
         if (!response.ok) {
           throw new Error("Failed to fetch document");
         }
         const text = await response.text();
+        if (signal.aborted || previewRequestIdRef.current !== requestId) {
+          return;
+        }
         setTextContent(text);
       } else if (fileType === "pdf") {
         // Set URL for PDF iframe
@@ -110,15 +112,46 @@ export default function DocumentPreviewDialog({
         setError("Unsupported file type for preview");
       }
     } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return;
+      }
+
+      if (signal.aborted || previewRequestIdRef.current !== requestId) {
+        return;
+      }
+
       console.error("Error loading preview:", err);
       setError(
         err instanceof Error ? err.message : "Failed to load document preview",
       );
       toast.error("Failed to load document preview");
     } finally {
-      setIsLoading(false);
+      if (!signal.aborted && previewRequestIdRef.current === requestId) {
+        setIsLoading(false);
+      }
     }
-  };
+  }, [document.url, fileType]);
+
+  useEffect(() => {
+    if (!open || !document.url) {
+      previewRequestIdRef.current += 1;
+      setPreviewUrl(null);
+      setTextContent(null);
+      setError(null);
+      setIsLoading(false);
+      return;
+    }
+
+    const requestId = previewRequestIdRef.current + 1;
+    previewRequestIdRef.current = requestId;
+    const controller = new AbortController();
+
+    void loadPreview(requestId, controller.signal);
+
+    return () => {
+      controller.abort();
+    };
+  }, [document.url, loadPreview, open]);
 
   const handleDownload = async () => {
     try {

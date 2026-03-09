@@ -8,8 +8,7 @@ import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { eq } from "@workspace/db";
 import { after } from "next/server";
-import { insertAuditLog } from "@workspace/db/queries";
-import { getPositionBySlug } from "@workspace/db/queries";
+import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const deletePosition = async (id: string) => {
   // calling get session on the server
@@ -19,6 +18,10 @@ export const deletePosition = async (id: string) => {
 
   if (!session?.user) {
     return { error: "Unauthorized" };
+  }
+
+  if (session.user.role !== "admin") {
+    return { error: "Only admins are allowed to delete positions" };
   }
 
   try {

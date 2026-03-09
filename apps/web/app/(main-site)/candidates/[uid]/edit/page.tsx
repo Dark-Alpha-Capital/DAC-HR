@@ -1,5 +1,6 @@
 import React, { Suspense } from "react";
-import { getCandidateById, getPositions } from "@workspace/db/queries";
+import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
+import { getPositions } from "@workspace/db/queries";
 import CandidateEditForm from "@/components/forms/candidate-edit-form";
 import { cacheLife, cacheTag } from "next/cache";
 import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";

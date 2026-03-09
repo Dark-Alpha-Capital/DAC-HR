@@ -22,6 +22,7 @@ import {
   Route,
   CheckCircle2,
   ArrowDown,
+  RefreshCcw,
 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -60,6 +61,12 @@ const quickLinks = [
     description: "Use AI for screening and analysis",
     href: "/docs/ai-features",
     icon: Sparkles,
+  },
+  {
+    title: "What's New",
+    description: "Latest platform updates and behavior changes",
+    href: "/docs/whats-new",
+    icon: RefreshCcw,
   },
   {
     title: "Workflows",

@@ -5,12 +5,12 @@ import {
   deleteDocumentCategory,
   getDocumentCategories,
   getDocumentCategoryById,
-} from "@workspace/db/queries";
+} from "@workspace/db/repositories/document-repository";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { after } from "next/server";
-import { insertAuditLog } from "@workspace/db/queries";
+import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const createCategory = async (name: string, description?: string) => {
   const session = await auth.api.getSession({
@@ -106,6 +106,10 @@ export const updateCategory = async (
       description?.trim() || undefined,
     );
 
+    if (!updatedCategory) {
+      return { error: "Category not found" };
+    }
+
     revalidatePath("/documents");
 
     after(async () => {
@@ -116,11 +120,11 @@ export const updateCategory = async (
         entityId: id,
         details: {
           category: {
-            id: updatedCategory?.id || "",
-            name: updatedCategory?.name || "",
-            description: updatedCategory?.description || "",
-            createdAt: updatedCategory?.createdAt.toISOString() || "",
-            updatedAt: updatedCategory?.updatedAt.toISOString() || "",
+            id: updatedCategory.id,
+            name: updatedCategory.name,
+            description: updatedCategory.description || "",
+            createdAt: updatedCategory.createdAt.toISOString(),
+            updatedAt: updatedCategory.updatedAt.toISOString(),
           },
           input: {
             name: name.trim(),

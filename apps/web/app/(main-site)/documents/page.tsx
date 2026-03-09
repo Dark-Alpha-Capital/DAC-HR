@@ -1,10 +1,13 @@
 import React, { Suspense } from "react";
 import { Metadata } from "next";
-import { getDocuments, getDocumentCategories } from "@workspace/db/queries";
+import { redirect } from "next/navigation";
+import {
+  getDocumentCategories,
+  getDocuments,
+} from "@workspace/db/repositories/document-repository";
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import DocumentContainer from "./document-container";
-import { UserAuthenticated } from "@/components/auth-checks";
 import FilterDocumentCategory from "@/components/filter-document-category";
 import FilterDocumentName from "@/components/filter-document-name";
 import FilterDocumentTags from "@/components/filter-document-tags";
@@ -18,6 +21,9 @@ import {
 import DocumentCategoriesManager from "@/components/document-categories-manager";
 import { cacheLife, cacheTag } from "next/cache";
 import PaginationControls from "@/components/pagination-controls";
+import { auth } from "@/auth";
+import { headers } from "next/headers";
+import type { DocumentCategory } from "@workspace/db/schema";
 
 export const metadata: Metadata = {
   title: "Documents",
@@ -26,17 +32,9 @@ export const metadata: Metadata = {
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
-const DocumentsPage = async ({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) => {
+const DocumentsPage = ({ searchParams }: { searchParams: SearchParams }) => {
   return (
     <div className="space-y-6">
-      <Suspense>
-        <UserAuthenticated />
-      </Suspense>
-
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Documents</h1>
         <Button asChild>
@@ -44,44 +42,84 @@ const DocumentsPage = async ({
         </Button>
       </div>
 
-      <Tabs defaultValue="documents" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="categories">Categories</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="documents" className="space-y-6">
-          <Suspense>
-            <PresentFilters />
-          </Suspense>
-
-          <Suspense fallback={<div>Loading...</div>}>
-            <PresentDocumentsWrapper searchParams={searchParams} />
-          </Suspense>
-        </TabsContent>
-
-        <TabsContent value="categories">
-          <Suspense fallback={<div>Loading categories...</div>}>
-            <PresentCategories />
-          </Suspense>
-        </TabsContent>
-      </Tabs>
+      <Suspense fallback={<div>Loading...</div>}>
+        <AuthedDocuments searchParams={searchParams} />
+      </Suspense>
     </div>
   );
 };
 
 export default DocumentsPage;
 
-const PresentFilters = () => {
+async function AuthedDocuments({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  return (
+    <Tabs defaultValue="documents" className="space-y-6">
+      <TabsList>
+        <TabsTrigger value="documents">Documents</TabsTrigger>
+        <TabsTrigger value="categories">Categories</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="documents" className="space-y-6">
+        <Suspense fallback={<div>Loading filters...</div>}>
+          <DocumentsTabContent searchParams={searchParams} />
+        </Suspense>
+      </TabsContent>
+
+      <TabsContent value="categories">
+        <Suspense fallback={<div>Loading categories...</div>}>
+          <PresentCategories />
+        </Suspense>
+      </TabsContent>
+    </Tabs>
+  );
+}
+
+async function DocumentsTabContent({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const categories = await CachedDocumentCategories();
+
+  return (
+    <>
+      <PresentFilters categories={categories} />
+      <Suspense fallback={<div>Loading...</div>}>
+        <PresentDocumentsWrapper searchParams={searchParams} />
+      </Suspense>
+    </>
+  );
+}
+
+function PresentFilters({ categories }: { categories: DocumentCategory[] }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <FilterDocumentName />
-      <FilterDocumentCategory />
+      <FilterDocumentCategory categories={categories} />
       <FilterDocumentTags />
       <ClearDocumentFiltersButton />
     </div>
   );
-};
+}
+
+async function CachedDocumentCategories() {
+  "use cache";
+  cacheLife("hr-data");
+  cacheTag("documents");
+  return getDocumentCategories();
+}
 
 // Cached function for documents
 async function CachedDocuments(
@@ -181,16 +219,12 @@ const PresentDocumentsWrapper = async ({
   );
 };
 
-// Cached function for categories
-async function CachedCategories() {
+const PresentCategories = async () => {
   "use cache";
   cacheLife("hr-data");
   cacheTag("documents");
 
-  return await getDocumentCategories();
-}
+  const categories = await getDocumentCategories();
 
-const PresentCategories = async () => {
-  const categories = await CachedCategories();
   return <DocumentCategoriesManager categories={categories} />;
 };
