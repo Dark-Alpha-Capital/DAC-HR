@@ -1,11 +1,9 @@
-"use client";
-
 import React, { useTransition } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Loader2, Trash2 } from "lucide-react";
 import { deleteQuestion } from "@/lib/actions/delete-question";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -67,7 +65,7 @@ const DeleteQuestionButton = ({ questionId }: { questionId: string }) => {
                   }
                   if (response?.success) {
                     toast.success("Question deleted successfully");
-                    router.refresh();
+                    router.invalidate();
                   }
                 });
               }}

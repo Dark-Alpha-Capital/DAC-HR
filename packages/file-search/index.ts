@@ -11,7 +11,9 @@ export type FileSearchClientConfig = {
   apiKey?: string;
 };
 
-export const createFileSearchClient = ({ apiKey }: FileSearchClientConfig = {}) => {
+export const createFileSearchClient = ({
+  apiKey,
+}: FileSearchClientConfig = {}) => {
   const resolvedApiKey = apiKey ?? process.env.GEMINI_API_KEY;
 
   if (!resolvedApiKey || resolvedApiKey.trim() === "") {

@@ -1,5 +1,3 @@
-"use client";
-
 import {
   LayoutDashboard,
   Users,
@@ -17,8 +15,8 @@ import {
   ClipboardList,
   ShieldCheckIcon,
 } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link } from "@tanstack/react-router";
+import { useRouterState } from "@tanstack/react-router";
 import { authClient } from "@/auth-client";
 
 import {
@@ -70,7 +68,7 @@ const adminLinks = [
 ] as const;
 
 export function AppSidebar() {
-  const pathname = usePathname();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { data: session } = authClient.useSession();
   const isAdmin = session?.user?.role === "admin";
 
@@ -84,7 +82,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="DAC HR">
-              <Link href="/" className="gap-2">
+              <Link to="/" className="gap-2">
                 <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-foreground">
                   <ShieldCheckIcon className="size-4" />
                 </span>
@@ -108,7 +106,7 @@ export function AppSidebar() {
                     isActive={isActive(link.href)}
                     tooltip={link.label}
                   >
-                    <Link href={{ pathname: link.href }}>
+                    <Link to={link.href}>
                       <link.icon />
                       <span>{link.label}</span>
                     </Link>
@@ -130,7 +128,7 @@ export function AppSidebar() {
                     isActive={isActive(link.href)}
                     tooltip={link.label}
                   >
-                    <Link href={{ pathname: link.href }}>
+                    <Link to={link.href}>
                       <link.icon />
                       <span>{link.label}</span>
                     </Link>
@@ -153,7 +151,7 @@ export function AppSidebar() {
                       isActive={isActive(link.href)}
                       tooltip={link.label}
                     >
-                      <Link href={{ pathname: link.href }}>
+                      <Link to={link.href}>
                         <link.icon />
                         <span>{link.label}</span>
                       </Link>
@@ -177,7 +175,7 @@ export function AppSidebar() {
                       isActive={isActive(link.href)}
                       tooltip={link.label}
                     >
-                      <Link href={{ pathname: link.href }}>
+                      <Link to={link.href}>
                         <link.icon />
                         <span>{link.label}</span>
                       </Link>

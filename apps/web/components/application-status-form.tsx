@@ -1,7 +1,5 @@
-"use client";
-
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import { Button } from "@workspace/ui/components/button";
 import { Label } from "@workspace/ui/components/label";
 import {
@@ -46,7 +44,8 @@ const statusLabels: Record<ApplicationStatus, string> = {
 const statusDescriptions: Record<ApplicationStatus, string> = {
   ai_screening: "AI analysis is being performed on the candidate",
   first_round_recruiter_call: "First round interview with recruiter",
-  second_round_technical_screening: "Second round technical screening interview",
+  second_round_technical_screening:
+    "Second round technical screening interview",
   third_round_final_ceo: "Final round interview with CEO",
   contract_offer: "Contract has been requested or sent",
   onboarding: "Candidate is in the onboarding process",
@@ -81,7 +80,7 @@ export default function ApplicationStatusForm({
       }
 
       toast.success("Application status updated");
-      router.refresh();
+      router.invalidate();
       onSuccess?.();
     });
   };

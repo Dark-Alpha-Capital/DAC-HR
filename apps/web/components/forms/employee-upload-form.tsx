@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { useTransition, useState, useEffect } from "react";
 import { useForm } from "@tanstack/react-form";
@@ -29,7 +27,7 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 import { Loader2, ChevronDown } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import {
   employeeFormSchema,
   type EmployeeFormSchema,
@@ -163,7 +161,7 @@ const EmployeeUploadForm = ({
               action: {
                 label: "View Employees",
                 onClick: () => {
-                  router.push("/employees");
+                  router.navigate({ to: "/employees", search: {} as any });
                 },
               },
             });
@@ -178,7 +176,7 @@ const EmployeeUploadForm = ({
             }
             // Reset bio field
             form.setFieldValue("bio", "");
-            router.push("/employees");
+            router.navigate({ to: "/employees", search: {} as any });
           }
         } catch (error) {
           toast.error(

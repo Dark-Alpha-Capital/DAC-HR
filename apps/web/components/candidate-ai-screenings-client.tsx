@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, useTransition } from "react";
 import {
   Card,
@@ -45,7 +43,7 @@ import {
 import { formatDate } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import type { CandidateAiScreening } from "@workspace/db/schema";
 import { deleteAiScreening } from "@/lib/actions/delete-ai-screening";
 import {
@@ -231,7 +229,7 @@ export default function CandidateAiScreeningsClient({
           setSelectedScreening(null);
         }
 
-        router.refresh();
+        router.invalidate();
       }
     });
   };
@@ -289,7 +287,7 @@ export default function CandidateAiScreeningsClient({
           });
         }
 
-        router.refresh();
+        router.invalidate();
       }
     });
   };

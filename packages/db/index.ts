@@ -1,6 +1,6 @@
-import { drizzle } from "drizzle-orm/postgres-js";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { drizzle } from "drizzle-orm/neon-http";
+import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
+import { neon } from "@neondatabase/serverless";
 export {
   eq,
   and,
@@ -15,10 +15,10 @@ export {
 } from "drizzle-orm";
 export type { InferSelectModel, InferInsertModel } from "drizzle-orm";
 
-let cachedDb: PostgresJsDatabase | undefined;
-let cachedClient: postgres.Sql | undefined;
+let cachedDb: NeonHttpDatabase | undefined;
+let cachedSql: ReturnType<typeof neon> | undefined;
 
-function getDb(): PostgresJsDatabase {
+function getDb(): NeonHttpDatabase {
   if (cachedDb) {
     return cachedDb;
   }
@@ -28,30 +28,22 @@ function getDb(): PostgresJsDatabase {
     throw new Error("DATABASE_URL is required");
   }
 
-  const client =
-    cachedClient ??
-    postgres(url, {
-      max: 10,
-      idle_timeout: 20,
-      connect_timeout: 10,
-      onnotice: () => {},
-      debug: process.env.NODE_ENV === "development" ? console.log : undefined,
-    });
+  const sql = cachedSql ?? neon(url);
 
   if (process.env.NODE_ENV !== "production") {
-    cachedClient = client;
+    cachedSql = sql;
   }
 
-  const database = drizzle(client);
+  const database = drizzle({ client: sql });
   cachedDb = database;
 
   return database;
 }
 
-export const db = new Proxy({} as PostgresJsDatabase, {
+export const db = new Proxy({} as NeonHttpDatabase, {
   get(_target, prop) {
     const database = getDb();
-    const value = database[prop as keyof PostgresJsDatabase];
+    const value = database[prop as keyof NeonHttpDatabase];
     if (typeof value === "function") {
       return value.bind(database);
     }

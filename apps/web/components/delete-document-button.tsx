@@ -1,11 +1,9 @@
-"use client";
-
 import React, { useTransition } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Loader2, Trash2 } from "lucide-react";
 import { deleteDocument } from "@/lib/actions/delete-document";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,7 +35,7 @@ const DeleteDocumentButton = ({ documentId }: { documentId: string }) => {
 
       if (response?.success) {
         toast.success("Document deleted successfully");
-        router.refresh();
+        router.invalidate();
       }
     });
   };

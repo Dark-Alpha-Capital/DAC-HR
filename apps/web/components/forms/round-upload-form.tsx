@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
@@ -28,7 +26,7 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import { roundFormSchema } from "@/lib/schemas/round-form-schema";
 import { createRound } from "@/lib/actions/create-round";
 
@@ -73,12 +71,12 @@ const RoundUploadForm = ({
             action: {
               label: "View Round",
               onClick: () => {
-                router.push(`/rounds/${result.data?.id}`);
+                router.navigate({ to: `/rounds/${result.data?.id}` });
               },
             },
           });
 
-          router.push(`/rounds/${result.data?.id}`);
+          router.navigate({ to: `/rounds/${result.data?.id}` });
           form.reset();
         }
       });

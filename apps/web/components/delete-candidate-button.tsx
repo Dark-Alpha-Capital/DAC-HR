@@ -1,10 +1,8 @@
-"use client";
-
 import React, { useTransition } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import { deleteCandidate } from "@/lib/actions/delete-candidate";
 import {
   AlertDialog,
@@ -53,7 +51,7 @@ const DeleteCandidateButton = ({ candidateId }: { candidateId: string }) => {
         toast.success("Candidate deleted successfully", {
           position: "bottom-right",
         });
-        router.refresh();
+        router.invalidate();
       } catch (error) {
         toast.error(
           error instanceof Error ? error.message : "Failed to delete candidate",

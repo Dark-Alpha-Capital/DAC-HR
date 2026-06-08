@@ -1,5 +1,3 @@
-"use server";
-
 import { getRoundsByPositionId } from "@workspace/db/queries";
 
 export const getRoundsByPosition = async (positionId: string) => {

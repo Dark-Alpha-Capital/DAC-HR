@@ -1,5 +1,3 @@
-"use client";
-
 import { useRef, useTransition, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
@@ -26,7 +24,7 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 
 const CandidateDocumentUploadForm = ({
   candidateId,
@@ -65,10 +63,13 @@ const CandidateDocumentUploadForm = ({
             formData.append("tags", JSON.stringify(value.tags));
           }
 
-          const response = await fetch(`/api/candidate/${candidateId}/documents`, {
-            method: "POST",
-            body: formData,
-          });
+          const response = await fetch(
+            `/api/candidate/${candidateId}/documents`,
+            {
+              method: "POST",
+              body: formData,
+            },
+          );
 
           const result = await response.json();
 
@@ -91,7 +92,7 @@ const CandidateDocumentUploadForm = ({
             if (fileInputRef.current) {
               fileInputRef.current.value = "";
             }
-            router.push(`/candidates/${candidateId}`);
+            router.navigate({ to: `/candidates/${candidateId}` });
           } else {
             const errorMessage =
               typeof result.error === "string"

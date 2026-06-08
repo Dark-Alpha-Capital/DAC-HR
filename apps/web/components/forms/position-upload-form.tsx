@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
@@ -37,7 +35,7 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 import { createPosition } from "@/lib/actions/create-position";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import { RichTextEditorField } from "@/components/rich-text-editor";
 import { cn } from "@workspace/ui/lib/utils";
 
@@ -92,12 +90,12 @@ const PositionUploadForm = () => {
             action: {
               label: "View Position",
               onClick: () => {
-                router.push(`/positions/${result.data?.slug}`);
+                router.navigate({ to: `/positions/${result.data?.slug}` });
               },
             },
           });
           form.reset();
-          router.push(`/positions/${result.data?.slug}`);
+          router.navigate({ to: `/positions/${result.data?.slug}` });
         } else {
           toast((result.error as string) || "Failed to upload position", {
             position: "bottom-right",

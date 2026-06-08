@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useCallback, useRef, useEffect } from "react";
 import { useJsApiLoader, Autocomplete } from "@react-google-maps/api";
 import { Input } from "@workspace/ui/components/input";

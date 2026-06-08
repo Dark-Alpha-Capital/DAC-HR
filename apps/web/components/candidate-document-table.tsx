@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState } from "react";
 import { Download, Eye, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -58,7 +56,8 @@ const CandidateDocumentTableRow = ({
   const categoryLabel =
     categoryLabels[document.category] || categoryLabels.other;
 
-  const formatDate = (date: Date) => documentDateFormatter.format(new Date(date));
+  const formatDate = (date: Date) =>
+    documentDateFormatter.format(new Date(date));
 
   const handleViewDocument = async () => {
     setIsLoadingViewUrl(true);

@@ -1,10 +1,6 @@
-"use server";
-
 import { db } from "@workspace/db";
 import { recruiterWeeklyCheckin } from "@workspace/db/schema";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
-import { after } from "next/server";
+import { getSession } from "@/lib/middleware/auth-guard";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import {
   weeklyCheckinFormSchema,
@@ -12,9 +8,7 @@ import {
 } from "@/lib/schemas/weekly-checkin-form-schema";
 
 export const createWeeklyCheckin = async (data: WeeklyCheckinFormSchema) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -56,8 +50,7 @@ export const createWeeklyCheckin = async (data: WeeklyCheckinFormSchema) => {
       return { error: "Failed to create weekly check-in" };
     }
 
-    after(async () => {
-      await insertAuditLog({
+    insertAuditLog({
         userId: session.user.id,
         action: "create_weekly_checkin",
         entityType: "recruiter_weekly_checkin",
@@ -87,8 +80,7 @@ export const createWeeklyCheckin = async (data: WeeklyCheckinFormSchema) => {
             timestamp: new Date().toISOString(),
           },
         },
-      });
-    });
+      }).catch((error) => console.error("Audit log error:", error));
 
     return { success: true, data: newCheckin };
   } catch (error) {

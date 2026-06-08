@@ -1,8 +1,9 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db, eq } from "@workspace/db";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
-import { nextCookies } from "better-auth/next-js";
 import {
   user as usersTable,
   account as accountsTable,
@@ -13,7 +14,7 @@ import { admin, customSession } from "better-auth/plugins";
 import { createAuthMiddleware, APIError } from "better-auth/api";
 
 config({
-  path: ".env",
+  path: path.join(path.dirname(fileURLToPath(import.meta.url)), ".env"),
 });
 
 const ADMIN_EMAILS: string[] = [
@@ -70,7 +71,6 @@ export const auth = betterAuth({
     },
   },
   plugins: [
-    nextCookies(),
     admin(),
     customSession(async ({ user, session }) => {
       const isAdmin = isAdminEmail(user.email);
@@ -199,7 +199,9 @@ export const auth = betterAuth({
             reason: "email_domain_not_allowed",
           });
           if (sessionId) {
-            await db.delete(sessionsTable).where(eq(sessionsTable.id, sessionId));
+            await db
+              .delete(sessionsTable)
+              .where(eq(sessionsTable.id, sessionId));
           }
           throw ctx.redirect("/unauthorized");
         }

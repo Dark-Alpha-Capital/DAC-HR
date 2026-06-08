@@ -1,0 +1,282 @@
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { Button } from "@workspace/ui/components/button";
+import { Badge } from "@workspace/ui/components/badge";
+import {
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@workspace/ui/components/tabs";
+import {
+  Pencil,
+  Calendar,
+  Clock,
+  Briefcase,
+  FileText,
+  User,
+  ClipboardCheck,
+  Sparkles,
+} from "lucide-react";
+import DeleteCandidateButton from "@/components/delete-candidate-button";
+import { formatDate } from "@/lib/utils";
+import CandidateTabsClient from "@/components/candidate-tabs-client";
+import { CandidateOverviewTab } from "@/components/candidate-overview-tab";
+import { CandidateApplicationsTab } from "@/components/candidate-applications-tab";
+import { CandidateDocumentsTab } from "@/components/candidate-documents-tab";
+import CandidateAiScreeningsClient from "@/components/candidate-ai-screenings-client";
+import CandidateAiAnalysis from "@/components/candidate-ai-analysis";
+import OnboardingCard from "@/components/onboarding-card";
+import {
+  getCandidateAiScreenings,
+  getOrCreateCandidateOnboarding,
+  getUsers,
+} from "@workspace/db/queries";
+import { getApplicationWithInterviews } from "@workspace/db/repositories/interview-repository";
+import {
+  getCachedCandidate,
+  getCachedDocuments,
+} from "@/lib/cache/candidate";
+import { getSession } from "@/lib/middleware/auth-guard";
+import { toOptionalString } from "@/lib/parse-search";
+
+export const Route = createFileRoute("/_main/candidates/$uid/")({
+  head: () => ({
+    meta: [{ title: "Candidate Detail" }],
+  }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: toOptionalString(search.tab),
+    application: toOptionalString(search.application),
+  }),
+  loaderDeps: ({ search }) => search,
+  loader: async ({ params, deps }) => {
+    const session = await getSession();
+    if (!session?.user) {
+      throw redirect({ to: "/login" });
+    }
+
+    const [users, candidate, documents, screenings] = await Promise.all([
+      getUsers(),
+      getCachedCandidate(params.uid),
+      getCachedDocuments(params.uid),
+      getCandidateAiScreenings(params.uid),
+    ]);
+
+    if (!candidate) {
+      return {
+        candidate: null,
+        users: [],
+        session: session.session,
+        currentUser: session.user,
+        documents: [],
+        screenings: [],
+        onboardingData: null,
+        applicationDetails: [] as Awaited<
+          ReturnType<typeof getApplicationWithInterviews>
+        >[],
+        initialApplicationId: deps.application,
+      };
+    }
+
+    const [applicationDetails, rawOnboarding] = await Promise.all([
+      Promise.all(
+        candidate.applications.map((app) =>
+          getApplicationWithInterviews(app.id),
+        ),
+      ),
+      getOrCreateCandidateOnboarding(candidate.id),
+    ]);
+
+    const onboardingData = rawOnboarding
+      ? {
+          contractSigned: rawOnboarding.contractSigned ?? false,
+          registrationEmailSent: rawOnboarding.emailProvided ?? false,
+          packetSent: rawOnboarding.onboardingPacketSent ?? false,
+          companyEmailActivate: rawOnboarding.companyEmailActivate ?? false,
+        }
+      : null;
+
+    return {
+      candidate,
+      users,
+      session: session.session,
+      currentUser: session.user,
+      documents,
+      screenings,
+      onboardingData,
+      applicationDetails,
+      initialApplicationId: deps.application,
+    };
+  },
+  component: CandidateDetailPage,
+});
+
+function CandidateDetailPage() {
+  const {
+    candidate,
+    users,
+    session,
+    currentUser,
+    documents,
+    screenings,
+    onboardingData,
+    applicationDetails,
+    initialApplicationId,
+  } = Route.useLoaderData();
+  const { uid } = Route.useParams();
+
+  if (!candidate) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl font-semibold">Candidate not found</h1>
+        <p className="text-muted-foreground">
+          The candidate you&apos;re looking for doesn&apos;t exist or has been
+          removed.
+        </p>
+        <Button variant="secondary" asChild>
+          <Link to="/candidates" search={{} as any}>Back to candidates</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  const fullName = `${candidate.firstName} ${candidate.lastName}`;
+  const positionId = candidate.applications[0]?.position.id ?? "";
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-2 flex-1">
+          <h1 className="text-3xl font-bold">{fullName}</h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge variant="secondary" className="text-xs gap-1.5">
+              <Calendar className="h-3 w-3" />
+              Created {formatDate(candidate.createdAt)}
+            </Badge>
+            {candidate.updatedAt &&
+            candidate.updatedAt.getTime() !== candidate.createdAt.getTime() ? (
+              <Badge variant="secondary" className="text-xs gap-1.5">
+                <Clock className="h-3 w-3" />
+                Updated {formatDate(candidate.updatedAt)}
+              </Badge>
+            ) : null}
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="secondary" size="sm" asChild>
+            <Link to="/candidates/$uid/edit" params={{ uid: candidate.id }}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit Candidate
+            </Link>
+          </Button>
+          <DeleteCandidateButton candidateId={candidate.id} />
+        </div>
+      </div>
+
+      <CandidateTabsClient>
+        <TabsList>
+          <TabsTrigger value="overview">
+            <User className="h-4 w-4 mr-2" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="applications">
+            <Briefcase className="h-4 w-4 mr-2" />
+            Applications
+            {candidate.applications.length > 0 ? (
+              <Badge
+                variant="secondary"
+                className="ml-2 h-5 min-w-5 px-1.5 text-xs"
+              >
+                {candidate.applications.length}
+              </Badge>
+            ) : null}
+          </TabsTrigger>
+          <TabsTrigger value="documents">
+            <FileText className="h-4 w-4 mr-2" />
+            Documents
+            {documents.length > 0 ? (
+              <Badge
+                variant="secondary"
+                className="ml-2 h-5 min-w-5 px-1.5 text-xs"
+              >
+                {documents.length}
+              </Badge>
+            ) : null}
+          </TabsTrigger>
+          <TabsTrigger value="ai-screenings">
+            <Sparkles className="h-4 w-4 mr-2" />
+            AI Screenings
+            {screenings.length > 0 ? (
+              <Badge
+                variant="secondary"
+                className="ml-2 h-5 min-w-5 px-1.5 text-xs"
+              >
+                {screenings.length}
+              </Badge>
+            ) : null}
+          </TabsTrigger>
+          <TabsTrigger value="ai-analysis">
+            <Sparkles className="h-4 w-4 mr-2" />
+            Do AI Analysis
+          </TabsTrigger>
+          <TabsTrigger value="checklist">
+            <ClipboardCheck className="h-4 w-4 mr-2" />
+            Checklist
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="mt-6">
+          <CandidateOverviewTab candidate={candidate} />
+        </TabsContent>
+
+        <TabsContent value="applications" className="mt-6">
+          <CandidateApplicationsTab
+            candidate={candidate}
+            users={users}
+            applicationDetails={applicationDetails}
+            initialApplicationId={initialApplicationId}
+            currentUser={currentUser}
+          />
+        </TabsContent>
+
+        <TabsContent value="documents" className="mt-6">
+          <CandidateDocumentsTab uid={uid} documents={documents} />
+        </TabsContent>
+
+        <TabsContent value="ai-screenings" className="mt-6">
+          <CandidateAiScreeningsClient
+            screenings={screenings}
+            positionId={candidate.applications[0]?.position.id ?? null}
+          />
+        </TabsContent>
+
+        <TabsContent value="ai-analysis" className="mt-6">
+          <CandidateAiAnalysis
+            candidateId={uid}
+            positionId={positionId}
+            session={session}
+            documents={documents}
+          />
+        </TabsContent>
+
+        <TabsContent value="checklist" className="mt-6">
+          {!onboardingData ? (
+            <div className="mt-4 md:mt-6 lg:mt-8">
+              <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
+                Checklist
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Checklist enabled, but no data available.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-4 md:mt-6 lg:mt-8">
+              <OnboardingCard
+                candidateId={candidate.id}
+                onboardingData={onboardingData}
+              />
+            </div>
+          )}
+        </TabsContent>
+      </CandidateTabsClient>
+    </div>
+  );
+}

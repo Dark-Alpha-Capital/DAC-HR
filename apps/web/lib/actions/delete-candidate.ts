@@ -1,8 +1,4 @@
-"use server";
-
-import { auth } from "@/auth";
-import { headers } from "next/headers";
-import { updateTag } from "next/cache";
+import { getSession } from "@/lib/middleware/auth-guard";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { deleteCandidateWithAssets } from "@/lib/application/candidate-service";
 
@@ -11,9 +7,7 @@ import { deleteCandidateWithAssets } from "@/lib/application/candidate-service";
  * Uses shared application service and invalidates Next.js cache tags
  */
 export async function deleteCandidate(candidateId: string) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -66,12 +60,6 @@ export async function deleteCandidate(candidateId: string) {
     }).catch((error) => {
       console.error("Error inserting delete candidate audit log:", error);
     });
-
-    // Invalidate cache tags immediately after successful deletion
-    // This ensures the UI reflects the change right away
-    updateTag("candidates"); // Invalidate the candidates list
-    updateTag(`candidate-${candidateId}`); // Invalidate individual candidate page
-    updateTag(`candidate-applications-${candidateId}`); // Invalidate candidate applications
 
     return { success: true };
   } catch (error) {

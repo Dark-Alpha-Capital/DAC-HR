@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { useTransition, useState } from "react";
 import { useForm } from "@tanstack/react-form";
@@ -22,7 +20,7 @@ import {
 import { Checkbox } from "@workspace/ui/components/checkbox";
 import { Loader2 } from "lucide-react";
 import { createDocument } from "@/lib/actions/create-document";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import type { DocumentCategory } from "@workspace/db/schema";
 import * as z from "zod";
 
@@ -114,7 +112,7 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
               action: {
                 label: "View Documents",
                 onClick: () => {
-                  router.push("/documents");
+                  router.navigate({ to: "/documents", search: {} as any });
                 },
               },
             });
@@ -129,7 +127,7 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
               fileInput.value = "";
             }
 
-            router.push("/documents");
+            router.navigate({ to: "/documents", search: {} as any });
           } else {
             toast.error(
               typeof result.error === "string"

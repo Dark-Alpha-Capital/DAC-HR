@@ -44,7 +44,9 @@ export const normalizeFolderPath = (folderPath: string) => {
 export const sanitizeFilename = (fileName: string) =>
   fileName.replace(/[^a-zA-Z0-9._-]/g, "_").replace(/_{2,}/g, "_");
 
-export const createNextcloudClient = (config: NextcloudConfig): WebDAVClient => {
+export const createNextcloudClient = (
+  config: NextcloudConfig,
+): WebDAVClient => {
   if (!config.url || !config.user || !config.password) {
     throw new Error(
       "Invalid Nextcloud config. Expected url, user, and password.",
@@ -160,7 +162,10 @@ export const resolveFilePath = (filePathOrUrl: string): string => {
     return extractPathFromDavUrl(filePathOrUrl);
   }
 
-  if (filePathOrUrl.startsWith("http://") || filePathOrUrl.startsWith("https://")) {
+  if (
+    filePathOrUrl.startsWith("http://") ||
+    filePathOrUrl.startsWith("https://")
+  ) {
     return extractPathFromDavUrl(filePathOrUrl);
   }
 

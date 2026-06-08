@@ -1,11 +1,9 @@
-"use client";
-
 import React, { useTransition } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Loader2, Trash2 } from "lucide-react";
 import { deleteRound } from "@/lib/actions/delete-round";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -67,7 +65,7 @@ const DeleteRoundButton = ({ roundId }: { roundId: string }) => {
                   }
                   if (response?.success) {
                     toast.success("Round deleted successfully");
-                    router.push("/rounds");
+                    router.navigate({ to: "/rounds", search: {} as any });
                   }
                 });
               }}

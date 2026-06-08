@@ -1,7 +1,5 @@
-"use client";
-
 import { useTransition, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import { Badge } from "@workspace/ui/components/badge";
 import {
   DropdownMenu,
@@ -108,7 +106,7 @@ export default function InlineApplicationStatusEditor({
       }
 
       toast.success("Application status updated");
-      router.refresh();
+      router.invalidate();
     });
   };
 
@@ -117,9 +115,9 @@ export default function InlineApplicationStatusEditor({
     // Update status first, then redirect
     updateStatus("onboarding");
     // Redirect to employee form with candidate data
-    router.push(
-      `/employees/new?candidateId=${candidateId}&applicationId=${application.id}`,
-    );
+    router.navigate({
+      to: `/employees/new?candidateId=${candidateId}&applicationId=${application.id}`,
+    });
   };
 
   const handleMarkAsOnboardingOnly = () => {
@@ -178,8 +176,8 @@ export default function InlineApplicationStatusEditor({
           <AlertDialogHeader>
             <AlertDialogTitle>Add to Employee Directory?</AlertDialogTitle>
             <AlertDialogDescription>
-              This candidate has been marked as ONBOARDING. Would you like to add
-              them to the DAC Employee Directory? You can fill in additional
+              This candidate has been marked as ONBOARDING. Would you like to
+              add them to the DAC Employee Directory? You can fill in additional
               information like their picture and bio.
             </AlertDialogDescription>
           </AlertDialogHeader>

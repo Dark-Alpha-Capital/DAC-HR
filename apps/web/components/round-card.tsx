@@ -1,5 +1,5 @@
 import React from "react";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@workspace/ui/components/button";
 import {
   Card,
@@ -62,13 +62,13 @@ const RoundCard = ({ round }: RoundCardProps) => {
       <CardFooter className="border-t">
         <div className="flex gap-2 w-full">
           <Button variant="secondary" size="sm" asChild>
-            <Link href={`/rounds/${round.id}`}>
+            <Link to={`/rounds/${round.id}` as any}>
               <Eye className="h-4 w-4" />
               View
             </Link>
           </Button>
           <Button variant="secondary" size="sm" asChild>
-            <Link href={`/rounds/${round.id}/edit`}>
+            <Link to={`/rounds/${round.id}/edit` as any}>
               <Pencil className="h-4 w-4" />
               Edit
             </Link>

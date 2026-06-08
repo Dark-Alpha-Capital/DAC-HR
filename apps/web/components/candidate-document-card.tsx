@@ -1,7 +1,5 @@
-"use client";
-
 import React, { useState } from "react";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@workspace/ui/components/button";
 import {
   Card,
@@ -156,8 +154,7 @@ const CandidateDocumentCard = ({
             View
           </Button>
           <Button variant="secondary" size="sm" asChild>
-            <Link
-              href={`/candidates/${candidateId}/documents/${document.id}/edit`}
+            <Link to={`/candidates/${candidateId}/documents/${document.id}/edit` as any}
             >
               <Pencil className="h-4 w-4" />
               Edit

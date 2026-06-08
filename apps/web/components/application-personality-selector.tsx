@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useTransition } from "react";
 import {
   Select,
@@ -9,7 +7,7 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 import { updateApplication } from "@/lib/actions/update-application";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 type Personality =
@@ -80,7 +78,7 @@ export default function ApplicationPersonalitySelector({
         setValue(currentPersonality || NONE_VALUE);
       } else {
         toast.success("Personality updated successfully");
-        router.refresh();
+        router.invalidate();
       }
     });
   };

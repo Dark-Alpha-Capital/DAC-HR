@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useMemo } from "react";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
@@ -31,12 +29,12 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { formatDate } from "@/lib/utils";
 import RecordInterviewDialogWrapper from "./record-interview-dialog-wrapper";
 import { deleteInterview } from "@/lib/actions/delete-interview";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 
 interface Round {
   id: string;
@@ -182,7 +180,7 @@ export default function ApplicationProgressTimeline({
         toast.error(result.error);
       } else {
         toast.success("Interview deleted successfully");
-        router.refresh();
+        router.invalidate();
       }
     } catch (error) {
       toast.error("Failed to delete interview");
@@ -234,7 +232,9 @@ export default function ApplicationProgressTimeline({
       {rounds.length === 0 ? (
         <div className="py-12 text-center text-muted-foreground">
           <MessageSquare className="h-8 w-8 mx-auto mb-3 opacity-50" />
-          <p className="text-sm">No interview rounds configured for this position.</p>
+          <p className="text-sm">
+            No interview rounds configured for this position.
+          </p>
         </div>
       ) : (
         <div className="divide-y divide-border">
@@ -272,92 +272,86 @@ export default function ApplicationProgressTimeline({
                 ) : (
                   <div className="overflow-hidden rounded-md border">
                     <Table>
-                        <TableHeader>
-                          <TableRow className="bg-muted/30">
-                            <TableHead className="font-medium">
-                              Interviewer
-                            </TableHead>
-                            <TableHead className="font-medium">Date</TableHead>
-                            <TableHead className="font-medium">
-                              Status
-                            </TableHead>
-                            <TableHead className="font-medium">
-                              Rating
-                            </TableHead>
-                            <TableHead className="text-right font-medium">
-                              Actions
-                            </TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {roundInterviews.map((interview) => (
-                            <TableRow
-                              key={interview.id}
-                              className={
-                                selectedInterviewId === interview.id
-                                  ? "bg-primary/5"
-                                  : undefined
-                              }
-                            >
-                              <TableCell>
-                                {interview.interviewer
-                                  ? interview.interviewer.name ||
-                                    interview.interviewer.email
+                      <TableHeader>
+                        <TableRow className="bg-muted/30">
+                          <TableHead className="font-medium">
+                            Interviewer
+                          </TableHead>
+                          <TableHead className="font-medium">Date</TableHead>
+                          <TableHead className="font-medium">Status</TableHead>
+                          <TableHead className="font-medium">Rating</TableHead>
+                          <TableHead className="text-right font-medium">
+                            Actions
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {roundInterviews.map((interview) => (
+                          <TableRow
+                            key={interview.id}
+                            className={
+                              selectedInterviewId === interview.id
+                                ? "bg-primary/5"
+                                : undefined
+                            }
+                          >
+                            <TableCell>
+                              {interview.interviewer
+                                ? interview.interviewer.name ||
+                                  interview.interviewer.email
+                                : "-"}
+                            </TableCell>
+                            <TableCell>
+                              {interview.scheduledAt
+                                ? formatDate(interview.scheduledAt)
+                                : interview.createdAt
+                                  ? formatDate(interview.createdAt)
                                   : "-"}
-                              </TableCell>
-                              <TableCell>
-                                {interview.scheduledAt
-                                  ? formatDate(interview.scheduledAt)
-                                  : interview.createdAt
-                                    ? formatDate(interview.createdAt)
-                                    : "-"}
-                              </TableCell>
-                              <TableCell>
-                                {getStatusBadge(interview.status)}
-                              </TableCell>
-                              <TableCell>
-                                {interview.rating ? (
-                                  <div className="flex items-center gap-1">
-                                    <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
-                                    <span className="text-sm">
-                                      {interview.rating}/5
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <span className="text-muted-foreground">
-                                    -
+                            </TableCell>
+                            <TableCell>
+                              {getStatusBadge(interview.status)}
+                            </TableCell>
+                            <TableCell>
+                              {interview.rating ? (
+                                <div className="flex items-center gap-1">
+                                  <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                                  <span className="text-sm">
+                                    {interview.rating}/5
                                   </span>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex items-center justify-end gap-1">
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    className="h-8 w-8 p-0"
-                                    asChild
-                                  >
-                                    <Link href={`/interviews/${interview.id}`}>
-                                      <Eye className="h-4 w-4" />
-                                    </Link>
-                                  </Button>
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                    onClick={() =>
-                                      handleDeleteClick(interview.id)
-                                    }
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
                                 </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  asChild
+                                >
+                                  <Link to={`/interviews/${interview.id}` as any}>
+                                    <Eye className="h-4 w-4" />
+                                  </Link>
+                                </Button>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  onClick={() =>
+                                    handleDeleteClick(interview.id)
+                                  }
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </section>
             );

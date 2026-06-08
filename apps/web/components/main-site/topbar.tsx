@@ -1,10 +1,6 @@
-"use client";
-
 import * as React from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import type { Route } from "next";
-
+import { Link } from "@tanstack/react-router";
+import { useRouterState } from "@tanstack/react-router";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -48,7 +44,7 @@ function labelForSegment(segment: string) {
 }
 
 export function MainSiteTopbar() {
-  const pathname = usePathname();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const segments = React.useMemo(
     () => pathname.split("/").filter(Boolean),
     [pathname],
@@ -76,7 +72,7 @@ export function MainSiteTopbar() {
               <>
                 <BreadcrumbItem>
                   <BreadcrumbLink asChild>
-                    <Link href="/">Home</Link>
+                    <Link to="/">Home</Link>
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
@@ -85,8 +81,8 @@ export function MainSiteTopbar() {
             {secondaryLabel ? (
               <>
                 <BreadcrumbItem>
-                  <BreadcrumbLink asChild>
-                    <Link href={`/${first}` as Route}>{primaryLabel}</Link>
+                  <BreadcrumbLink href={`/${first}`}>
+                    {primaryLabel}
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />

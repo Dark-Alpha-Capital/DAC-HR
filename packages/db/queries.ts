@@ -407,9 +407,9 @@ export const getCandidatesWithPositions = async () => {
       ...result.candidate,
       position: result.position?.id
         ? {
-          id: result.position.id,
-          name: result.position.name,
-        }
+            id: result.position.id,
+            name: result.position.name,
+          }
         : null,
     }));
   } catch (error) {
@@ -539,9 +539,9 @@ export const getCandidatesWithPositionsFiltered = async (
           ...result.candidate,
           position: result.position?.id
             ? {
-              id: result.position.id,
-              name: result.position.name,
-            }
+                id: result.position.id,
+                name: result.position.name,
+              }
             : null,
         });
       }
@@ -1423,10 +1423,10 @@ export const getInterviewById = async (interviewId: string) => {
         ...question,
         feedback: feedback
           ? {
-            id: feedback.id,
-            notes: feedback.notes,
-            rating: feedback.rating,
-          }
+              id: feedback.id,
+              notes: feedback.notes,
+              rating: feedback.rating,
+            }
           : null,
       };
     });
@@ -1668,15 +1668,21 @@ export const getDashboardStats = async () => {
       .where(sql`${candidate.createdAt} >= NOW() - INTERVAL '30 days'`);
     const totalCandidatesThisMonth = totalCandidatesThisMonthResult?.count || 0;
 
-    // Active candidates count (candidates with applications in reviewed, shortlisted, or interviewing status)
+    const activePipelineStatuses = [
+      "ai_screening",
+      "first_round_recruiter_call",
+      "second_round_technical_screening",
+      "third_round_final_ceo",
+      "contract_offer",
+    ] as const;
+
+    // Active candidates count (applications still in the hiring pipeline)
     const [activeCandidatesResult] = await db
       .select({
         count: sql<number>`count(DISTINCT ${application.candidateId})::int`,
       })
       .from(application)
-      .where(
-        sql`${application.status} IN ('reviewed', 'shortlisted', 'interviewing')`,
-      );
+      .where(inArray(application.status, [...activePipelineStatuses]));
     const activeCandidates = activeCandidatesResult?.count || 0;
 
     // Active candidates last month
@@ -1686,7 +1692,10 @@ export const getDashboardStats = async () => {
       })
       .from(application)
       .where(
-        sql`${application.status} IN ('reviewed', 'shortlisted', 'interviewing') AND ${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`,
+        and(
+          inArray(application.status, [...activePipelineStatuses]),
+          sql`${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`,
+        ),
       );
     const activeCandidatesLastMonth =
       activeCandidatesLastMonthResult?.count || 0;

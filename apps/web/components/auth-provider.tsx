@@ -1,5 +1,3 @@
-"use client";
-
 import { authClient } from "@/auth-client";
 import { createContext, useContext, type ReactNode } from "react";
 

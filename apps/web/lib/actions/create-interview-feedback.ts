@@ -1,12 +1,7 @@
-"use server";
-
 import { db } from "@workspace/db";
 import { interviewFeedback } from "@workspace/db/schema";
-import { revalidatePath, updateTag } from "next/cache";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
+import { getSession } from "@/lib/middleware/auth-guard";
 import { getInterviewById } from "@workspace/db/repositories/interview-repository";
-import { after } from "next/server";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export interface CreateInterviewFeedbackInput {
@@ -31,9 +26,7 @@ export interface BulkCreateInterviewFeedbackInput {
 export const createInterviewFeedback = async (
   data: CreateInterviewFeedbackInput,
 ) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -61,14 +54,9 @@ export const createInterviewFeedback = async (
 
     const interview = await getInterviewById(interviewId);
     if (interview) {
-      updateTag(`interview-${interviewId}`);
-      updateTag(`application-${interview.applicationId}`);
-      revalidatePath(`/interviews/${interviewId}`);
-      revalidatePath(`/applications/${interview.applicationId}`);
     }
 
-    after(async () => {
-      await insertAuditLog({
+    insertAuditLog({
         userId: session.user.id,
         action: "upsert_interview_feedback",
         entityType: "interview_feedback",
@@ -97,8 +85,7 @@ export const createInterviewFeedback = async (
             isUpsert: true,
           },
         },
-      });
-    });
+      }).catch((error) => console.error("Audit log error:", error));
 
     return { success: true, data: result };
   } catch (error) {
@@ -118,9 +105,7 @@ export const createInterviewFeedback = async (
 export const bulkCreateInterviewFeedback = async (
   data: BulkCreateInterviewFeedbackInput,
 ) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -158,14 +143,9 @@ export const bulkCreateInterviewFeedback = async (
 
     const interview = await getInterviewById(interviewId);
     if (interview) {
-      updateTag(`interview-${interviewId}`);
-      updateTag(`application-${interview.applicationId}`);
-      revalidatePath(`/interviews/${interviewId}`);
-      revalidatePath(`/applications/${interview.applicationId}`);
     }
 
-    after(async () => {
-      await insertAuditLog({
+    insertAuditLog({
         userId: session.user.id,
         action: "bulk_upsert_interview_feedback",
         entityType: "interview_feedback",
@@ -192,8 +172,7 @@ export const bulkCreateInterviewFeedback = async (
             count: results.length,
           },
         },
-      });
-    });
+      }).catch((error) => console.error("Audit log error:", error));
 
     return { success: true, data: results };
   } catch (error) {

@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import FilterEmployeeName from "@/components/filter-employee-name";
 import FilterEmployeeEmail from "@/components/filter-employee-email";

@@ -1,7 +1,5 @@
-"use client";
-
 import { ChevronUp, LoaderIcon } from "lucide-react";
-import Image from "next/image";
+import { Image } from "@unpic/react";
 import { authClient } from "@/auth-client";
 import {
   DropdownMenu,
@@ -15,7 +13,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@workspace/ui/components/sidebar";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import type { Route } from "next";
 import { useTheme } from "next-themes";
 
@@ -29,7 +27,7 @@ export function SidebarUserNav() {
     await authClient.signOut({
       fetchOptions: {
         onSuccess: () => {
-          router.push("/");
+          router.navigate({ to: "/" });
         },
       },
     });
@@ -88,7 +86,7 @@ export function SidebarUserNav() {
                   type="button"
                   className="w-full cursor-pointer"
                   onClick={() => {
-                    router.push("/login");
+                    router.navigate({ to: "/login" });
                   }}
                 >
                   Login to your account
@@ -136,7 +134,7 @@ export function SidebarUserNav() {
               className="cursor-pointer"
               onSelect={() => {
                 if (user.id) {
-                  router.push(`/profile/${user.id}` as Route);
+                  router.navigate({ to: `/profile/${user.id}` as Route });
                 }
               }}
             >

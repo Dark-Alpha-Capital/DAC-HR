@@ -1,12 +1,7 @@
-"use server";
-
 import { db } from "@workspace/db";
 import { application } from "@workspace/db/schema";
-import { revalidatePath, updateTag } from "next/cache";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
+import { getSession } from "@/lib/middleware/auth-guard";
 import { eq } from "@workspace/db";
-import { after } from "next/server";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export interface UpdateApplicationInput {
@@ -40,9 +35,7 @@ export interface UpdateApplicationInput {
 }
 
 export const updateApplication = async (data: UpdateApplicationInput) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -64,16 +57,9 @@ export const updateApplication = async (data: UpdateApplicationInput) => {
     if (!updatedApplication) {
       return { error: "Application not found" };
     }
-
-    updateTag(`application-${applicationId}`);
     if (updatedApplication.candidateId) {
-      updateTag(`candidate-applications-${updatedApplication.candidateId}`);
-      revalidatePath(`/candidates/${updatedApplication.candidateId}`);
     }
-    revalidatePath(`/applications/${applicationId}`);
-
-    after(async () => {
-      await insertAuditLog({
+    insertAuditLog({
         userId: session.user.id,
         action: "update_application",
         entityType: "application",
@@ -101,8 +87,7 @@ export const updateApplication = async (data: UpdateApplicationInput) => {
             timestamp: new Date().toISOString(),
           },
         },
-      });
-    });
+      }).catch((error) => console.error("Audit log error:", error));
 
     return { success: true, data: updatedApplication };
   } catch (error) {

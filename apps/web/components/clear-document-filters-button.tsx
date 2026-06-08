@@ -1,13 +1,11 @@
-"use client";
+import { useUrlSearchParams } from "@/lib/hooks/use-url-search-params";
 
 import React from "react";
 import { Button } from "@workspace/ui/components/button";
-import { useRouter, useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
 
 const ClearDocumentFiltersButton = () => {
-  const searchParams = useSearchParams();
-  const router = useRouter();
+  const { searchParams, setSearchParams } = useUrlSearchParams();
 
   const hasFilters =
     searchParams.has("category") ||
@@ -27,7 +25,7 @@ const ClearDocumentFiltersButton = () => {
         params.delete("category");
         params.delete("name");
         params.delete("tags");
-        router.push(`?${params.toString()}`);
+        setSearchParams(params);
       }}
     >
       <X className="h-4 w-4" />

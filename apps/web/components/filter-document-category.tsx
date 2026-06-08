@@ -1,7 +1,6 @@
-"use client";
+import { useUrlSearchParams } from "@/lib/hooks/use-url-search-params";
 
 import React, { useOptimistic, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -19,8 +18,7 @@ const FilterDocumentCategory = ({
 }: {
   categories: DocumentCategory[];
 }) => {
-  const searchParams = useSearchParams();
-  const router = useRouter();
+  const { searchParams, setSearchParams } = useUrlSearchParams();
   const [isPending, startTransition] = useTransition();
   const [selectedCategories, setSelectedCategories] = useOptimistic(
     searchParams.getAll("category"),
@@ -38,10 +36,8 @@ const FilterDocumentCategory = ({
       newSelected.forEach((cat) => params.append("category", cat));
       setSelectedCategories(newSelected);
 
-      router.push(`?${params.toString()}`, {
-        scroll: false,
-      });
-    });
+      setSearchParams(params);
+  });
   };
 
   return (

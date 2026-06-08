@@ -1,18 +1,11 @@
-"use server";
-
 import { db } from "@workspace/db";
 import { roundTemplate, positionRoundTemplates } from "@workspace/db/schema";
 import { RoundFormSchema, roundFormSchema } from "../schemas/round-form-schema";
-import { revalidatePath, updateTag } from "next/cache";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
-import { after } from "next/server";
+import { getSession } from "@/lib/middleware/auth-guard";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const createRound = async (data: RoundFormSchema) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -48,13 +41,8 @@ export const createRound = async (data: RoundFormSchema) => {
       positionId,
       roundTemplateId: newRound.id,
     });
-
-    revalidatePath("/rounds");
     // Invalidate cache for all applications using this position
-    updateTag(`position-${positionId}`);
-
-    after(async () => {
-      await insertAuditLog({
+    insertAuditLog({
         userId: session.user.id,
         action: "create_round",
         entityType: "round",
@@ -82,8 +70,7 @@ export const createRound = async (data: RoundFormSchema) => {
             linkedToPosition: !!positionId,
           },
         },
-      });
-    });
+      }).catch((error) => console.error("Audit log error:", error));
 
     return { success: true, data: newRound };
   } catch (error) {

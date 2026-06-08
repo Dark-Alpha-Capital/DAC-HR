@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useTransition, useState } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Checkbox } from "@workspace/ui/components/checkbox";

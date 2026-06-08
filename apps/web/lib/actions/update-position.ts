@@ -1,5 +1,3 @@
-"use server";
-
 import { db } from "@workspace/db";
 import { position } from "@workspace/db/schema";
 import slugify from "slugify";
@@ -7,20 +5,15 @@ import {
   PositionFormSchema,
   positionFormSchema,
 } from "../schemas/position-form-schema";
-import { revalidatePath, updateTag } from "next/cache";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
+import { getSession } from "@/lib/middleware/auth-guard";
 import { eq } from "@workspace/db";
-import { after } from "next/server";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const updatePosition = async (
   positionId: string,
   data: PositionFormSchema,
 ) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -55,14 +48,7 @@ export const updatePosition = async (
     if (!updatedPosition) {
       return { error: "Position not found" };
     }
-
-    updateTag("positions");
-    revalidatePath("/positions");
-    revalidatePath(`/positions/${updatedPosition.slug}`);
-    revalidatePath(`/positions/${updatedPosition.slug}/edit`);
-
-    after(async () => {
-      await insertAuditLog({
+    insertAuditLog({
         userId: session.user.id,
         action: "update_position",
         entityType: "position",
@@ -94,8 +80,7 @@ export const updatePosition = async (
             timestamp: new Date().toISOString(),
           },
         },
-      });
-    });
+      }).catch((error) => console.error("Audit log error:", error));
 
     return { success: true, data: updatedPosition };
   } catch (error) {

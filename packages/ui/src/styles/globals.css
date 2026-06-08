@@ -1,6 +1,10 @@
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+@import "@fontsource-variable/dm-sans";
+
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
-@source "../../../apps/**/*.{ts,tsx}";
+@source "../../../../apps/web/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
 
 @import "tw-animate-css";
@@ -41,13 +45,13 @@
   --sidebar-border: oklch(0.92 0.01 260);
   --sidebar-ring: oklch(0.38 0.04 260);
   --font-sans:
-    geist, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Geist Variable", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-serif:
-    geist, ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+    "DM Sans Variable", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --font-mono:
-    geist-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
   --radius: 0.5rem;
   --shadow-x: 0;
@@ -106,13 +110,13 @@
   --sidebar-border: oklch(0.3 0.02 260);
   --sidebar-ring: oklch(0.72 0.04 260);
   --font-sans:
-    geist, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Geist Variable", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-serif:
-    geist, ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+    "DM Sans Variable", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --font-mono:
-    geist-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
   --radius: 0.5rem;
   --shadow-x: 0;
@@ -197,7 +201,7 @@ body {
   }
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-geist, var(--font-sans));
+    font-family: var(--font-sans);
     letter-spacing: var(--tracking-normal);
   }
 }

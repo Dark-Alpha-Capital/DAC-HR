@@ -1,6 +1,4 @@
-"use client";
-
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { Eye, Pencil } from "lucide-react";
 
 import { Card, CardContent } from "@workspace/ui/components/card";
@@ -78,7 +76,7 @@ const PositionKanbanCard = ({
               className="h-6 w-6 p-0"
               asChild
             >
-              <Link href={`/positions/${slug}`}>
+              <Link to={`/positions/${slug}` as any}>
                 <Eye className="h-3 w-3" />
               </Link>
             </Button>
@@ -88,7 +86,7 @@ const PositionKanbanCard = ({
               className="h-6 w-6 p-0"
               asChild
             >
-              <Link href={`/positions/${slug}/edit`}>
+              <Link to={`/positions/${slug}/edit` as any}>
                 <Pencil className="h-3 w-3" />
               </Link>
             </Button>

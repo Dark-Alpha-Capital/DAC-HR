@@ -1,21 +1,14 @@
-"use server";
-
 import { db } from "@workspace/db";
 import { employee } from "@workspace/db/schema";
 import {
   EmployeeFormSchema,
   employeeFormSchema,
 } from "../schemas/employee-form-schema";
-import { revalidatePath, updateTag } from "next/cache";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
-import { after } from "next/server";
+import { getSession } from "@/lib/middleware/auth-guard";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const createEmployee = async (data: EmployeeFormSchema) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -45,15 +38,9 @@ export const createEmployee = async (data: EmployeeFormSchema) => {
     if (!newEmployee) {
       return { error: "Failed to create employee" };
     }
-
-    updateTag("employees");
     if (newEmployee) {
-      updateTag(`employee-${newEmployee.id}`);
     }
-    revalidatePath("/employees");
-
-    after(async () => {
-      await insertAuditLog({
+    insertAuditLog({
         userId: session.user.id,
         action: "create_employee",
         entityType: "employee",
@@ -87,8 +74,7 @@ export const createEmployee = async (data: EmployeeFormSchema) => {
             timestamp: new Date().toISOString(),
           },
         },
-      });
-    });
+      }).catch((error) => console.error("Audit log error:", error));
 
     return { success: true, data: newEmployee };
   } catch (error) {

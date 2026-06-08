@@ -105,7 +105,9 @@ export const getInterviewById = async (interviewId: string) => {
       return null;
     }
 
-    const questions = await getQuestionsByRoundId(interviewResult.roundTemplate.id);
+    const questions = await getQuestionsByRoundId(
+      interviewResult.roundTemplate.id,
+    );
 
     const feedbackResults = await db
       .select({
@@ -126,7 +128,9 @@ export const getInterviewById = async (interviewId: string) => {
       .where(eq(interviewFeedback.interviewId, interviewId));
 
     const questionsWithFeedback = questions.map((question) => {
-      const feedback = feedbackResults.find((f) => f.questionId === question.id);
+      const feedback = feedbackResults.find(
+        (f) => f.questionId === question.id,
+      );
       return {
         ...question,
         feedback: feedback

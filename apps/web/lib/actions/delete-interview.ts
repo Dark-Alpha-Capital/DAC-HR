@@ -1,5 +1,3 @@
-"use server";
-
 import { db } from "@workspace/db";
 import {
   interview,
@@ -7,16 +5,11 @@ import {
   application,
 } from "@workspace/db/schema";
 import { eq } from "@workspace/db";
-import { revalidatePath, updateTag } from "next/cache";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
-import { after } from "next/server";
+import { getSession } from "@/lib/middleware/auth-guard";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const deleteInterview = async (interviewId: string) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -50,16 +43,9 @@ export const deleteInterview = async (interviewId: string) => {
     await db.delete(interview).where(eq(interview.id, interviewId));
 
     // Invalidate caches
-    updateTag(`interview-${interviewId}`);
-    updateTag(`application-${existingInterview.applicationId}`);
     if (app?.candidateId) {
-      updateTag(`candidate-applications-${app.candidateId}`);
-      revalidatePath(`/candidates/${app.candidateId}`);
     }
-    revalidatePath(`/applications/${existingInterview.applicationId}`);
-
-    after(async () => {
-      await insertAuditLog({
+    insertAuditLog({
         userId: session.user.id,
         action: "delete_interview",
         entityType: "interview",
@@ -84,8 +70,7 @@ export const deleteInterview = async (interviewId: string) => {
             timestamp: new Date().toISOString(),
           },
         },
-      });
-    });
+      }).catch((error) => console.error("Audit log error:", error));
 
     return { success: true };
   } catch (error) {

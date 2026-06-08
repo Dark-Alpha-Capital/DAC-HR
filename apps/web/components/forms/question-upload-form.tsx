@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { useTransition, useState, useEffect } from "react";
 import { useForm } from "@tanstack/react-form";
@@ -27,8 +25,8 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useRouter } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { questionFormSchema } from "@/lib/schemas/question-form-schema";
 import { createQuestion } from "@/lib/actions/create-question";
 import { getRoundsByPosition } from "@/lib/actions/get-rounds-by-position";
@@ -84,7 +82,7 @@ const QuestionUploadForm = ({
             action: {
               label: "View Questions",
               onClick: () => {
-                router.push("/questions");
+                router.navigate({ to: "/questions", search: {} as any });
               },
             },
           });
@@ -308,7 +306,9 @@ const QuestionUploadForm = ({
                           variant="default"
                           className="w-full"
                         >
-                          <Link href={`/rounds/new?position=${positionId}`}>
+                          <Link
+                            to={`/rounds/new?position=${positionId}` as any}
+                          >
                             Create Round for{" "}
                             {selectedPosition?.name || "Position"}
                           </Link>

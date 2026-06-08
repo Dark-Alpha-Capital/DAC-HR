@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, cloneElement, isValidElement } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Plus } from "lucide-react";

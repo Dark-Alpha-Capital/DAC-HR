@@ -1,20 +1,13 @@
-"use server";
-
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import {
   CandidateFormSchema,
   candidateFormSchema,
 } from "../schemas/candidate-form-schema";
-import { revalidatePath, updateTag } from "next/cache";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
-import { after } from "next/server";
+import { getSession } from "@/lib/middleware/auth-guard";
 import { createCandidateWithOptionalPosition } from "@/lib/application/candidate-service";
 
 export const createCandidate = async (data: CandidateFormSchema) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -49,13 +42,7 @@ export const createCandidate = async (data: CandidateFormSchema) => {
         note,
         positionId,
       });
-
-    updateTag("candidates");
-    updateTag(`candidate-applications-${newCandidate.id}`);
-    revalidatePath("/candidates");
-
-    after(async () => {
-      await insertAuditLog({
+    insertAuditLog({
         userId: session.user.id,
         action: "create_candidate",
         entityType: "candidate",
@@ -100,8 +87,7 @@ export const createCandidate = async (data: CandidateFormSchema) => {
             applicationCreated: hasPosition,
           },
         },
-      });
-    });
+      }).catch((error) => console.error("Audit log error:", error));
 
     return { success: true, data: newCandidate };
   } catch (error) {

@@ -1,10 +1,8 @@
-"use client";
-
 import React, { useTransition } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -75,7 +73,7 @@ const BulkDeleteCandidatesButton = ({
           });
           setOpen(false);
           onDeleteComplete?.();
-          router.refresh();
+          router.invalidate();
         } else {
           const errorMessage =
             result.errors && result.errors.length > 0
@@ -90,7 +88,7 @@ const BulkDeleteCandidatesButton = ({
           );
           setOpen(false);
           onDeleteComplete?.();
-          router.refresh();
+          router.invalidate();
         }
       } catch (error) {
         toast.error(

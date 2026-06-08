@@ -20,6 +20,7 @@ Provides frontend design and development expertise specializing in creating visu
 ## Quick Start
 
 **Invoke this skill when:**
+
 - Need to transform functional UI into visually stunning interfaces
 - Design mockups don't exist, but beautiful UI is required
 - Visual polish and micro-interactions are priority over code elegance
@@ -27,6 +28,7 @@ Provides frontend design and development expertise specializing in creating visu
 - User experience improvements needed without dedicated designer
 
 **Do NOT invoke when:**
+
 - Backend logic or API development needed
 - Pure code refactoring without visual changes
 - Performance optimization is sole priority
@@ -34,6 +36,7 @@ Provides frontend design and development expertise specializing in creating visu
 - Database or infrastructure work
 
 ---
+
 ---
 
 ## Core Workflows
@@ -43,6 +46,7 @@ Provides frontend design and development expertise specializing in creating visu
 **Use case:** Given a plain React component, make it visually exceptional
 
 **Input Example:**
+
 ```tsx
 // Before: Functional but plain
 function ProductCard({ product }: { product: Product }) {
@@ -60,6 +64,7 @@ function ProductCard({ product }: { product: Product }) {
 **Steps:**
 
 **1. Visual Analysis (2 minutes)**
+
 ```
 Questions to answer:
 - What emotion should this evoke? (Premium? Playful? Trustworthy?)
@@ -69,16 +74,17 @@ Questions to answer:
 ```
 
 **2. Color & Typography Enhancement**
+
 ```tsx
 // After: Visual foundation established
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
 
 function ProductCard({ product }: { product: Product }) {
   return (
     <motion.div
       className="group relative overflow-hidden rounded-2xl bg-white shadow-lg transition-shadow hover:shadow-2xl"
       whileHover={{ y: -4 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
     >
       {/* Image container with aspect ratio */}
       <div className="relative aspect-square overflow-hidden">
@@ -96,7 +102,7 @@ function ProductCard({ product }: { product: Product }) {
         <h3 className="text-xl font-semibold text-gray-900 line-clamp-2">
           {product.name}
         </h3>
-        
+
         <div className="flex items-baseline gap-2">
           <span className="text-2xl font-bold text-blue-600">
             ${product.price}
@@ -119,6 +125,7 @@ function ProductCard({ product }: { product: Product }) {
 ```
 
 **3. Micro-interactions & Polish**
+
 ```tsx
 // Final: Delightful interactions added
 function ProductCard({ product, onAddToCart }: ProductCardProps) {
@@ -142,7 +149,7 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
           alt={product.name}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
-        
+
         {/* Sale badge with animation */}
         {product.onSale && (
           <motion.div
@@ -159,13 +166,13 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
         <h3 className="text-xl font-semibold text-gray-900 line-clamp-2 transition-colors group-hover:text-blue-600">
           {product.name}
         </h3>
-        
+
         <div className="flex items-baseline gap-2">
           <motion.span
             className="text-2xl font-bold text-blue-600"
             key={product.price} // Re-animate on price change
-            initial={{ scale: 1.2, color: '#ef4444' }}
-            animate={{ scale: 1, color: '#2563eb' }}
+            initial={{ scale: 1.2, color: "#ef4444" }}
+            animate={{ scale: 1, color: "#2563eb" }}
           >
             ${product.price}
           </motion.span>
@@ -181,9 +188,10 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
           onClick={handleAddToCart}
           className={`
             w-full rounded-lg px-6 py-3 font-medium text-white transition-all
-            ${isAdded 
-              ? 'bg-green-500 scale-105' 
-              : 'bg-blue-600 hover:bg-blue-700 active:scale-95'
+            ${
+              isAdded
+                ? "bg-green-500 scale-105"
+                : "bg-blue-600 hover:bg-blue-700 active:scale-95"
             }
           `}
         >
@@ -193,7 +201,7 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
               Added!
             </span>
           ) : (
-            'Add to Cart'
+            "Add to Cart"
           )}
         </button>
       </div>
@@ -203,12 +211,14 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
 ```
 
 **Expected Outcome:**
+
 - Visual appeal increased 5x
 - Engagement metrics improve 20-40% (typical)
 - User delight through micro-interactions
 - Maintains accessibility (ARIA labels, keyboard navigation)
 
 ---
+
 ---
 
 ## Patterns & Templates
@@ -218,27 +228,28 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
 **When to use:** Modern, premium aesthetic (works well with colorful backgrounds)
 
 ```tsx
-function GlassCard({ children, className = '' }: GlassCardProps) {
+function GlassCard({ children, className = "" }: GlassCardProps) {
   return (
-    <div className={`
+    <div
+      className={`
       relative overflow-hidden rounded-2xl
       backdrop-blur-xl backdrop-saturate-150
       bg-white/10 border border-white/20
       shadow-xl shadow-black/5
       ${className}
-    `}>
+    `}
+    >
       {/* Optional gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-50" />
-      
-      <div className="relative z-10 p-6">
-        {children}
-      </div>
+
+      <div className="relative z-10 p-6">{children}</div>
     </div>
   );
 }
 ```
 
 ---
+
 ---
 
 ### Pattern 3: Skeleton Loading with Shimmer
@@ -251,7 +262,7 @@ function SkeletonCard() {
     <div className="relative overflow-hidden rounded-xl bg-gray-200 p-6">
       {/* Shimmer effect */}
       <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/50 to-transparent" />
-      
+
       {/* Skeleton content */}
       <div className="space-y-4">
         <div className="h-4 w-3/4 rounded bg-gray-300" />
@@ -280,11 +291,13 @@ function SkeletonCard() {
 ```
 
 ---
+
 ---
 
 ### ❌ Anti-Pattern 2: Ignoring Color Contrast
 
 **What it looks like:**
+
 ```css
 /* ❌ Gray text on light gray background = unreadable */
 .subtle-text {
@@ -295,11 +308,13 @@ function SkeletonCard() {
 ```
 
 **Why it fails:**
+
 - Fails WCAG AA accessibility (4.5:1 contrast for text)
 - Users with visual impairments cannot read content
 - Poor UX in bright sunlight (mobile devices)
 
 **Correct approach:**
+
 ```css
 /* ✅ Sufficient contrast */
 .readable-text {
@@ -310,17 +325,19 @@ function SkeletonCard() {
 
 /* Or use design system tokens */
 .text {
-  color: var(--color-text-primary);    /* Guaranteed 4.5:1 */
+  color: var(--color-text-primary); /* Guaranteed 4.5:1 */
   background: var(--color-bg-surface); /* Against text color */
 }
 ```
 
 ---
+
 ---
 
 ## Quality Checklist
 
 ### Visual Polish
+
 - [ ] Color palette uses max 3 primary colors + neutrals
 - [ ] Typography hierarchy clear (3-5 font sizes)
 - [ ] Spacing follows consistent scale (4px, 8px, 16px, 24px, 32px...)
@@ -329,6 +346,7 @@ function SkeletonCard() {
 - [ ] Empty states with helpful messaging
 
 ### Accessibility
+
 - [ ] Color contrast ≥4.5:1 for text (WCAG AA)
 - [ ] Focus indicators visible on all interactive elements
 - [ ] Animations respect `prefers-reduced-motion`
@@ -336,6 +354,7 @@ function SkeletonCard() {
 - [ ] Keyboard navigation works (Tab, Enter, Esc)
 
 ### Responsive Design
+
 - [ ] Mobile-first approach (320px base)
 - [ ] Breakpoints: sm (640px), md (768px), lg (1024px), xl (1280px)
 - [ ] Touch targets ≥44x44px (mobile)
@@ -343,6 +362,7 @@ function SkeletonCard() {
 - [ ] Images responsive (`max-width: 100%`, `height: auto`)
 
 ### Performance
+
 - [ ] Animations use `transform` and `opacity` (GPU-accelerated)
 - [ ] Images optimized (WebP, lazy loading)
 - [ ] CSS bundle <50KB (after minification)

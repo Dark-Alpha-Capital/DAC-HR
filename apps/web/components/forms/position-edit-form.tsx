@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
@@ -43,7 +41,7 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 import { updatePosition } from "@/lib/actions/update-position";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import type { Position } from "@workspace/db/schema";
 import { RichTextEditorField } from "@/components/rich-text-editor";
 import { cn } from "@workspace/ui/lib/utils";
@@ -109,11 +107,11 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
             action: {
               label: "View Position",
               onClick: () => {
-                router.push(`/positions/${result.data?.slug}`);
+                router.navigate({ to: `/positions/${result.data?.slug}` });
               },
             },
           });
-          router.push(`/positions/${result.data?.slug}`);
+          router.navigate({ to: `/positions/${result.data?.slug}` });
         } else {
           toast("Failed to update position", {
             position: "bottom-right",

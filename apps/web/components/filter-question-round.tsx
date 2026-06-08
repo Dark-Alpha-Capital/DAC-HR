@@ -1,7 +1,6 @@
-"use client";
+import { useUrlSearchParams } from "@/lib/hooks/use-url-search-params";
 
 import React, { useOptimistic, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -21,8 +20,7 @@ const FilterQuestionRound = ({
     name: string;
   }[];
 }) => {
-  const searchParams = useSearchParams();
-  const router = useRouter();
+  const { searchParams, setSearchParams } = useUrlSearchParams();
   const [isPending, startTransition] = useTransition();
   const [selectedRounds, setSelectedRounds] = useOptimistic(
     searchParams.getAll("round"),
@@ -40,10 +38,8 @@ const FilterQuestionRound = ({
       newSelected.forEach((round) => params.append("round", round));
       setSelectedRounds(newSelected);
 
-      router.push(`?${params.toString()}`, {
-        scroll: false,
-      });
-    });
+      setSearchParams(params);
+  });
   };
 
   return (
@@ -66,7 +62,7 @@ const FilterQuestionRound = ({
         <DropdownMenuContent className="w-56">
           <DropdownMenuLabel>Filter by Round</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {rounds.length === 0 ? (
+          {!rounds || rounds.length === 0 ? (
             <div className="px-2 py-1.5 text-sm text-muted-foreground">
               No rounds available
             </div>

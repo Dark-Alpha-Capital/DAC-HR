@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dialog,
@@ -79,58 +77,63 @@ export default function DocumentPreviewDialog({
   const previewRequestIdRef = useRef(0);
   const fileType = getFileType(document.url);
 
-  const loadPreview = useCallback(async (requestId: number, signal: AbortSignal) => {
-    setIsLoading(true);
-    setError(null);
-    setPreviewUrl(null);
-    setTextContent(null);
+  const loadPreview = useCallback(
+    async (requestId: number, signal: AbortSignal) => {
+      setIsLoading(true);
+      setError(null);
+      setPreviewUrl(null);
+      setTextContent(null);
 
-    try {
-      const signedUrl = await getSignedUrl(document.url, signal);
-      if (signal.aborted || previewRequestIdRef.current !== requestId) {
-        return;
-      }
-
-      if (fileType === "txt") {
-        // Fetch and display text content
-        const response = await fetch(signedUrl, { signal });
-        if (!response.ok) {
-          throw new Error("Failed to fetch document");
-        }
-        const text = await response.text();
+      try {
+        const signedUrl = await getSignedUrl(document.url, signal);
         if (signal.aborted || previewRequestIdRef.current !== requestId) {
           return;
         }
-        setTextContent(text);
-      } else if (fileType === "pdf") {
-        // Set URL for PDF iframe
-        setPreviewUrl(signedUrl);
-      } else if (fileType === "docx") {
-        // DOCX preview - we'll show a message and offer download
-        setPreviewUrl(signedUrl);
-      } else {
-        setError("Unsupported file type for preview");
-      }
-    } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") {
-        return;
-      }
 
-      if (signal.aborted || previewRequestIdRef.current !== requestId) {
-        return;
-      }
+        if (fileType === "txt") {
+          // Fetch and display text content
+          const response = await fetch(signedUrl, { signal });
+          if (!response.ok) {
+            throw new Error("Failed to fetch document");
+          }
+          const text = await response.text();
+          if (signal.aborted || previewRequestIdRef.current !== requestId) {
+            return;
+          }
+          setTextContent(text);
+        } else if (fileType === "pdf") {
+          // Set URL for PDF iframe
+          setPreviewUrl(signedUrl);
+        } else if (fileType === "docx") {
+          // DOCX preview - we'll show a message and offer download
+          setPreviewUrl(signedUrl);
+        } else {
+          setError("Unsupported file type for preview");
+        }
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") {
+          return;
+        }
 
-      console.error("Error loading preview:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to load document preview",
-      );
-      toast.error("Failed to load document preview");
-    } finally {
-      if (!signal.aborted && previewRequestIdRef.current === requestId) {
-        setIsLoading(false);
+        if (signal.aborted || previewRequestIdRef.current !== requestId) {
+          return;
+        }
+
+        console.error("Error loading preview:", err);
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load document preview",
+        );
+        toast.error("Failed to load document preview");
+      } finally {
+        if (!signal.aborted && previewRequestIdRef.current === requestId) {
+          setIsLoading(false);
+        }
       }
-    }
-  }, [document.url, fileType]);
+    },
+    [document.url, fileType],
+  );
 
   useEffect(() => {
     if (!open || !document.url) {

@@ -10,18 +10,20 @@ export const insertAuditLog = async (params: {
   details: Record<string, unknown>;
 }) => {
   try {
-    const [logEntry] = await db
-      .insert(auditLog)
-      .values({
-        userId: params.userId,
-        action: params.action,
-        entityType: params.entityType,
-        entityId: params.entityId,
-        details: params.details,
-      })
-      .returning();
+    // const [logEntry] = await db
+    //   .insert(auditLog)
+    //   .values({
+    //     userId: params.userId,
+    //     action: params.action,
+    //     entityType: params.entityType,
+    //     entityId: params.entityId,
+    //     details: params.details,
+    //   })
+    //   .returning();
 
-    return logEntry;
+    // return logEntry;
+
+
   } catch (error) {
     console.error("Error inserting audit log", error);
     return null;

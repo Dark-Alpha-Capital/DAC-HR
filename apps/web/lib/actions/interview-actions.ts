@@ -1,5 +1,3 @@
-"use server";
-
 import { db } from "@workspace/db";
 import {
   interview,
@@ -7,10 +5,7 @@ import {
   application,
 } from "@workspace/db/schema";
 import { and, eq } from "@workspace/db";
-import { revalidatePath, updateTag } from "next/cache";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
-import { after } from "next/server";
+import { getSession } from "@/lib/middleware/auth-guard";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export type InterviewRoundData = {
@@ -30,9 +25,7 @@ export type InterviewRoundData = {
 export async function saveInterviewRound(
   data: InterviewRoundData & { interviewId?: string },
 ) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { success: false, error: "Unauthorized" };
@@ -102,15 +95,10 @@ export async function saveInterviewRound(
       .from(application)
       .where(eq(application.id, data.applicationId))
       .limit(1);
-
-    updateTag(`application-${data.applicationId}`);
     if (app?.candidateId) {
-      updateTag(`candidate-applications-${app.candidateId}`);
-      revalidatePath(`/candidates/${app.candidateId}`);
     }
 
-    after(async () => {
-      await insertAuditLog({
+    insertAuditLog({
         userId: session.user.id,
         action: data.interviewId
           ? "update_interview_round"
@@ -148,8 +136,7 @@ export async function saveInterviewRound(
             isUpdate: !!data.interviewId,
           },
         },
-      });
-    });
+      }).catch((error) => console.error("Audit log error:", error));
 
     return { success: true, interviewId };
   } catch (error) {
@@ -166,9 +153,7 @@ export async function startInterviewRound(data: {
   positionRoundTemplateId: string;
   interviewerId: string;
 }) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { success: false, error: "Unauthorized" };
@@ -202,17 +187,12 @@ export async function startInterviewRound(data: {
       .limit(1);
 
     if (newInterview) {
-      updateTag(`interview-${newInterview.id}`);
     }
-    updateTag(`application-${data.applicationId}`);
     if (app?.candidateId) {
-      updateTag(`candidate-applications-${app.candidateId}`);
-      revalidatePath(`/candidates/${app.candidateId}`);
     }
 
     if (newInterview?.id) {
-      after(async () => {
-        await insertAuditLog({
+      insertAuditLog({
           userId: session.user.id,
           action: "start_interview_round",
           entityType: "interview",
@@ -241,8 +221,7 @@ export async function startInterviewRound(data: {
               timestamp: new Date().toISOString(),
             },
           },
-        });
-      });
+        }).catch((error) => console.error("Audit log error:", error));
     }
 
     return { success: true, interviewId: newInterview?.id };

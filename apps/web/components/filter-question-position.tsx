@@ -1,7 +1,6 @@
-"use client";
+import { useUrlSearchParams } from "@/lib/hooks/use-url-search-params";
 
 import React, { useOptimistic, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -21,8 +20,7 @@ const FilterQuestionPosition = ({
     name: string;
   }[];
 }) => {
-  const searchParams = useSearchParams();
-  const router = useRouter();
+  const { searchParams, setSearchParams } = useUrlSearchParams();
   const [isPending, startTransition] = useTransition();
   const [selectedPositions, setSelectedPositions] = useOptimistic(
     searchParams.getAll("position"),
@@ -40,10 +38,8 @@ const FilterQuestionPosition = ({
       newSelected.forEach((pos) => params.append("position", pos));
       setSelectedPositions(newSelected);
 
-      router.push(`?${params.toString()}`, {
-        scroll: false,
-      });
-    });
+      setSearchParams(params);
+  });
   };
 
   return (
@@ -66,7 +62,7 @@ const FilterQuestionPosition = ({
         <DropdownMenuContent className="w-56">
           <DropdownMenuLabel>Filter by Position</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {positions.length === 0 ? (
+          {!positions || positions.length === 0 ? (
             <div className="px-2 py-1.5 text-sm text-muted-foreground">
               No positions available
             </div>

@@ -1,13 +1,8 @@
-"use server";
-
 import { db } from "@workspace/db";
 import { interview, application } from "@workspace/db/schema";
-import { revalidatePath, updateTag } from "next/cache";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
+import { getSession } from "@/lib/middleware/auth-guard";
 import { eq } from "@workspace/db";
 import { getInterviewById } from "@workspace/db/repositories/interview-repository";
-import { after } from "next/server";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export interface UpdateInterviewInput {
@@ -19,9 +14,7 @@ export interface UpdateInterviewInput {
 }
 
 export const updateInterview = async (data: UpdateInterviewInput) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -66,18 +59,9 @@ export const updateInterview = async (data: UpdateInterviewInput) => {
       .from(application)
       .where(eq(application.id, currentInterview.applicationId))
       .limit(1);
-
-    updateTag(`interview-${interviewId}`);
-    updateTag(`application-${currentInterview.applicationId}`);
     if (app?.candidateId) {
-      updateTag(`candidate-applications-${app.candidateId}`);
-      revalidatePath(`/candidates/${app.candidateId}`);
     }
-    revalidatePath(`/applications/${currentInterview.applicationId}`);
-    revalidatePath(`/interviews/${interviewId}`);
-
-    after(async () => {
-      await insertAuditLog({
+    insertAuditLog({
         userId: session.user.id,
         action: "update_interview",
         entityType: "interview",
@@ -110,8 +94,7 @@ export const updateInterview = async (data: UpdateInterviewInput) => {
             previousStatus: currentInterview.status,
           },
         },
-      });
-    });
+      }).catch((error) => console.error("Audit log error:", error));
 
     return { success: true, data: updatedInterview };
   } catch (error) {

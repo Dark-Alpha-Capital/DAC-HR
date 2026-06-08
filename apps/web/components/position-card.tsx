@@ -1,5 +1,5 @@
 import React from "react";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@workspace/ui/components/button";
 import {
   Card,
@@ -85,13 +85,13 @@ const PositionCard = ({
       <CardFooter className="border-t">
         <div className="flex gap-2 w-full">
           <Button variant="secondary" size="sm" asChild>
-            <Link href={`/positions/${positionSlug}`}>
+            <Link to={`/positions/${positionSlug}` as any}>
               <Eye className="h-4 w-4" />
               <span className="sr-only">View</span>
             </Link>
           </Button>
           <Button variant="secondary" size="sm" asChild>
-            <Link href={`/positions/${positionSlug}/edit`}>
+            <Link to={`/positions/${positionSlug}/edit` as any}>
               <Pencil className="h-4 w-4" />
               <span className="sr-only">Edit</span>
             </Link>

@@ -1,13 +1,11 @@
-"use client";
+import { useUrlSearchParams } from "@/lib/hooks/use-url-search-params";
 
 import React, { useTransition, useEffect, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@workspace/ui/components/input";
 import { Tag } from "lucide-react";
 
 const FilterDocumentTags = () => {
-  const searchParams = useSearchParams();
-  const router = useRouter();
+  const { searchParams, setSearchParams } = useUrlSearchParams();
   const [isPending, startTransition] = useTransition();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -24,10 +22,8 @@ const FilterDocumentTags = () => {
         } else {
           params.delete("tags");
         }
-        router.push(`?${params.toString()}`, {
-          scroll: false,
-        });
-      });
+        setSearchParams(params);
+    });
     }, 300);
   };
 

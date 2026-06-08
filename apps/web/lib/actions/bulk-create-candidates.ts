@@ -1,5 +1,3 @@
-"use server";
-
 import { db, inArray } from "@workspace/db";
 import {
   candidate,
@@ -9,10 +7,7 @@ import {
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { candidateFormSchema } from "../schemas/candidate-form-schema";
 import type { CandidateFormSchema } from "../schemas/candidate-form-schema";
-import { revalidatePath, updateTag } from "next/cache";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
-import { after } from "next/server";
+import { getSession } from "@/lib/middleware/auth-guard";
 
 export type BulkCandidateRow = {
   firstName: string;
@@ -55,9 +50,7 @@ const checkExistingEmails = async (emails: string[]): Promise<Set<string>> => {
 export const bulkCreateCandidates = async (
   candidates: BulkCandidateRow[],
 ): Promise<BulkCandidateResult> => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return {
@@ -213,15 +206,11 @@ export const bulkCreateCandidates = async (
     });
 
     if (auditPayloads.length > 0) {
-      after(async () => {
-        await Promise.allSettled(auditPayloads.map((payload) => insertAuditLog(payload)));
-      });
+      Promise.allSettled(auditPayloads.map((payload) => insertAuditLog(payload)))
+        .catch((error) => console.error("Audit log error:", error));
     }
 
     // Revalidate cache only after successful transaction
-    updateTag("candidates");
-    revalidatePath("/candidates");
-
     return {
       success: true,
       created: createdCandidates.length,

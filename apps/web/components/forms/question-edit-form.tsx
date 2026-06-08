@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
@@ -20,7 +18,7 @@ import {
 import { questionEditFormSchema } from "@/lib/schemas/question-form-schema";
 import { Loader2 } from "lucide-react";
 import { updateQuestion } from "@/lib/actions/update-question";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import type { Question } from "@workspace/db/schema";
 
 interface QuestionEditFormProps {
@@ -47,11 +45,11 @@ const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
             action: {
               label: "View Question",
               onClick: () => {
-                router.push(`/questions/${result.data?.id}`);
+                router.navigate({ to: `/questions/${result.data?.id}` });
               },
             },
           });
-          router.push(`/questions/${result.data?.id}`);
+          router.navigate({ to: `/questions/${result.data?.id}` });
         } else {
           toast.error(
             typeof result.error === "string"

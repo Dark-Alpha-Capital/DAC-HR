@@ -1,5 +1,3 @@
-"use server";
-
 import { db } from "@workspace/db";
 import { questionBank } from "@workspace/db/schema";
 import {
@@ -8,20 +6,15 @@ import {
   QuestionEditFormSchema,
   questionEditFormSchema,
 } from "../schemas/question-form-schema";
-import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
+import { getSession } from "@/lib/middleware/auth-guard";
 import { eq } from "@workspace/db";
-import { after } from "next/server";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const updateQuestion = async (
   questionId: string,
   data: QuestionEditFormSchema,
 ) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -47,13 +40,7 @@ export const updateQuestion = async (
     if (!updatedQuestion) {
       return { error: "Question not found" };
     }
-
-    revalidatePath("/questions");
-    revalidatePath(`/questions/${updatedQuestion.id}`);
-    revalidatePath(`/questions/${updatedQuestion.id}/edit`);
-
-    after(async () => {
-      await insertAuditLog({
+    insertAuditLog({
         userId: session.user.id,
         action: "update_question",
         entityType: "question",
@@ -76,8 +63,7 @@ export const updateQuestion = async (
             timestamp: new Date().toISOString(),
           },
         },
-      });
-    });
+      }).catch((error) => console.error("Audit log error:", error));
 
     return { success: true, data: updatedQuestion };
   } catch (error) {

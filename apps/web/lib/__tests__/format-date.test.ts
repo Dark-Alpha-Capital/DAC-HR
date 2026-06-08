@@ -13,12 +13,15 @@ describe("department formatting utilities", () => {
   });
 
   test("formatDepartment joins mapped labels for arrays", () => {
-    expect(formatDepartment(["deal-team", "operations"]))
-      .toBe("Deal Team, Operations");
+    expect(formatDepartment(["deal-team", "operations"])).toBe(
+      "Deal Team, Operations",
+    );
   });
 
   test("formatDepartments returns mapped labels as an array", () => {
-    expect(formatDepartments(["management", "legal"]))
-      .toEqual(["Management", "Legal"]);
+    expect(formatDepartments(["management", "legal"])).toEqual([
+      "Management",
+      "Legal",
+    ]);
   });
 });

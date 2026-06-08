@@ -1,4 +1,3 @@
-import { cacheLife, cacheTag } from "next/cache";
 import { getCandidateWithApplications } from "@workspace/db/repositories/candidate-repository";
 import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
 import {
@@ -8,27 +7,14 @@ import {
 } from "@workspace/db/queries";
 
 export async function getCachedCandidate(uid: string) {
-  "use cache";
-  cacheLife("hr-data");
-  cacheTag("candidates");
-  cacheTag(`candidate-applications-${uid}`);
-
   return getCandidateWithApplications(uid);
 }
 
 export async function getCachedDocuments(uid: string) {
-  "use cache";
-  cacheLife("hr-data");
-  cacheTag(`candidate-documents-${uid}`);
-
   return getDocumentsByCandidateId(uid);
 }
 
 export async function getCachedPositions() {
-  "use cache";
-  cacheLife("hr-metadata");
-  cacheTag("positions");
-
   return getPositions();
 }
 
@@ -39,10 +25,6 @@ export async function getCachedCandidatesWithPositionsFiltered(
   page: number,
   limit: number,
 ) {
-  "use cache";
-  cacheLife("hr-data");
-  cacheTag("candidates");
-
   return getCandidatesWithPositionsFiltered(
     nameSearch,
     emailSearch,
@@ -60,10 +42,6 @@ export async function getCachedApplicationsFiltered(
   page: number,
   limit: number,
 ) {
-  "use cache";
-  cacheLife("hr-data");
-  cacheTag("candidates");
-
   return getApplicationsFiltered(
     nameSearch,
     emailSearch,

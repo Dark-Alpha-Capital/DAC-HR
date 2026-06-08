@@ -1,5 +1,3 @@
-"use client";
-
 import { Badge } from "@workspace/ui/components/badge";
 import {
   Calendar,
@@ -11,7 +9,7 @@ import {
   Eye,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@workspace/ui/components/button";
 
 interface InterviewDetailCardProps {
@@ -127,7 +125,7 @@ export default function InterviewDetailCard({
       </div>
       <div className="pt-2 border-t">
         <Button size="sm" variant="secondary" asChild>
-          <Link href={`/interviews/${interview.id}`}>
+          <Link to={`/interviews/${interview.id}` as any}>
             <Eye className="h-3 w-3 mr-2" />
             View Interview
           </Link>

@@ -1,25 +1,18 @@
-"use server";
-
 import { db } from "@workspace/db";
 import { employee } from "@workspace/db/schema";
 import {
   EmployeeFormSchema,
   employeeFormSchema,
 } from "../schemas/employee-form-schema";
-import { revalidatePath, updateTag } from "next/cache";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
+import { getSession } from "@/lib/middleware/auth-guard";
 import { eq } from "@workspace/db";
-import { after } from "next/server";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const updateEmployee = async (
   employeeId: string,
   data: EmployeeFormSchema,
 ) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -51,14 +44,7 @@ export const updateEmployee = async (
     if (!updatedEmployee) {
       return { error: "Failed to update employee" };
     }
-
-    updateTag("employees");
-    updateTag(`employee-${employeeId}`);
-    revalidatePath("/employees");
-    revalidatePath(`/employees/${employeeId}`);
-
-    after(async () => {
-      await insertAuditLog({
+    insertAuditLog({
         userId: session.user.id,
         action: "update_employee",
         entityType: "employee",
@@ -91,8 +77,7 @@ export const updateEmployee = async (
             timestamp: new Date().toISOString(),
           },
         },
-      });
-    });
+      }).catch((error) => console.error("Audit log error:", error));
 
     return { success: true, data: updatedEmployee };
   } catch (error) {

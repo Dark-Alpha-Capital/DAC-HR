@@ -28,6 +28,7 @@ This Skill provides Codex with specific guidance on how to adhere to coding stan
 **Always start with mobile layout, then enhance for larger screens.**
 
 Bad (desktop-first):
+
 ```css
 .container {
   width: 1200px;
@@ -44,6 +45,7 @@ Bad (desktop-first):
 ```
 
 Good (mobile-first):
+
 ```css
 .container {
   width: 100%;
@@ -66,6 +68,7 @@ Good (mobile-first):
 ```
 
 **Why mobile-first:**
+
 - Forces content prioritization
 - Better performance on mobile (no overriding)
 - Progressive enhancement over graceful degradation
@@ -77,6 +80,7 @@ Good (mobile-first):
 Common breakpoint systems:
 
 Tailwind:
+
 ```
 sm: 640px   (small tablets)
 md: 768px   (tablets)
@@ -86,6 +90,7 @@ xl: 1280px  (desktops)
 ```
 
 Bootstrap:
+
 ```
 sm: 576px
 md: 768px
@@ -97,14 +102,18 @@ xxl: 1400px
 **Check existing codebase for breakpoint definitions before creating new ones.**
 
 Usage (Tailwind):
+
 ```jsx
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
 ```
 
 Usage (CSS):
+
 ```css
-@media (min-width: 768px) { }
-@media (min-width: 1024px) { }
+@media (min-width: 768px) {
+}
+@media (min-width: 1024px) {
+}
 ```
 
 **Never use arbitrary breakpoints like 850px or 1150px unless explicitly required.**
@@ -114,13 +123,21 @@ Usage (CSS):
 **Use flexible containers that adapt to screen size:**
 
 Bad (fixed widths):
+
 ```css
-.container { width: 1200px; }
-.sidebar { width: 300px; }
-.content { width: 900px; }
+.container {
+  width: 1200px;
+}
+.sidebar {
+  width: 300px;
+}
+.content {
+  width: 900px;
+}
 ```
 
 Good (fluid):
+
 ```css
 .container {
   width: 100%;
@@ -141,6 +158,7 @@ Good (fluid):
 ```
 
 **Patterns for fluid layouts:**
+
 - Flexbox: `flex: 1`, `flex-grow`, `flex-shrink`
 - Grid: `1fr`, `minmax()`, `auto-fit`, `auto-fill`
 - Percentage widths: `width: 100%`, `max-width: 1200px`
@@ -151,6 +169,7 @@ Good (fluid):
 **Use rem/em for scalability and accessibility:**
 
 Bad:
+
 ```css
 font-size: 16px;
 padding: 20px;
@@ -159,14 +178,16 @@ border-radius: 8px;
 ```
 
 Good:
+
 ```css
-font-size: 1rem;      /* 16px base */
-padding: 1.25rem;     /* 20px */
-margin: 0.625rem;     /* 10px */
+font-size: 1rem; /* 16px base */
+padding: 1.25rem; /* 20px */
+margin: 0.625rem; /* 10px */
 border-radius: 0.5rem; /* 8px */
 ```
 
 **When to use each unit:**
+
 - `rem`: Font sizes, spacing, layout dimensions (scales with root font size)
 - `em`: Component-relative sizing (scales with parent font size)
 - `%`: Widths, heights relative to parent
@@ -175,6 +196,7 @@ border-radius: 0.5rem; /* 8px */
 - `ch`: Text-based widths (e.g., `max-width: 65ch` for readable line length)
 
 **Framework utilities handle this automatically:**
+
 ```jsx
 <div className="text-base p-5 m-2.5 rounded-lg">
 ```
@@ -184,6 +206,7 @@ border-radius: 0.5rem; /* 8px */
 **Minimum touch target size: 44x44px (iOS) / 48x48px (Android)**
 
 Bad:
+
 ```css
 .icon-button {
   width: 24px;
@@ -192,6 +215,7 @@ Bad:
 ```
 
 Good:
+
 ```css
 .icon-button {
   width: 24px;
@@ -204,6 +228,7 @@ Good:
 ```
 
 **Touch target checklist:**
+
 - [ ] Buttons minimum 44x44px
 - [ ] Links in text have adequate spacing
 - [ ] Form inputs have sufficient height (min 44px)
@@ -215,18 +240,29 @@ Good:
 **Maintain readable font sizes without zoom:**
 
 Bad:
+
 ```css
-body { font-size: 12px; }
-.small-text { font-size: 10px; }
+body {
+  font-size: 12px;
+}
+.small-text {
+  font-size: 10px;
+}
 ```
 
 Good:
+
 ```css
-body { font-size: 1rem; } /* 16px minimum */
-.small-text { font-size: 0.875rem; } /* 14px minimum */
+body {
+  font-size: 1rem;
+} /* 16px minimum */
+.small-text {
+  font-size: 0.875rem;
+} /* 14px minimum */
 ```
 
 **Typography guidelines:**
+
 - Body text: 16px (1rem) minimum
 - Small text: 14px (0.875rem) minimum
 - Line height: 1.5 for body, 1.2 for headings
@@ -234,6 +270,7 @@ body { font-size: 1rem; } /* 16px minimum */
 - Contrast: WCAG AA minimum (4.5:1 for normal text)
 
 Responsive typography:
+
 ```css
 h1 {
   font-size: 2rem;
@@ -253,6 +290,7 @@ h1 {
 ```
 
 Or with clamp (fluid):
+
 ```css
 h1 {
   font-size: clamp(2rem, 5vw, 3rem);
@@ -264,6 +302,7 @@ h1 {
 **Show most important content first, hide or collapse secondary content:**
 
 Bad:
+
 ```jsx
 <div>
   <Sidebar /> {/* Full sidebar on mobile */}
@@ -272,6 +311,7 @@ Bad:
 ```
 
 Good:
+
 ```jsx
 <div className="flex flex-col lg:flex-row">
   <MainContent className="order-1" />
@@ -280,6 +320,7 @@ Good:
 ```
 
 **Strategies:**
+
 - Hide non-essential elements on mobile
 - Use hamburger menus for navigation
 - Collapse accordions/tabs for secondary content
@@ -291,34 +332,38 @@ Good:
 **Serve appropriate images for device size:**
 
 Bad:
+
 ```html
-<img src="hero-4000x3000.jpg" alt="Hero">
+<img src="hero-4000x3000.jpg" alt="Hero" />
 ```
 
 Good:
+
 ```html
 <img
   src="hero-800x600.jpg"
   srcset="
-    hero-400x300.jpg 400w,
-    hero-800x600.jpg 800w,
+    hero-400x300.jpg    400w,
+    hero-800x600.jpg    800w,
     hero-1600x1200.jpg 1600w
   "
   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 800px"
   alt="Hero"
->
+/>
 ```
 
 Or with modern formats:
+
 ```html
 <picture>
-  <source srcset="hero.avif" type="image/avif">
-  <source srcset="hero.webp" type="image/webp">
-  <img src="hero.jpg" alt="Hero">
+  <source srcset="hero.avif" type="image/avif" />
+  <source srcset="hero.webp" type="image/webp" />
+  <img src="hero.jpg" alt="Hero" />
 </picture>
 ```
 
 **Framework-specific:**
+
 ```jsx
 // Next.js
 <Image
@@ -335,6 +380,7 @@ Or with modern formats:
 **Verify layouts at key breakpoints before completing work:**
 
 Test checklist:
+
 - [ ] Mobile (375px - iPhone SE)
 - [ ] Mobile large (414px - iPhone Pro Max)
 - [ ] Tablet (768px - iPad)
@@ -342,12 +388,14 @@ Test checklist:
 - [ ] Desktop (1440px)
 
 **Testing methods:**
+
 1. Browser DevTools responsive mode
 2. Real device testing (iOS/Android)
 3. Browser extensions (Responsive Viewer)
 4. Automated visual regression tests
 
 **Common issues to check:**
+
 - Horizontal scrolling on mobile
 - Text overflow or truncation
 - Overlapping elements
@@ -358,6 +406,7 @@ Test checklist:
 ## Common Responsive Patterns
 
 **Navigation:**
+
 ```jsx
 // Mobile: Hamburger menu
 // Desktop: Horizontal nav
@@ -371,6 +420,7 @@ Test checklist:
 ```
 
 **Grid layouts:**
+
 ```css
 .grid {
   display: grid;
@@ -379,15 +429,20 @@ Test checklist:
 }
 
 @media (min-width: 640px) {
-  .grid { grid-template-columns: repeat(2, 1fr); }
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (min-width: 1024px) {
-  .grid { grid-template-columns: repeat(4, 1fr); }
+  .grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 ```
 
 **Sidebar layouts:**
+
 ```css
 .layout {
   display: flex;
@@ -398,8 +453,12 @@ Test checklist:
   .layout {
     flex-direction: row;
   }
-  .sidebar { width: 300px; }
-  .content { flex: 1; }
+  .sidebar {
+    width: 300px;
+  }
+  .content {
+    flex: 1;
+  }
 }
 ```
 

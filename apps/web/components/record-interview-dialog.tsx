@@ -1,7 +1,5 @@
-"use client";
-
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import { Button } from "@workspace/ui/components/button";
 import {
   Dialog,
@@ -97,7 +95,7 @@ export default function RecordInterviewDialog({
       } else {
         toast.success("Interview recorded successfully");
         onOpenChange(false);
-        router.refresh();
+        router.invalidate();
       }
     } catch (error) {
       toast.error("An error occurred while recording the interview");

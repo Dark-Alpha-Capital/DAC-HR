@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
@@ -21,7 +19,7 @@ import {
   InputGroupTextarea,
 } from "@workspace/ui/components/input-group";
 import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import { candidateFormSchema } from "@/lib/schemas/candidate-form-schema";
 import {
   Select,
@@ -103,11 +101,11 @@ const CandidateEditForm = ({
             action: {
               label: "View Candidate",
               onClick: () => {
-                router.push(`/candidates/${result.data?.id}`);
+                router.navigate({ to: `/candidates/${result.data?.id}` });
               },
             },
           });
-          router.push(`/candidates/${result.data?.id}`);
+          router.navigate({ to: `/candidates/${result.data?.id}` });
         }
       });
     },

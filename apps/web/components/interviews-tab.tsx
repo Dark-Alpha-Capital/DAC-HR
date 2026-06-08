@@ -1,7 +1,5 @@
-"use client";
-
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
   Card,
@@ -122,7 +120,7 @@ export default function InterviewsTab({ candidate }: { candidate: Candidate }) {
 
       // Wait a moment for the toast to be visible, then redirect
       setTimeout(() => {
-        router.push("/candidates");
+        router.navigate({ to: "/candidates", search: {} as any });
       }, 1000);
     } catch (error) {
       toast.error("Failed to save interview round", {

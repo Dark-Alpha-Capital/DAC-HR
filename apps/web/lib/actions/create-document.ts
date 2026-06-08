@@ -1,7 +1,3 @@
-"use server";
-
-
-
 import { db } from "@workspace/db";
 import { documents } from "@workspace/db/schema";
 import slugify from "slugify";
@@ -9,19 +5,14 @@ import {
   DocumentFormSchema,
   documentFormSchema,
 } from "../schemas/document-form-schema";
-import { revalidatePath, updateTag } from "next/cache";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
-import { after } from "next/server";
+import { getSession } from "@/lib/middleware/auth-guard";
 import { setDocumentCategories } from "@workspace/db/repositories/document-repository";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const createDocument = async (data: DocumentFormSchema) => {
   console.log("in create document");
 
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -53,12 +44,7 @@ export const createDocument = async (data: DocumentFormSchema) => {
     if (categoryIds && categoryIds.length > 0) {
       await setDocumentCategories(newDocument?.id || "", categoryIds);
     }
-
-    updateTag("documents");
-    revalidatePath("/documents");
-
-    after(async () => {
-      await insertAuditLog({
+    insertAuditLog({
         userId: session.user.id,
         action: "create_document",
         entityType: "document",
@@ -92,8 +78,7 @@ export const createDocument = async (data: DocumentFormSchema) => {
             timestamp: new Date().toISOString(),
           },
         },
-      });
-    });
+      }).catch((error) => console.error("Audit log error:", error));
 
     return { success: true, data: newDocument };
   } catch (error) {
