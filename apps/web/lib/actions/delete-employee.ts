@@ -1,19 +1,12 @@
-"use server";
-
 import { db } from "@workspace/db";
 import { employee } from "@workspace/db/schema";
-import { revalidatePath, updateTag } from "next/cache";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
+import { getSession } from "@/lib/middleware/auth-guard";
 import { eq } from "@workspace/db";
-import { after } from "next/server";
-import { insertAuditLog } from "@workspace/db/queries";
+import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { getEmployeeById } from "@workspace/db/queries";
 
 export const deleteEmployee = async (id: string) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -24,14 +17,8 @@ export const deleteEmployee = async (id: string) => {
     const employeeData = await getEmployeeById(id);
 
     await db.delete(employee).where(eq(employee.id, id));
-
-    updateTag("employees");
-    updateTag(`employee-${id}`);
-    revalidatePath("/employees");
-
     if (employeeData) {
-      after(async () => {
-        await insertAuditLog({
+      insertAuditLog({
           userId: session.user.id,
           action: "delete_employee",
           entityType: "employee",
@@ -55,8 +42,7 @@ export const deleteEmployee = async (id: string) => {
               timestamp: new Date().toISOString(),
             },
           },
-        });
-      });
+        }).catch((error) => console.error("Audit log error:", error));
     }
 
     return { success: true };

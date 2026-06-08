@@ -1,13 +1,8 @@
-"use server";
-
 import { db } from "@workspace/db";
 import { interview, application } from "@workspace/db/schema";
-import { revalidatePath, updateTag } from "next/cache";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
+import { getSession } from "@/lib/middleware/auth-guard";
 import { eq } from "@workspace/db";
-import { after } from "next/server";
-import { insertAuditLog } from "@workspace/db/queries";
+import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export interface CreateInterviewInput {
   applicationId: string;
@@ -17,9 +12,7 @@ export interface CreateInterviewInput {
 }
 
 export const createInterview = async (data: CreateInterviewInput) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -63,15 +56,7 @@ export const createInterview = async (data: CreateInterviewInput) => {
         .set({ status: "second_round_technical_screening" })
         .where(eq(application.id, applicationId));
     }
-
-    updateTag(`interview-${newInterview.id}`);
-    updateTag(`application-${applicationId}`);
-    updateTag(`candidate-applications-${app.candidateId}`);
-    revalidatePath(`/candidates/${app.candidateId}`);
-    revalidatePath(`/applications/${applicationId}`);
-
-    after(async () => {
-      await insertAuditLog({
+    insertAuditLog({
         userId: session.user.id,
         action: "create_interview",
         entityType: "interview",
@@ -104,8 +89,7 @@ export const createInterview = async (data: CreateInterviewInput) => {
             applicationStatus: app.status,
           },
         },
-      });
-    });
+      }).catch((error) => console.error("Audit log error:", error));
 
     return { success: true, data: newInterview };
   } catch (error) {

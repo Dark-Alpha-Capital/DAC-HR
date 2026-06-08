@@ -1,7 +1,6 @@
-"use client";
+import { useUrlSearchParams } from "@/lib/hooks/use-url-search-params";
 
 import React, { useOptimistic, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -21,8 +20,7 @@ const FilterPositionType = ({
     name: string;
   }[];
 }) => {
-  const searchParams = useSearchParams();
-  const router = useRouter();
+  const { searchParams, setSearchParams } = useUrlSearchParams();
   const [isPending, startTransition] = useTransition();
   const [selectedTypes, setSelectedTypes] = useOptimistic(
     searchParams.getAll("type"),
@@ -40,10 +38,8 @@ const FilterPositionType = ({
       newSelected.forEach((type) => params.append("type", type));
       setSelectedTypes(newSelected);
 
-      router.push(`?${params.toString()}`, {
-        scroll: false,
-      });
-    });
+      setSearchParams(params);
+  });
   };
 
   return (

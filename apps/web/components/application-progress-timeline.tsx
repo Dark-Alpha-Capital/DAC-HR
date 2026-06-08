@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useMemo } from "react";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
@@ -11,12 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,12 +29,12 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { formatDate } from "@/lib/utils";
 import RecordInterviewDialogWrapper from "./record-interview-dialog-wrapper";
 import { deleteInterview } from "@/lib/actions/delete-interview";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 
 interface Round {
   id: string;
@@ -188,7 +180,7 @@ export default function ApplicationProgressTimeline({
         toast.error(result.error);
       } else {
         toast.success("Interview deleted successfully");
-        router.refresh();
+        router.invalidate();
       }
     } catch (error) {
       toast.error("Failed to delete interview");
@@ -238,142 +230,130 @@ export default function ApplicationProgressTimeline({
 
       {/* Rounds and Interviews */}
       {rounds.length === 0 ? (
-        <div className="text-center py-12 border rounded-lg bg-muted/20">
-          <MessageSquare className="h-8 w-8 mx-auto mb-3 text-muted-foreground opacity-50" />
-          <p className="text-sm text-muted-foreground mb-1">
+        <div className="py-12 text-center text-muted-foreground">
+          <MessageSquare className="h-8 w-8 mx-auto mb-3 opacity-50" />
+          <p className="text-sm">
             No interview rounds configured for this position.
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="divide-y divide-border">
           {rounds.map((round) => {
             const roundInterviews =
               interviewsByRound.get(round.positionRoundTemplateId) || [];
             const hasInterviews = roundInterviews.length > 0;
 
             return (
-              <Card key={round.id} className="overflow-hidden">
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-1 flex-1">
-                      <CardTitle className="text-base font-semibold">
-                        {round.name}
-                      </CardTitle>
-                      {round.description && (
-                        <p className="text-sm text-muted-foreground">
-                          {round.description}
-                        </p>
-                      )}
-                    </div>
-                    <Badge variant="secondary" className="text-xs shrink-0">
-                      {roundInterviews.length} interview
-                      {roundInterviews.length !== 1 ? "s" : ""}
-                    </Badge>
+              <section key={round.id} className="py-5 first:pt-0">
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="space-y-0.5 flex-1">
+                    <h3 className="text-base font-medium">{round.name}</h3>
+                    {round.description && (
+                      <p className="text-sm text-muted-foreground">
+                        {round.description}
+                      </p>
+                    )}
                   </div>
-                </CardHeader>
-                <CardContent>
-                  {!hasInterviews ? (
-                    <div className="text-center py-8 border border-dashed rounded-lg bg-muted/20">
-                      <Circle className="h-8 w-8 mx-auto mb-3 text-muted-foreground opacity-50" />
-                      <p className="text-sm text-muted-foreground mb-1">
-                        No interviews recorded for this round yet.
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Click "Record Interview" to add an interview.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="border rounded-lg overflow-hidden">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-muted/30">
-                            <TableHead className="font-medium">
-                              Interviewer
-                            </TableHead>
-                            <TableHead className="font-medium">Date</TableHead>
-                            <TableHead className="font-medium">
-                              Status
-                            </TableHead>
-                            <TableHead className="font-medium">
-                              Rating
-                            </TableHead>
-                            <TableHead className="text-right font-medium">
-                              Actions
-                            </TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {roundInterviews.map((interview) => (
-                            <TableRow
-                              key={interview.id}
-                              className={
-                                selectedInterviewId === interview.id
-                                  ? "bg-primary/5"
-                                  : undefined
-                              }
-                            >
-                              <TableCell>
-                                {interview.interviewer
-                                  ? interview.interviewer.name ||
-                                    interview.interviewer.email
+                  <Badge variant="secondary" className="text-xs shrink-0">
+                    {roundInterviews.length} interview
+                    {roundInterviews.length !== 1 ? "s" : ""}
+                  </Badge>
+                </div>
+                {!hasInterviews ? (
+                  <div className="py-8 text-center text-muted-foreground">
+                    <Circle className="h-8 w-8 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm mb-1">
+                      No interviews recorded for this round yet.
+                    </p>
+                    <p className="text-xs">
+                      Click "Record Interview" to add an interview.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-hidden rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/30">
+                          <TableHead className="font-medium">
+                            Interviewer
+                          </TableHead>
+                          <TableHead className="font-medium">Date</TableHead>
+                          <TableHead className="font-medium">Status</TableHead>
+                          <TableHead className="font-medium">Rating</TableHead>
+                          <TableHead className="text-right font-medium">
+                            Actions
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {roundInterviews.map((interview) => (
+                          <TableRow
+                            key={interview.id}
+                            className={
+                              selectedInterviewId === interview.id
+                                ? "bg-primary/5"
+                                : undefined
+                            }
+                          >
+                            <TableCell>
+                              {interview.interviewer
+                                ? interview.interviewer.name ||
+                                  interview.interviewer.email
+                                : "-"}
+                            </TableCell>
+                            <TableCell>
+                              {interview.scheduledAt
+                                ? formatDate(interview.scheduledAt)
+                                : interview.createdAt
+                                  ? formatDate(interview.createdAt)
                                   : "-"}
-                              </TableCell>
-                              <TableCell>
-                                {interview.scheduledAt
-                                  ? formatDate(interview.scheduledAt)
-                                  : interview.createdAt
-                                    ? formatDate(interview.createdAt)
-                                    : "-"}
-                              </TableCell>
-                              <TableCell>
-                                {getStatusBadge(interview.status)}
-                              </TableCell>
-                              <TableCell>
-                                {interview.rating ? (
-                                  <div className="flex items-center gap-1">
-                                    <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
-                                    <span className="text-sm">
-                                      {interview.rating}/5
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <span className="text-muted-foreground">
-                                    -
+                            </TableCell>
+                            <TableCell>
+                              {getStatusBadge(interview.status)}
+                            </TableCell>
+                            <TableCell>
+                              {interview.rating ? (
+                                <div className="flex items-center gap-1">
+                                  <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                                  <span className="text-sm">
+                                    {interview.rating}/5
                                   </span>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex items-center justify-end gap-1">
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    className="h-8 w-8 p-0"
-                                    asChild
-                                  >
-                                    <Link href={`/interviews/${interview.id}`}>
-                                      <Eye className="h-4 w-4" />
-                                    </Link>
-                                  </Button>
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                    onClick={() =>
-                                      handleDeleteClick(interview.id)
-                                    }
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
                                 </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  asChild
+                                >
+                                  <Link to={`/interviews/${interview.id}` as any}>
+                                    <Eye className="h-4 w-4" />
+                                  </Link>
+                                </Button>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  onClick={() =>
+                                    handleDeleteClick(interview.id)
+                                  }
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </section>
             );
           })}
         </div>

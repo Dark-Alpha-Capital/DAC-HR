@@ -1,5 +1,3 @@
-"use client";
-
 import { DocsNav } from "./docs-nav";
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
 import { Button } from "@workspace/ui/components/button";

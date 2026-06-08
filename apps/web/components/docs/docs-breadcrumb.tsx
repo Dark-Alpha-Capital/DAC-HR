@@ -1,12 +1,10 @@
-"use client";
-
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link } from "@tanstack/react-router";
+import { useRouterState } from "@tanstack/react-router";
 import { ChevronRight, Home } from "lucide-react";
 import { docsNavItems } from "./docs-nav";
 
 export function DocsBreadcrumb() {
-  const pathname = usePathname();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   const getBreadcrumbs = () => {
     const breadcrumbs: { title: string; href: string }[] = [
@@ -65,9 +63,7 @@ export function DocsBreadcrumb() {
           {index > 0 && <ChevronRight className="h-4 w-4 mx-1" />}
           {index === 0 ? (
             <Link
-              href={{
-                pathname: crumb.href,
-              }}
+              to={crumb.href}
               className="hover:text-foreground transition-colors"
             >
               <Home className="h-4 w-4" />
@@ -76,9 +72,7 @@ export function DocsBreadcrumb() {
             <span className="text-foreground font-medium">{crumb.title}</span>
           ) : (
             <Link
-              href={{
-                pathname: crumb.href,
-              }}
+              to={crumb.href}
               className="hover:text-foreground transition-colors"
             >
               {crumb.title}

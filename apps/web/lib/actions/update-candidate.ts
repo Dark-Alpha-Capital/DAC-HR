@@ -1,5 +1,3 @@
-"use server";
-
 import { db } from "@workspace/db";
 import {
   candidate,
@@ -11,20 +9,15 @@ import {
   CandidateFormSchema,
   candidateFormSchema,
 } from "../schemas/candidate-form-schema";
-import { revalidatePath, updateTag } from "next/cache";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
+import { getSession } from "@/lib/middleware/auth-guard";
 import { eq, and, inArray } from "@workspace/db";
-import { after } from "next/server";
-import { insertAuditLog } from "@workspace/db/queries";
+import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const updateCandidate = async (
   candidateId: string,
   data: CandidateFormSchema,
 ) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -157,14 +150,9 @@ export const updateCandidate = async (
 
             // Invalidate cache for all affected interviews (including completed ones we kept)
             for (const inv of existingInterviews) {
-              updateTag(`interview-${inv.id}`);
-              revalidatePath(`/interviews/${inv.id}`);
             }
 
             // Invalidate cache for the old application (before position update)
-            updateTag(`application-${oldApplication.id}`);
-            revalidatePath(`/applications/${oldApplication.id}`);
-
             // Now update the application position
             await db
               .update(application)
@@ -211,18 +199,10 @@ export const updateCandidate = async (
         .limit(1);
       applicationId = currentApplication?.id;
     }
-
-    updateTag("candidates");
-    updateTag(`candidate-applications-${candidateId}`);
-    revalidatePath("/candidates");
-    revalidatePath(`/candidates/${updatedCandidate.id}`);
-    revalidatePath(`/candidates/${updatedCandidate.id}/edit`);
     if (applicationId) {
-      updateTag(`application-${applicationId}`);
     }
 
-    after(async () => {
-      await insertAuditLog({
+    insertAuditLog({
         userId: session.user.id,
         action: "update_candidate",
         entityType: "candidate",
@@ -261,8 +241,7 @@ export const updateCandidate = async (
             positionUpdated: !!positionId,
           },
         },
-      });
-    });
+      }).catch((error) => console.error("Audit log error:", error));
 
     return { success: true, data: updatedCandidate };
   } catch (error) {

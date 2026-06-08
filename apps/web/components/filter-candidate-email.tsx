@@ -1,13 +1,11 @@
-"use client";
+import { useUrlSearchParams } from "@/lib/hooks/use-url-search-params";
 
 import React, { useTransition, useEffect, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@workspace/ui/components/input";
 import { Mail } from "lucide-react";
 
 const FilterCandidateEmail = () => {
-  const searchParams = useSearchParams();
-  const router = useRouter();
+  const { searchParams, setSearchParams } = useUrlSearchParams();
   const [isPending, startTransition] = useTransition();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -24,10 +22,8 @@ const FilterCandidateEmail = () => {
         } else {
           params.delete("email");
         }
-        router.push(`?${params.toString()}`, {
-          scroll: false,
-        });
-      });
+        setSearchParams(params);
+    });
     }, 300);
   };
 
@@ -51,6 +47,7 @@ const FilterCandidateEmail = () => {
         defaultValue={searchParams.get("email") || ""}
         onChange={(e) => handleSearch(e.target.value)}
         className="pl-9"
+        aria-label="Filter candidates by email"
       />
     </div>
   );

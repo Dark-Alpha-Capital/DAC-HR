@@ -1,4 +1,10 @@
-import { uploadFileToNextCloud, getClient } from "./next-cloud";
+import {
+  deleteFile as deleteNextcloudFile,
+  getDownloadUrl,
+  resolveFilePath,
+  uploadFile as uploadToNextcloud,
+} from "@workspace/nextcloud";
+import { getClient } from "./next-cloud";
 
 /**
  * Uploads a file to Nextcloud storage
@@ -11,19 +17,19 @@ export const uploadFile = async (
   folderPath?: string,
 ): Promise<string | null> => {
   try {
-    // Determine folder path based on context if not provided
-    // For candidate documents, use /Candidates folder
-    // For general documents, use /Documents folder
-    const defaultFolderPath = folderPath || "/Documents";
+    const client = getClient();
+    const result = await uploadToNextcloud({
+      client,
+      file,
+      folderPath: folderPath || "/Documents",
+    });
 
-    const url = await uploadFileToNextCloud(file, defaultFolderPath);
-
-    if (!url) {
-      console.error("Failed to upload file to Nextcloud");
+    if (!result.success || !result.downloadUrl) {
+      console.error("Failed to upload file to Nextcloud", result.error);
       return null;
     }
 
-    return url;
+    return result.downloadUrl;
   } catch (error) {
     console.error("Error uploading file to Nextcloud:", error);
     return null;
@@ -32,55 +38,17 @@ export const uploadFile = async (
 
 /**
  * Generates a signed URL for accessing a file in Nextcloud
- * For Nextcloud, we return the WebDAV download link directly
- * @param fileUrl The WebDAV URL or file path of the file
- * @param expiresInMinutes How long the signed URL should be valid (default: 60 minutes) - Not used for Nextcloud
- * @returns A URL that allows access to the file
+ * For Nextcloud, this returns the WebDAV download link directly
  */
 export const getSignedUrl = async (
   fileUrl: string,
   expiresInMinutes: number = 60,
 ): Promise<string | null> => {
   try {
-    // For Nextcloud, if the URL is already a WebDAV download link, return it as-is
-    // The WebDAV link already includes authentication via Basic Auth
-    if (fileUrl.includes("/remote.php/dav/")) {
-      return fileUrl;
-    }
-
-    // If it's a file path, construct the WebDAV download URL
-    // Extract the file path from the URL if needed
+    void expiresInMinutes;
     const client = getClient();
-
-    // Try to extract the file path from various URL formats
-    let filePath = fileUrl;
-
-    // If it's a full URL, try to extract the path
-    if (fileUrl.startsWith("http")) {
-      try {
-        const url = new URL(fileUrl);
-        // Extract path after /remote.php/dav/files/{user}/
-        const davPathMatch = url.pathname.match(
-          /\/remote\.php\/dav\/files\/[^/]+\/(.+)/,
-        );
-        if (davPathMatch) {
-          filePath = `/${davPathMatch[1]}`;
-        } else {
-          // Fallback: use the pathname directly
-          filePath = url.pathname;
-        }
-      } catch {
-        // If URL parsing fails, assume it's already a path
-        filePath = fileUrl.startsWith("/") ? fileUrl : `/${fileUrl}`;
-      }
-    } else {
-      // Ensure path starts with /
-      filePath = fileUrl.startsWith("/") ? fileUrl : `/${fileUrl}`;
-    }
-
-    // Generate the WebDAV download link
-    const downloadUrl = client.getFileDownloadLink(filePath);
-    return downloadUrl;
+    const filePath = resolveFilePath(fileUrl);
+    return getDownloadUrl(client, filePath);
   } catch (error) {
     console.error("Error generating signed URL:", error);
     return null;
@@ -95,54 +63,21 @@ export const getSignedUrl = async (
 export const deleteFile = async (fileUrl: string): Promise<boolean> => {
   try {
     const client = getClient();
+    const result = await deleteNextcloudFile({
+      client,
+      filePathOrUrl: fileUrl,
+    });
 
-    // Extract the file path from the URL
-    let filePath: string;
-
-    // If it's a WebDAV URL, extract the path
-    if (fileUrl.includes("/remote.php/dav/files/")) {
-      try {
-        const url = new URL(fileUrl);
-        // Extract path after /remote.php/dav/files/{user}/
-        const davPathMatch = url.pathname.match(
-          /\/remote\.php\/dav\/files\/[^/]+\/(.+)/,
-        );
-        if (davPathMatch) {
-          filePath = `/${davPathMatch[1]}`;
-        } else {
-          filePath = url.pathname;
-        }
-      } catch {
-        // If URL parsing fails, try to extract manually
-        const parts = fileUrl.split("/remote.php/dav/files/");
-        const afterUserPart = parts[1];
-        if (parts.length > 1 && afterUserPart) {
-          const afterUser = afterUserPart.split("/").slice(1).join("/");
-          filePath = `/${afterUser}`;
-        } else {
-          filePath = fileUrl;
-        }
-      }
-    } else {
-      // Assume it's already a file path
-      filePath = fileUrl.startsWith("/") ? fileUrl : `/${fileUrl}`;
-    }
-
-    // Check if file exists
-    try {
-      await client.stat(filePath);
-    } catch (error: any) {
-      if (error?.status === 404 || error?.response?.status === 404) {
-        console.warn(`File not found in Nextcloud: ${filePath}`);
+    if (!result.success) {
+      if (result.code === "NOT_FOUND") {
+        console.warn(`File not found in Nextcloud: ${fileUrl}`);
         return false;
       }
-      // If it's not a 404, rethrow the error
-      throw error;
+
+      console.error("Error deleting file from Nextcloud:", result.error);
+      return false;
     }
 
-    // Delete the file
-    await client.deleteFile(filePath);
-    console.log(`✅ File '${filePath}' deleted successfully from Nextcloud.`);
     return true;
   } catch (error) {
     console.error("Error deleting file from Nextcloud:", error);

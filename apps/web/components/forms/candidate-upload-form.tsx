@@ -1,10 +1,8 @@
-"use client";
-
 import * as React from "react";
 import { useTransition, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
-import { useSearchParams } from "next/navigation"; // Add this import
+import { useUrlSearchParams } from "@/lib/hooks/use-url-search-params";
 import * as z from "zod";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -23,7 +21,7 @@ import {
   InputGroupTextarea,
 } from "@workspace/ui/components/input-group";
 import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import {
   candidateFormSchema,
   type CandidateFormSchema,
@@ -36,7 +34,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
-import { authClient } from "@/auth-client";
 import { Session } from "better-auth";
 import { resetCacheForCandidates } from "@/lib/actions/reset-cache";
 
@@ -52,7 +49,7 @@ const CandidateUploadForm = ({
 }) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const searchParams = useSearchParams();
+  const { searchParams } = useUrlSearchParams();
   const [selectedSource, setSelectedSource] = React.useState<
     "LinkedIn" | "Upwork" | "Handshake" | "Indeed" | undefined
   >(undefined);
@@ -103,7 +100,6 @@ const CandidateUploadForm = ({
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${userSession.token}`,
             },
             body: JSON.stringify({
               ...value,
@@ -152,9 +148,6 @@ const CandidateUploadForm = ({
                 `/api/candidate/${candidateId}/documents`,
                 {
                   method: "POST",
-                  headers: {
-                    Authorization: `Bearer ${userSession.token}`,
-                  },
                   body: formData,
                 },
               );
@@ -178,7 +171,7 @@ const CandidateUploadForm = ({
                   action: {
                     label: "View Candidate",
                     onClick: () => {
-                      router.push(`/candidates/${candidateId}`);
+                      router.navigate({ to: `/candidates/${candidateId}` });
                     },
                   },
                 });
@@ -198,7 +191,7 @@ const CandidateUploadForm = ({
               action: {
                 label: "View Candidate",
                 onClick: () => {
-                  router.push(`/candidates/${candidateId}`);
+                  router.navigate({ to: `/candidates/${candidateId}` });
                 },
               },
             });
@@ -216,7 +209,7 @@ const CandidateUploadForm = ({
           if (fileInput) {
             fileInput.value = "";
           }
-          router.push(`/candidates`);
+          router.navigate({ to: `/candidates` });
         } catch (error) {
           toast.error(
             error instanceof Error

@@ -1,7 +1,5 @@
-"use client";
-
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import { Button } from "@workspace/ui/components/button";
 import { Label } from "@workspace/ui/components/label";
 import { Textarea } from "@workspace/ui/components/textarea";
@@ -71,7 +69,7 @@ export default function InterviewQuestionFeedbackForm({
       }
 
       toast.success("Feedback saved");
-      router.refresh();
+      router.invalidate();
       onSuccess?.();
     });
   };

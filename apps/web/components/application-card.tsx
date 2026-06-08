@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@workspace/ui/components/button";
 import { Eye, Users, Pencil } from "lucide-react";
 import DeleteCandidateButton from "./delete-candidate-button";
@@ -53,10 +53,7 @@ const getTimeAgo = (date: Date): string => {
   return "- just now";
 };
 
-const ApplicationCard = ({
-  application,
-  status,
-}: ApplicationCardProps) => {
+const ApplicationCard = ({ application, status }: ApplicationCardProps) => {
   const cardStatus = status || application.status;
   const borderColor = CARD_BORDER_COLORS[cardStatus] || "border-l-gray-500";
   const timeAgo = getTimeAgo(application.updatedAt);
@@ -91,23 +88,17 @@ const ApplicationCard = ({
           </div>
         )}
         <div className="ml-auto flex items-center gap-1">
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-7 w-7 p-0"
-            asChild
-          >
-            <Link href={`/candidates/${application.candidate.id}`}>
+          <Button variant="secondary" size="sm" className="h-7 w-7 p-0" asChild>
+            <Link to={`/candidates/${application.candidate.id}` as any}
+              aria-label={`View ${application.candidate.firstName} ${application.candidate.lastName}`}
+            >
               <Eye className="h-3.5 w-3.5" />
             </Link>
           </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-7 w-7 p-0"
-            asChild
-          >
-            <Link href={`/candidates/${application.candidate.id}/edit`}>
+          <Button variant="secondary" size="sm" className="h-7 w-7 p-0" asChild>
+            <Link to={`/candidates/${application.candidate.id}/edit` as any}
+              aria-label={`Edit ${application.candidate.firstName} ${application.candidate.lastName}`}
+            >
               <Pencil className="h-3.5 w-3.5" />
             </Link>
           </Button>

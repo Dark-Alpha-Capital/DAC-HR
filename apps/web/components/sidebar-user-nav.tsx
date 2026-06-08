@@ -1,7 +1,5 @@
-"use client";
-
-import { ChevronUp, LoaderIcon } from "lucide-react";
-import Image from "next/image";
+import { ChevronUp } from "lucide-react";
+import { Image } from "@unpic/react";
 import { authClient } from "@/auth-client";
 import {
   DropdownMenu,
@@ -15,48 +13,21 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@workspace/ui/components/sidebar";
-import { useRouter } from "next/navigation";
-import type { Route } from "next";
+import { useRouter } from "@tanstack/react-router";
 import { useTheme } from "next-themes";
+import type { AppSession } from "@/lib/auth-session";
 
-export function SidebarUserNav() {
+export function SidebarUserNav({ session }: { session: AppSession }) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
-  const { data: session, isPending } = authClient.useSession();
   const user = session?.user;
 
   const handleLogout = async () => {
-    await authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          router.push("/");
-        },
-      },
-    });
+    await authClient.signOut();
+    await router.invalidate();
+    router.navigate({ to: "/" });
   };
 
-  // Loading state - session is being streamed
-  if (isPending) {
-    return (
-      <SidebarMenu>
-        <SidebarMenuItem>
-          <SidebarMenuButton className="data-[state=open]:bg-sidebar-accent bg-background data-[state=open]:text-sidebar-accent-foreground h-10 justify-between cursor-not-allowed">
-            <div className="flex flex-row gap-2 items-center">
-              <div className="size-6 bg-muted rounded-full animate-pulse" />
-              <span className="bg-muted text-transparent rounded-md animate-pulse w-24">
-                Loading...
-              </span>
-            </div>
-            <div className="animate-spin text-muted-foreground">
-              <LoaderIcon className="size-4" />
-            </div>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      </SidebarMenu>
-    );
-  }
-
-  // Unauthenticated state - no session
   if (!session || !user) {
     return (
       <SidebarMenu>
@@ -88,7 +59,7 @@ export function SidebarUserNav() {
                   type="button"
                   className="w-full cursor-pointer"
                   onClick={() => {
-                    router.push("/login");
+                    router.navigate({ to: "/login" });
                   }}
                 >
                   Login to your account
@@ -101,7 +72,6 @@ export function SidebarUserNav() {
     );
   }
 
-  // Authenticated state - session is present
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -136,7 +106,7 @@ export function SidebarUserNav() {
               className="cursor-pointer"
               onSelect={() => {
                 if (user.id) {
-                  router.push(`/profile/${user.id}` as Route);
+                  router.navigate({ to: "/profile/$userId", params: { userId: user.id } });
                 }
               }}
             >

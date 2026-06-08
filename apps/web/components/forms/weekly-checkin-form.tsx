@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { useTransition, useState } from "react";
 import { useForm } from "@tanstack/react-form";
@@ -35,7 +33,7 @@ import {
   Loader2,
   CheckCircle2,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import {
   weeklyCheckinFormSchema,
   sourcingChannels,
@@ -111,7 +109,7 @@ export default function WeeklyCheckinForm({
             description: "Your weekly report has been recorded.",
           });
 
-          router.push("/dashboard");
+          router.navigate({ to: "/dashboard" });
         } catch (error) {
           toast.error(
             error instanceof Error

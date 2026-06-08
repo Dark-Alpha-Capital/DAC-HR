@@ -1,7 +1,5 @@
-"use client";
-
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link } from "@tanstack/react-router";
+import { useRouterState } from "@tanstack/react-router";
 import { cn } from "@workspace/ui/lib/utils";
 import {
   BookOpen,
@@ -18,6 +16,7 @@ import {
   UserCheck,
   Search,
   MessageSquare,
+  RefreshCcw,
 } from "lucide-react";
 
 export interface NavItem {
@@ -82,6 +81,11 @@ export const docsNavItems: NavItem[] = [
         href: "/docs/ai-features",
         icon: Sparkles,
       },
+      {
+        title: "What's New",
+        href: "/docs/whats-new",
+        icon: RefreshCcw,
+      },
     ],
   },
   {
@@ -109,7 +113,7 @@ export const docsNavItems: NavItem[] = [
 ];
 
 export function DocsNav() {
-  const pathname = usePathname();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   const isActive = (href: string) => {
     if (href === "/docs") {
@@ -133,9 +137,7 @@ export function DocsNav() {
                   return (
                     <Link
                       key={subItem.href}
-                      href={{
-                        pathname: subItem.href,
-                      }}
+                      to={subItem.href as any}
                       className={cn(
                         "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
                         isActive(subItem.href)
@@ -152,9 +154,7 @@ export function DocsNav() {
             </div>
           ) : (
             <Link
-              href={{
-                pathname: item.href,
-              }}
+              to={item.href as any}
               className={cn(
                 "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
                 isActive(item.href)

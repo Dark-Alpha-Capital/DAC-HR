@@ -1,188 +1,101 @@
-# AGENTS.md (Operator Guide)
+# AGENTS.md — HR Automation Platform (TanStack Start + Cloudflare)
 
-This file is for agentic coding tools working in this repo.
+## Quick reference
 
-## Repository Overview
+```bash
+bun install          # always use bun, never npm/pnpm/yarn
+bun run dev          # turbo dev (Vite on :3000)
+bun run build        # turbo build (vite build)
+bun run lint         # turbo lint (ESLint 9 flat config)
+bun run test         # turbo run test (bun test in each package)
+bun run format       # prettier across *.ts,*.tsx,*.md
+```
 
-- Monorepo (workspaces): `apps/*`, `packages/*` (Turborepo)
-- Main app: `apps/web/` (Next.js App Router)
-- Shared packages:
-  - `packages/db/` Drizzle ORM schema/queries + DB scripts
-  - `packages/ui/` shared shadcn/ui components (`@workspace/ui`)
-  - `packages/eslint-config/`, `packages/typescript-config/` shared configs
-- Runtime/tooling: prefer `bun` for local commands.
+**Typecheck web app directly:** `tsc --noEmit` from `apps/web/`
+**Deploy web:** `wrangler deploy` from `apps/web/`
 
-## Agent Rules (local)
+## Architecture overview
 
-- Cursor rules: none found in `.cursor/rules/` or `.cursorrules`.
-- Copilot rules: none found in `.github/copilot-instructions.md`.
-- Do not add new rule systems unless requested.
+Turborepo monorepo with `bun@1.1.38`. Deployed on **Cloudflare Workers**.
 
-## Commands (Build / Lint / Typecheck / “Tests”)
+| Directory                     | Package                        | Role                                                                  |
+| ----------------------------- | ------------------------------ | --------------------------------------------------------------------- |
+| `apps/web/`                   | `web`                          | TanStack Start app (React 19, Vite, Tailwind v4, shadcn/ui)           |
+| `apps/worker/`                | `worker`                       | Stub (future Cloudflare Worker for background jobs)                   |
+| `packages/db/`                | `@workspace/db`                | Drizzle ORM + PostgreSQL via `@neondatabase/serverless` (HTTP driver) |
+| `packages/nextcloud/`         | `@workspace/nextcloud`         | Nextcloud WebDAV client                                               |
+| `packages/file-search/`       | `@workspace/file-search`       | Google Gemini File Search API                                         |
+| `packages/ui/`                | `@workspace/ui`                | shadcn/ui component library                                           |
+| `packages/eslint-config/`     | `@workspace/eslint-config`     | Shared ESLint configs (base, next-js, react-internal)                 |
+| `packages/typescript-config/` | `@workspace/typescript-config` | Shared tsconfig extends                                               |
 
-### Install
+## Database (Drizzle + Neon HTTP)
 
-- `bun install`
+- Driver: `@neondatabase/serverless` (HTTP-based, Cloudflare Workers compatible)
+- Production: Hyperdrive pools connections to Neon Postgres
+- Schema: `packages/db/schema.ts` (22+ tables)
+- Migrations: `packages/db/drizzle/` (25 SQL migration files)
+- The DB client uses a **lazy-init Proxy pattern**. Import `db` directly.
 
-### Dev
+```bash
+cd packages/db
+bun run db:generate   # generate migrations from schema changes
+bun run db:migrate    # apply migrations
+bun run db:push       # push schema directly
+bun run db:seed       # seed sample data
+```
 
-- Run everything: `bun run dev` (Turbo)
-- Run web only: `bun --cwd apps/web run dev` (Next dev w/ Turbopack)
+All common Drizzle operators re-exported:
 
-### Build
+```ts
+import { db, eq, and, or, sql, asc, desc, inArray, count } from "@workspace/db";
+```
 
-- Build all: `bun run build`
-- Build web only: `bun --cwd apps/web run build`
+## Environment variables
 
-### Lint
+- All env vars go in `apps/web/.env` (not the repo root)
+- Template: `apps/web/.env.example`
+- `packages/db/.env` only needs `DATABASE_URL` (for drizzle-kit CLI)
+- Bun auto-loads `.env` files; `auth.ts` explicitly calls `dotenv/config`
+- Dev secrets for wrangler: `apps/web/.dev.vars`
 
-- Lint all (Turbo): `bun run lint`
-- Lint web only: `bun --cwd apps/web run lint`
-- Lint web and autofix: `bun --cwd apps/web run lint:fix`
-- Lint UI package: `bun --cwd packages/ui run lint`
+## Auth (better-auth)
 
-**Target a single file (closest thing to “single test”)**
+- Config: `apps/web/auth.ts`, Client: `apps/web/auth-client.ts`
+- Only `@darkalphacapital.com` emails can sign in
+- Admin emails hardcoded in `auth.ts` (rahul@, gaurav@, da@)
+- Auth check uses `authGuard` middleware, not per-route `requireAuth()`
+- `authGuard` puts typed `{ session }` in request context
 
-- Next lint supports file targeting:
-  - `bun --cwd apps/web run lint -- --file app/(main-site)/page.tsx`
-- Any ESLint script can take file args:
-  - `bun --cwd packages/ui run lint -- src/components/button.tsx`
+## Observability
 
-**Turbo filtering (fast iteration)**
+- `apps/web/lib/middleware/request-logger.ts` — centralized request timing middleware
+- `apps/web/lib/middleware/auth-guard.ts` — `authGuard` + `adminGuard` middleware
+- Structured JSON logging throughout (readable via `wrangler tail`)
 
-- `bun run lint -- --filter=web`
-- `bun run build -- --filter=@workspace/ui`
+## API route conventions
 
-### Typecheck
+- Zod validation with `safeParse`, return 400 with `flatten().fieldErrors`
+- Audit logs inserted inline with `.catch()` (fire-and-forget)
+- Auth check via middleware, not inline in handlers
 
-- Web only: `bun --cwd apps/web run typecheck`
+## Config files
 
-### Formatting
+- `apps/web/vite.config.ts` — Vite + TanStack Start + Tailwind v4 plugin
+- `apps/web/wrangler.jsonc` — Cloudflare Workers config (R2, Hyperdrive bindings)
 
-- Format (repo): `bun run format`
-  - Runs `prettier --write "**/*.{ts,tsx,md}"`
+## File storage
 
-### Tests
+- Documents stored in Cloudflare R2 (bucket: `hr-documents`)
+- Binding: `env.DOCUMENTS_BUCKET` in Workers runtime
 
-- There is no dedicated unit/integration test runner configured in this repo.
-- Treat these as “required checks”:
-  - `bun run lint`
-  - `bun --cwd apps/web run typecheck`
-- For behavior changes, do focused manual validation (run the app, hit the route, verify UI).
+## Testing
 
-## Database (Drizzle / Postgres)
+All tests use `bun test` with `--pass-with-no-tests`:
 
-From `packages/db/`:
+```bash
+bun test --pass-with-no-tests    # single package
+bun run test                     # all packages via turbo
+```
 
-- Generate migrations: `bun --cwd packages/db run db:generate`
-- Run migrations: `bun --cwd packages/db run db:migrate`
-- Seed: `bun --cwd packages/db run db:seed`
-- Studio: `bun --cwd packages/db run db:studio`
-
-Local dev uses Docker:
-
-- Start DB/redis: `docker-compose up -d`
-- App container (prod-like): `docker-compose up -d --build` (web at `http://localhost:3001`)
-
-## Project Structure (where to change things)
-
-- UI pages/routes: `apps/web/app/` (Next.js App Router)
-- API route handlers: `apps/web/app/api/**/route.ts`
-- Server actions (preferred for UI mutations): `apps/web/lib/actions/`
-- Zod input schemas: `apps/web/lib/schemas/`
-- DB schema + tables: `packages/db/schema.ts`
-- DB access helpers/queries: `packages/db/queries.ts`
-
-## Code Style Guidelines
-
-### Language / Modules
-
-- TypeScript everywhere; packages are ESM (`"type": "module"`).
-- Prefer `async/await` over raw promise chains.
-- Keep functions small; prefer extracting helpers over deeply nested blocks.
-
-### Formatting
-
-- Prettier is the source of truth. Don’t hand-format.
-- Run `bun run format` before finishing a change if files were touched.
-
-### Imports
-
-- Use absolute imports where configured:
-  - In `apps/web`: `@/…` maps to `apps/web/*` via `paths` in `apps/web/tsconfig.json`.
-  - Workspace packages: `@workspace/db`, `@workspace/ui/...`.
-- Prefer `import type { X } from "..."` for type-only imports.
-- Group imports by intent (recommended order):
-  1. Node/standard libs (rare in web)
-  2. External deps
-  3. `@workspace/*`
-  4. `@/*`
-  5. Relative imports (`./`, `../`)
-
-### Naming
-
-- React components: `PascalCase.tsx`.
-- Hooks: `useSomething.ts`.
-- Server actions: `kebab-case.ts` or `verb-noun.ts` (existing pattern varies; match the folder).
-- Next route segments: follow Next conventions; prefer kebab-case folder names.
-- Zod schemas:
-  - Runtime schema: `somethingSchema`
-  - Inferred type: `SomethingSchema` (type alias) or `SomethingFormSchema` (existing pattern).
-
-### Types & Validation
-
-- TS is `strict` with `noUncheckedIndexedAccess` (see `packages/typescript-config/base.json`).
-- Prefer validating inputs at boundaries:
-  - Server actions + API routes should `safeParse` with Zod schemas.
-  - Return validation errors in a structured way.
-
-### Error Handling (match existing patterns)
-
-- Server actions (`apps/web/lib/actions/*`):
-  - Authenticate early (`auth.api.getSession({ headers: await headers() })`).
-  - On auth failure, return `{ error: "Unauthorized" }`.
-  - On validation failure, return `{ error: zodError.flatten().fieldErrors }`.
-  - Wrap DB calls in `try/catch`; return a user-safe message.
-
-- Route handlers (`apps/web/app/api/**/route.ts`):
-  - Prefer `NextResponse.json({ error }, { status })`.
-  - Use `400` for validation errors, `401/403` for auth, `500` for unexpected failures.
-
-- Logging:
-  - Prefer contextual logs (route name, entity id) over generic `console.log`.
-  - Never log secrets or raw credentials.
-
-### Auth
-
-- Auth is `better-auth`.
-- Common patterns:
-  - Server actions: `auth.api.getSession({ headers: await headers() })`.
-  - API routes: `requireAuth()` middleware returns either user info or a `NextResponse`.
-
-### Data Access
-
-- Prefer using Drizzle via `@workspace/db`.
-- Keep query logic inside `packages/db/queries.ts` when it’s reused.
-- When adding new env vars affecting builds, update `turbo.json` env lists to avoid `turbo/no-undeclared-env-vars` warnings.
-
-### Caching / Revalidation
-
-- Server actions often call `updateTag(...)` and/or `revalidatePath(...)` after mutations.
-- Audit logging is often done non-blockingly via `after(async () => ...)`.
-
-## Security & Configuration
-
-- Do not commit secrets (`.env`, private keys, tokens).
-- If you introduce new env vars, update:
-  - `apps/web/.env.example`
-  - `turbo.json` task env list (if used during build)
-- Treat `service-account-key.json` as sensitive; avoid modifying or propagating it.
-
-## Practical Agent Workflow
-
-1. Identify scope (`apps/web` vs `packages/*`).
-2. Make the smallest possible code change.
-3. Run targeted checks:
-   - `bun --cwd apps/web run lint -- --file <changed-file>` (web)
-   - `bun --cwd apps/web run typecheck` for TS-heavy changes
-4. Run `bun run format` if formatting drift is likely.
+Import from `bun:test`: `import { test, expect } from "bun:test";`

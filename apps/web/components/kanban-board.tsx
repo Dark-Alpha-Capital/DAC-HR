@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { cn } from "@workspace/ui/lib/utils";
 
@@ -27,6 +25,14 @@ function KanbanBoardInner<TItem>({
   className,
   columnClassName,
 }: KanbanBoardProps<TItem>) {
+  if (!columns || !Array.isArray(columns)) {
+    return (
+      <div className="flex items-center justify-center py-12 text-muted-foreground">
+        Loading...
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(

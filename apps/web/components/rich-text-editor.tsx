@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * Rich Text Editor Component
  *

@@ -1,20 +1,13 @@
-"use server";
-
 import { db } from "@workspace/db";
 import { questionBank } from "@workspace/db/schema";
 
-import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
+import { getSession } from "@/lib/middleware/auth-guard";
 import { eq } from "@workspace/db";
-import { after } from "next/server";
-import { insertAuditLog } from "@workspace/db/queries";
+import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { getQuestionById } from "@workspace/db/queries";
 
 export const deleteQuestion = async (id: string) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -25,12 +18,8 @@ export const deleteQuestion = async (id: string) => {
     const questionData = await getQuestionById(id);
 
     await db.delete(questionBank).where(eq(questionBank.id, id));
-
-    revalidatePath("/questions");
-
     if (questionData) {
-      after(async () => {
-        await insertAuditLog({
+      insertAuditLog({
           userId: session.user.id,
           action: "delete_question",
           entityType: "question",
@@ -49,8 +38,7 @@ export const deleteQuestion = async (id: string) => {
               timestamp: new Date().toISOString(),
             },
           },
-        });
-      });
+        }).catch((error) => console.error("Audit log error:", error));
     }
 
     return { success: true };

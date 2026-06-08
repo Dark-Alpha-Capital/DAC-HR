@@ -1,11 +1,9 @@
-"use client";
-
 import React, { useTransition } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
-import { authClient } from "@/auth-client";
+import { useRouter } from "@tanstack/react-router";
+import { useAppSession } from "@/hooks/use-app-session";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,10 +25,10 @@ const DeleteCandidateDocumentButton = ({
 }) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const { data: session } = authClient.useSession();
+  const session = useAppSession();
 
   const handleDelete = () => {
-    if (!session?.session?.token) {
+    if (!session?.user) {
       toast.error("You must be logged in to delete a document", {
         position: "bottom-right",
       });
@@ -43,9 +41,6 @@ const DeleteCandidateDocumentButton = ({
           `/api/candidate/${candidateId}/documents/${documentId}`,
           {
             method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${session.session.token}`,
-            },
           },
         );
 
@@ -66,7 +61,7 @@ const DeleteCandidateDocumentButton = ({
           toast.success("Document deleted successfully", {
             position: "bottom-right",
           });
-          router.refresh();
+          router.invalidate();
         }
       } catch (error) {
         toast.error(

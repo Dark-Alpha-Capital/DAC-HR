@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, useTransition } from "react";
 import { Button } from "@workspace/ui/components/button";
 import {

@@ -1,10 +1,8 @@
-"use client";
-
 import React, { useTransition } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,8 +14,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog";
-import { authClient } from "@/auth-client";
 import { resetCacheForCandidates } from "@/lib/actions/reset-cache";
+import { useAppSession } from "@/hooks/use-app-session";
 
 interface BulkDeleteCandidatesButtonProps {
   selectedIds: string[];
@@ -31,7 +29,7 @@ const BulkDeleteCandidatesButton = ({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [open, setOpen] = React.useState(false);
-  const { data: userSession } = authClient.useSession();
+  const session = useAppSession();
 
   const handleBulkDelete = () => {
     if (selectedIds.length === 0) {
@@ -41,7 +39,7 @@ const BulkDeleteCandidatesButton = ({
       return;
     }
 
-    if (!userSession?.session?.token) {
+    if (!session?.user) {
       toast.error("You must be logged in to delete candidates", {
         position: "bottom-right",
       });
@@ -54,7 +52,6 @@ const BulkDeleteCandidatesButton = ({
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${userSession.session.token}`,
           },
           body: JSON.stringify({ candidateIds: selectedIds }),
         });
@@ -75,7 +72,7 @@ const BulkDeleteCandidatesButton = ({
           });
           setOpen(false);
           onDeleteComplete?.();
-          router.refresh();
+          router.invalidate();
         } else {
           const errorMessage =
             result.errors && result.errors.length > 0
@@ -90,7 +87,7 @@ const BulkDeleteCandidatesButton = ({
           );
           setOpen(false);
           onDeleteComplete?.();
-          router.refresh();
+          router.invalidate();
         }
       } catch (error) {
         toast.error(

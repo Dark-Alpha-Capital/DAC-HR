@@ -1,19 +1,13 @@
-"use server";
-
 import { db, inArray } from "@workspace/db";
 import {
   candidate,
   application,
   candidatePosition,
 } from "@workspace/db/schema";
-import { insertAuditLog } from "@workspace/db/queries";
+import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { candidateFormSchema } from "../schemas/candidate-form-schema";
 import type { CandidateFormSchema } from "../schemas/candidate-form-schema";
-import { revalidatePath, updateTag } from "next/cache";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
-import { after } from "next/server";
-import type { z } from "zod";
+import { getSession } from "@/lib/middleware/auth-guard";
 
 export type BulkCandidateRow = {
   firstName: string;
@@ -56,9 +50,7 @@ const checkExistingEmails = async (emails: string[]): Promise<Set<string>> => {
 export const bulkCreateCandidates = async (
   candidates: BulkCandidateRow[],
 ): Promise<BulkCandidateResult> => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return {
@@ -144,6 +136,7 @@ export const bulkCreateCandidates = async (
 
   // STEP 4: All validations passed - create ALL candidates in a transaction
   const createdCandidates: Array<{ id: string; email: string }> = [];
+  const auditPayloads: Array<Parameters<typeof insertAuditLog>[0]> = [];
 
   try {
     await db.transaction(async (tx) => {
@@ -189,36 +182,35 @@ export const bulkCreateCandidates = async (
           email: newCandidate.email,
         });
 
-        // Create audit log (after transaction completes)
-        after(async () => {
-          await insertAuditLog({
-            userId: session.user.id,
-            action: "bulk_create_candidate",
-            entityType: "candidate",
-            entityId: newCandidate.id,
-            details: {
-              candidate: {
-                id: newCandidate.id,
-                firstName: newCandidate.firstName,
-                lastName: newCandidate.lastName,
-                email: newCandidate.email,
-                phone: newCandidate.phone,
-                location: newCandidate.location,
-                source: newCandidate.source,
-                sourceUrl: newCandidate.sourceUrl,
-                note: newCandidate.note,
-              },
-              bulkUpload: { row, totalRows: candidates.length },
+        auditPayloads.push({
+          userId: session.user.id,
+          action: "bulk_create_candidate",
+          entityType: "candidate",
+          entityId: newCandidate.id,
+          details: {
+            candidate: {
+              id: newCandidate.id,
+              firstName: newCandidate.firstName,
+              lastName: newCandidate.lastName,
+              email: newCandidate.email,
+              phone: newCandidate.phone,
+              location: newCandidate.location,
+              source: newCandidate.source,
+              sourceUrl: newCandidate.sourceUrl,
+              note: newCandidate.note,
             },
-          });
+            bulkUpload: { row, totalRows: candidates.length },
+          },
         });
       }
     });
 
-    // Revalidate cache only after successful transaction
-    updateTag("candidates");
-    revalidatePath("/candidates");
+    if (auditPayloads.length > 0) {
+      Promise.allSettled(auditPayloads.map((payload) => insertAuditLog(payload)))
+        .catch((error) => console.error("Audit log error:", error));
+    }
 
+    // Revalidate cache only after successful transaction
     return {
       success: true,
       created: createdCandidates.length,

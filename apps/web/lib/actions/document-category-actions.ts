@@ -1,21 +1,15 @@
-"use server";
 import {
   createDocumentCategory,
   updateDocumentCategory,
   deleteDocumentCategory,
   getDocumentCategories,
   getDocumentCategoryById,
-} from "@workspace/db/queries";
-import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
-import { after } from "next/server";
-import { insertAuditLog } from "@workspace/db/queries";
+} from "@workspace/db/repositories/document-repository";
+import { getSession } from "@/lib/middleware/auth-guard";
+import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const createCategory = async (name: string, description?: string) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -30,11 +24,7 @@ export const createCategory = async (name: string, description?: string) => {
       name.trim(),
       description?.trim() || undefined,
     );
-
-    revalidatePath("/documents");
-
-    after(async () => {
-      await insertAuditLog({
+    insertAuditLog({
         userId: session.user.id,
         action: "create_document_category",
         entityType: "document_category",
@@ -60,8 +50,7 @@ export const createCategory = async (name: string, description?: string) => {
             timestamp: new Date().toISOString(),
           },
         },
-      });
-    });
+      }).catch((error) => console.error("Audit log error:", error));
 
     return { success: true, data: newCategory };
   } catch (error) {
@@ -87,9 +76,7 @@ export const updateCategory = async (
   name: string,
   description?: string,
 ) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -106,21 +93,21 @@ export const updateCategory = async (
       description?.trim() || undefined,
     );
 
-    revalidatePath("/documents");
-
-    after(async () => {
-      await insertAuditLog({
+    if (!updatedCategory) {
+      return { error: "Category not found" };
+    }
+    insertAuditLog({
         userId: session.user.id,
         action: "update_document_category",
         entityType: "document_category",
         entityId: id,
         details: {
           category: {
-            id: updatedCategory?.id || "",
-            name: updatedCategory?.name || "",
-            description: updatedCategory?.description || "",
-            createdAt: updatedCategory?.createdAt.toISOString() || "",
-            updatedAt: updatedCategory?.updatedAt.toISOString() || "",
+            id: updatedCategory.id,
+            name: updatedCategory.name,
+            description: updatedCategory.description || "",
+            createdAt: updatedCategory.createdAt.toISOString(),
+            updatedAt: updatedCategory.updatedAt.toISOString(),
           },
           input: {
             name: name.trim(),
@@ -135,8 +122,7 @@ export const updateCategory = async (
             timestamp: new Date().toISOString(),
           },
         },
-      });
-    });
+      }).catch((error) => console.error("Audit log error:", error));
 
     return { success: true, data: updatedCategory };
   } catch (error) {
@@ -158,9 +144,7 @@ export const updateCategory = async (
 };
 
 export const deleteCategory = async (id: string) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -174,11 +158,7 @@ export const deleteCategory = async (id: string) => {
     }
 
     await deleteDocumentCategory(id);
-
-    revalidatePath("/documents");
-
-    after(async () => {
-      await insertAuditLog({
+    insertAuditLog({
         userId: session.user.id,
         action: "delete_document_category",
         entityType: "document_category",
@@ -200,8 +180,7 @@ export const deleteCategory = async (id: string) => {
             timestamp: new Date().toISOString(),
           },
         },
-      });
-    });
+      }).catch((error) => console.error("Audit log error:", error));
 
     return { success: true };
   } catch (error) {
@@ -226,9 +205,7 @@ export const deleteCategory = async (id: string) => {
 };
 
 export const getAllCategories = async () => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };

@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { useState, useTransition } from "react";
 import { Button } from "@workspace/ui/components/button";
@@ -42,7 +40,7 @@ import {
   type BulkCandidateRow,
   type BulkCandidateValidationError,
 } from "@/lib/actions/bulk-create-candidates";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 
 interface ParsedCandidate extends BulkCandidateRow {
   _rowNumber: number;
@@ -321,7 +319,7 @@ export default function BulkUploadCandidatesDialog() {
           );
           setOpen(false);
           resetDialog();
-          router.refresh();
+          router.invalidate();
           return;
         }
 

@@ -1,21 +1,14 @@
-"use server";
-
 import { db } from "@workspace/db";
 import { questionBank, roundTemplateQuestions } from "@workspace/db/schema";
 import {
   QuestionFormSchema,
   questionFormSchema,
 } from "../schemas/question-form-schema";
-import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
-import { after } from "next/server";
-import { insertAuditLog } from "@workspace/db/queries";
+import { getSession } from "@/lib/middleware/auth-guard";
+import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const createQuestion = async (data: QuestionFormSchema) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -46,12 +39,7 @@ export const createQuestion = async (data: QuestionFormSchema) => {
       roundTemplateId,
       questionId: newQuestion.id,
     });
-
-    revalidatePath("/questions");
-    revalidatePath(`/rounds/${roundTemplateId}`);
-
-    after(async () => {
-      await insertAuditLog({
+    insertAuditLog({
         userId: session.user.id,
         action: "create_question",
         entityType: "question",
@@ -77,8 +65,7 @@ export const createQuestion = async (data: QuestionFormSchema) => {
             linkedToRound: true,
           },
         },
-      });
-    });
+      }).catch((error) => console.error("Audit log error:", error));
 
     return { success: true, data: newQuestion };
   } catch (error) {
@@ -96,9 +83,7 @@ export const createQuestionForRound = async (
   data: QuestionFormSchema,
   roundId: string,
 ) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -129,12 +114,7 @@ export const createQuestionForRound = async (
       roundTemplateId: roundId,
       questionId: newQuestion.id,
     });
-
-    revalidatePath("/questions");
-    revalidatePath(`/rounds/${roundId}`);
-
-    after(async () => {
-      await insertAuditLog({
+    insertAuditLog({
         userId: session.user.id,
         action: "create_question_for_round",
         entityType: "question",
@@ -160,8 +140,7 @@ export const createQuestionForRound = async (
             linkedToRound: true,
           },
         },
-      });
-    });
+      }).catch((error) => console.error("Audit log error:", error));
 
     return { success: true, data: newQuestion };
   } catch (error) {

@@ -1,7 +1,5 @@
-"use client";
-
 import React, { useState } from "react";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@workspace/ui/components/button";
 import {
   Card,

@@ -1,7 +1,6 @@
-"use client";
+import { useUrlSearchParams } from "@/lib/hooks/use-url-search-params";
 
 import React from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs } from "@workspace/ui/components/tabs";
 
 interface CandidateTabsClientProps {
@@ -11,8 +10,7 @@ interface CandidateTabsClientProps {
 export default function CandidateTabsClient({
   children,
 }: CandidateTabsClientProps) {
-  const searchParams = useSearchParams();
-  const router = useRouter();
+  const { searchParams, setSearchParams } = useUrlSearchParams();
   const activeTab = searchParams.get("tab") || "overview";
 
   const handleTabChange = (value: string) => {
@@ -22,7 +20,7 @@ export default function CandidateTabsClient({
     } else {
       params.set("tab", value);
     }
-    router.push(`?${params.toString()}`, { scroll: false });
+    setSearchParams(params);
   };
 
   return (

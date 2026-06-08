@@ -1,8 +1,7 @@
-"use client";
+import { useUrlSearchParams } from "@/lib/hooks/use-url-search-params";
 
 import React from "react";
 import { Button } from "@workspace/ui/components/button";
-import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const CandidatesPaginationControls = ({
@@ -16,8 +15,7 @@ const CandidatesPaginationControls = ({
   hasNextPage: boolean;
   hasPreviousPage: boolean;
 }) => {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const { searchParams, setSearchParams } = useUrlSearchParams();
 
   const navigateToPage = (page: number) => {
     const params = new URLSearchParams(searchParams);
@@ -29,7 +27,7 @@ const CandidatesPaginationControls = ({
       params.set("page", page.toString());
     }
 
-    router.push(`/candidates?${params.toString()}`);
+    setSearchParams(params, "/candidates");
   };
 
   return (

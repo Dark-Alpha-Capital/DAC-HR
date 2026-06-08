@@ -1,14 +1,12 @@
-"use client";
-
 import React from "react";
 import { Button } from "@workspace/ui/components/button";
 import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 
 const BackButton = () => {
   const router = useRouter();
   const handleBack = () => {
-    router.back();
+    window.history.back();
   };
   return (
     <Button variant="secondary" size="sm" onClick={handleBack}>

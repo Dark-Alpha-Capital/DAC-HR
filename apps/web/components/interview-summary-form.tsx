@@ -1,7 +1,5 @@
-"use client";
-
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import { Button } from "@workspace/ui/components/button";
 import { Label } from "@workspace/ui/components/label";
 import {
@@ -78,7 +76,7 @@ export default function InterviewSummaryForm({
       }
 
       toast.success("Interview updated");
-      router.refresh();
+      router.invalidate();
     });
   };
 
@@ -150,7 +148,7 @@ export default function InterviewSummaryForm({
         <Button
           type="button"
           variant="secondary"
-          onClick={() => router.back()}
+          onClick={() => window.history.back()}
           disabled={isPending}
         >
           Cancel

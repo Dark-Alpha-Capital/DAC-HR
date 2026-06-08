@@ -1,7 +1,5 @@
-"use client";
-
 import React from "react";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@workspace/ui/components/button";
 import {
   Card,
@@ -76,13 +74,13 @@ const CandidateCard = ({ candidate }: CandidateCardProps) => {
       <CardFooter className="border-t">
         <div className="flex gap-2 w-full">
           <Button variant="secondary" size="sm" asChild>
-            <Link href={`/candidates/${candidate.id}`}>
+            <Link to={`/candidates/${candidate.id}` as any}>
               <Eye className="h-4 w-4" />
               View
             </Link>
           </Button>
           <Button variant="secondary" size="sm" asChild>
-            <Link href={`/candidates/${candidate.id}/edit`}>
+            <Link to={`/candidates/${candidate.id}/edit` as any}>
               <Pencil className="h-4 w-4" />
               Edit
             </Link>

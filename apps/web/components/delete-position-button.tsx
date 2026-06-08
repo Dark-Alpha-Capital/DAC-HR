@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useTransition } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Loader2, Trash2 } from "lucide-react";

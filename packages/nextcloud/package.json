@@ -1,0 +1,20 @@
+{
+  "name": "@workspace/nextcloud",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "bun test --pass-with-no-tests"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "webdav": "^5.8.0"
+  },
+  "exports": {
+    ".": "./index.ts",
+    "./index": "./index.ts"
+  }
+}

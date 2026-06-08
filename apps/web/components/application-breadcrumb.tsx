@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -28,7 +28,7 @@ export default function ApplicationBreadcrumb({
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
-            <Link href="/applications">Applications</Link>
+            <Link to="/applications" search={{} as any}>Applications</Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />

@@ -1,20 +1,13 @@
-"use server";
-
 import { db } from "@workspace/db";
 import { documents } from "@workspace/db/schema";
 
-import { revalidatePath, updateTag } from "next/cache";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
+import { getSession } from "@/lib/middleware/auth-guard";
 import { eq } from "@workspace/db";
-import { after } from "next/server";
-import { insertAuditLog } from "@workspace/db/queries";
+import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const deleteDocument = async (id: string) => {
   // calling get session on the server
-  const session = await auth.api.getSession({
-    headers: await headers(), // some endpoints might require headers
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     return { error: "Unauthorized" };
@@ -29,13 +22,8 @@ export const deleteDocument = async (id: string) => {
       .limit(1);
 
     await db.delete(documents).where(eq(documents.id, id));
-
-    updateTag("documents");
-    revalidatePath("/documents");
-
     if (documentData) {
-      after(async () => {
-        await insertAuditLog({
+      insertAuditLog({
           userId: session.user.id,
           action: "delete_document",
           entityType: "document",
@@ -59,8 +47,7 @@ export const deleteDocument = async (id: string) => {
               timestamp: new Date().toISOString(),
             },
           },
-        });
-      });
+        }).catch((error) => console.error("Audit log error:", error));
     }
 
     return { success: true };

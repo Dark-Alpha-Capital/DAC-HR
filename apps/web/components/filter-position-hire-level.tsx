@@ -1,7 +1,6 @@
-"use client";
+import { useUrlSearchParams } from "@/lib/hooks/use-url-search-params";
 
 import React, { useOptimistic, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -22,8 +21,7 @@ const hireLevelOptions = [
 ];
 
 const FilterPositionHireLevel = () => {
-  const searchParams = useSearchParams();
-  const router = useRouter();
+  const { searchParams, setSearchParams } = useUrlSearchParams();
   const [isPending, startTransition] = useTransition();
   const [selectedLevels, setSelectedLevels] = useOptimistic(
     searchParams.getAll("hireLevel"),
@@ -41,10 +39,8 @@ const FilterPositionHireLevel = () => {
       newSelected.forEach((level) => params.append("hireLevel", level));
       setSelectedLevels(newSelected);
 
-      router.push(`?${params.toString()}`, {
-        scroll: false,
-      });
-    });
+      setSearchParams(params);
+  });
   };
 
   return (

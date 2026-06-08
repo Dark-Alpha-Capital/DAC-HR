@@ -407,9 +407,9 @@ export const getCandidatesWithPositions = async () => {
       ...result.candidate,
       position: result.position?.id
         ? {
-          id: result.position.id,
-          name: result.position.name,
-        }
+            id: result.position.id,
+            name: result.position.name,
+          }
         : null,
     }));
   } catch (error) {
@@ -539,9 +539,9 @@ export const getCandidatesWithPositionsFiltered = async (
           ...result.candidate,
           position: result.position?.id
             ? {
-              id: result.position.id,
-              name: result.position.name,
-            }
+                id: result.position.id,
+                name: result.position.name,
+              }
             : null,
         });
       }
@@ -1423,10 +1423,10 @@ export const getInterviewById = async (interviewId: string) => {
         ...question,
         feedback: feedback
           ? {
-            id: feedback.id,
-            notes: feedback.notes,
-            rating: feedback.rating,
-          }
+              id: feedback.id,
+              notes: feedback.notes,
+              rating: feedback.rating,
+            }
           : null,
       };
     });
@@ -1668,15 +1668,21 @@ export const getDashboardStats = async () => {
       .where(sql`${candidate.createdAt} >= NOW() - INTERVAL '30 days'`);
     const totalCandidatesThisMonth = totalCandidatesThisMonthResult?.count || 0;
 
-    // Active candidates count (candidates with applications in reviewed, shortlisted, or interviewing status)
+    const activePipelineStatuses = [
+      "ai_screening",
+      "first_round_recruiter_call",
+      "second_round_technical_screening",
+      "third_round_final_ceo",
+      "contract_offer",
+    ] as const;
+
+    // Active candidates count (applications still in the hiring pipeline)
     const [activeCandidatesResult] = await db
       .select({
         count: sql<number>`count(DISTINCT ${application.candidateId})::int`,
       })
       .from(application)
-      .where(
-        sql`${application.status} IN ('reviewed', 'shortlisted', 'interviewing')`,
-      );
+      .where(inArray(application.status, [...activePipelineStatuses]));
     const activeCandidates = activeCandidatesResult?.count || 0;
 
     // Active candidates last month
@@ -1686,7 +1692,10 @@ export const getDashboardStats = async () => {
       })
       .from(application)
       .where(
-        sql`${application.status} IN ('reviewed', 'shortlisted', 'interviewing') AND ${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`,
+        and(
+          inArray(application.status, [...activePipelineStatuses]),
+          sql`${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`,
+        ),
       );
     const activeCandidatesLastMonth =
       activeCandidatesLastMonthResult?.count || 0;
@@ -2087,6 +2096,19 @@ export async function getCandidateOnboarding(candidateId: string) {
 }
 
 export const getOrCreateCandidateOnboarding = async (candidateId: string) => {
+  const [newOnboarding] = await db
+    .insert(candidateOnboarding)
+    .values({ candidateId })
+    .onConflictDoNothing({
+      target: candidateOnboarding.candidateId,
+    })
+    .returning()
+    .execute();
+
+  if (newOnboarding) {
+    return newOnboarding;
+  }
+
   const [existingOnboarding] = await db
     .select()
     .from(candidateOnboarding)
@@ -2094,17 +2116,7 @@ export const getOrCreateCandidateOnboarding = async (candidateId: string) => {
     .limit(1)
     .execute();
 
-  if (existingOnboarding) {
-    return existingOnboarding;
-  }
-
-  const [newOnboarding] = await db
-    .insert(candidateOnboarding)
-    .values({ candidateId })
-    .returning()
-    .execute();
-
-  return newOnboarding;
+  return existingOnboarding;
 };
 
 /**
@@ -2840,13 +2852,63 @@ export const getLatestInterviewAiAnalysis = async (interviewId: string) => {
  */
 export const deleteInterviewAiAnalysis = async (analysisId: string) => {
   try {
-    await db
+    const deletedRows = await db
       .delete(interviewAiAnalysis)
-      .where(eq(interviewAiAnalysis.id, analysisId));
-    return true;
+      .where(eq(interviewAiAnalysis.id, analysisId))
+      .returning({ id: interviewAiAnalysis.id });
+    return deletedRows.length > 0;
   } catch (error) {
     console.error("Error deleting interview AI analysis", error);
     return false;
+  }
+};
+
+/**
+ * Deletes an interview AI analysis by analysis ID scoped to interview ID
+ * @param interviewId The interview ID from route context
+ * @param analysisId The analysis ID to delete
+ * @returns Deletion result with reason for non-delete cases
+ */
+export const deleteInterviewAiAnalysisForInterview = async (
+  interviewId: string,
+  analysisId: string,
+): Promise<{ deleted: boolean; reason?: "not_found" | "mismatch" }> => {
+  try {
+    const [analysisRecord] = await db
+      .select({
+        id: interviewAiAnalysis.id,
+        interviewId: interviewAiAnalysis.interviewId,
+      })
+      .from(interviewAiAnalysis)
+      .where(eq(interviewAiAnalysis.id, analysisId))
+      .limit(1);
+
+    if (!analysisRecord) {
+      return { deleted: false, reason: "not_found" };
+    }
+
+    if (analysisRecord.interviewId !== interviewId) {
+      return { deleted: false, reason: "mismatch" };
+    }
+
+    const deletedRows = await db
+      .delete(interviewAiAnalysis)
+      .where(
+        and(
+          eq(interviewAiAnalysis.id, analysisId),
+          eq(interviewAiAnalysis.interviewId, interviewId),
+        ),
+      )
+      .returning({ id: interviewAiAnalysis.id });
+
+    if (deletedRows.length === 0) {
+      return { deleted: false, reason: "not_found" };
+    }
+
+    return { deleted: true };
+  } catch (error) {
+    console.error("Error deleting scoped interview AI analysis", error);
+    return { deleted: false };
   }
 };
 

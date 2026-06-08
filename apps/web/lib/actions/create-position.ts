@@ -1,5 +1,3 @@
-"use server";
-
 import { db } from "@workspace/db";
 import { position } from "@workspace/db/schema";
 import slugify from "slugify";
@@ -7,18 +5,13 @@ import {
   PositionFormSchema,
   positionFormSchema,
 } from "../schemas/position-form-schema";
-import { revalidatePath, updateTag } from "next/cache";
-import { auth } from "@/auth";
-import { headers } from "next/headers";
-import { after } from "next/server";
-import { insertAuditLog } from "@workspace/db/queries";
+import { getSession } from "@/lib/middleware/auth-guard";
+import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const createPosition = async (data: PositionFormSchema) => {
   console.log("data", data);
 
-  const session = await auth.api.getSession({
-    headers: await headers(), // some endpoints might require headers
-  });
+  const session = await getSession();
 
   if (!session?.user) {
     console.log("unauthorized");
@@ -57,12 +50,7 @@ export const createPosition = async (data: PositionFormSchema) => {
     }
 
     console.log("new position created", newPosition);
-
-    updateTag("positions");
-    revalidatePath("/positions");
-
-    after(async () => {
-      await insertAuditLog({
+    insertAuditLog({
         userId: session.user.id,
         action: "create_position",
         entityType: "position",
@@ -95,8 +83,7 @@ export const createPosition = async (data: PositionFormSchema) => {
             timestamp: new Date().toISOString(),
           },
         },
-      });
-    });
+      }).catch((error) => console.error("Audit log error:", error));
 
     return { success: true, data: newPosition };
   } catch (error) {

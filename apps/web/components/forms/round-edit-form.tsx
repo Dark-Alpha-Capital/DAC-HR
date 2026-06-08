@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
@@ -22,7 +20,7 @@ import {
 import { roundEditFormSchema } from "@/lib/schemas/round-form-schema";
 import { Loader2 } from "lucide-react";
 import { updateRound } from "@/lib/actions/update-round";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import type { RoundTemplate } from "@workspace/db/schema";
 
 interface RoundEditFormProps {
@@ -53,11 +51,11 @@ const RoundEditForm = ({ round }: RoundEditFormProps) => {
             action: {
               label: "View Round",
               onClick: () => {
-                router.push(`/rounds/${result.data?.id}`);
+                router.navigate({ to: `/rounds/${result.data?.id}` });
               },
             },
           });
-          router.push(`/rounds/${result.data?.id}`);
+          router.navigate({ to: `/rounds/${result.data?.id}` });
         } else {
           toast.error(
             typeof result.error === "string"

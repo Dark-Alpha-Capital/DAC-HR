@@ -1,10 +1,8 @@
-"use client";
-
 import React, { useTransition } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import { deleteCandidate } from "@/lib/actions/delete-candidate";
 import {
   AlertDialog,
@@ -17,17 +15,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog";
-import { authClient } from "@/auth-client";
 import { resetCacheForCandidates } from "@/lib/actions/reset-cache";
+import { useAppSession } from "@/hooks/use-app-session";
 
 const DeleteCandidateButton = ({ candidateId }: { candidateId: string }) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-
-  const { data: userSession } = authClient.useSession();
+  const session = useAppSession();
 
   const handleDelete = () => {
-    if (!userSession?.session?.token) {
+    if (!session?.user) {
       toast.error("You must be logged in to delete a candidate", {
         position: "bottom-right",
       });
@@ -38,9 +35,6 @@ const DeleteCandidateButton = ({ candidateId }: { candidateId: string }) => {
       try {
         const response = await fetch(`/api/candidate/${candidateId}`, {
           method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${userSession?.session?.token}`,
-          },
         });
 
         const result = await response.json();
@@ -53,7 +47,7 @@ const DeleteCandidateButton = ({ candidateId }: { candidateId: string }) => {
         toast.success("Candidate deleted successfully", {
           position: "bottom-right",
         });
-        router.refresh();
+        router.invalidate();
       } catch (error) {
         toast.error(
           error instanceof Error ? error.message : "Failed to delete candidate",

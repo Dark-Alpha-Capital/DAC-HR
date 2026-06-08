@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useTransition, useState } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Checkbox } from "@workspace/ui/components/checkbox";
@@ -152,7 +150,6 @@ export default function CandidateAiAnalysis({
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${session.token}`,
             },
             body: JSON.stringify(requestBody),
           },

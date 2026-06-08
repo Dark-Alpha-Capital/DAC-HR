@@ -1,5 +1,3 @@
-"use client";
-
 import OnboardingCard from "./onboarding-card";
 
 interface OnboardingCardWrapperProps {

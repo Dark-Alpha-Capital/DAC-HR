@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { useTransition, useState } from "react";
 import { useForm } from "@tanstack/react-form";
@@ -29,7 +27,7 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 import { Loader2, ChevronDown } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@tanstack/react-router";
 import {
   employeeFormSchema,
   type EmployeeFormSchema,
@@ -139,11 +137,11 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
               action: {
                 label: "View Employees",
                 onClick: () => {
-                  router.push("/employees");
+                  router.navigate({ to: "/employees", search: {} as any });
                 },
               },
             });
-            router.push(`/employees/${employee.id}`);
+            router.navigate({ to: `/employees/${employee.id}` });
           }
         } catch (error) {
           toast.error(
@@ -205,7 +203,7 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
           <Button
             type="button"
             variant="secondary"
-            onClick={() => router.back()}
+            onClick={() => window.history.back()}
             disabled={isPending}
           >
             Cancel
