@@ -30,6 +30,7 @@ import { Route as MainDocsIndexRouteImport } from './_main/docs/index'
 import { Route as MainCandidatesIndexRouteImport } from './_main/candidates/index'
 import { Route as MainApplicationsIndexRouteImport } from './_main/applications/index'
 import { Route as MainAdminIndexRouteImport } from './_main/admin/index'
+import { Route as ApiLoginGoogleRouteImport } from './api/login/google'
 import { Route as ApiDocumentsViewRouteImport } from './api/documents/view'
 import { Route as ApiDocumentsUploadRouteImport } from './api/documents/upload'
 import { Route as ApiCandidateBulkRouteImport } from './api/candidate/bulk'
@@ -178,6 +179,11 @@ const MainAdminIndexRoute = MainAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
   getParentRoute: () => MainRouteRoute,
+} as any)
+const ApiLoginGoogleRoute = ApiLoginGoogleRouteImport.update({
+  id: '/api/login/google',
+  path: '/api/login/google',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiDocumentsViewRoute = ApiDocumentsViewRouteImport.update({
   id: '/api/documents/view',
@@ -440,6 +446,7 @@ export interface FileRoutesByFullPath {
   '/api/candidate/bulk': typeof ApiCandidateBulkRoute
   '/api/documents/upload': typeof ApiDocumentsUploadRoute
   '/api/documents/view': typeof ApiDocumentsViewRoute
+  '/api/login/google': typeof ApiLoginGoogleRoute
   '/admin/': typeof MainAdminIndexRoute
   '/applications/': typeof MainApplicationsIndexRoute
   '/candidates/': typeof MainCandidatesIndexRoute
@@ -505,6 +512,7 @@ export interface FileRoutesByTo {
   '/api/candidate/bulk': typeof ApiCandidateBulkRoute
   '/api/documents/upload': typeof ApiDocumentsUploadRoute
   '/api/documents/view': typeof ApiDocumentsViewRoute
+  '/api/login/google': typeof ApiLoginGoogleRoute
   '/admin': typeof MainAdminIndexRoute
   '/applications': typeof MainApplicationsIndexRoute
   '/candidates': typeof MainCandidatesIndexRoute
@@ -573,6 +581,7 @@ export interface FileRoutesById {
   '/api/candidate/bulk': typeof ApiCandidateBulkRoute
   '/api/documents/upload': typeof ApiDocumentsUploadRoute
   '/api/documents/view': typeof ApiDocumentsViewRoute
+  '/api/login/google': typeof ApiLoginGoogleRoute
   '/_main/admin/': typeof MainAdminIndexRoute
   '/_main/applications/': typeof MainApplicationsIndexRoute
   '/_main/candidates/': typeof MainCandidatesIndexRoute
@@ -641,6 +650,7 @@ export interface FileRouteTypes {
     | '/api/candidate/bulk'
     | '/api/documents/upload'
     | '/api/documents/view'
+    | '/api/login/google'
     | '/admin/'
     | '/applications/'
     | '/candidates/'
@@ -706,6 +716,7 @@ export interface FileRouteTypes {
     | '/api/candidate/bulk'
     | '/api/documents/upload'
     | '/api/documents/view'
+    | '/api/login/google'
     | '/admin'
     | '/applications'
     | '/candidates'
@@ -773,6 +784,7 @@ export interface FileRouteTypes {
     | '/api/candidate/bulk'
     | '/api/documents/upload'
     | '/api/documents/view'
+    | '/api/login/google'
     | '/_main/admin/'
     | '/_main/applications/'
     | '/_main/candidates/'
@@ -819,6 +831,7 @@ export interface RootRouteChildren {
   ApiCandidateBulkRoute: typeof ApiCandidateBulkRoute
   ApiDocumentsUploadRoute: typeof ApiDocumentsUploadRoute
   ApiDocumentsViewRoute: typeof ApiDocumentsViewRoute
+  ApiLoginGoogleRoute: typeof ApiLoginGoogleRoute
   ApiCandidateIndexRoute: typeof ApiCandidateIndexRoute
   ApiCandidateIdAiAnalysisRoute: typeof ApiCandidateIdAiAnalysisRoute
   ApiCandidateIdAiScreeningRoute: typeof ApiCandidateIdAiScreeningRoute
@@ -975,6 +988,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof MainAdminIndexRouteImport
       parentRoute: typeof MainRouteRoute
+    }
+    '/api/login/google': {
+      id: '/api/login/google'
+      path: '/api/login/google'
+      fullPath: '/api/login/google'
+      preLoaderRoute: typeof ApiLoginGoogleRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/documents/view': {
       id: '/api/documents/view'
@@ -1430,6 +1450,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCandidateBulkRoute: ApiCandidateBulkRoute,
   ApiDocumentsUploadRoute: ApiDocumentsUploadRoute,
   ApiDocumentsViewRoute: ApiDocumentsViewRoute,
+  ApiLoginGoogleRoute: ApiLoginGoogleRoute,
   ApiCandidateIndexRoute: ApiCandidateIndexRoute,
   ApiCandidateIdAiAnalysisRoute: ApiCandidateIdAiAnalysisRoute,
   ApiCandidateIdAiScreeningRoute: ApiCandidateIdAiScreeningRoute,

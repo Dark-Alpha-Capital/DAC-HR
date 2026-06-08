@@ -17,5 +17,5 @@
     "**/*.ts",
     "**/*.tsx"
   ],
-  "exclude": ["node_modules", "_old_nextjs", ".next", ".turbo", ".output"]
+  "exclude": ["node_modules", ".turbo", ".output"]
 }

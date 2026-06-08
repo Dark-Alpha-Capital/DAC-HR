@@ -13,7 +13,7 @@ import {
 import { Separator } from "@workspace/ui/components/separator";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { LogInIcon, ShieldCheckIcon } from "lucide-react";
-import { getSession } from "@/lib/middleware/auth-guard";
+import { fetchSession } from "@/lib/auth-session";
 import GoogleSignInButton from "@/components/google-signin-button";
 import { AuthLayout } from "@/components/auth-layout";
 
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/login")({
     meta: [{ title: "Login - DAC-HR" }],
   }),
   loader: async () => {
-    const session = await getSession();
+    const session = await fetchSession();
     if (session) throw redirect({ to: "/dashboard" });
   },
   component: LoginPage,

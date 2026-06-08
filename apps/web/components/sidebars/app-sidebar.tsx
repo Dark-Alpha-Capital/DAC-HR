@@ -15,9 +15,8 @@ import {
   ClipboardList,
   ShieldCheckIcon,
 } from "lucide-react";
-import { Link } from "@tanstack/react-router";
-import { useRouterState } from "@tanstack/react-router";
-import { authClient } from "@/auth-client";
+import { Link, useRouterState } from "@tanstack/react-router";
+import type { AppSession } from "@/lib/auth-session";
 
 import {
   Sidebar,
@@ -34,7 +33,6 @@ import {
   SidebarSeparator,
 } from "@workspace/ui/components/sidebar";
 
-import { Suspense } from "react";
 import { SidebarUserNav } from "../sidebar-user-nav";
 
 // Recruiting links (available to all users)
@@ -67,9 +65,8 @@ const adminLinks = [
   { href: "/admin/audit-logs", label: "Audit Logs", icon: ScrollText },
 ] as const;
 
-export function AppSidebar() {
+export function AppSidebar({ session }: { session: AppSession }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { data: session } = authClient.useSession();
   const isAdmin = session?.user?.role === "admin";
 
   const isActive = (href: string) => {
@@ -188,9 +185,7 @@ export function AppSidebar() {
         )}
       </SidebarContent>
       <SidebarFooter>
-        <Suspense>
-          <SidebarUserNav />
-        </Suspense>
+        <SidebarUserNav session={session} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

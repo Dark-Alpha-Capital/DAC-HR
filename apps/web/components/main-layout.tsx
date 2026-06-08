@@ -1,17 +1,21 @@
-import { Suspense } from "react";
 import {
   SidebarInset,
   SidebarProvider,
 } from "@workspace/ui/components/sidebar";
 import { AppSidebar } from "@/components/sidebars/app-sidebar";
 import { MainSiteTopbar } from "@/components/main-site/topbar";
+import type { AppSession } from "@/lib/auth-session";
 
-export function MainLayout({ children }: { children: React.ReactNode }) {
+export function MainLayout({
+  children,
+  session,
+}: {
+  children: React.ReactNode;
+  session: AppSession;
+}) {
   return (
     <SidebarProvider>
-      <Suspense fallback={null}>
-        <AppSidebar />
-      </Suspense>
+      <AppSidebar session={session} />
       <SidebarInset>
         <MainSiteTopbar />
         <div

@@ -1,15 +1,12 @@
 import { createMiddleware } from "@tanstack/react-start";
 import { redirect } from "@tanstack/react-router";
-import { auth } from "@/auth";
 import { getRequest } from "@tanstack/react-start/server";
+import { getSessionFromHeaders } from "@/lib/auth-session";
 
 export async function getSession() {
   try {
     const request = getRequest();
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-    return session;
+    return await getSessionFromHeaders(request.headers);
   } catch {
     return null;
   }

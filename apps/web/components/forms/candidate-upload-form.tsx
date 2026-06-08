@@ -34,7 +34,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
-import { authClient } from "@/auth-client";
 import { Session } from "better-auth";
 import { resetCacheForCandidates } from "@/lib/actions/reset-cache";
 
@@ -101,7 +100,6 @@ const CandidateUploadForm = ({
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${userSession.token}`,
             },
             body: JSON.stringify({
               ...value,
@@ -150,9 +148,6 @@ const CandidateUploadForm = ({
                 `/api/candidate/${candidateId}/documents`,
                 {
                   method: "POST",
-                  headers: {
-                    Authorization: `Bearer ${userSession.token}`,
-                  },
                   body: formData,
                 },
               );

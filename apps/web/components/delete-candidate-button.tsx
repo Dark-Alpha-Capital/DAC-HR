@@ -15,17 +15,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog";
-import { authClient } from "@/auth-client";
 import { resetCacheForCandidates } from "@/lib/actions/reset-cache";
+import { useAppSession } from "@/hooks/use-app-session";
 
 const DeleteCandidateButton = ({ candidateId }: { candidateId: string }) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-
-  const { data: userSession } = authClient.useSession();
+  const session = useAppSession();
 
   const handleDelete = () => {
-    if (!userSession?.session?.token) {
+    if (!session?.user) {
       toast.error("You must be logged in to delete a candidate", {
         position: "bottom-right",
       });
@@ -36,9 +35,6 @@ const DeleteCandidateButton = ({ candidateId }: { candidateId: string }) => {
       try {
         const response = await fetch(`/api/candidate/${candidateId}`, {
           method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${userSession?.session?.token}`,
-          },
         });
 
         const result = await response.json();
