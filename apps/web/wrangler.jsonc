@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "hr-automation-web",
-  "main": "./.output/server/index.mjs",
+  "main": "@tanstack/react-start/server-entry",
   "compatibility_date": "2026-06-01",
   "compatibility_flags": ["nodejs_compat"],
 
@@ -14,19 +14,20 @@
     "BETTER_AUTH_URL": "http://localhost:3000"
   },
 
-  "r2_buckets": [
-    {
-      "binding": "DOCUMENTS_BUCKET",
-      "bucket_name": "hr-documents"
-    }
+  // "r2_buckets": [
+  //   {
+  //     "binding": "DOCUMENTS_BUCKET",
+  //     "bucket_name": "hr-documents"
+  //   }
+  // ],
+
+  "vectorize": [
+  {
+    "binding": "VECTORIZE",
+    "index_name": "hr-documents-index"
+  }
   ],
 
-  "hyperdrive": [
-    {
-      "binding": "HYPERDRIVE",
-      "id": "<HYPERDRIVE_CONFIG_ID>"
-    }
-  ],
 
   "assets": {
     "directory": "./public"

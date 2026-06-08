@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "start": "wrangler dev",
-    "deploy": "wrangler deploy",
+      "preview": "vite preview",
+    "deploy": "npm run build && wrangler deploy",
+    "cf-typegen": "wrangler types", 
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "test": "bun test --pass-with-no-tests",
@@ -58,6 +59,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.40.0",
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.3.0",
     "@types/bun": "latest",
