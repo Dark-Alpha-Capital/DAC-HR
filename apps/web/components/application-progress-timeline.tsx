@@ -28,7 +28,9 @@ import {
   Circle,
   CheckCircle2,
   XCircle,
+  Link2,
 } from "lucide-react";
+import GenerateInterviewLinkDialog from "./dialogs/generate-interview-link-dialog";
 import { Link } from "@tanstack/react-router";
 import { formatDate } from "@/lib/utils";
 import RecordInterviewDialogWrapper from "./record-interview-dialog-wrapper";
@@ -128,6 +130,15 @@ export default function ApplicationProgressTimeline({
     null,
   );
   const [isDeleting, setIsDeleting] = useState(false);
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkDialogInterviewId, setLinkDialogInterviewId] = useState<
+    string | null
+  >(null);
+
+  const handleGenerateLinkClick = (interviewId: string) => {
+    setLinkDialogInterviewId(interviewId);
+    setLinkDialogOpen(true);
+  };
 
   // Group interviews by round
   const interviewsByRound = useMemo(() => {
@@ -338,6 +349,17 @@ export default function ApplicationProgressTimeline({
                                 <Button
                                   variant="secondary"
                                   size="sm"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() =>
+                                    handleGenerateLinkClick(interview.id)
+                                  }
+                                  title="Generate interview link"
+                                >
+                                  <Link2 className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
                                   className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                                   onClick={() =>
                                     handleDeleteClick(interview.id)
@@ -357,6 +379,18 @@ export default function ApplicationProgressTimeline({
             );
           })}
         </div>
+      )}
+
+      {/* Generate Link Dialog */}
+      {linkDialogInterviewId && (
+        <GenerateInterviewLinkDialog
+          interviewId={linkDialogInterviewId}
+          open={linkDialogOpen}
+          onOpenChange={(open) => {
+            setLinkDialogOpen(open);
+            if (!open) setLinkDialogInterviewId(null);
+          }}
+        />
       )}
 
       {/* Delete Confirmation Dialog */}
