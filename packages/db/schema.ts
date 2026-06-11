@@ -196,11 +196,29 @@ export const candidatePosition = pgTable(
   }),
 );
 
+export const questionTypeEnum = pgEnum("question_type", [
+  "text",
+  "video",
+  "audio",
+  "mcq",
+]);
+
+export const questionCategoryEnum = pgEnum("question_category", [
+  "screening",
+  "technical",
+  "behavioral",
+]);
+
 export const questionBank = pgTable("question_bank", {
   id: text("id")
     .primaryKey()
     .default(sql`gen_random_uuid()`),
   questionText: text("question_text").notNull(),
+  questionType: questionTypeEnum("question_type").default("text").notNull(),
+  category: questionCategoryEnum("question_category"),
+  timeLimitSeconds: integer("time_limit_seconds"),
+  orderIndex: integer("order_index"),
+  isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -599,3 +617,94 @@ export const recruiterWeeklyCheckin = pgTable("recruiter_weekly_checkin", {
 export type RecruiterWeeklyCheckin = InferSelectModel<
   typeof recruiterWeeklyCheckin
 >;
+
+export const interviewSessionStatusEnum = pgEnum("interview_session_status", [
+  "pending",
+  "invited",
+  "in_progress",
+  "completed",
+  "reviewed",
+]);
+
+export const interviewEvaluationRecommendationEnum = pgEnum(
+  "interview_evaluation_recommendation",
+  ["strong_hire", "hire", "maybe", "reject"],
+);
+
+export const interviewSession = pgTable("interview_session", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  token: text("token").notNull().unique(),
+  applicationId: text("application_id")
+    .notNull()
+    .references(() => application.id, { onDelete: "cascade" }),
+  roundId: text("round_id")
+    .notNull()
+    .references(() => roundTemplate.id, { onDelete: "cascade" }),
+  status: interviewSessionStatusEnum("status").default("pending").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  tabSwitches: integer("tab_switches").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+});
+
+export type InterviewSession = InferSelectModel<typeof interviewSession>;
+
+export const interviewResponse = pgTable(
+  "interview_response",
+  {
+    id: text("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    sessionId: text("session_id")
+      .notNull()
+      .references(() => interviewSession.id, { onDelete: "cascade" }),
+    questionId: text("question_id")
+      .notNull()
+      .references(() => questionBank.id, { onDelete: "cascade" }),
+    answerText: text("answer_text"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => ({
+    interviewResponseUnique: uniqueIndex("interview_response_unique").on(
+      table.sessionId,
+      table.questionId,
+    ),
+  }),
+);
+
+export type InterviewResponse = InferSelectModel<typeof interviewResponse>;
+
+export const interviewEvaluation = pgTable("interview_evaluation", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  sessionId: text("session_id")
+    .notNull()
+    .unique()
+    .references(() => interviewSession.id, { onDelete: "cascade" }),
+  score: integer("score"),
+  recommendation: interviewEvaluationRecommendationEnum("recommendation"),
+  summary: text("summary"),
+  strengths: json("strengths"),
+  risks: json("risks"),
+  dimensionScores: json("dimension_scores"),
+  perQuestionFeedback: json("per_question_feedback"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+});
+
+export type InterviewEvaluation = InferSelectModel<typeof interviewEvaluation>;

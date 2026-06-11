@@ -14,13 +14,6 @@
     "BETTER_AUTH_URL": "http://localhost:3000"
   },
 
-  // "r2_buckets": [
-  //   {
-  //     "binding": "DOCUMENTS_BUCKET",
-  //     "bucket_name": "hr-documents"
-  //   }
-  // ],
-
   "vectorize": [
   {
     "binding": "VECTORIZE",

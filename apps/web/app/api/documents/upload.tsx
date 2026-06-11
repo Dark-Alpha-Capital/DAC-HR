@@ -1,6 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { getSession } from "@/lib/middleware/auth-guard";
-import { uploadDocument } from "@/lib/r2-storage";
+import { uploadFile } from "@/lib/storage";
+
+const VIDEO_TYPES = [
+  "video/mp4",
+  "video/mpeg",
+  "video/quicktime",
+  "video/x-msvideo",
+  "video/x-ms-wmv",
+  "video/webm",
+  "video/ogg",
+  "video/x-matroska",
+  "video/3gpp",
+  "video/x-flv",
+];
 
 export const Route = createFileRoute("/api/documents/upload")({
   server: {
@@ -11,50 +25,73 @@ export const Route = createFileRoute("/api/documents/upload")({
           if (!authSession?.user)
             return Response.json({ error: "Unauthorized" }, { status: 401 });
 
+          const { user } = authSession;
           const formData = await request.formData();
           const file = formData.get("file") as File | null;
-          const name = formData.get("name") as string;
-          const category = formData.get("category") as string;
-          const tags = formData.get("tags") as string;
 
           if (!file) {
+            return Response.json({ error: "No file provided" }, { status: 400 });
+          }
+
+          const maxSize = 500 * 1024 * 1024;
+          if (file.size > maxSize) {
             return Response.json(
-              { error: "File is required" },
+              { error: "File size exceeds 500MB limit" },
               { status: 400 },
             );
           }
 
-          const key = `documents/${Date.now()}-${name || file.name}`;
-          const uploadedKey = await uploadDocument(key, file, file.type);
-
-          if (!uploadedKey) {
+          if (VIDEO_TYPES.includes(file.type)) {
             return Response.json(
-              { error: "Failed to upload document" },
+              {
+                error:
+                  "Video files are not allowed. Please upload other file types.",
+              },
+              { status: 400 },
+            );
+          }
+
+          const url = await uploadFile(file, "/Documents");
+
+          if (!url) {
+            return Response.json(
+              { error: "Failed to upload file to storage" },
               { status: 500 },
             );
           }
 
-          return Response.json(
-            {
-              success: true,
-              data: {
-                name: name || file.name,
+          insertAuditLog({
+            userId: user.id,
+            action: "upload_document",
+            entityType: "document",
+            entityId: url,
+            details: {
+              file: {
+                name: file.name,
                 size: file.size,
                 type: file.type,
-                category: category || "other",
-                tags: tags ? tags.split(",").map((t) => t.trim()) : [],
-                key: uploadedKey,
+                url,
+              },
+              uploadedBy: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+              },
+              metadata: {
+                timestamp: new Date().toISOString(),
               },
             },
-            { status: 201 },
-          );
+          }).catch((err) => console.error("Audit log error:", err));
+
+          return Response.json({ url }, { status: 200 });
         } catch (error) {
+          console.error("Error uploading file:", error);
           return Response.json(
             {
               error:
                 error instanceof Error
                   ? error.message
-                  : "Failed to upload document",
+                  : "Internal server error",
             },
             { status: 500 },
           );

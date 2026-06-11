@@ -987,6 +987,89 @@ export const getQuestionsByRoundId = async (roundId: string) => {
   }
 };
 
+function seededShuffle<T>(array: T[], seed: number): T[] {
+  const shuffled = [...array];
+  let s = seed;
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    s = (s * 16807 + 0) % 2147483647;
+    const j = s % (i + 1);
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+function hashString(str: string): number {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash + str.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
+}
+
+export const getQuestionsForInterviewSession = async (
+  roundId: string,
+  seed: string,
+  categoryLimits?: Record<string, number>,
+) => {
+  try {
+    const results = await db
+      .select({
+        id: questionBank.id,
+        questionText: questionBank.questionText,
+        questionType: questionBank.questionType,
+        category: questionBank.questionCategory,
+        timeLimitSeconds: questionBank.timeLimitSeconds,
+        orderIndex: questionBank.orderIndex,
+        createdAt: questionBank.createdAt,
+        updatedAt: questionBank.updatedAt,
+      })
+      .from(roundTemplateQuestions)
+      .innerJoin(
+        questionBank,
+        eq(roundTemplateQuestions.questionId, questionBank.id),
+      )
+      .where(
+        and(
+          eq(roundTemplateQuestions.roundTemplateId, roundId),
+          eq(questionBank.isActive, true),
+        ),
+      );
+
+    const groupedByCategory = new Map<string, typeof results>();
+    for (const q of results) {
+      const cat = q.category ?? "screening";
+      if (!groupedByCategory.has(cat)) {
+        groupedByCategory.set(cat, []);
+      }
+      groupedByCategory.get(cat)!.push(q);
+    }
+
+    const numericSeed = hashString(seed);
+    const defaults: Record<string, number> = {
+      screening: 5,
+      technical: 5,
+      behavioral: 5,
+    };
+    const limits = { ...defaults, ...categoryLimits };
+
+    const selected: typeof results = [];
+    for (const [category, questions] of groupedByCategory) {
+      const limit = limits[category] ?? 5;
+      const shuffled = seededShuffle(questions, numericSeed + hashString(category));
+      selected.push(...shuffled.slice(0, limit));
+    }
+
+    const finalOrdered = selected.sort(
+      (a, b) => (a.orderIndex ?? 9999) - (b.orderIndex ?? 9999),
+    );
+
+    return finalOrdered;
+  } catch (error) {
+    console.error("Error fetching questions for interview session", error);
+    return [];
+  }
+};
+
 /**
  *
  * Fetches all round templates from the database

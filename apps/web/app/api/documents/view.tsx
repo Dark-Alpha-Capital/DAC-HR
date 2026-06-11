@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getSession } from "@/lib/middleware/auth-guard";
-import { getDocumentUrl } from "@/lib/r2-storage";
+import { getSignedUrl } from "@/lib/storage";
 
 export const Route = createFileRoute("/api/documents/view")({
   server: {
@@ -11,29 +11,34 @@ export const Route = createFileRoute("/api/documents/view")({
           if (!authSession?.user)
             return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-          const url = new URL(request.url);
-          const key = url.searchParams.get("id") || url.searchParams.get("key");
-          if (!key)
+          const searchParams = new URL(request.url).searchParams;
+          const url = searchParams.get("url");
+
+          if (!url) {
             return Response.json(
-              { error: "Document key required" },
+              { error: "Document URL is required" },
               { status: 400 },
             );
+          }
 
-          const docUrl = await getDocumentUrl(key);
-          if (!docUrl)
+          const signedUrl = await getSignedUrl(url, 60);
+
+          if (!signedUrl) {
             return Response.json(
-              { error: "Document not found" },
-              { status: 404 },
+              { error: "Failed to generate access URL" },
+              { status: 500 },
             );
+          }
 
-          return Response.json({ url: docUrl }, { status: 200 });
+          return Response.json({ url: signedUrl }, { status: 200 });
         } catch (error) {
+          console.error("Error generating signed URL:", error);
           return Response.json(
             {
               error:
                 error instanceof Error
                   ? error.message
-                  : "Failed to view document",
+                  : "Internal server error",
             },
             { status: 500 },
           );

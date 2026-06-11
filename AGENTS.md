@@ -8,11 +8,11 @@ bun run dev          # turbo dev (Vite on :3000)
 bun run build        # turbo build (vite build)
 bun run lint         # turbo lint (ESLint 9 flat config)
 bun run test         # turbo run test (bun test in each package)
-bun run format       # prettier across *.ts,*.tsx,*.md
+bun run format       # prettier --write "**/*.{ts,tsx,md}" (no config file — uses defaults)
 ```
 
-**Typecheck web app directly:** `tsc --noEmit` from `apps/web/`
-**Deploy web:** `wrangler deploy` from `apps/web/`
+**Typecheck:** `tsc --noEmit` from `apps/web/` (no root-level typecheck script)
+**Deploy:** `wrangler deploy` from `apps/web/`
 
 ## Architecture overview
 
@@ -20,7 +20,7 @@ Turborepo monorepo with `bun@1.1.38`. Deployed on **Cloudflare Workers**.
 
 | Directory                     | Package                        | Role                                                                  |
 | ----------------------------- | ------------------------------ | --------------------------------------------------------------------- |
-| `apps/web/`                   | `web`                          | TanStack Start app (React 19, Vite, Tailwind v4, shadcn/ui)           |
+| `apps/web/`                   | `web`                          | TanStack Start app (React 19, Vite 8, Tailwind v4, shadcn/ui)         |
 | `apps/worker/`                | `worker`                       | Stub (future Cloudflare Worker for background jobs)                   |
 | `packages/db/`                | `@workspace/db`                | Drizzle ORM + PostgreSQL via `@neondatabase/serverless` (HTTP driver) |
 | `packages/nextcloud/`         | `@workspace/nextcloud`         | Nextcloud WebDAV client                                               |
@@ -28,27 +28,37 @@ Turborepo monorepo with `bun@1.1.38`. Deployed on **Cloudflare Workers**.
 | `packages/ui/`                | `@workspace/ui`                | shadcn/ui component library                                           |
 | `packages/eslint-config/`     | `@workspace/eslint-config`     | Shared ESLint configs (base, next-js, react-internal)                 |
 | `packages/typescript-config/` | `@workspace/typescript-config` | Shared tsconfig extends                                               |
+| `packages/mail/`              | —                              | Empty stub (no package.json)                                          |
+
+## TanStack Start routing quirks
+
+- **Routes live directly under `app/`** (e.g. `app/_main/dashboard.tsx`), NOT under `app/routes/`. This is because `vite.config.ts` sets `routesDirectory: "."`.
+- `app/routeTree.gen.ts` is **auto-generated** — never edit it manually.
+- `_main` is a layout route wrapping all authenticated pages. It calls `fetchSession()` in `beforeLoad`.
+- Public routes: `login.tsx`, `signup.tsx`, `unauthorized.tsx`, `interview/$token/index.tsx`.
 
 ## Database (Drizzle + Neon HTTP)
 
 - Driver: `@neondatabase/serverless` (HTTP-based, Cloudflare Workers compatible)
 - Production: Hyperdrive pools connections to Neon Postgres
-- Schema: `packages/db/schema.ts` (22+ tables)
-- Migrations: `packages/db/drizzle/` (25 SQL migration files)
-- The DB client uses a **lazy-init Proxy pattern**. Import `db` directly.
+- Schema: `packages/db/schema.ts` (27 tables)
+- Migrations: `packages/db/drizzle/` (27 SQL migration files)
+- Repositories: `packages/db/repositories/` (5 files: audit, candidate, document, interview, interview-session)
+- The DB client uses a **lazy-init Proxy pattern**. Import `db` directly — it initializes on first access.
 
 ```bash
 cd packages/db
 bun run db:generate   # generate migrations from schema changes
 bun run db:migrate    # apply migrations
-bun run db:push       # push schema directly
+bun run db:push       # push schema directly (bypasses migrations)
 bun run db:seed       # seed sample data
 ```
 
-All common Drizzle operators re-exported:
+All common Drizzle operators re-exported from `@workspace/db`:
 
 ```ts
-import { db, eq, and, or, sql, asc, desc, inArray, count } from "@workspace/db";
+import { db, eq, and, or, sql, asc, desc, inArray, count, gte, lte } from "@workspace/db";
+// also exports InferSelectModel, InferInsertModel
 ```
 
 ## Environment variables
@@ -56,38 +66,37 @@ import { db, eq, and, or, sql, asc, desc, inArray, count } from "@workspace/db";
 - All env vars go in `apps/web/.env` (not the repo root)
 - Template: `apps/web/.env.example`
 - `packages/db/.env` only needs `DATABASE_URL` (for drizzle-kit CLI)
-- Bun auto-loads `.env` files; `auth.ts` explicitly calls `dotenv/config`
-- Dev secrets for wrangler: `apps/web/.dev.vars`
+- `apps/web/.dev.vars` duplicates secrets for **wrangler dev** (Cloudflare Workers runtime can't read `.env`)
+- `auth.ts` explicitly calls `dotenv/config` to load `.env` at startup (`bun` auto-loads `.env` only for scripts)
 
 ## Auth (better-auth)
 
 - Config: `apps/web/auth.ts`, Client: `apps/web/auth-client.ts`
 - Only `@darkalphacapital.com` emails can sign in
 - Admin emails hardcoded in `auth.ts` (rahul@, gaurav@, da@)
-- Auth check uses `authGuard` middleware, not per-route `requireAuth()`
-- `authGuard` puts typed `{ session }` in request context
-
-## Observability
-
-- `apps/web/lib/middleware/request-logger.ts` — centralized request timing middleware
-- `apps/web/lib/middleware/auth-guard.ts` — `authGuard` + `adminGuard` middleware
-- Structured JSON logging throughout (readable via `wrangler tail`)
+- Session helpers in `lib/auth-session.ts`:
+  - `fetchSession()` — used in `beforeLoad` of layout routes
+  - `getSession()` from `lib/middleware/auth-guard.ts` — used inline in API routes
+  - `authGuard` / `adminGuard` middleware exist in `lib/middleware/auth-guard.ts` but are **not currently used**
+  - `requestLogger` middleware exists in `lib/middleware/request-logger.ts` but is **not currently used**
 
 ## API route conventions
 
 - Zod validation with `safeParse`, return 400 with `flatten().fieldErrors`
+- Auth check via `getSession()` called inline at the top of each handler
 - Audit logs inserted inline with `.catch()` (fire-and-forget)
-- Auth check via middleware, not inline in handlers
-
-## Config files
-
-- `apps/web/vite.config.ts` — Vite + TanStack Start + Tailwind v4 plugin
-- `apps/web/wrangler.jsonc` — Cloudflare Workers config (R2, Hyperdrive bindings)
+- Structured JSON logging via `console.info(JSON.stringify({...}))` (readable via `wrangler tail`)
 
 ## File storage
 
-- Documents stored in Cloudflare R2 (bucket: `hr-documents`)
-- Binding: `env.DOCUMENTS_BUCKET` in Workers runtime
+- Documents stored in **Nextcloud** via WebDAV (`packages/nextcloud/`)
+- Upload/view API routes: `app/api/documents/upload.tsx`, `app/api/documents/view.tsx`
+- Requires `NEXTCLOUD_URL`, `NEXTCLOUD_USER`, `NEXTCLOUD_PASSWORD` in `apps/web/.env`
+
+## Cloudflare bindings
+
+- Vectorize binding is active: index `hr-documents-index`
+- `cloudflare()` vite plugin handles the Workers integration
 
 ## Testing
 
