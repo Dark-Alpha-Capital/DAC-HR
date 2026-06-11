@@ -1,4 +1,4 @@
-import { db } from "./index";
+import { db } from "./db";
 import { ilike, jsonArrayOverlap, jsonArrayTagSearch } from "./sqlite-helpers";
 import {
   position,
@@ -1259,6 +1259,31 @@ export const getRoundById = async (id: string) => {
   } catch (error) {
     console.error("Error fetching round by id", error);
     return null;
+  }
+};
+
+/**
+ * Fetches the first position ID linked to a round template (for pre-selecting in forms).
+ * @param roundTemplateId The ID of the round template
+ * @returns The first linked position ID, or empty string if none
+ */
+export const getFirstPositionIdForRoundTemplate = async (
+  roundTemplateId: string,
+): Promise<string> => {
+  try {
+    const [result] = await db
+      .select({ positionId: positionRoundTemplates.positionId })
+      .from(positionRoundTemplates)
+      .where(eq(positionRoundTemplates.roundTemplateId, roundTemplateId))
+      .limit(1);
+
+    return result?.positionId ?? "";
+  } catch (error) {
+    console.error(
+      "Error fetching first position for round template",
+      error,
+    );
+    return "";
   }
 };
 
