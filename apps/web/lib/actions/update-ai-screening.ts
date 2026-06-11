@@ -1,4 +1,5 @@
-import { db } from "@workspace/db";
+import { defineAction } from "./create-action";
+import { db } from "@workspace/db/db";
 import { candidateAiScreening } from "@workspace/db/schema";
 import { getSession } from "@/lib/middleware/auth-guard";
 import { eq } from "@workspace/db";
@@ -11,7 +12,7 @@ export interface UpdateAiScreeningInput {
   structuredData?: unknown | null; // Allow any structure to preserve existing data
 }
 
-export const updateAiScreening = async (data: UpdateAiScreeningInput) => {
+export const updateAiScreening = defineAction(async (data: UpdateAiScreeningInput) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -102,4 +103,4 @@ export const updateAiScreening = async (data: UpdateAiScreeningInput) => {
           : "Failed to update AI screening",
     };
   }
-};
+});

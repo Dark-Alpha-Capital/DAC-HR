@@ -11,8 +11,17 @@
   },
 
   "vars": {
-    "BETTER_AUTH_URL": "http://localhost:3000"
+    "BETTER_AUTH_URL": "https://hr-automation-web.darkalpha.workers.dev"
   },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "hr-automation-db",
+      "database_id": "d86703d9-2aa7-42b5-91a6-995fcf0afde0",
+      "migrations_dir": "../../packages/db/drizzle"
+    }
+  ],
 
   "vectorize": [
   {

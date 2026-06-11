@@ -1,2 +1,0 @@
-CREATE TYPE "public"."position_department" AS ENUM('management', 'capital-markets', 'deal-team', 'legal-operations', 'origination-pipe-public-markets');--> statement-breakpoint
-ALTER TABLE "position" ADD COLUMN "department" "position_department";

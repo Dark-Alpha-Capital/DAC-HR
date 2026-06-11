@@ -22,7 +22,7 @@ Turborepo monorepo with `bun@1.1.38`. Deployed on **Cloudflare Workers**.
 | ----------------------------- | ------------------------------ | --------------------------------------------------------------------- |
 | `apps/web/`                   | `web`                          | TanStack Start app (React 19, Vite 8, Tailwind v4, shadcn/ui)         |
 | `apps/worker/`                | `worker`                       | Stub (future Cloudflare Worker for background jobs)                   |
-| `packages/db/`                | `@workspace/db`                | Drizzle ORM + PostgreSQL via `@neondatabase/serverless` (HTTP driver) |
+| `packages/db/`                | `@workspace/db`                | Drizzle ORM + Cloudflare D1 (SQLite) via `drizzle-orm/d1`             |
 | `packages/nextcloud/`         | `@workspace/nextcloud`         | Nextcloud WebDAV client                                               |
 | `packages/file-search/`       | `@workspace/file-search`       | Google Gemini File Search API                                         |
 | `packages/ui/`                | `@workspace/ui`                | shadcn/ui component library                                           |
@@ -37,27 +37,28 @@ Turborepo monorepo with `bun@1.1.38`. Deployed on **Cloudflare Workers**.
 - `_main` is a layout route wrapping all authenticated pages. It calls `fetchSession()` in `beforeLoad`.
 - Public routes: `login.tsx`, `signup.tsx`, `unauthorized.tsx`, `interview/$token/index.tsx`.
 
-## Database (Drizzle + Neon HTTP)
+## Database (Drizzle + Cloudflare D1)
 
-- Driver: `@neondatabase/serverless` (HTTP-based, Cloudflare Workers compatible)
-- Production: Hyperdrive pools connections to Neon Postgres
-- Schema: `packages/db/schema.ts` (27 tables)
-- Migrations: `packages/db/drizzle/` (27 SQL migration files)
+- Driver: `drizzle-orm/d1` via `env.DB` binding (`cloudflare:workers`)
+- D1 database: `hr-automation-db` (binding `DB` in `apps/web/wrangler.jsonc`)
+- Schema: `packages/db/schema.ts` (27 tables, SQLite dialect)
+- Migrations: `packages/db/drizzle/` — applied with `wrangler d1 migrations apply`
 - Repositories: `packages/db/repositories/` (5 files: audit, candidate, document, interview, interview-session)
-- The DB client uses a **lazy-init Proxy pattern**. Import `db` directly — it initializes on first access.
+- The DB client uses a **lazy-init Proxy pattern**. Import `db` directly — it reads the D1 binding on first access.
 
 ```bash
 cd packages/db
-bun run db:generate   # generate migrations from schema changes
-bun run db:migrate    # apply migrations
-bun run db:push       # push schema directly (bypasses migrations)
-bun run db:seed       # seed sample data
+bun run db:generate      # generate migrations from schema changes
+bun run db:migrate       # apply migrations to local D1
+bun run db:migrate:remote # apply migrations to remote D1
+bun run db:seed          # seed local D1 (bun:sqlite against wrangler local state)
 ```
 
 All common Drizzle operators re-exported from `@workspace/db`:
 
 ```ts
-import { db, eq, and, or, sql, asc, desc, inArray, count, gte, lte } from "@workspace/db";
+import { eq, and, or, sql, asc, desc, inArray, count, gte, lte } from "@workspace/db";
+import { db } from "@workspace/db/db"; // server-only — D1 binding via cloudflare:workers
 // also exports InferSelectModel, InferInsertModel
 ```
 
@@ -65,7 +66,7 @@ import { db, eq, and, or, sql, asc, desc, inArray, count, gte, lte } from "@work
 
 - All env vars go in `apps/web/.env` (not the repo root)
 - Template: `apps/web/.env.example`
-- `packages/db/.env` only needs `DATABASE_URL` (for drizzle-kit CLI)
+- No `DATABASE_URL` — D1 is bound via `wrangler.jsonc`
 - `apps/web/.dev.vars` duplicates secrets for **wrangler dev** (Cloudflare Workers runtime can't read `.env`)
 - `auth.ts` explicitly calls `dotenv/config` to load `.env` at startup (`bun` auto-loads `.env` only for scripts)
 
@@ -95,7 +96,8 @@ import { db, eq, and, or, sql, asc, desc, inArray, count, gte, lte } from "@work
 
 ## Cloudflare bindings
 
-- Vectorize binding is active: index `hr-documents-index`
+- D1 binding `DB` → database `hr-automation-db`
+- Vectorize binding `VECTORIZE` → index `hr-documents-index` (reserved for future RAG)
 - `cloudflare()` vite plugin handles the Workers integration
 
 ## Testing

@@ -1,4 +1,5 @@
-import { db } from "@workspace/db";
+import { defineAction, defineArgsAction } from "./create-action";
+import { db } from "@workspace/db/db";
 import { questionBank, roundTemplateQuestions } from "@workspace/db/schema";
 import {
   QuestionFormSchema,
@@ -7,7 +8,7 @@ import {
 import { getSession } from "@/lib/middleware/auth-guard";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
-export const createQuestion = async (data: QuestionFormSchema) => {
+export const createQuestion = defineAction(async (data: QuestionFormSchema) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -77,9 +78,9 @@ export const createQuestion = async (data: QuestionFormSchema) => {
 
     return { error: "Failed to create question" };
   }
-};
+});
 
-export const createQuestionForRound = async (
+export const createQuestionForRound = defineArgsAction(async (
   data: QuestionFormSchema,
   roundId: string,
 ) => {
@@ -152,4 +153,4 @@ export const createQuestionForRound = async (
 
     return { error: "Failed to create question" };
   }
-};
+});

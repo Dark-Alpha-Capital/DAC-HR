@@ -1,4 +1,5 @@
-import { db } from "@workspace/db";
+import { defineAction } from "./create-action";
+import { db } from "@workspace/db/db";
 import { position } from "@workspace/db/schema";
 import slugify from "slugify";
 import {
@@ -8,7 +9,7 @@ import {
 import { getSession } from "@/lib/middleware/auth-guard";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
-export const createPosition = async (data: PositionFormSchema) => {
+export const createPosition = defineAction(async (data: PositionFormSchema) => {
   console.log("data", data);
 
   const session = await getSession();
@@ -95,4 +96,4 @@ export const createPosition = async (data: PositionFormSchema) => {
 
     return { error: "Failed to create position" };
   }
-};
+});

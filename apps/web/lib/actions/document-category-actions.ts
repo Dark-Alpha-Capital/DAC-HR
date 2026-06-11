@@ -1,3 +1,4 @@
+import { defineAction, defineQueryWithInput } from "./create-action";
 import {
   createDocumentCategory,
   updateDocumentCategory,
@@ -8,7 +9,7 @@ import {
 import { getSession } from "@/lib/middleware/auth-guard";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
-export const createCategory = async (name: string, description?: string) => {
+export const createCategory = defineArgsAction(async (name: string, description?: string) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -69,9 +70,9 @@ export const createCategory = async (name: string, description?: string) => {
 
     return { error: "Failed to create category" };
   }
-};
+});
 
-export const updateCategory = async (
+export const updateCategory = defineArgsAction(async (
   id: string,
   name: string,
   description?: string,
@@ -141,9 +142,9 @@ export const updateCategory = async (
 
     return { error: "Failed to update category" };
   }
-};
+});
 
-export const deleteCategory = async (id: string) => {
+export const deleteCategory = defineAction(async (id: string) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -202,9 +203,9 @@ export const deleteCategory = async (id: string) => {
 
     return { error: "Failed to delete category" };
   }
-};
+});
 
-export const getAllCategories = async () => {
+export const getAllCategories = defineQueryWithInput(async () => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -218,4 +219,4 @@ export const getAllCategories = async () => {
     console.error(error);
     return { error: "Failed to fetch categories" };
   }
-};
+});

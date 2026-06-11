@@ -1,4 +1,5 @@
-import { db } from "@workspace/db";
+import { defineAction, defineArgsAction } from "./create-action";
+import { db } from "@workspace/db/db";
 import { position } from "@workspace/db/schema";
 import slugify from "slugify";
 import {
@@ -9,7 +10,7 @@ import { getSession } from "@/lib/middleware/auth-guard";
 import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
-export const updatePosition = async (
+export const updatePosition = defineArgsAction(async (
   positionId: string,
   data: PositionFormSchema,
 ) => {
@@ -92,4 +93,4 @@ export const updatePosition = async (
 
     return { error: "Failed to update position" };
   }
-};
+});

@@ -1,10 +1,11 @@
-import { db } from "@workspace/db";
+import { defineAction, defineArgsAction } from "./create-action";
+import { db } from "@workspace/db/db";
 import { candidateAiScreening } from "@workspace/db/schema";
 import { getSession } from "@/lib/middleware/auth-guard";
 import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
-export const deleteAiScreening = async (
+export const deleteAiScreening = defineArgsAction(async (
   screeningId: string,
   candidateId: string,
 ) => {
@@ -64,4 +65,4 @@ export const deleteAiScreening = async (
           : "Failed to delete AI screening",
     };
   }
-};
+});

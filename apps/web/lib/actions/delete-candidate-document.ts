@@ -1,10 +1,11 @@
-import { db } from "@workspace/db";
+import { defineAction, defineArgsAction } from "./create-action";
+import { db } from "@workspace/db/db";
 import { candidateDocument } from "@workspace/db/schema";
 import { getSession } from "@/lib/middleware/auth-guard";
 import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
-export const deleteCandidateDocument = async (
+export const deleteCandidateDocument = defineArgsAction(async (
   documentId: string,
   candidateId: string,
 ) => {
@@ -61,4 +62,4 @@ export const deleteCandidateDocument = async (
 
     return { error: "Failed to delete candidate document" };
   }
-};
+});

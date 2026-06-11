@@ -1,4 +1,6 @@
-import { db, inArray } from "@workspace/db";
+import { defineAction } from "./create-action";
+import { inArray } from "@workspace/db";
+import { db } from "@workspace/db/db";
 import {
   candidate,
   application,
@@ -47,9 +49,9 @@ const checkExistingEmails = async (emails: string[]): Promise<Set<string>> => {
   return new Set(existingCandidates.map((c) => c.email.toLowerCase()));
 };
 
-export const bulkCreateCandidates = async (
+export const bulkCreateCandidates = defineAction(async (
   candidates: BulkCandidateRow[],
-): Promise<BulkCandidateResult> => {
+) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -237,4 +239,4 @@ export const bulkCreateCandidates = async (
       ],
     };
   }
-};
+});

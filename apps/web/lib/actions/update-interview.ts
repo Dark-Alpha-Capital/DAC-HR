@@ -1,4 +1,5 @@
-import { db } from "@workspace/db";
+import { defineAction } from "./create-action";
+import { db } from "@workspace/db/db";
 import { interview, application } from "@workspace/db/schema";
 import { getSession } from "@/lib/middleware/auth-guard";
 import { eq } from "@workspace/db";
@@ -13,7 +14,7 @@ export interface UpdateInterviewInput {
   rating?: number; // Rating from 1 to 5
 }
 
-export const updateInterview = async (data: UpdateInterviewInput) => {
+export const updateInterview = defineAction(async (data: UpdateInterviewInput) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -106,4 +107,4 @@ export const updateInterview = async (data: UpdateInterviewInput) => {
 
     return { error: "Failed to update interview" };
   }
-};
+});

@@ -1,4 +1,5 @@
-import { db } from "@workspace/db";
+import { defineAction } from "./create-action";
+import { db } from "@workspace/db/db";
 import { interview, application } from "@workspace/db/schema";
 import { getSession } from "@/lib/middleware/auth-guard";
 import { eq } from "@workspace/db";
@@ -11,7 +12,7 @@ export interface CreateInterviewInput {
   scheduledAt?: Date;
 }
 
-export const createInterview = async (data: CreateInterviewInput) => {
+export const createInterview = defineAction(async (data: CreateInterviewInput) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -101,4 +102,4 @@ export const createInterview = async (data: CreateInterviewInput) => {
 
     return { error: "Failed to create interview" };
   }
-};
+});

@@ -1,11 +1,12 @@
-import { db } from "@workspace/db";
+import { defineAction } from "./create-action";
+import { db } from "@workspace/db/db";
 import { documents } from "@workspace/db/schema";
 
 import { getSession } from "@/lib/middleware/auth-guard";
 import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
-export const deleteDocument = async (id: string) => {
+export const deleteDocument = defineAction(async (id: string) => {
   // calling get session on the server
   const session = await getSession();
 
@@ -60,4 +61,4 @@ export const deleteDocument = async (id: string) => {
 
     return { error: "Failed to delete document" };
   }
-};
+});

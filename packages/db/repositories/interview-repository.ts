@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "../index";
+import { db } from "@workspace/db/db";
 import {
   interview,
   interviewAiAnalysis,

@@ -1,4 +1,8 @@
-import { db } from "@workspace/db";
+import {
+  defineAction,
+  defineArgsQuery,
+} from "./create-action";
+import { db } from "@workspace/db/db";
 import {
   interview,
   interviewFeedback,
@@ -22,9 +26,9 @@ export type InterviewRoundData = {
 /**
  * Create or update an interview round
  */
-export async function saveInterviewRound(
+export const saveInterviewRound = defineAction(async (
   data: InterviewRoundData & { interviewId?: string },
-) {
+) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -143,16 +147,16 @@ export async function saveInterviewRound(
     console.error("Error saving interview round:", error);
     return { success: false, error: "Failed to save interview round" };
   }
-}
+});
 
 /**
  * Start an interview round (mark as in-progress)
  */
-export async function startInterviewRound(data: {
+export const startInterviewRound = defineAction(async (data: {
   applicationId: string;
   positionRoundTemplateId: string;
   interviewerId: string;
-}) {
+}) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -229,15 +233,15 @@ export async function startInterviewRound(data: {
     console.error("Error starting interview round:", error);
     return { success: false, error: "Failed to start interview round" };
   }
-}
+});
 
 /**
  * Get interview details for a specific application and round
  */
-export async function getInterviewForRound(
+export const getInterviewForRound = defineArgsQuery(async (
   applicationId: string,
   positionRoundTemplateId: string,
-) {
+) => {
   try {
     const [interviewData] = await db
       .select()
@@ -271,4 +275,4 @@ export async function getInterviewForRound(
     console.error("Error fetching interview:", error);
     return { success: false, error: "Failed to fetch interview" };
   }
-}
+});

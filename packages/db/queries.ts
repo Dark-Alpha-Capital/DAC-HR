@@ -1,4 +1,5 @@
-import { db } from "./index";
+import { db } from "@workspace/db/db";
+import { ilike, jsonArrayOverlap, jsonArrayTagSearch } from "./sqlite-helpers";
 import {
   position,
   candidate,
@@ -407,9 +408,9 @@ export const getCandidatesWithPositions = async () => {
       ...result.candidate,
       position: result.position?.id
         ? {
-            id: result.position.id,
-            name: result.position.name,
-          }
+          id: result.position.id,
+          name: result.position.name,
+        }
         : null,
     }));
   } catch (error) {
@@ -487,8 +488,8 @@ export const getCandidatesWithPositionsFiltered = async (
       const searchTerm = `%${nameSearch.trim()}%`;
       conditions.push(
         or(
-          sql`${candidate.firstName} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`,
-          sql`${candidate.lastName} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`,
+          ilike(candidate.firstName, searchTerm),
+          ilike(candidate.lastName, searchTerm),
         )!,
       );
     }
@@ -496,9 +497,7 @@ export const getCandidatesWithPositionsFiltered = async (
     // Email search
     if (emailSearch && emailSearch.trim()) {
       const searchTerm = `%${emailSearch.trim()}%`;
-      conditions.push(
-        sql`${candidate.email} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`,
-      );
+      conditions.push(ilike(candidate.email, searchTerm));
     }
 
     // Position filter
@@ -539,9 +538,9 @@ export const getCandidatesWithPositionsFiltered = async (
           ...result.candidate,
           position: result.position?.id
             ? {
-                id: result.position.id,
-                name: result.position.name,
-              }
+              id: result.position.id,
+              name: result.position.name,
+            }
             : null,
         });
       }
@@ -1263,6 +1262,25 @@ export const getRoundById = async (id: string) => {
   }
 };
 
+export const getFirstPositionIdForRoundTemplate = async (
+  roundTemplateId: string,
+) => {
+  try {
+    const [result] = await db
+      .select({
+        positionId: positionRoundTemplates.positionId,
+      })
+      .from(positionRoundTemplates)
+      .where(eq(positionRoundTemplates.roundTemplateId, roundTemplateId))
+      .limit(1);
+
+    return result?.positionId ?? "";
+  } catch (error) {
+    console.error("Error fetching position for round template", error);
+    return "";
+  }
+};
+
 /**
  * Fetches all positions linked to a specific round template
  * @param roundId The ID of the round template
@@ -1506,10 +1524,10 @@ export const getInterviewById = async (interviewId: string) => {
         ...question,
         feedback: feedback
           ? {
-              id: feedback.id,
-              notes: feedback.notes,
-              rating: feedback.rating,
-            }
+            id: feedback.id,
+            notes: feedback.notes,
+            rating: feedback.rating,
+          }
           : null,
       };
     });
@@ -1641,34 +1659,26 @@ export async function getDocuments(
 
     // Category filter - filter by category IDs (new system)
     if (categoryFilters && categoryFilters.length > 0) {
-      // Use a subquery to find documents that have any of the specified categories
       conditions.push(
         sql`EXISTS (
-          SELECT 1 FROM ${documentCategoryRelations} 
+          SELECT 1 FROM ${documentCategoryRelations}
           WHERE ${documentCategoryRelations.documentId} = ${documents.id}
-          AND ${documentCategoryRelations.categoryId} = ANY(${sql.raw(`ARRAY[${categoryFilters.map((id) => `'${id.replace(/'/g, "''")}'`).join(",")}]`)})
+          AND ${documentCategoryRelations.categoryId} IN (${sql.join(
+          categoryFilters.map((id) => sql`${id}`),
+          sql`, `,
+        )})
         )`,
       );
     }
 
-    // Name search
     if (nameSearch && nameSearch.trim()) {
       const searchTerm = `%${nameSearch.trim()}%`;
-      conditions.push(
-        sql`${documents.name} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`,
-      );
+      conditions.push(ilike(documents.name, searchTerm));
     }
 
-    // Tags search - search in the tags array
     if (tagsSearch && tagsSearch.trim()) {
-      const searchTerm = tagsSearch.trim().toLowerCase();
-      // Use array overlap operator (&&) or array contains check
-      // PostgreSQL array contains: ANY(array) = value
       conditions.push(
-        sql`EXISTS (
-          SELECT 1 FROM unnest(${documents.tags}) AS tag 
-          WHERE LOWER(tag) LIKE ${sql.raw(`'%${searchTerm.replace(/'/g, "''")}%'`)}
-        )`,
+        jsonArrayTagSearch(documents.tags, tagsSearch.trim().toLowerCase()),
       );
     }
 
@@ -1729,26 +1739,30 @@ export async function getDocumentsByCandidateId(candidateId: string) {
  */
 export const getDashboardStats = async () => {
   try {
+    const now = Date.now();
+    const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
+    const sixtyDaysAgo = new Date(now - 60 * 24 * 60 * 60 * 1000);
+
     // Total candidates count
     const [totalCandidatesResult] = await db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: sql<number>`count(*)` })
       .from(candidate);
     const totalCandidates = totalCandidatesResult?.count || 0;
 
     // Total candidates last month (30-60 days ago)
     const [totalCandidatesLastMonthResult] = await db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: sql<number>`count(*)` })
       .from(candidate)
       .where(
-        sql`${candidate.createdAt} >= NOW() - INTERVAL '60 days' AND ${candidate.createdAt} < NOW() - INTERVAL '30 days'`,
+        sql`${candidate.createdAt} >= ${sixtyDaysAgo} AND ${candidate.createdAt} < ${thirtyDaysAgo}`,
       );
     const totalCandidatesLastMonth = totalCandidatesLastMonthResult?.count || 0;
 
     // Total candidates this month
     const [totalCandidatesThisMonthResult] = await db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: sql<number>`count(*)` })
       .from(candidate)
-      .where(sql`${candidate.createdAt} >= NOW() - INTERVAL '30 days'`);
+      .where(sql`${candidate.createdAt} >= ${thirtyDaysAgo}`);
     const totalCandidatesThisMonth = totalCandidatesThisMonthResult?.count || 0;
 
     const activePipelineStatuses = [
@@ -1762,7 +1776,7 @@ export const getDashboardStats = async () => {
     // Active candidates count (applications still in the hiring pipeline)
     const [activeCandidatesResult] = await db
       .select({
-        count: sql<number>`count(DISTINCT ${application.candidateId})::int`,
+        count: sql<number>`count(DISTINCT ${application.candidateId})`,
       })
       .from(application)
       .where(inArray(application.status, [...activePipelineStatuses]));
@@ -1771,13 +1785,13 @@ export const getDashboardStats = async () => {
     // Active candidates last month
     const [activeCandidatesLastMonthResult] = await db
       .select({
-        count: sql<number>`count(DISTINCT ${application.candidateId})::int`,
+        count: sql<number>`count(DISTINCT ${application.candidateId})`,
       })
       .from(application)
       .where(
         and(
           inArray(application.status, [...activePipelineStatuses]),
-          sql`${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`,
+          sql`${application.updatedAt} >= ${sixtyDaysAgo} AND ${application.updatedAt} < ${thirtyDaysAgo}`,
         ),
       );
     const activeCandidatesLastMonth =
@@ -1785,7 +1799,7 @@ export const getDashboardStats = async () => {
 
     // Interviews scheduled count (interviews with status 'pending')
     const [interviewsScheduledResult] = await db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: sql<number>`count(*)` })
       .from(interview)
       .where(eq(interview.status, "pending"));
     const interviewsScheduled = interviewsScheduledResult?.count || 0;
@@ -1793,7 +1807,7 @@ export const getDashboardStats = async () => {
     // Average time to hire (in days) - from application created to onboarding status
     const [avgTimeToHireResult] = await db
       .select({
-        avgDays: sql<number>`AVG(EXTRACT(EPOCH FROM (${application.updatedAt} - ${application.createdAt})) / 86400)::int`,
+        avgDays: sql<number>`cast(avg((${application.updatedAt} - ${application.createdAt}) / 86400000.0) as integer)`,
       })
       .from(application)
       .where(eq(application.status, "onboarding"));
@@ -1802,69 +1816,69 @@ export const getDashboardStats = async () => {
     // Average time to hire last month
     const [avgTimeToHireLastMonthResult] = await db
       .select({
-        avgDays: sql<number>`AVG(EXTRACT(EPOCH FROM (${application.updatedAt} - ${application.createdAt})) / 86400)::int`,
+        avgDays: sql<number>`cast(avg((${application.updatedAt} - ${application.createdAt}) / 86400000.0) as integer)`,
       })
       .from(application)
       .where(
-        sql`${application.status} = 'onboarding' AND ${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`,
+        sql`${application.status} = 'onboarding' AND ${application.updatedAt} >= ${sixtyDaysAgo} AND ${application.updatedAt} < ${thirtyDaysAgo}`,
       );
     const avgTimeToHireLastMonth = avgTimeToHireLastMonthResult?.avgDays || 0;
 
     // Total employees count
     const [totalEmployeesResult] = await db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: sql<number>`count(*)` })
       .from(employee);
     const totalEmployees = totalEmployeesResult?.count || 0;
 
     // Total positions count
     const [totalPositionsResult] = await db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: sql<number>`count(*)` })
       .from(position);
     const totalPositions = totalPositionsResult?.count || 0;
 
     // Applications this month
     const [applicationsThisMonthResult] = await db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: sql<number>`count(*)` })
       .from(application)
-      .where(sql`${application.createdAt} >= NOW() - INTERVAL '30 days'`);
+      .where(sql`${application.createdAt} >= ${thirtyDaysAgo}`);
     const applicationsThisMonth = applicationsThisMonthResult?.count || 0;
 
     // Applications last month
     const [applicationsLastMonthResult] = await db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: sql<number>`count(*)` })
       .from(application)
       .where(
-        sql`${application.createdAt} >= NOW() - INTERVAL '60 days' AND ${application.createdAt} < NOW() - INTERVAL '30 days'`,
+        sql`${application.createdAt} >= ${sixtyDaysAgo} AND ${application.createdAt} < ${thirtyDaysAgo}`,
       );
     const applicationsLastMonth = applicationsLastMonthResult?.count || 0;
 
     // Hired this month
     const [hiredThisMonthResult] = await db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: sql<number>`count(*)` })
       .from(application)
       .where(
-        sql`${application.status} = 'onboarding' AND ${application.updatedAt} >= NOW() - INTERVAL '30 days'`,
+        sql`${application.status} = 'onboarding' AND ${application.updatedAt} >= ${thirtyDaysAgo}`,
       );
     const hiredThisMonth = hiredThisMonthResult?.count || 0;
 
     // Hired last month
     const [hiredLastMonthResult] = await db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: sql<number>`count(*)` })
       .from(application)
       .where(
-        sql`${application.status} = 'onboarding' AND ${application.updatedAt} >= NOW() - INTERVAL '60 days' AND ${application.updatedAt} < NOW() - INTERVAL '30 days'`,
+        sql`${application.status} = 'onboarding' AND ${application.updatedAt} >= ${sixtyDaysAgo} AND ${application.updatedAt} < ${thirtyDaysAgo}`,
       );
     const hiredLastMonth = hiredLastMonthResult?.count || 0;
 
     // Total interviews count
     const [totalInterviewsResult] = await db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: sql<number>`count(*)` })
       .from(interview);
     const totalInterviews = totalInterviewsResult?.count || 0;
 
     // Completed interviews (not pending)
     const [completedInterviewsResult] = await db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: sql<number>`count(*)` })
       .from(interview)
       .where(sql`${interview.status} != 'pending'`);
     const completedInterviews = completedInterviewsResult?.count || 0;
@@ -1963,7 +1977,7 @@ export const getCandidatesByStatus = async () => {
     const results = await db
       .select({
         status: application.status,
-        count: sql<number>`count(DISTINCT ${application.candidateId})::int`,
+        count: sql<number>`count(DISTINCT ${application.candidateId})`,
       })
       .from(application)
       .groupBy(application.status);
@@ -1984,7 +1998,7 @@ export const getCandidatesByPosition = async () => {
     const results = await db
       .select({
         positionName: position.name,
-        count: sql<number>`count(DISTINCT ${application.candidateId})::int`,
+        count: sql<number>`count(DISTINCT ${application.candidateId})`,
       })
       .from(application)
       .innerJoin(position, eq(application.positionId, position.id))
@@ -2045,7 +2059,7 @@ export const getUpcomingInterviews = async (limit?: number) => {
       .where(
         and(
           eq(interview.status, "pending"),
-          sql`${interview.scheduledAt} >= NOW()`,
+          sql`${interview.scheduledAt} >= ${new Date()}`,
         ),
       )
       .orderBy(asc(interview.scheduledAt));
@@ -2259,16 +2273,12 @@ export const getEmployees = async (
       conditions.push(inArray(employee.positionId, positionIds));
     }
     if (departments && departments.length > 0) {
-      // Use PostgreSQL array overlap operator (&&) to check if employee.department array overlaps with filter departments
-      conditions.push(
-        sql`${employee.department} && ${departments}::department[]`,
-      );
+      conditions.push(jsonArrayOverlap(employee.department, departments));
     }
     if (name && name.trim()) {
-      // Filter by name (search in firstName and lastName)
       const searchTerm = `%${name.trim()}%`;
       conditions.push(
-        sql`CONCAT(${employee.firstName}, ' ', ${employee.lastName}) ILIKE ${searchTerm}`,
+        sql`lower(${employee.firstName} || ' ' || ${employee.lastName}) like lower(${searchTerm})`,
       );
     }
     // Note: Email filtering is not available yet as employees don't have an email field in the schema
@@ -2349,15 +2359,19 @@ export const getEmployeeById = async (id: string) => {
  */
 export const getApplicationsOverTime = async () => {
   try {
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const monthExpr = sql<string>`strftime('%Y-%m', datetime(${application.createdAt} / 1000, 'unixepoch'))`;
+
     const results = await db
       .select({
-        month: sql<string>`TO_CHAR(${application.createdAt}, 'YYYY-MM')`,
-        count: sql<number>`count(*)::int`,
+        month: monthExpr,
+        count: sql<number>`count(*)`,
       })
       .from(application)
-      .where(sql`${application.createdAt} >= NOW() - INTERVAL '6 months'`)
-      .groupBy(sql`TO_CHAR(${application.createdAt}, 'YYYY-MM')`)
-      .orderBy(sql`TO_CHAR(${application.createdAt}, 'YYYY-MM')`);
+      .where(sql`${application.createdAt} >= ${sixMonthsAgo}`)
+      .groupBy(monthExpr)
+      .orderBy(monthExpr);
 
     return results.map((r) => ({
       month: r.month,
@@ -2378,7 +2392,7 @@ export const getEmployeesByDepartment = async () => {
     const results = await db
       .select({
         department: employee.department,
-        count: sql<number>`count(*)::int`,
+        count: sql<number>`count(*)`,
       })
       .from(employee)
       .groupBy(employee.department);
@@ -2402,7 +2416,7 @@ export const getInterviewRatingsDistribution = async () => {
     const results = await db
       .select({
         rating: interview.rating,
-        count: sql<number>`count(*)::int`,
+        count: sql<number>`count(*)`,
       })
       .from(interview)
       .where(sql`${interview.rating} IS NOT NULL`)
@@ -2428,7 +2442,7 @@ export const getInterviewStatusDistribution = async () => {
     const results = await db
       .select({
         status: interview.status,
-        count: sql<number>`count(*)::int`,
+        count: sql<number>`count(*)`,
       })
       .from(interview)
       .groupBy(interview.status);
@@ -2505,13 +2519,13 @@ export const getAuditLogs = async (options: {
 
     if (action && action.trim()) {
       conditions.push(
-        sql`${auditLog.action} ILIKE ${sql.raw(`'%${action.trim().replace(/'/g, "''")}%'`)}`,
+        ilike(auditLog.action, `%${action.trim()}%`),
       );
     }
 
     if (entityType && entityType.trim()) {
       conditions.push(
-        sql`${auditLog.entityType} ILIKE ${sql.raw(`'%${entityType.trim().replace(/'/g, "''")}%'`)}`,
+        ilike(auditLog.entityType, `%${entityType.trim()}%`),
       );
     }
 
@@ -2521,12 +2535,12 @@ export const getAuditLogs = async (options: {
 
     // Search across action, entityType, and entityId
     if (search && search.trim()) {
-      const searchTerm = `%${search.trim().replace(/'/g, "''")}%`;
+      const searchTerm = `%${search.trim()}%`;
       conditions.push(
         or(
-          sql`${auditLog.action} ILIKE ${sql.raw(`'${searchTerm}'`)}`,
-          sql`${auditLog.entityType} ILIKE ${sql.raw(`'${searchTerm}'`)}`,
-          sql`${auditLog.entityId} ILIKE ${sql.raw(`'${searchTerm}'`)}`,
+          ilike(auditLog.action, searchTerm),
+          ilike(auditLog.entityType, searchTerm),
+          ilike(auditLog.entityId, searchTerm),
         )!,
       );
     }

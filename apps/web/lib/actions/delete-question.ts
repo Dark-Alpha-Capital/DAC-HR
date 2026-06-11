@@ -1,4 +1,5 @@
-import { db } from "@workspace/db";
+import { defineAction } from "./create-action";
+import { db } from "@workspace/db/db";
 import { questionBank } from "@workspace/db/schema";
 
 import { getSession } from "@/lib/middleware/auth-guard";
@@ -6,7 +7,7 @@ import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { getQuestionById } from "@workspace/db/queries";
 
-export const deleteQuestion = async (id: string) => {
+export const deleteQuestion = defineAction(async (id: string) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -51,4 +52,4 @@ export const deleteQuestion = async (id: string) => {
 
     return { error: "Failed to delete question" };
   }
-};
+});

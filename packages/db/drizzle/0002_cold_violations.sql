@@ -1,1 +1,0 @@
-ALTER TABLE "candidate" ADD COLUMN "source_url" text;

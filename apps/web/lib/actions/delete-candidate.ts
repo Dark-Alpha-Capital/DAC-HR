@@ -1,3 +1,4 @@
+import { defineAction } from "./create-action";
 import { getSession } from "@/lib/middleware/auth-guard";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { deleteCandidateWithAssets } from "@/lib/application/candidate-service";
@@ -6,7 +7,7 @@ import { deleteCandidateWithAssets } from "@/lib/application/candidate-service";
  * Server Action to delete a candidate
  * Uses shared application service and invalidates Next.js cache tags
  */
-export async function deleteCandidate(candidateId: string) {
+export const deleteCandidate = defineAction(async (candidateId: string) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -70,4 +71,4 @@ export async function deleteCandidate(candidateId: string) {
         error instanceof Error ? error.message : "Failed to delete candidate",
     };
   }
-}
+});

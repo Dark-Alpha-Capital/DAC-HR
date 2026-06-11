@@ -1,4 +1,5 @@
-import { db } from "@workspace/db";
+import { defineAction } from "./create-action";
+import { db } from "@workspace/db/db";
 import { application } from "@workspace/db/schema";
 import { getSession } from "@/lib/middleware/auth-guard";
 import { eq } from "@workspace/db";
@@ -34,7 +35,7 @@ export interface UpdateApplicationInput {
     | null;
 }
 
-export const updateApplication = async (data: UpdateApplicationInput) => {
+export const updateApplication = defineAction(async (data: UpdateApplicationInput) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -99,4 +100,4 @@ export const updateApplication = async (data: UpdateApplicationInput) => {
 
     return { error: "Failed to update application" };
   }
-};
+});

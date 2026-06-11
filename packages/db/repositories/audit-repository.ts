@@ -1,5 +1,6 @@
-import { and, count, desc, eq, gte, lte, or, sql } from "drizzle-orm";
-import { db } from "../index";
+import { and, count, desc, eq, gte, lte, or } from "drizzle-orm";
+import { db } from "@workspace/db/db";
+import { ilike } from "../sqlite-helpers";
 import { auditLog, user } from "../schema";
 
 export const insertAuditLog = async (params: {
@@ -56,15 +57,11 @@ export const getAuditLogs = async (options: {
     const conditions = [];
 
     if (action && action.trim()) {
-      conditions.push(
-        sql`${auditLog.action} ILIKE ${sql.raw(`'%${action.trim().replace(/'/g, "''")}%'`)}`,
-      );
+      conditions.push(ilike(auditLog.action, `%${action.trim()}%`));
     }
 
     if (entityType && entityType.trim()) {
-      conditions.push(
-        sql`${auditLog.entityType} ILIKE ${sql.raw(`'%${entityType.trim().replace(/'/g, "''")}%'`)}`,
-      );
+      conditions.push(ilike(auditLog.entityType, `%${entityType.trim()}%`));
     }
 
     if (userId && userId.trim()) {
@@ -72,12 +69,12 @@ export const getAuditLogs = async (options: {
     }
 
     if (search && search.trim()) {
-      const searchTerm = `%${search.trim().replace(/'/g, "''")}%`;
+      const searchTerm = `%${search.trim()}%`;
       conditions.push(
         or(
-          sql`${auditLog.action} ILIKE ${sql.raw(`'${searchTerm}'`)}`,
-          sql`${auditLog.entityType} ILIKE ${sql.raw(`'${searchTerm}'`)}`,
-          sql`${auditLog.entityId} ILIKE ${sql.raw(`'${searchTerm}'`)}`,
+          ilike(auditLog.action, searchTerm),
+          ilike(auditLog.entityType, searchTerm),
+          ilike(auditLog.entityId, searchTerm),
         )!,
       );
     }

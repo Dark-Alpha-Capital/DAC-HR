@@ -1,10 +1,11 @@
-import { db } from "@workspace/db";
+import { defineAction } from "./create-action";
+import { db } from "@workspace/db/db";
 import { roundTemplate, positionRoundTemplates } from "@workspace/db/schema";
 import { RoundFormSchema, roundFormSchema } from "../schemas/round-form-schema";
 import { getSession } from "@/lib/middleware/auth-guard";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
-export const createRound = async (data: RoundFormSchema) => {
+export const createRound = defineAction(async (data: RoundFormSchema) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -89,4 +90,4 @@ export const createRound = async (data: RoundFormSchema) => {
 
     return { error: "Failed to create round" };
   }
-};
+});

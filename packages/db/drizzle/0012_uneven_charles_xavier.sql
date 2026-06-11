@@ -1,1 +1,0 @@
-ALTER TABLE "candidate_document" ADD COLUMN "file_search_document_name" text;

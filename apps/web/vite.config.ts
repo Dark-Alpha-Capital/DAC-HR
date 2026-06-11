@@ -9,9 +9,32 @@ import { cloudflare } from '@cloudflare/vite-plugin'
 
 const appRoot = path.dirname(fileURLToPath(import.meta.url));
 
+const dbPackage = path.resolve(appRoot, "../../packages/db");
+
 export default defineConfig({
   server: {
     port: 3000,
+  },
+  build: {
+    rolldownOptions: {
+      external: ["cloudflare:workers"],
+    },
+  },
+  environments: {
+    client: {
+      resolve: {
+        alias: {
+          "@workspace/db/db": path.resolve(dbPackage, "db.stub.ts"),
+        },
+      },
+    },
+    ssr: {
+      resolve: {
+        alias: {
+          "@workspace/db/db": path.resolve(dbPackage, "db.ts"),
+        },
+      },
+    },
   },
   resolve: {
     alias: {
@@ -23,7 +46,7 @@ export default defineConfig({
     },
   },
   plugins: [
-    cloudflare({ viteEnvironment: { name: 'ssr' } }),
+    cloudflare({ viteEnvironment: { name: "ssr" } }),
 
 
     tanstackStart({

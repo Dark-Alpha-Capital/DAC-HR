@@ -1,4 +1,5 @@
-import { db } from "@workspace/db";
+import { defineAction, defineArgsAction } from "./create-action";
+import { db } from "@workspace/db/db";
 import { questionBank } from "@workspace/db/schema";
 import {
   QuestionFormSchema,
@@ -10,7 +11,7 @@ import { getSession } from "@/lib/middleware/auth-guard";
 import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
-export const updateQuestion = async (
+export const updateQuestion = defineArgsAction(async (
   questionId: string,
   data: QuestionEditFormSchema,
 ) => {
@@ -75,4 +76,4 @@ export const updateQuestion = async (
 
     return { error: "Failed to update question" };
   }
-};
+});

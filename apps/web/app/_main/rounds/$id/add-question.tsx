@@ -2,11 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense } from "react";
 import QuestionUploadForm from "@/components/forms/question-upload-form";
 import { Button } from "@workspace/ui/components/button";
-import { getRoundById, getPositions } from "@workspace/db/queries";
+import {
+  getFirstPositionIdForRoundTemplate,
+  getRoundById,
+  getPositions,
+} from "@workspace/db/queries";
 import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";
 import BackButton from "@/components/back-button";
-import { db, eq } from "@workspace/db";
-import { positionRoundTemplates } from "@workspace/db/schema";
 
 export const Route = createFileRoute("/_main/rounds/$id/add-question")({
   head: () => ({
@@ -19,15 +21,7 @@ export const Route = createFileRoute("/_main/rounds/$id/add-question")({
       return { round: null, positions: [], positionId: "", roundId: params.id };
     }
 
-    const positionRoundTemplate = await db
-      .select({
-        positionId: positionRoundTemplates.positionId,
-      })
-      .from(positionRoundTemplates)
-      .where(eq(positionRoundTemplates.roundTemplateId, params.id))
-      .limit(1);
-
-    const positionId = positionRoundTemplate[0]?.positionId ?? "";
+    const positionId = await getFirstPositionIdForRoundTemplate(params.id);
     const { positions } = await getPositions();
 
     return {

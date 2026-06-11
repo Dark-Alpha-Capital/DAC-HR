@@ -1,6 +1,7 @@
+import { defineQueryWithInput } from "./create-action";
 import { getRoundsByPositionId } from "@workspace/db/queries";
 
-export const getRoundsByPosition = async (positionId: string) => {
+export const getRoundsByPosition = defineQueryWithInput(async (positionId: string) => {
   if (!positionId) {
     return [];
   }
@@ -16,4 +17,4 @@ export const getRoundsByPosition = async (positionId: string) => {
     console.error("Error fetching rounds by position:", error);
     return [];
   }
-};
+});

@@ -11,24 +11,26 @@
   },
   "exports": {
     ".": "./index.ts",
+    "./db": "./db.ts",
     "./queries": "./queries.ts",
     "./repositories/*": "./repositories/*.ts",
     "./schema": "./schema.ts",
+    "./sqlite-helpers": "./sqlite-helpers.ts",
     "./index": "./index.ts"
   },
   "scripts": {
     "test": "bun test --pass-with-no-tests",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "npx tsx migrate.ts",
+    "db:migrate": "bun run migrate.ts",
+    "db:migrate:remote": "bun run migrate.ts --remote",
     "db:studio": "drizzle-kit studio",
     "db:push": "drizzle-kit push",
-    "db:seed": "npx tsx seed.ts"
+    "db:seed": "bun run seed.ts"
   },
   "peerDependencies": {
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^1.1.0",
     "drizzle-orm": "^0.45.1"
   }
 }

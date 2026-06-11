@@ -1,4 +1,5 @@
-import { db, eq } from "@workspace/db";
+import { db } from "@workspace/db/db";
+import { eq } from "@workspace/db";
 import {
   application,
   candidate,

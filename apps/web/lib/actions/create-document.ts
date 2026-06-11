@@ -1,4 +1,5 @@
-import { db } from "@workspace/db";
+import { defineAction } from "./create-action";
+import { db } from "@workspace/db/db";
 import { documents } from "@workspace/db/schema";
 import slugify from "slugify";
 import {
@@ -9,7 +10,7 @@ import { getSession } from "@/lib/middleware/auth-guard";
 import { setDocumentCategories } from "@workspace/db/repositories/document-repository";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
-export const createDocument = async (data: DocumentFormSchema) => {
+export const createDocument = defineAction(async (data: DocumentFormSchema) => {
   console.log("in create document");
 
   const session = await getSession();
@@ -90,4 +91,4 @@ export const createDocument = async (data: DocumentFormSchema) => {
 
     return { error: "Failed to create document" };
   }
-};
+});

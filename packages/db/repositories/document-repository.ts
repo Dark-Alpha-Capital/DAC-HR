@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, sql } from "drizzle-orm";
-import { db } from "../index";
+import { db } from "@workspace/db/db";
+import { ilike, jsonArrayTagSearch } from "../sqlite-helpers";
 import {
   candidateDocument,
   documentCategories,
@@ -40,27 +41,24 @@ export async function getDocuments(
     if (categoryFilters && categoryFilters.length > 0) {
       conditions.push(
         sql`EXISTS (
-          SELECT 1 FROM ${documentCategoryRelations} 
+          SELECT 1 FROM ${documentCategoryRelations}
           WHERE ${documentCategoryRelations.documentId} = ${documents.id}
-          AND ${documentCategoryRelations.categoryId} = ANY(${sql.raw(`ARRAY[${categoryFilters.map((id) => `'${id.replace(/'/g, "''")}'`).join(",")}]`)})
+          AND ${documentCategoryRelations.categoryId} IN (${sql.join(
+            categoryFilters.map((id) => sql`${id}`),
+            sql`, `,
+          )})
         )`,
       );
     }
 
     if (nameSearch && nameSearch.trim()) {
       const searchTerm = `%${nameSearch.trim()}%`;
-      conditions.push(
-        sql`${documents.name} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`,
-      );
+      conditions.push(ilike(documents.name, searchTerm));
     }
 
     if (tagsSearch && tagsSearch.trim()) {
-      const searchTerm = tagsSearch.trim().toLowerCase();
       conditions.push(
-        sql`EXISTS (
-          SELECT 1 FROM unnest(${documents.tags}) AS tag 
-          WHERE LOWER(tag) LIKE ${sql.raw(`'%${searchTerm.replace(/'/g, "''")}%'`)}
-        )`,
+        jsonArrayTagSearch(documents.tags, tagsSearch.trim().toLowerCase()),
       );
     }
 

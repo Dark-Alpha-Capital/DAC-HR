@@ -15,7 +15,8 @@
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx"
+    "**/*.tsx",
+    "worker-configuration.d.ts"
   ],
   "exclude": ["node_modules", ".turbo", ".output"]
 }

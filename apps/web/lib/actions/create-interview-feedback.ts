@@ -1,4 +1,5 @@
-import { db } from "@workspace/db";
+import { defineAction } from "./create-action";
+import { db } from "@workspace/db/db";
 import { interviewFeedback } from "@workspace/db/schema";
 import { getSession } from "@/lib/middleware/auth-guard";
 import { getInterviewById } from "@workspace/db/repositories/interview-repository";
@@ -23,7 +24,7 @@ export interface BulkCreateInterviewFeedbackInput {
 /**
  * Creates or updates feedback for a single question in an interview
  */
-export const createInterviewFeedback = async (
+export const createInterviewFeedback = defineAction(async (
   data: CreateInterviewFeedbackInput,
 ) => {
   const session = await getSession();
@@ -97,12 +98,12 @@ export const createInterviewFeedback = async (
 
     return { error: "Failed to create interview feedback" };
   }
-};
+});
 
 /**
  * Creates or updates feedback for multiple questions at once
  */
-export const bulkCreateInterviewFeedback = async (
+export const bulkCreateInterviewFeedback = defineAction(async (
   data: BulkCreateInterviewFeedbackInput,
 ) => {
   const session = await getSession();
@@ -184,4 +185,4 @@ export const bulkCreateInterviewFeedback = async (
 
     return { error: "Failed to create interview feedback" };
   }
-};
+});

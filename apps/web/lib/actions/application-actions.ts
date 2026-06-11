@@ -1,4 +1,8 @@
-import { db } from "@workspace/db";
+import {
+  defineArgsAction,
+  defineQueryWithInput,
+} from "./create-action";
+import { db } from "@workspace/db/db";
 import {
   application,
   candidate,
@@ -19,10 +23,10 @@ type ApplicationStatus =
   | "rejected"
   | "withdrawn";
 
-export async function updateApplicationStatus(
+export const updateApplicationStatus = defineArgsAction(async (
   applicationId: string,
   status: ApplicationStatus,
-) {
+) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -82,12 +86,12 @@ export async function updateApplicationStatus(
     console.error("Error updating application status:", error);
     return { success: false, error: "Failed to update application status" };
   }
-}
+});
 
 /**
  * Get application by ID with related data
  */
-export async function getApplicationById(applicationId: string) {
+export const getApplicationById = defineQueryWithInput(async (applicationId: string) => {
   try {
     const [applicationData] = await db
       .select()
@@ -104,4 +108,4 @@ export async function getApplicationById(applicationId: string) {
     console.error("Error fetching application:", error);
     return { success: false, error: "Failed to fetch application" };
   }
-}
+});

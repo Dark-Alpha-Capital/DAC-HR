@@ -1,3 +1,4 @@
+import { defineAction } from "./create-action";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import {
   CandidateFormSchema,
@@ -6,7 +7,7 @@ import {
 import { getSession } from "@/lib/middleware/auth-guard";
 import { createCandidateWithOptionalPosition } from "@/lib/application/candidate-service";
 
-export const createCandidate = async (data: CandidateFormSchema) => {
+export const createCandidate = defineAction(async (data: CandidateFormSchema) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -99,4 +100,4 @@ export const createCandidate = async (data: CandidateFormSchema) => {
 
     return { error: "Failed to create candidate" };
   }
-};
+});

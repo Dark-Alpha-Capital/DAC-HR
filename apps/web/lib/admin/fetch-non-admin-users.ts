@@ -1,4 +1,6 @@
-import { db, sql, and, count } from "@workspace/db";
+import { db } from "@workspace/db/db";
+import { sql, and, count } from "@workspace/db";
+import { ilike } from "@workspace/db/sqlite-helpers";
 import { user } from "@workspace/db/schema";
 
 export type AdminUser = {
@@ -23,17 +25,11 @@ export async function fetchNonAdminUsers(
   const conditions = [sql`${user.role} IS NULL OR ${user.role} != 'admin'`];
 
   if (nameSearch?.trim()) {
-    const searchTerm = `%${nameSearch.trim()}%`;
-    conditions.push(
-      sql`${user.name} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`,
-    );
+    conditions.push(ilike(user.name, `%${nameSearch.trim()}%`));
   }
 
   if (emailSearch?.trim()) {
-    const searchTerm = `%${emailSearch.trim()}%`;
-    conditions.push(
-      sql`${user.email} ILIKE ${sql.raw(`'${searchTerm.replace(/'/g, "''")}'`)}`,
-    );
+    conditions.push(ilike(user.email, `%${emailSearch.trim()}%`));
   }
 
   const totalResult = await db

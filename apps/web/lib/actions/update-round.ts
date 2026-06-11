@@ -1,4 +1,5 @@
-import { db } from "@workspace/db";
+import { defineAction, defineArgsAction } from "./create-action";
+import { db } from "@workspace/db/db";
 import { roundTemplate } from "@workspace/db/schema";
 import {
   RoundFormSchema,
@@ -9,7 +10,7 @@ import { getSession } from "@/lib/middleware/auth-guard";
 import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
-export const updateRound = async (
+export const updateRound = defineArgsAction(async (
   roundId: string,
   data:
     | RoundFormSchema
@@ -94,4 +95,4 @@ export const updateRound = async (
 
     return { error: "Failed to update round" };
   }
-};
+});

@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db, eq } from "@workspace/db";
+import { db } from "@workspace/db/db";
+import { eq } from "@workspace/db";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
@@ -53,7 +54,7 @@ export const auth = betterAuth({
     errorURL: "/unauthorized",
   },
   database: drizzleAdapter(db, {
-    provider: "pg",
+    provider: "sqlite",
     schema: {
       user: usersTable,
       account: accountsTable,

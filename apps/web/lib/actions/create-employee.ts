@@ -1,4 +1,5 @@
-import { db } from "@workspace/db";
+import { defineAction } from "./create-action";
+import { db } from "@workspace/db/db";
 import { employee } from "@workspace/db/schema";
 import {
   EmployeeFormSchema,
@@ -7,7 +8,7 @@ import {
 import { getSession } from "@/lib/middleware/auth-guard";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
-export const createEmployee = async (data: EmployeeFormSchema) => {
+export const createEmployee = defineAction(async (data: EmployeeFormSchema) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -86,4 +87,4 @@ export const createEmployee = async (data: EmployeeFormSchema) => {
 
     return { error: "Failed to create employee" };
   }
-};
+});

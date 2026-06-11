@@ -1,4 +1,5 @@
-import { db } from "@workspace/db";
+import { defineAction, defineArgsAction } from "./create-action";
+import { db } from "@workspace/db/db";
 import { candidateDocument } from "@workspace/db/schema";
 import {
   CandidateDocumentFormSchema,
@@ -7,7 +8,7 @@ import {
 import { getSession } from "@/lib/middleware/auth-guard";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
-export const createCandidateDocument = async (
+export const createCandidateDocument = defineArgsAction(async (
   candidateId: string,
   data: CandidateDocumentFormSchema,
-) => {};
+) => {});

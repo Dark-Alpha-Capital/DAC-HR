@@ -1,1 +1,0 @@
-ALTER TABLE "round_template" DROP CONSTRAINT "round_template_name_unique";

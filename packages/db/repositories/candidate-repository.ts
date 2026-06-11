@@ -1,5 +1,5 @@
 import { asc, eq } from "drizzle-orm";
-import { db } from "../index";
+import { db } from "@workspace/db/db";
 import { application, candidate, candidatePosition, position } from "../schema";
 import { getInterviewsByApplicationId } from "./interview-repository";
 

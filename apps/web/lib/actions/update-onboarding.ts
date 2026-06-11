@@ -1,4 +1,5 @@
-import { db } from "@workspace/db";
+import { defineArgsAction } from "./create-action";
+import { db } from "@workspace/db/db";
 import { candidateOnboarding } from "@workspace/db/schema";
 import { getSession } from "@/lib/middleware/auth-guard";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
@@ -31,11 +32,11 @@ const buildTaskUpdate = (
   }
 };
 
-export async function toggleOnboardingTask(
+export const toggleOnboardingTask = defineArgsAction(async (
   candidateId: string,
   taskKey: OnboardingTaskKey,
   value: boolean,
-) {
+) => {
   const [upserted] = await db
     .insert(candidateOnboarding)
     .values({
@@ -50,9 +51,9 @@ export async function toggleOnboardingTask(
     .execute();
 
   return upserted;
-}
+});
 
-export async function updateOnboardingTasks(
+export const updateOnboardingTasks = defineArgsAction(async (
   candidateId: string,
   tasks: {
     contractSigned: boolean;
@@ -60,7 +61,7 @@ export async function updateOnboardingTasks(
     onboardingPacketSent: boolean;
     companyEmailActivate: boolean;
   },
-) {
+) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -126,4 +127,4 @@ export async function updateOnboardingTasks(
     console.error("Error updating onboarding tasks:", error);
     return { success: false, error: "Failed to update onboarding tasks" };
   }
-}
+});

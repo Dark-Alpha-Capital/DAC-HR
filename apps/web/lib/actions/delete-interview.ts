@@ -1,4 +1,5 @@
-import { db } from "@workspace/db";
+import { defineAction } from "./create-action";
+import { db } from "@workspace/db/db";
 import {
   interview,
   interviewFeedback,
@@ -8,7 +9,7 @@ import { eq } from "@workspace/db";
 import { getSession } from "@/lib/middleware/auth-guard";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
-export const deleteInterview = async (interviewId: string) => {
+export const deleteInterview = defineAction(async (interviewId: string) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -82,4 +83,4 @@ export const deleteInterview = async (interviewId: string) => {
 
     return { error: "Failed to delete interview" };
   }
-};
+});

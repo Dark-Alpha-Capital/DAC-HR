@@ -1,4 +1,5 @@
-import { db } from "@workspace/db";
+import { defineAction, defineArgsAction } from "./create-action";
+import { db } from "@workspace/db/db";
 import { employee } from "@workspace/db/schema";
 import {
   EmployeeFormSchema,
@@ -8,7 +9,7 @@ import { getSession } from "@/lib/middleware/auth-guard";
 import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
-export const updateEmployee = async (
+export const updateEmployee = defineArgsAction(async (
   employeeId: string,
   data: EmployeeFormSchema,
 ) => {
@@ -89,4 +90,4 @@ export const updateEmployee = async (
 
     return { error: "Failed to update employee" };
   }
-};
+});
