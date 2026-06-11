@@ -4,7 +4,11 @@ import { getEmployees, getPositions } from "@workspace/db/queries";
 import EmployeeFilters from "@/components/employee-filters";
 import EmployeeContainer from "@/components/employee-container";
 import PaginationControls from "@/components/pagination-controls";
-import { toOptionalString, toPageNumber, toStringArray } from "@/lib/parse-search";
+import {
+  toOptionalString,
+  toPageNumber,
+  toStringArray,
+} from "@/lib/parse-search";
 
 export const Route = createFileRoute("/_main/employees/")({
   head: () => ({
@@ -54,9 +58,9 @@ export const Route = createFileRoute("/_main/employees/")({
       hasPreviousPage: currentPage > 1,
       hasFilters: Boolean(
         deps.position?.length ||
-          deps.department?.length ||
-          deps.name ||
-          deps.email,
+        deps.department?.length ||
+        deps.name ||
+        deps.email,
       ),
     };
   },
@@ -79,7 +83,9 @@ function EmployeesPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Employees</h1>
         <Button asChild>
-          <Link to="/employees/new" search="{}">New Employee</Link>
+          <Link to="/employees/new" search="{}">
+            New Employee
+          </Link>
         </Button>
       </div>
 
@@ -93,7 +99,9 @@ function EmployeesPage() {
               : "No employees found."}
           </p>
           <Button asChild className="mt-4">
-            <Link to="/employees/new" search="{}">Add your first employee</Link>
+            <Link to="/employees/new" search="{}">
+              Add your first employee
+            </Link>
           </Button>
         </div>
       ) : (
