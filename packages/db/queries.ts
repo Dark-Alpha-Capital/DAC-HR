@@ -1,4 +1,4 @@
-import { db } from "@workspace/db/db";
+import { db } from "./index";
 import { ilike, jsonArrayOverlap, jsonArrayTagSearch } from "./sqlite-helpers";
 import {
   position,
@@ -1259,25 +1259,6 @@ export const getRoundById = async (id: string) => {
   } catch (error) {
     console.error("Error fetching round by id", error);
     return null;
-  }
-};
-
-export const getFirstPositionIdForRoundTemplate = async (
-  roundTemplateId: string,
-) => {
-  try {
-    const [result] = await db
-      .select({
-        positionId: positionRoundTemplates.positionId,
-      })
-      .from(positionRoundTemplates)
-      .where(eq(positionRoundTemplates.roundTemplateId, roundTemplateId))
-      .limit(1);
-
-    return result?.positionId ?? "";
-  } catch (error) {
-    console.error("Error fetching position for round template", error);
-    return "";
   }
 };
 

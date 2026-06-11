@@ -1,15 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
+import type { auth } from "@/auth";
+import { getSessionFromHeaders } from "@/lib/server/session";
 
-export type AppSession = Awaited<
-  ReturnType<
-    Awaited<ReturnType<typeof import("@/auth")>>["auth"]["api"]["getSession"]
-  >
->;
+export type Session = typeof auth.$Infer.Session;
+export type AppSession = Session | null;
 
 export const fetchSession = createServerFn({ method: "GET" }).handler(
   async () => {
-    const { getSessionFromHeaders } = await import("@/lib/server/session");
     const headers = getRequestHeaders();
     return getSessionFromHeaders(headers);
   },

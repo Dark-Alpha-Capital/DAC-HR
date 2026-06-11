@@ -21,6 +21,12 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [{ title: "Login - DAC-HR" }],
   }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect:
+      typeof search.redirect === "string" && search.redirect.startsWith("/")
+        ? search.redirect
+        : "/dashboard",
+  }),
   loader: async () => {
     const session = await fetchSession();
     if (session) throw redirect({ to: "/dashboard" });
@@ -37,6 +43,8 @@ function LoginPage() {
 }
 
 function LoginContent() {
+  const { redirect: callbackURL } = Route.useSearch();
+
   return (
     <Card className="w-full border-border/60 bg-card/80 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/60">
       <CardHeader className="text-center">
@@ -52,7 +60,7 @@ function LoginContent() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <GoogleSignInButton callbackURL="/dashboard" />
+        <GoogleSignInButton callbackURL={callbackURL} />
         <div className="mt-6 flex items-center gap-4">
           <Separator className="flex-1" />
           <span className="text-xs text-muted-foreground">No password</span>

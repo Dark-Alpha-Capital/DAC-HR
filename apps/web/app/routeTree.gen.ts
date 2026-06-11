@@ -18,6 +18,7 @@ import { Route as ApiInterviewSessionsRouteImport } from './api/interview-sessio
 import { Route as ApiHealthRouteImport } from './api/health'
 import { Route as MainDashboardRouteImport } from './_main/dashboard'
 import { Route as MainDocsRouteRouteImport } from './_main/docs/route'
+import { Route as MainAdminRouteRouteImport } from './_main/admin/route'
 import { Route as InterviewTokenIndexRouteImport } from './interview/$token/index'
 import { Route as ApiCandidateIndexRouteImport } from './api/candidate/index'
 import { Route as MainWeeklyCheckinIndexRouteImport } from './_main/weekly-checkin/index'
@@ -130,6 +131,11 @@ const MainDocsRouteRoute = MainDocsRouteRouteImport.update({
   path: '/docs',
   getParentRoute: () => MainRouteRoute,
 } as any)
+const MainAdminRouteRoute = MainAdminRouteRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => MainRouteRoute,
+} as any)
 const InterviewTokenIndexRoute = InterviewTokenIndexRouteImport.update({
   id: '/interview/$token/',
   path: '/interview/$token/',
@@ -202,9 +208,9 @@ const MainApplicationsIndexRoute = MainApplicationsIndexRouteImport.update({
   getParentRoute: () => MainRouteRoute,
 } as any)
 const MainAdminIndexRoute = MainAdminIndexRouteImport.update({
-  id: '/admin/',
-  path: '/admin/',
-  getParentRoute: () => MainRouteRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => MainAdminRouteRoute,
 } as any)
 const ApiLoginGoogleRoute = ApiLoginGoogleRouteImport.update({
   id: '/api/login/google',
@@ -329,9 +335,9 @@ const MainCandidatesNewRoute = MainCandidatesNewRouteImport.update({
   getParentRoute: () => MainRouteRoute,
 } as any)
 const MainAdminAuditLogsRoute = MainAdminAuditLogsRouteImport.update({
-  id: '/admin/audit-logs',
-  path: '/admin/audit-logs',
-  getParentRoute: () => MainRouteRoute,
+  id: '/audit-logs',
+  path: '/audit-logs',
+  getParentRoute: () => MainAdminRouteRoute,
 } as any)
 const ApiInterviewSessionsIdIndexRoute =
   ApiInterviewSessionsIdIndexRouteImport.update({
@@ -487,6 +493,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/unauthorized': typeof UnauthorizedRoute
+  '/admin': typeof MainAdminRouteRouteWithChildren
   '/docs': typeof MainDocsRouteRouteWithChildren
   '/dashboard': typeof MainDashboardRoute
   '/api/health': typeof ApiHealthRoute
@@ -641,6 +648,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/unauthorized': typeof UnauthorizedRoute
+  '/_main/admin': typeof MainAdminRouteRouteWithChildren
   '/_main/docs': typeof MainDocsRouteRouteWithChildren
   '/_main/dashboard': typeof MainDashboardRoute
   '/api/health': typeof ApiHealthRoute
@@ -721,6 +729,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/unauthorized'
+    | '/admin'
     | '/docs'
     | '/dashboard'
     | '/api/health'
@@ -874,6 +883,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/unauthorized'
+    | '/_main/admin'
     | '/_main/docs'
     | '/_main/dashboard'
     | '/api/health'
@@ -1039,6 +1049,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainDocsRouteRouteImport
       parentRoute: typeof MainRouteRoute
     }
+    '/_main/admin': {
+      id: '/_main/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof MainAdminRouteRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
     '/interview/$token/': {
       id: '/interview/$token/'
       path: '/interview/$token'
@@ -1139,10 +1156,10 @@ declare module '@tanstack/react-router' {
     }
     '/_main/admin/': {
       id: '/_main/admin/'
-      path: '/admin'
+      path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof MainAdminIndexRouteImport
-      parentRoute: typeof MainRouteRoute
+      parentRoute: typeof MainAdminRouteRoute
     }
     '/api/login/google': {
       id: '/api/login/google'
@@ -1314,10 +1331,10 @@ declare module '@tanstack/react-router' {
     }
     '/_main/admin/audit-logs': {
       id: '/_main/admin/audit-logs'
-      path: '/admin/audit-logs'
+      path: '/audit-logs'
       fullPath: '/admin/audit-logs'
       preLoaderRoute: typeof MainAdminAuditLogsRouteImport
-      parentRoute: typeof MainRouteRoute
+      parentRoute: typeof MainAdminRouteRoute
     }
     '/api/interview-sessions/$id/': {
       id: '/api/interview-sessions/$id/'
@@ -1511,6 +1528,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface MainAdminRouteRouteChildren {
+  MainAdminAuditLogsRoute: typeof MainAdminAuditLogsRoute
+  MainAdminIndexRoute: typeof MainAdminIndexRoute
+}
+
+const MainAdminRouteRouteChildren: MainAdminRouteRouteChildren = {
+  MainAdminAuditLogsRoute: MainAdminAuditLogsRoute,
+  MainAdminIndexRoute: MainAdminIndexRoute,
+}
+
+const MainAdminRouteRouteWithChildren = MainAdminRouteRoute._addFileChildren(
+  MainAdminRouteRouteChildren,
+)
+
 interface MainDocsRouteRouteChildren {
   MainDocsAiFeaturesRoute: typeof MainDocsAiFeaturesRoute
   MainDocsApplicationsRoute: typeof MainDocsApplicationsRoute
@@ -1544,10 +1575,10 @@ const MainDocsRouteRouteWithChildren = MainDocsRouteRoute._addFileChildren(
 )
 
 interface MainRouteRouteChildren {
+  MainAdminRouteRoute: typeof MainAdminRouteRouteWithChildren
   MainDocsRouteRoute: typeof MainDocsRouteRouteWithChildren
   MainDashboardRoute: typeof MainDashboardRoute
   MainIndexRoute: typeof MainIndexRoute
-  MainAdminAuditLogsRoute: typeof MainAdminAuditLogsRoute
   MainCandidatesNewRoute: typeof MainCandidatesNewRoute
   MainDocumentsNewRoute: typeof MainDocumentsNewRoute
   MainEmployeesNewRoute: typeof MainEmployeesNewRoute
@@ -1556,7 +1587,6 @@ interface MainRouteRouteChildren {
   MainQuestionsNewRoute: typeof MainQuestionsNewRoute
   MainRoundsNewRoute: typeof MainRoundsNewRoute
   MainWeeklyCheckinRecordsRoute: typeof MainWeeklyCheckinRecordsRoute
-  MainAdminIndexRoute: typeof MainAdminIndexRoute
   MainApplicationsIndexRoute: typeof MainApplicationsIndexRoute
   MainCandidatesIndexRoute: typeof MainCandidatesIndexRoute
   MainDocumentsIndexRoute: typeof MainDocumentsIndexRoute
@@ -1587,10 +1617,10 @@ interface MainRouteRouteChildren {
 }
 
 const MainRouteRouteChildren: MainRouteRouteChildren = {
+  MainAdminRouteRoute: MainAdminRouteRouteWithChildren,
   MainDocsRouteRoute: MainDocsRouteRouteWithChildren,
   MainDashboardRoute: MainDashboardRoute,
   MainIndexRoute: MainIndexRoute,
-  MainAdminAuditLogsRoute: MainAdminAuditLogsRoute,
   MainCandidatesNewRoute: MainCandidatesNewRoute,
   MainDocumentsNewRoute: MainDocumentsNewRoute,
   MainEmployeesNewRoute: MainEmployeesNewRoute,
@@ -1599,7 +1629,6 @@ const MainRouteRouteChildren: MainRouteRouteChildren = {
   MainQuestionsNewRoute: MainQuestionsNewRoute,
   MainRoundsNewRoute: MainRoundsNewRoute,
   MainWeeklyCheckinRecordsRoute: MainWeeklyCheckinRecordsRoute,
-  MainAdminIndexRoute: MainAdminIndexRoute,
   MainApplicationsIndexRoute: MainApplicationsIndexRoute,
   MainCandidatesIndexRoute: MainCandidatesIndexRoute,
   MainDocumentsIndexRoute: MainDocumentsIndexRoute,

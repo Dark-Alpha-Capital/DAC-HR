@@ -1,4 +1,8 @@
-import { defineAction, defineQueryWithInput } from "./create-action";
+import {
+  defineAction,
+  defineArgsAction,
+  defineQueryWithInput,
+} from "./create-action";
 import {
   createDocumentCategory,
   updateDocumentCategory,
