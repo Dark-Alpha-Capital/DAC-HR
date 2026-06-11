@@ -54,7 +54,7 @@ export default defineConfig({
       // Routes live directly under app/ (__root.tsx, login.tsx, _main/, api/), not app/routes/
       router: {
         routesDirectory: ".",
-        routeFileIgnorePattern: "^(routeTree\\.gen|router|client|server)\\.",
+        routeFileIgnorePattern: "^(routeTree\\.gen|router|client|server|start)\\.",
       },
     }),
     viteReact(),
