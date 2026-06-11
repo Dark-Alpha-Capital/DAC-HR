@@ -1,6 +1,5 @@
 import React from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { authClient } from "@/auth-client";
 
 import {
@@ -49,7 +48,7 @@ const navLinks = [
 ] as const;
 
 const Header = () => {
-  const pathname = usePathname();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const router = useRouter();
   const isMobile = useIsMobile();
 
@@ -63,7 +62,7 @@ const Header = () => {
     await authClient.signOut({
       fetchOptions: {
         onSuccess: () => {
-          router.push("/");
+          router.navigate({ to: "/" });
         },
       },
     });
@@ -88,7 +87,7 @@ const Header = () => {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link
-          href="/"
+          to="/"
           className="text-lg sm:text-xl font-bold hover:opacity-80 transition-opacity"
         >
           dac-hr
@@ -98,9 +97,7 @@ const Header = () => {
         <nav className="hidden md:flex items-center gap-4 lg:gap-6">
           {session?.user?.role === "admin" && (
             <Link
-              href={{
-                pathname: "/admin",
-              }}
+              to="/admin"
               className="text-sm font-medium hover:text-primary transition-colors"
             >
               Admin
@@ -132,7 +129,7 @@ const Header = () => {
                             className={isActive ? "bg-accent/50" : ""}
                           >
                             <Link
-                              href={link.href}
+                              to={link.href}
                               className={`w-full ${
                                 isActive ? "font-semibold text-primary" : ""
                               }`}
@@ -170,7 +167,7 @@ const Header = () => {
                             className={isActive ? "bg-accent/50" : ""}
                           >
                             <Link
-                              href={link.href}
+                              to={link.href}
                               className={`w-full ${
                                 isActive ? "font-semibold text-primary" : ""
                               }`}
@@ -225,7 +222,7 @@ const Header = () => {
                 <DropdownMenuSeparator />
 
                 <DropdownMenuItem asChild>
-                  <Link href="/profile" className="cursor-pointer">
+                  <Link to="/profile" className="cursor-pointer">
                     <User className="mr-2 size-4" />
                     Profile
                   </Link>
@@ -246,7 +243,7 @@ const Header = () => {
           ) : (
             <div className="flex items-center gap-2">
               <Button variant="secondary" asChild>
-                <Link href="/signup">Sign In</Link>
+                <Link to="/signup">Sign In</Link>
               </Button>
             </div>
           )}
@@ -291,7 +288,7 @@ const Header = () => {
                 <DropdownMenuSeparator />
 
                 <DropdownMenuItem asChild>
-                  <Link href="/profile" className="cursor-pointer">
+                  <Link to="/profile" className="cursor-pointer">
                     <User className="mr-2 size-4" />
                     Profile
                   </Link>
@@ -337,7 +334,7 @@ const Header = () => {
                       return (
                         <Link
                           key={link.href}
-                          href={link.href}
+                          to={link.href}
                           onClick={() => setMobileMenuOpen(false)}
                           className={`flex items-center px-3 py-2 rounded-md text-sm transition-colors ${
                             isActive
@@ -365,7 +362,7 @@ const Header = () => {
                     return (
                       <DropdownMenuItem key={link.href} asChild>
                         <Link
-                          href={link.href}
+                          to={link.href}
                           className={`cursor-pointer ${isActive ? "text-primary font-semibold" : ""}`}
                         >
                           {link.label}
@@ -389,7 +386,7 @@ const Header = () => {
                       )}
                     </div>
                     <Link
-                      href="/profile"
+                      to="/profile"
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center px-3 py-2 rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
                     >

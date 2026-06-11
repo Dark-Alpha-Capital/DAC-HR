@@ -1,5 +1,4 @@
 import { ChevronUp } from "lucide-react";
-import { Image } from "@unpic/react";
 import { authClient } from "@/auth-client";
 import {
   DropdownMenu,
@@ -81,12 +80,12 @@ export function SidebarUserNav({ session }: { session: AppSession }) {
               data-testid="user-nav-button"
               className="data-[state=open]:bg-sidebar-accent bg-background data-[state=open]:text-sidebar-accent-foreground h-10"
             >
-              <Image
+              <img
                 src={user.image ?? `https://avatar.vercel.sh/${user.email}`}
                 alt={user.email ?? "User Avatar"}
                 width={24}
                 height={24}
-                className="rounded-full"
+                className="size-6 rounded-full"
               />
               <span data-testid="user-email" className="truncate">
                 {user.email ?? user.name ?? "User"}

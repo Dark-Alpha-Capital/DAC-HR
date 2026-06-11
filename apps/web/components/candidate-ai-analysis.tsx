@@ -12,8 +12,8 @@ import {
 } from "@workspace/ui/components/select";
 import { Sparkles, Loader2, FileText } from "lucide-react";
 import { toast } from "sonner";
-import { useRouter, useSearchParams } from "next/navigation";
 import { Session } from "better-auth";
+import { useUrlSearchParams } from "@/lib/hooks/use-url-search-params";
 import type { CandidateDocument } from "@workspace/db/schema";
 import { resetCacheForCandidateAiScreenings } from "@/lib/actions/reset-cache";
 
@@ -86,8 +86,7 @@ export default function CandidateAiAnalysis({
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
   const [customPrompt, setCustomPrompt] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<string>("custom");
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const { searchParams, setSearchParams } = useUrlSearchParams();
 
   const handleDocumentToggle = (documentId: string) => {
     setSelectedDocumentIds((prev) =>
@@ -167,8 +166,7 @@ export default function CandidateAiAnalysis({
         // Navigate to AI Screenings tab
         const params = new URLSearchParams(searchParams);
         params.set("tab", "ai-screenings");
-
-        router.replace(`?${params.toString()}`, { scroll: false });
+        setSearchParams(params);
 
         // Invalidate cache tags immediately after successful analysis
         // This ensures the UI reflects the change right away
