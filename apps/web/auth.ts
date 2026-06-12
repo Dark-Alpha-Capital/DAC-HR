@@ -2,9 +2,6 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@workspace/db/db";
 import { eq } from "@workspace/db";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { config } from "dotenv";
 import {
   user as usersTable,
   account as accountsTable,
@@ -13,10 +10,6 @@ import {
 } from "@workspace/db/schema";
 import { admin, customSession } from "better-auth/plugins";
 import { createAuthMiddleware, APIError } from "better-auth/api";
-
-config({
-  path: path.join(path.dirname(fileURLToPath(import.meta.url)), ".env"),
-});
 
 const ADMIN_EMAILS: string[] = [
   "rahul@darkalphacapital.com",
