@@ -798,6 +798,7 @@ export const getQuestionsWithRounds = async (
   questions: Array<{
     id: string;
     questionText: string;
+    questionType: string;
     createdAt: Date;
     updatedAt: Date;
     rounds: Array<{
@@ -814,6 +815,7 @@ export const getQuestionsWithRounds = async (
       .select({
         questionId: questionBank.id,
         questionText: questionBank.questionText,
+        questionType: questionBank.questionType,
         createdAt: questionBank.createdAt,
         updatedAt: questionBank.updatedAt,
         roundId: roundTemplate.id,
@@ -842,6 +844,7 @@ export const getQuestionsWithRounds = async (
       {
         id: string;
         questionText: string;
+        questionType: string;
         createdAt: Date;
         updatedAt: Date;
         rounds: Array<{
@@ -859,6 +862,7 @@ export const getQuestionsWithRounds = async (
         questionsMap.set(questionId, {
           id: result.questionId,
           questionText: result.questionText,
+          questionType: result.questionType,
           createdAt: result.createdAt,
           updatedAt: result.updatedAt,
           rounds: [],
@@ -1016,7 +1020,8 @@ export const getQuestionsForInterviewSession = async (
         id: questionBank.id,
         questionText: questionBank.questionText,
         questionType: questionBank.questionType,
-        category: questionBank.questionCategory,
+        category: questionBank.category,
+        options: questionBank.options,
         timeLimitSeconds: questionBank.timeLimitSeconds,
         orderIndex: questionBank.orderIndex,
         createdAt: questionBank.createdAt,

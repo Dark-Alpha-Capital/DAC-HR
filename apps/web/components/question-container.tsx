@@ -14,6 +14,7 @@ import { Link } from "@tanstack/react-router";
 import { Eye, Pencil } from "lucide-react";
 import DeleteQuestionButton from "@/components/delete-question-button";
 import { Badge } from "@workspace/ui/components/badge";
+import { getQuestionTypeLabel } from "@/lib/question-type-label";
 
 type QuestionPosition = { id: string; name: string };
 
@@ -26,6 +27,7 @@ type QuestionRound = {
 type QuestionWithRounds = {
   id: string;
   questionText: string;
+  questionType: string;
   createdAt: Date;
   updatedAt: Date;
   rounds: QuestionRound[];
@@ -78,6 +80,7 @@ const QuestionContainer = ({ questions }: QuestionContainerProps) => {
           <TableRow>
             <TableHead className="py-3 px-4 w-16">#</TableHead>
             <TableHead className="py-3 px-4">Question</TableHead>
+            <TableHead className="py-3 px-4">Type</TableHead>
             <TableHead className="py-3 px-4">Round</TableHead>
             <TableHead className="py-3 px-4">Position</TableHead>
             <TableHead className="text-right py-3 px-4">Actions</TableHead>
@@ -91,6 +94,11 @@ const QuestionContainer = ({ questions }: QuestionContainerProps) => {
               </TableCell>
               <TableCell className="py-3 px-4 font-medium max-w-[500px]">
                 <div className="line-clamp-2">{question.questionText}</div>
+              </TableCell>
+              <TableCell className="py-3 px-4 align-top">
+                <Badge variant="secondary" className="text-xs">
+                  {getQuestionTypeLabel(question.questionType)}
+                </Badge>
               </TableCell>
               <TableCell className="py-3 px-4 align-top">
                 {renderRounds(question)}

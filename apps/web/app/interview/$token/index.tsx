@@ -4,6 +4,12 @@ import { Button } from "@workspace/ui/components/button";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { Badge } from "@workspace/ui/components/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@workspace/ui/components/card";
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@workspace/ui/components/radio-group";
+import { Label } from "@workspace/ui/components/label";
+import type { QuestionOption } from "@workspace/db/question-types";
 
 import { Clock, ArrowLeft, ArrowRight, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 
@@ -13,6 +19,7 @@ interface Question {
   questionType: string;
   category: string | null;
   timeLimitSeconds: number | null;
+  options?: QuestionOption[] | null;
 }
 
 interface InterviewData {
@@ -22,6 +29,10 @@ interface InterviewData {
   roundName: string;
   questions: Question[];
 }
+
+type AnswerValue =
+  | { type: "text"; text: string }
+  | { type: "mcq"; selectedOptionId: string };
 
 let tabSwitchCount = 0;
 if (typeof document !== "undefined") {
@@ -37,15 +48,32 @@ export const Route = createFileRoute("/interview/$token/")({
   component: InterviewPage,
 });
 
+function hasAnswer(answer: AnswerValue | undefined): boolean {
+  if (!answer) {
+    return false;
+  }
+
+  if (answer.type === "text") {
+    return answer.text.trim().length > 0;
+  }
+
+  return answer.selectedOptionId.length > 0;
+}
+
 function InterviewPage() {
   const { token } = Route.useParams();
   const [status, setStatus] = useState<"loading" | "invalid" | "ready" | "in_progress" | "completed">("loading");
   const [error, setError] = useState("");
   const [data, setData] = useState<InterviewData | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [saving, setSaving] = useState(false);
   const [completing, setCompleting] = useState(false);
+  const answersRef = useRef(answers);
+
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
 
   useEffect(() => {
     let cancelled = false;
@@ -89,13 +117,28 @@ function InterviewPage() {
     return () => { cancelled = true; };
   }, [token]);
 
-  const saveAnswer = useCallback(async (questionId: string, answerText: string) => {
+  const saveAnswer = useCallback(async (question: Question, answer: AnswerValue) => {
+    if (!hasAnswer(answer)) {
+      return;
+    }
+
     setSaving(true);
     try {
+      const body =
+        answer.type === "mcq"
+          ? {
+              questionId: question.id,
+              selectedOptionId: answer.selectedOptionId,
+            }
+          : {
+              questionId: question.id,
+              answerText: answer.text,
+            };
+
       await fetch(`/api/interview-token/${token}/responses`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ questionId, answerText }),
+        body: JSON.stringify(body),
       });
     } catch {
       // continue regardless
@@ -107,9 +150,9 @@ function InterviewPage() {
   const handleNext = useCallback(async () => {
     if (!data) return;
     const question = data.questions[currentStep];
-    const answer = answers[question.id] || "";
-    if (answer.trim()) {
-      await saveAnswer(question.id, answer);
+    const answer = answers[question.id];
+    if (answer && hasAnswer(answer)) {
+      await saveAnswer(question, answer);
     }
     if (currentStep < data.questions.length - 1) {
       setCurrentStep((s) => s + 1);
@@ -119,9 +162,9 @@ function InterviewPage() {
   const handlePrev = useCallback(async () => {
     if (!data) return;
     const question = data.questions[currentStep];
-    const answer = answers[question.id] || "";
-    if (answer.trim()) {
-      await saveAnswer(question.id, answer);
+    const answer = answers[question.id];
+    if (answer && hasAnswer(answer)) {
+      await saveAnswer(question, answer);
     }
     if (currentStep > 0) {
       setCurrentStep((s) => s - 1);
@@ -131,9 +174,9 @@ function InterviewPage() {
   const handleComplete = useCallback(async () => {
     if (!data) return;
     const question = data.questions[currentStep];
-    const answer = answers[question.id] || "";
-    if (answer.trim()) {
-      await saveAnswer(question.id, answer);
+    const answer = answers[question.id];
+    if (answer && hasAnswer(answer)) {
+      await saveAnswer(question, answer);
     }
     setCompleting(true);
     try {
@@ -200,7 +243,8 @@ function InterviewPage() {
   const question = data.questions[currentStep];
   const isLast = currentStep === data.questions.length - 1;
   const progress = ((currentStep + 1) / data.questions.length) * 100;
-  const currentAnswer = answers[question.id] || "";
+  const currentAnswer = answers[question.id];
+  const isMcq = question.questionType === "mcq";
 
   return (
     <div className="flex min-h-svh flex-col bg-background">
@@ -243,14 +287,46 @@ function InterviewPage() {
         </div>
 
         <div className="flex-1">
-          <Textarea
-            value={currentAnswer}
-            onChange={(e) =>
-              setAnswers((prev) => ({ ...prev, [question.id]: e.target.value }))
-            }
-            placeholder="Type your answer here..."
-            className="min-h-[200px] resize-y text-base leading-relaxed"
-          />
+          {isMcq ? (
+            <RadioGroup
+              value={
+                currentAnswer?.type === "mcq"
+                  ? currentAnswer.selectedOptionId
+                  : ""
+              }
+              onValueChange={(selectedOptionId) =>
+                setAnswers((prev) => ({
+                  ...prev,
+                  [question.id]: { type: "mcq", selectedOptionId },
+                }))
+              }
+              className="space-y-3"
+            >
+              {(question.options ?? []).map((option) => (
+                <div
+                  key={option.id}
+                  className="flex items-center gap-3 rounded-lg border p-4"
+                >
+                  <RadioGroupItem value={option.id} id={option.id} />
+                  <Label htmlFor={option.id} className="flex-1 cursor-pointer">
+                    {option.text}
+                  </Label>
+                </div>
+              ))}
+            </RadioGroup>
+          ) : (
+            <Textarea
+              value={currentAnswer?.type === "text" ? currentAnswer.text : ""}
+              onChange={(e) =>
+                setAnswers((prev) => ({
+                  ...prev,
+                  [question.id]: { type: "text", text: e.target.value },
+                }))
+              }
+              placeholder="Type your answer here..."
+              className="min-h-[200px] resize-y text-base leading-relaxed"
+            />
+          )}
         </div>
 
         <div className="mt-6 flex items-center justify-between gap-3 border-t pt-4">
@@ -298,16 +374,16 @@ function InterviewPage() {
               type="button"
               onClick={async () => {
                 const currentQ = data.questions[currentStep];
-                const currentA = answers[currentQ.id] || "";
-                if (currentA.trim()) {
-                  await saveAnswer(currentQ.id, currentA);
+                const currentA = answersRef.current[currentQ.id];
+                if (currentA && hasAnswer(currentA)) {
+                  await saveAnswer(currentQ, currentA);
                 }
                 setCurrentStep(i);
               }}
               className={`flex size-7 items-center justify-center rounded text-xs font-medium transition-colors ${
                 i === currentStep
                   ? "bg-primary text-primary-foreground"
-                  : answers[q.id]
+                  : hasAnswer(answers[q.id])
                     ? "bg-primary/20 text-primary"
                     : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}

@@ -192,7 +192,8 @@ export const getResponsesBySessionId = async (sessionId: string) => {
         id: questionBank.id,
         questionText: questionBank.questionText,
         questionType: questionBank.questionType,
-        category: questionBank.questionCategory,
+        category: questionBank.category,
+        options: questionBank.options,
         timeLimitSeconds: questionBank.timeLimitSeconds,
       },
     })
@@ -236,6 +237,37 @@ export const createResponse = async (data: {
       sessionId: data.sessionId,
       questionId: data.questionId,
       answerText: data.answerText,
+    })
+    .returning();
+
+  return row;
+};
+
+export const upsertResponse = async (data: {
+  sessionId: string;
+  questionId: string;
+  answerText?: string | null;
+  selectedOptionId?: string | null;
+}) => {
+  const [row] = await db
+    .insert(interviewResponse)
+    .values({
+      sessionId: data.sessionId,
+      questionId: data.questionId,
+      answerText: data.answerText ?? null,
+      selectedOptionId: data.selectedOptionId ?? null,
+      updatedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: [
+        interviewResponse.sessionId,
+        interviewResponse.questionId,
+      ],
+      set: {
+        answerText: data.answerText ?? null,
+        selectedOptionId: data.selectedOptionId ?? null,
+        updatedAt: new Date(),
+      },
     })
     .returning();
 

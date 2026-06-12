@@ -14,6 +14,7 @@ import BackButton from "@/components/back-button";
 import { Pencil, Calendar, Clock } from "lucide-react";
 import DeleteQuestionButton from "@/components/delete-question-button";
 import { formatDate } from "@/lib/utils";
+import { getQuestionTypeLabel } from "@/lib/question-type-label";
 
 export const Route = createFileRoute("/_main/questions/$id/")({
   head: () => ({
@@ -59,6 +60,9 @@ function QuestionDetailPage() {
                   {question.questionText}
                 </CardTitle>
                 <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="secondary">
+                    {getQuestionTypeLabel(question.questionType)}
+                  </Badge>
                   <Badge variant="secondary" className="gap-1.5">
                     <Calendar className="h-3 w-3" />
                     Created {formatDate(question.createdAt)}
@@ -75,6 +79,19 @@ function QuestionDetailPage() {
               </div>
             </div>
           </CardHeader>
+          {question.questionType === "mcq" && question.options?.length ? (
+            <>
+              <Separator />
+              <CardContent className="space-y-2">
+                <p className="text-sm font-medium">Options</p>
+                <ol className="list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
+                  {question.options.map((option: { id: string; text: string }) => (
+                    <li key={option.id}>{option.text}</li>
+                  ))}
+                </ol>
+              </CardContent>
+            </>
+          ) : null}
           <Separator />
           <CardFooter className="flex items-center justify-between gap-4 pt-6">
             <div className="text-sm text-muted-foreground">

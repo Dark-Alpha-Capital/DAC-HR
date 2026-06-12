@@ -1,10 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { getSessionByToken, getResponseBySessionAndQuestion, createResponse } from "@workspace/db/repositories/interview-session-repository";
+import {
+  getSessionByToken,
+  upsertResponse,
+} from "@workspace/db/repositories/interview-session-repository";
+import { getQuestionById } from "@workspace/db/queries";
 
-const answerSchema = z.object({
+const answerRequestSchema = z.object({
   questionId: z.string().min(1),
-  answerText: z.string().min(1, "Answer cannot be empty"),
+  answerText: z.string().optional(),
+  selectedOptionId: z.string().optional(),
 });
 
 export const Route = createFileRoute("/api/interview-token/$token/responses")({
@@ -44,7 +49,7 @@ export const Route = createFileRoute("/api/interview-token/$token/responses")({
           }
 
           const body = await request.json();
-          const parsed = answerSchema.safeParse(body);
+          const parsed = answerRequestSchema.safeParse(body);
 
           if (!parsed.success) {
             return Response.json(
@@ -53,27 +58,57 @@ export const Route = createFileRoute("/api/interview-token/$token/responses")({
             );
           }
 
-          const { questionId, answerText } = parsed.data;
+          const { questionId, answerText, selectedOptionId } = parsed.data;
+          const question = await getQuestionById(questionId);
 
-          const existing = await getResponseBySessionAndQuestion(
-            session.id,
-            questionId,
-          );
+          if (!question) {
+            return Response.json({ error: "Question not found" }, { status: 404 });
+          }
 
-          if (existing) {
+          if (question.questionType === "mcq") {
+            if (!selectedOptionId) {
+              return Response.json(
+                { error: { selectedOptionId: ["Please select an option"] } },
+                { status: 400 },
+              );
+            }
+
+            const validOption = question.options?.some(
+              (option) => option.id === selectedOptionId,
+            );
+
+            if (!validOption) {
+              return Response.json(
+                { error: { selectedOptionId: ["Invalid option selected"] } },
+                { status: 400 },
+              );
+            }
+
+            const response = await upsertResponse({
+              sessionId: session.id,
+              questionId,
+              answerText: null,
+              selectedOptionId,
+            });
+
+            return Response.json({ response }, { status: 200 });
+          }
+
+          if (!answerText?.trim()) {
             return Response.json(
-              { error: "You have already answered this question" },
-              { status: 409 },
+              { error: { answerText: ["Answer cannot be empty"] } },
+              { status: 400 },
             );
           }
 
-          const response = await createResponse({
+          const response = await upsertResponse({
             sessionId: session.id,
             questionId,
-            answerText,
+            answerText: answerText.trim(),
+            selectedOptionId: null,
           });
 
-          return Response.json({ response }, { status: 201 });
+          return Response.json({ response }, { status: 200 });
         } catch (error) {
           console.error("Error saving interview response:", error);
           return Response.json(

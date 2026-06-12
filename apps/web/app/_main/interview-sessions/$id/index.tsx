@@ -6,12 +6,15 @@ import { Separator } from "@workspace/ui/components/separator";
 import { getSessionById, getResponsesBySessionId, getEvaluationBySessionId } from "@workspace/db/repositories/interview-session-repository";
 import { ArrowLeft, Copy, Check, Clock, Calendar } from "lucide-react";
 import { useState } from "react";
+import { getOptionLabel } from "@/lib/question-options";
+import type { QuestionOption } from "@workspace/db/question-types";
 
 type ResponseWithQuestion = {
   id: string;
   sessionId: string;
   questionId: string;
   answerText: string | null;
+  selectedOptionId: string | null;
   createdAt: Date;
   updatedAt: Date;
   question: {
@@ -19,9 +22,22 @@ type ResponseWithQuestion = {
     questionText: string;
     questionType: string;
     category: string | null;
+    options: QuestionOption[] | null;
     timeLimitSeconds: number | null;
   };
 };
+
+function formatResponseAnswer(response: ResponseWithQuestion): string {
+  if (response.question.questionType === "mcq") {
+    return (
+      getOptionLabel(response.question.options, response.selectedOptionId) ??
+      response.selectedOptionId ??
+      "No answer"
+    );
+  }
+
+  return response.answerText || "No answer";
+}
 
 function statusVariant(status: string): "default" | "secondary" | "destructive" {
   switch (status) {
@@ -176,7 +192,7 @@ function SessionDetailPage() {
               </CardHeader>
               <CardContent>
                 <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                  {r.answerText || <span className="italic">No answer</span>}
+                  {formatResponseAnswer(r)}
                 </p>
               </CardContent>
             </Card>

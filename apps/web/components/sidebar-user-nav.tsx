@@ -31,7 +31,7 @@ export function SidebarUserNav({ session }: { session: AppSession }) {
     return (
       <SidebarMenu>
         <SidebarMenuItem>
-          <DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 data-testid="user-nav-button"
@@ -74,7 +74,7 @@ export function SidebarUserNav({ session }: { session: AppSession }) {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <DropdownMenu>
+        <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               data-testid="user-nav-button"

@@ -1,6 +1,9 @@
+"use client";
+
 import * as React from "react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { AuthProvider } from "./auth-provider";
+import { PointerEventsGuard } from "./pointer-events-guard";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -11,7 +14,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
       disableTransitionOnChange
       enableColorScheme
     >
-      <AuthProvider>{children}</AuthProvider>
+      <AuthProvider>
+        <PointerEventsGuard />
+        {children}
+      </AuthProvider>
     </NextThemesProvider>
   );
 }

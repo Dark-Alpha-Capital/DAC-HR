@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
 import {
   Field,
+  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -15,11 +16,17 @@ import {
   InputGroupText,
   InputGroupTextarea,
 } from "@workspace/ui/components/input-group";
-import { questionEditFormSchema } from "@/lib/schemas/question-form-schema";
+import { Badge } from "@workspace/ui/components/badge";
+import {
+  questionEditFormSchema,
+  type QuestionEditFormSchema,
+} from "@/lib/schemas/question-form-schema";
 import { Loader2 } from "lucide-react";
 import { updateQuestion } from "@/lib/actions/update-question";
 import { useRouter } from "@tanstack/react-router";
 import type { Question } from "@workspace/db/schema";
+import { McqOptionsField } from "@/components/forms/mcq-options-field";
+import { getQuestionTypeLabel } from "@/lib/question-type-label";
 
 interface QuestionEditFormProps {
   question: Question;
@@ -28,17 +35,44 @@ interface QuestionEditFormProps {
 const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const questionType =
+    question.questionType === "mcq" ? ("mcq" as const) : ("text" as const);
 
   const form = useForm({
     defaultValues: {
       questionText: question.questionText,
-    },
-    validators: {
-      onSubmit: questionEditFormSchema,
+      questionType,
+      options:
+        questionType === "mcq"
+          ? (question.options ?? [{ id: crypto.randomUUID(), text: "" }, { id: crypto.randomUUID(), text: "" }]).map(
+              (option) => ({
+                id: option.id,
+                text: option.text,
+              }),
+            )
+          : [{ text: "" }, { text: "" }],
     },
     onSubmit: async ({ value }) => {
+      const payload: QuestionEditFormSchema =
+        value.questionType === "mcq"
+          ? {
+              questionText: value.questionText,
+              questionType: "mcq",
+              options: value.options,
+            }
+          : {
+              questionText: value.questionText,
+              questionType: "text",
+            };
+
+      const parsed = questionEditFormSchema.safeParse(payload);
+      if (!parsed.success) {
+        toast.error("Please fix the form errors", { position: "bottom-right" });
+        return;
+      }
+
       startTransition(async () => {
-        const result = await updateQuestion(question.id, value);
+        const result = await updateQuestion(question.id, parsed.data);
         if (result.success) {
           toast.success("Question updated successfully", {
             position: "bottom-right",
@@ -74,15 +108,16 @@ const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
           <p className="text-sm text-muted-foreground">
             Update the question details below.
           </p>
+          <Badge variant="secondary">
+            {getQuestionTypeLabel(question.questionType)}
+          </Badge>
         </div>
         <div className="flex items-center gap-3">
           <Button
             type="button"
             variant="secondary"
             onClick={() => {
-              form.reset({
-                questionText: question.questionText,
-              });
+              form.reset();
             }}
             disabled={isPending}
           >
@@ -109,6 +144,16 @@ const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
         className="space-y-6"
       >
         <FieldGroup>
+          <Field>
+            <FieldLabel>Question type</FieldLabel>
+            <FieldDescription>
+              Question type cannot be changed after creation.
+            </FieldDescription>
+            <Badge variant="secondary">
+              {getQuestionTypeLabel(question.questionType)}
+            </Badge>
+          </Field>
+
           <form.Field
             name="questionText"
             children={(field) => {
@@ -140,6 +185,19 @@ const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
               );
             }}
           />
+
+          {questionType === "mcq" ? (
+            <form.Field
+              name="options"
+              children={(field) => (
+                <McqOptionsField
+                  options={field.state.value}
+                  onChange={field.handleChange}
+                  disabled={isPending}
+                />
+              )}
+            />
+          ) : null}
         </FieldGroup>
       </form>
     </div>

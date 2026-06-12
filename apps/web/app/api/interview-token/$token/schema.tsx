@@ -60,6 +60,7 @@ export const Route = createFileRoute("/api/interview-token/$token/schema")({
               questionType: q.questionType,
               category: q.category,
               timeLimitSeconds: q.timeLimitSeconds,
+              options: q.questionType === "mcq" ? q.options : null,
             })),
           });
         } catch (error) {

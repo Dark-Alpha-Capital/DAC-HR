@@ -27,9 +27,13 @@ import {
 import { Loader2 } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
-import { questionFormSchema } from "@/lib/schemas/question-form-schema";
+import {
+  questionFormSchema,
+  type QuestionFormSchema,
+} from "@/lib/schemas/question-form-schema";
 import { createQuestion } from "@/lib/actions/create-question";
 import { getRoundsByPosition } from "@/lib/actions/get-rounds-by-position";
+import { McqOptionsField } from "@/components/forms/mcq-options-field";
 
 interface QuestionUploadFormProps {
   positions: {
@@ -39,6 +43,8 @@ interface QuestionUploadFormProps {
   preSelectedPositionId?: string;
   preSelectedRoundId?: string;
 }
+
+const defaultMcqOptions = () => [{ text: "" }, { text: "" }];
 
 const QuestionUploadForm = ({
   positions,
@@ -58,13 +64,34 @@ const QuestionUploadForm = ({
       questionText: "",
       positionId: preSelectedPositionId,
       roundTemplateId: preSelectedRoundId,
-    },
-    validators: {
-      onSubmit: questionFormSchema,
+      questionType: "text" as "text" | "mcq",
+      options: defaultMcqOptions(),
     },
     onSubmit: async ({ value }) => {
+      const payload: QuestionFormSchema =
+        value.questionType === "mcq"
+          ? {
+              questionText: value.questionText,
+              positionId: value.positionId,
+              roundTemplateId: value.roundTemplateId,
+              questionType: "mcq",
+              options: value.options,
+            }
+          : {
+              questionText: value.questionText,
+              positionId: value.positionId,
+              roundTemplateId: value.roundTemplateId,
+              questionType: "text",
+            };
+
+      const parsed = questionFormSchema.safeParse(payload);
+      if (!parsed.success) {
+        toast.error("Please fix the form errors", { position: "bottom-right" });
+        return;
+      }
+
       startTransition(async () => {
-        const result = await createQuestion(value);
+        const result = await createQuestion(parsed.data);
 
         if (result.error) {
           toast.error(
@@ -87,12 +114,12 @@ const QuestionUploadForm = ({
             },
           });
           form.reset();
+          setPositionId("");
         }
       });
     },
   });
 
-  // Fetch rounds when position changes
   useEffect(() => {
     const fetchRounds = async () => {
       if (!positionId) {
@@ -105,7 +132,6 @@ const QuestionUploadForm = ({
       try {
         const fetchedRounds = await getRoundsByPosition(positionId);
         setRounds(fetchedRounds);
-        // Reset round selection if current round is not in the new list
         const currentRoundId = form.getFieldValue("roundTemplateId");
         if (
           currentRoundId &&
@@ -313,10 +339,6 @@ const QuestionUploadForm = ({
                             {selectedPosition?.name || "Position"}
                           </Link>
                         </Button>
-                        <p className="text-xs text-muted-foreground text-center">
-                          After creating the round, come back here to add your
-                          question.
-                        </p>
                       </div>
                     </div>
                   ) : (
@@ -328,6 +350,39 @@ const QuestionUploadForm = ({
                 </Field>
               );
             }}
+          />
+
+          <form.Field
+            name="questionType"
+            children={(field) => (
+              <Field>
+                <FieldLabel htmlFor={field.name}>Question type</FieldLabel>
+                <Select
+                  value={field.state.value}
+                  onValueChange={(value: "text" | "mcq") => {
+                    field.handleChange(value);
+                    if (value === "mcq") {
+                      const currentOptions = form.getFieldValue("options");
+                      if (currentOptions.length < 2) {
+                        form.setFieldValue("options", defaultMcqOptions());
+                      }
+                    }
+                  }}
+                >
+                  <SelectTrigger id={field.name} className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="text">Text</SelectItem>
+                    <SelectItem value="mcq">Multiple choice</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FieldDescription>
+                  Text questions accept free-form answers. Multiple choice
+                  questions show selectable options to candidates.
+                </FieldDescription>
+              </Field>
+            )}
           />
 
           <form.Field
@@ -360,6 +415,24 @@ const QuestionUploadForm = ({
                 </Field>
               );
             }}
+          />
+
+          <form.Subscribe
+            selector={(state) => state.values.questionType}
+            children={(questionType) =>
+              questionType === "mcq" ? (
+                <form.Field
+                  name="options"
+                  children={(field) => (
+                    <McqOptionsField
+                      options={field.state.value}
+                      onChange={field.handleChange}
+                      disabled={isPending}
+                    />
+                  )}
+                />
+              ) : null
+            }
           />
         </FieldGroup>
       </form>

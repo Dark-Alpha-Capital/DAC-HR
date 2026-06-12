@@ -7,6 +7,7 @@ import {
 } from "../schemas/question-form-schema";
 import { getSession } from "@/lib/middleware/auth-guard";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
+import { normalizeMcqOptions } from "@/lib/question-options";
 
 export const createQuestion = defineAction(async (data: QuestionFormSchema) => {
   const session = await getSession();
@@ -20,14 +21,19 @@ export const createQuestion = defineAction(async (data: QuestionFormSchema) => {
     return { error: result.error.flatten().fieldErrors };
   }
 
-  const { questionText, roundTemplateId } = result.data;
+  const parsed = result.data;
+  const { questionText, roundTemplateId } = parsed;
 
   try {
-    // Create the question
     const [newQuestion] = await db
       .insert(questionBank)
       .values({
         questionText,
+        questionType: parsed.questionType,
+        options:
+          parsed.questionType === "mcq"
+            ? normalizeMcqOptions(parsed.options)
+            : null,
       })
       .returning();
 
@@ -35,38 +41,39 @@ export const createQuestion = defineAction(async (data: QuestionFormSchema) => {
       return { error: "Failed to create question" };
     }
 
-    // Link the question to the round
     await db.insert(roundTemplateQuestions).values({
       roundTemplateId,
       questionId: newQuestion.id,
     });
     insertAuditLog({
-        userId: session.user.id,
-        action: "create_question",
-        entityType: "question",
-        entityId: newQuestion.id,
-        details: {
-          question: {
-            id: newQuestion.id,
-            questionText: newQuestion.questionText,
-            createdAt: newQuestion.createdAt.toISOString(),
-            updatedAt: newQuestion.updatedAt.toISOString(),
-          },
-          input: {
-            questionText,
-            roundTemplateId,
-          },
-          createdBy: {
-            id: session.user.id,
-            email: session.user.email,
-            name: session.user.name,
-          },
-          metadata: {
-            timestamp: new Date().toISOString(),
-            linkedToRound: true,
-          },
+      userId: session.user.id,
+      action: "create_question",
+      entityType: "question",
+      entityId: newQuestion.id,
+      details: {
+        question: {
+          id: newQuestion.id,
+          questionText: newQuestion.questionText,
+          questionType: newQuestion.questionType,
+          createdAt: newQuestion.createdAt.toISOString(),
+          updatedAt: newQuestion.updatedAt.toISOString(),
         },
-      }).catch((error) => console.error("Audit log error:", error));
+        input: {
+          questionText,
+          questionType: parsed.questionType,
+          roundTemplateId,
+        },
+        createdBy: {
+          id: session.user.id,
+          email: session.user.email,
+          name: session.user.name,
+        },
+        metadata: {
+          timestamp: new Date().toISOString(),
+          linkedToRound: true,
+        },
+      },
+    }).catch((error) => console.error("Audit log error:", error));
 
     return { success: true, data: newQuestion };
   } catch (error) {
@@ -80,42 +87,44 @@ export const createQuestion = defineAction(async (data: QuestionFormSchema) => {
   }
 });
 
-export const createQuestionForRound = defineArgsAction(async (
-  data: QuestionFormSchema,
-  roundId: string,
-) => {
-  const session = await getSession();
+export const createQuestionForRound = defineArgsAction(
+  async (data: QuestionFormSchema, roundId: string) => {
+    const session = await getSession();
 
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
-
-  const result = questionFormSchema.safeParse(data);
-  if (!result.success) {
-    return { error: result.error.flatten().fieldErrors };
-  }
-
-  const { questionText } = result.data;
-
-  try {
-    // Create the question
-    const [newQuestion] = await db
-      .insert(questionBank)
-      .values({
-        questionText,
-      })
-      .returning();
-
-    if (!newQuestion) {
-      return { error: "Failed to create question" };
+    if (!session?.user) {
+      return { error: "Unauthorized" };
     }
 
-    // Link the question to the round
-    await db.insert(roundTemplateQuestions).values({
-      roundTemplateId: roundId,
-      questionId: newQuestion.id,
-    });
-    insertAuditLog({
+    const result = questionFormSchema.safeParse(data);
+    if (!result.success) {
+      return { error: result.error.flatten().fieldErrors };
+    }
+
+    const parsed = result.data;
+    const { questionText } = parsed;
+
+    try {
+      const [newQuestion] = await db
+        .insert(questionBank)
+        .values({
+          questionText,
+          questionType: parsed.questionType,
+          options:
+            parsed.questionType === "mcq"
+              ? normalizeMcqOptions(parsed.options)
+              : null,
+        })
+        .returning();
+
+      if (!newQuestion) {
+        return { error: "Failed to create question" };
+      }
+
+      await db.insert(roundTemplateQuestions).values({
+        roundTemplateId: roundId,
+        questionId: newQuestion.id,
+      });
+      insertAuditLog({
         userId: session.user.id,
         action: "create_question_for_round",
         entityType: "question",
@@ -124,11 +133,13 @@ export const createQuestionForRound = defineArgsAction(async (
           question: {
             id: newQuestion.id,
             questionText: newQuestion.questionText,
+            questionType: newQuestion.questionType,
             createdAt: newQuestion.createdAt.toISOString(),
             updatedAt: newQuestion.updatedAt.toISOString(),
           },
           input: {
             questionText,
+            questionType: parsed.questionType,
             roundId,
           },
           createdBy: {
@@ -143,14 +154,15 @@ export const createQuestionForRound = defineArgsAction(async (
         },
       }).catch((error) => console.error("Audit log error:", error));
 
-    return { success: true, data: newQuestion };
-  } catch (error) {
-    console.error(error);
+      return { success: true, data: newQuestion };
+    } catch (error) {
+      console.error(error);
 
-    if (error instanceof Error) {
-      return { error: error.message };
+      if (error instanceof Error) {
+        return { error: error.message };
+      }
+
+      return { error: "Failed to create question" };
     }
-
-    return { error: "Failed to create question" };
-  }
-});
+  },
+);

@@ -19,6 +19,7 @@ import type {
   QuestionCategory,
   QuestionType,
 } from "./enums";
+import type { QuestionOption } from "./question-types";
 
 const uuidPk = () =>
   text("id")
@@ -176,6 +177,7 @@ export const questionBank = sqliteTable("question_bank", {
     .default("text")
     .notNull(),
   category: text("question_category").$type<QuestionCategory>(),
+  options: text("options", { mode: "json" }).$type<QuestionOption[] | null>(),
   timeLimitSeconds: integer("time_limit_seconds"),
   orderIndex: integer("order_index"),
   isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
@@ -512,6 +514,7 @@ export const interviewResponse = sqliteTable(
       .notNull()
       .references(() => questionBank.id, { onDelete: "cascade" }),
     answerText: text("answer_text"),
+    selectedOptionId: text("selected_option_id"),
     createdAt: createdAtCol(),
     updatedAt: updatedAtCol(),
   },
