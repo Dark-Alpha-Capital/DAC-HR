@@ -3,15 +3,15 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { Badge } from "@workspace/ui/components/badge";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@workspace/ui/components/card";
+import { Card, CardHeader, CardTitle, CardDescription } from "@workspace/ui/components/card";
 import {
   RadioGroup,
   RadioGroupItem,
 } from "@workspace/ui/components/radio-group";
 import { Label } from "@workspace/ui/components/label";
 import type { QuestionOption } from "@workspace/db/question-types";
-
-import { Clock, ArrowLeft, ArrowRight, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import InterviewTimer from "@/components/interview-timer";
 
 interface Question {
   id: string;
@@ -27,6 +27,9 @@ interface InterviewData {
   candidateName: string;
   positionName: string;
   roundName: string;
+  // Epoch ms of when the candidate first clicked Start — used to anchor the timer.
+  // Null only if something went wrong server-side; treated as "just now" in that case.
+  startedAt: number | null;
   questions: Question[];
 }
 
@@ -49,31 +52,41 @@ export const Route = createFileRoute("/interview/$token/")({
 });
 
 function hasAnswer(answer: AnswerValue | undefined): boolean {
-  if (!answer) {
-    return false;
-  }
-
-  if (answer.type === "text") {
-    return answer.text.trim().length > 0;
-  }
-
+  if (!answer) return false;
+  if (answer.type === "text") return answer.text.trim().length > 0;
   return answer.selectedOptionId.length > 0;
 }
 
+const THIRTY_MINUTES_MS = 30 * 60 * 1000;
+
 function InterviewPage() {
   const { token } = Route.useParams();
-  const [status, setStatus] = useState<"loading" | "invalid" | "ready" | "in_progress" | "completed">("loading");
+  const [status, setStatus] = useState<"loading" | "invalid" | "in_progress" | "completed">("loading");
   const [error, setError] = useState("");
   const [data, setData] = useState<InterviewData | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [saving, setSaving] = useState(false);
   const [completing, setCompleting] = useState(false);
-  const answersRef = useRef(answers);
+  const [startedAt, setStartedAt] = useState<Date | null>(null);
 
+  // Always reflects latest answers — used by timer expire callback to avoid stale closures.
+  const answersRef = useRef(answers);
   useEffect(() => {
     answersRef.current = answers;
   }, [answers]);
+
+  // localStorage keys scoped to this token so multiple tabs/interviews don't collide.
+  const answersKey = `interview-answers-${token}`;
+  const timerKey = `interview-start-${token}`;
+
+  // Auto-save every answer change to localStorage immediately.
+  // This runs on every keystroke so even if the timer fires a millisecond later,
+  // whatever the candidate typed is already persisted.
+  useEffect(() => {
+    if (status !== "in_progress") return;
+    localStorage.setItem(answersKey, JSON.stringify(answers));
+  }, [answers, status, answersKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,10 +113,33 @@ function InterviewPage() {
           return;
         }
 
-        const interviewData = await schemaRes.json();
+        const interviewData: InterviewData = await schemaRes.json();
+
         if (!cancelled) {
           setData(interviewData);
-          setStatus("ready");
+
+          // Set the timer origin. The server returns the DB-recorded startedAt
+          // so page refresh always resumes from the real start time, not "now".
+          const origin = interviewData.startedAt
+            ? new Date(interviewData.startedAt)
+            : new Date();
+          setStartedAt(origin);
+
+          // Restore any answers the candidate had typed before a page refresh.
+          // We do this AFTER getting the schema so we know the question IDs.
+          const savedAnswers = localStorage.getItem(answersKey);
+          if (savedAnswers) {
+            try {
+              const parsed = JSON.parse(savedAnswers) as Record<string, AnswerValue>;
+              if (Object.keys(parsed).length > 0) {
+                setAnswers(parsed);
+              }
+            } catch {
+              // Corrupt localStorage — ignore and start fresh.
+            }
+          }
+
+          setStatus("in_progress");
         }
       } catch {
         if (!cancelled) {
@@ -115,25 +151,16 @@ function InterviewPage() {
 
     init();
     return () => { cancelled = true; };
-  }, [token]);
+  }, [token, answersKey]);
 
   const saveAnswer = useCallback(async (question: Question, answer: AnswerValue) => {
-    if (!hasAnswer(answer)) {
-      return;
-    }
-
+    if (!hasAnswer(answer)) return;
     setSaving(true);
     try {
       const body =
         answer.type === "mcq"
-          ? {
-              questionId: question.id,
-              selectedOptionId: answer.selectedOptionId,
-            }
-          : {
-              questionId: question.id,
-              answerText: answer.text,
-            };
+          ? { questionId: question.id, selectedOptionId: answer.selectedOptionId }
+          : { questionId: question.id, answerText: answer.text };
 
       await fetch(`/api/interview-token/${token}/responses`, {
         method: "POST",
@@ -141,43 +168,65 @@ function InterviewPage() {
         body: JSON.stringify(body),
       });
     } catch {
-      // continue regardless
+      // Network errors are non-fatal — localStorage already has the answer.
     } finally {
       setSaving(false);
     }
   }, [token]);
 
+  // Flushes ALL current answers to the API, then marks the session complete.
+  // Used by both the timer (auto-submit on expiry) and the Submit button (manual).
+  // Uses answersRef so the timer callback always sees the latest typed text
+  // even though it was set up before those keystrokes happened.
+  const handleTimerExpire = useCallback(async () => {
+    if (!data || completing) return;
+    setCompleting(true);
+    try {
+      // Save every question that has an answer — not just the current one.
+      const currentAnswers = answersRef.current;
+      for (const question of data.questions) {
+        const answer = currentAnswers[question.id];
+        if (answer && hasAnswer(answer)) {
+          await saveAnswer(question, answer);
+        }
+      }
+      await fetch(`/api/interview-token/${token}/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tabSwitches: tabSwitchCount }),
+      });
+      localStorage.removeItem(answersKey);
+      localStorage.removeItem(timerKey);
+      setStatus("completed");
+    } catch {
+      // Even if the complete call fails, the answers were saved above.
+      setStatus("completed");
+    } finally {
+      setCompleting(false);
+    }
+  }, [data, completing, token, saveAnswer, answersKey, timerKey]);
+
   const handleNext = useCallback(async () => {
     if (!data) return;
     const question = data.questions[currentStep];
     const answer = answers[question.id];
-    if (answer && hasAnswer(answer)) {
-      await saveAnswer(question, answer);
-    }
-    if (currentStep < data.questions.length - 1) {
-      setCurrentStep((s) => s + 1);
-    }
+    if (answer && hasAnswer(answer)) await saveAnswer(question, answer);
+    if (currentStep < data.questions.length - 1) setCurrentStep((s) => s + 1);
   }, [data, currentStep, answers, saveAnswer]);
 
   const handlePrev = useCallback(async () => {
     if (!data) return;
     const question = data.questions[currentStep];
     const answer = answers[question.id];
-    if (answer && hasAnswer(answer)) {
-      await saveAnswer(question, answer);
-    }
-    if (currentStep > 0) {
-      setCurrentStep((s) => s - 1);
-    }
+    if (answer && hasAnswer(answer)) await saveAnswer(question, answer);
+    if (currentStep > 0) setCurrentStep((s) => s - 1);
   }, [data, currentStep, answers, saveAnswer]);
 
   const handleComplete = useCallback(async () => {
     if (!data) return;
     const question = data.questions[currentStep];
     const answer = answers[question.id];
-    if (answer && hasAnswer(answer)) {
-      await saveAnswer(question, answer);
-    }
+    if (answer && hasAnswer(answer)) await saveAnswer(question, answer);
     setCompleting(true);
     try {
       await fetch(`/api/interview-token/${token}/complete`, {
@@ -185,13 +234,15 @@ function InterviewPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tabSwitches: tabSwitchCount }),
       });
+      localStorage.removeItem(answersKey);
+      localStorage.removeItem(timerKey);
       setStatus("completed");
     } catch {
       // continue
     } finally {
       setCompleting(false);
     }
-  }, [data, currentStep, answers, saveAnswer, token]);
+  }, [data, currentStep, answers, saveAnswer, token, answersKey, timerKey]);
 
   if (status === "loading") {
     return (
@@ -256,11 +307,18 @@ function InterviewPage() {
               {data.positionName} — {data.candidateName}
             </p>
           </div>
+          {/* 30-minute countdown. Completely independent of link expiry —
+              once the candidate is here, only this timer governs. */}
+          {startedAt && (
+            <InterviewTimer
+              durationMs={THIRTY_MINUTES_MS}
+              startedAt={startedAt}
+              token={token}
+              onExpire={handleTimerExpire}
+            />
+          )}
           <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
-            <Clock className="size-3.5" />
-            <span>
-              {currentStep + 1} / {data.questions.length}
-            </span>
+            <span>{currentStep + 1} / {data.questions.length}</span>
           </div>
         </div>
         <div className="h-1 w-full bg-muted">
@@ -289,17 +347,14 @@ function InterviewPage() {
         <div className="flex-1">
           {isMcq ? (
             <RadioGroup
-              value={
-                currentAnswer?.type === "mcq"
-                  ? currentAnswer.selectedOptionId
-                  : ""
-              }
+              value={currentAnswer?.type === "mcq" ? currentAnswer.selectedOptionId : ""}
               onValueChange={(selectedOptionId) =>
                 setAnswers((prev) => ({
                   ...prev,
                   [question.id]: { type: "mcq", selectedOptionId },
                 }))
               }
+              disabled={completing}
               className="space-y-3"
             >
               {(question.options ?? []).map((option) => (
@@ -325,15 +380,16 @@ function InterviewPage() {
               }
               placeholder="Type your answer here..."
               className="min-h-[200px] resize-y text-base leading-relaxed"
+              disabled={completing}
             />
           )}
         </div>
 
         <div className="mt-6 flex items-center justify-between gap-3 border-t pt-4">
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={handlePrev}
-            disabled={currentStep === 0 || saving}
+            disabled={currentStep === 0 || saving || completing}
             size="sm"
           >
             <ArrowLeft className="mr-1.5 size-4" />
@@ -357,7 +413,7 @@ function InterviewPage() {
             ) : (
               <Button
                 onClick={handleNext}
-                disabled={saving}
+                disabled={saving || completing}
                 size="sm"
               >
                 Next

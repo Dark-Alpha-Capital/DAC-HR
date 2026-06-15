@@ -41,7 +41,11 @@ export const Route = createFileRoute("/api/interview-token/$token/responses")({
             );
           }
 
-          if (new Date(session.expiresAt) < new Date()) {
+          // Expiry does not block saves once in_progress — candidate has their full 30 minutes.
+          if (
+            session.status !== "in_progress" &&
+            new Date(session.expiresAt) < new Date()
+          ) {
             return Response.json(
               { error: "This interview link has expired" },
               { status: 410 },

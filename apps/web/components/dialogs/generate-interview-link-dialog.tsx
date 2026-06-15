@@ -55,7 +55,7 @@ export default function GenerateInterviewLinkDialog({
         return;
       }
 
-      const link = `${window.location.origin}/interview/${result.token}`;
+      const link = `${window.location.origin}/interview/${result.token}/`;
       setGeneratedLink(link);
       setExpiresAt(new Date(result.linkExpiresAt));
     } catch {
