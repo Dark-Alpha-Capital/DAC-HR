@@ -1,7 +1,4 @@
-import {
-  defineAction,
-  defineArgsQuery,
-} from "./create-action";
+import { createServerFn } from "@tanstack/react-start";
 import { db } from "@workspace/db/db";
 import {
   interview,
@@ -26,9 +23,9 @@ export type InterviewRoundData = {
 /**
  * Create or update an interview round
  */
-export const saveInterviewRound = defineAction(async (
-  data: InterviewRoundData & { interviewId?: string },
-) => {
+export const saveInterviewRound = createServerFn({ method: "POST" })
+  .validator((data: InterviewRoundData & { interviewId?: string },) => data)
+  .handler(async ({ data }) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -152,11 +149,13 @@ export const saveInterviewRound = defineAction(async (
 /**
  * Start an interview round (mark as in-progress)
  */
-export const startInterviewRound = defineAction(async (data: {
+export const startInterviewRound = createServerFn({ method: "POST" })
+  .validator((data: {
   applicationId: string;
   positionRoundTemplateId: string;
   interviewerId: string;
-}) => {
+}) => data)
+  .handler(async ({ data }) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -238,10 +237,9 @@ export const startInterviewRound = defineAction(async (data: {
 /**
  * Get interview details for a specific application and round
  */
-export const getInterviewForRound = defineArgsQuery(async (
-  applicationId: string,
-  positionRoundTemplateId: string,
-) => {
+export const getInterviewForRound = createServerFn({ method: "GET" })
+  .validator((data: [string, string]) => data)
+  .handler(async ({ data: [applicationId, positionRoundTemplateId] }) => {
   try {
     const [interviewData] = await db
       .select()

@@ -1,15 +1,15 @@
 import React, { useTransition, useState } from "react";
-import { Button } from "@workspace/ui/components/button";
-import { Checkbox } from "@workspace/ui/components/checkbox";
-import { Textarea } from "@workspace/ui/components/textarea";
-import { Label } from "@workspace/ui/components/label";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select";
+} from "@/components/ui/select";
 import { Sparkles, Loader2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Session } from "better-auth";
@@ -170,7 +170,7 @@ export default function CandidateAiAnalysis({
 
         // Invalidate cache tags immediately after successful analysis
         // This ensures the UI reflects the change right away
-        resetCacheForCandidateAiScreenings(candidateId);
+        resetCacheForCandidateAiScreenings({ data: candidateId });
       } catch (err) {
         console.error("Error analyzing candidate", err);
         toast.error("An error occurred during analysis");

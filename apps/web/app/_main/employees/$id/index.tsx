@@ -1,14 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { getEmployeeById } from "@workspace/db/queries";
-import { Button } from "@workspace/ui/components/button";
-import { Separator } from "@workspace/ui/components/separator";
-import { Badge } from "@workspace/ui/components/badge";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@workspace/ui/components/tabs";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BackButton from "@/components/back-button";
 import {
   Pencil,
@@ -20,7 +15,6 @@ import {
   FileText,
 } from "lucide-react";
 import DeleteEmployeeButton from "@/components/delete-employee-button";
-import { formatDate, formatDepartments } from "@/lib/utils";
 import EmployeeProfileImage from "@/components/employee-profile-image";
 
 export const Route = createFileRoute("/_main/employees/$id/")({
@@ -48,7 +42,9 @@ function EmployeeDetailPage() {
             removed.
           </p>
           <Button asChild>
-            <Link to="/employees" search={{} as any}>Back to Employees</Link>
+            <Link to="/employees" search={{} as any}>
+              Back to Employees
+            </Link>
           </Button>
         </div>
       </div>
@@ -76,15 +72,12 @@ function EmployeeDetailPage() {
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant="secondary" className="gap-1.5 text-xs">
                   <Calendar className="h-3 w-3" />
-                  Created {formatDate(employee.createdAt)}
+                  {/* Created {formatDate(employee.createdAt)} */}
                 </Badge>
-                {employee.updatedAt &&
-                employee.updatedAt.getTime() !== employee.createdAt.getTime() ? (
-                  <Badge variant="secondary" className="gap-1.5 text-xs">
-                    <Clock className="h-3 w-3" />
-                    Updated {formatDate(employee.updatedAt)}
-                  </Badge>
-                ) : null}
+                <Badge variant="secondary" className="gap-1.5 text-xs">
+                  <Clock className="h-3 w-3" />
+                  {/* Updated {formatDate(employee.updatedAt)} */}
+                </Badge>
               </div>
             </div>
           </div>
@@ -117,13 +110,13 @@ function EmployeeDetailPage() {
                 <Building2 className="h-5 w-5 shrink-0 text-muted-foreground mt-0.5" />
                 <div className="flex-1">
                   <p className="text-sm font-medium mb-3">Department</p>
-                  <div className="flex flex-wrap gap-2">
+                  {/* <div className="flex flex-wrap gap-2">
                     {formatDepartments(employee.department).map((dept, idx) => (
                       <Badge key={idx} variant="secondary">
                         {dept}
                       </Badge>
                     ))}
-                  </div>
+                  </div> */}
                 </div>
               </div>
 

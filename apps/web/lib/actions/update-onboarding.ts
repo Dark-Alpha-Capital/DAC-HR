@@ -1,4 +1,4 @@
-import { defineArgsAction } from "./create-action";
+import { createServerFn } from "@tanstack/react-start";
 import { db } from "@workspace/db/db";
 import { candidateOnboarding } from "@workspace/db/schema";
 import { getSession } from "@/lib/middleware/auth-guard";
@@ -32,11 +32,9 @@ const buildTaskUpdate = (
   }
 };
 
-export const toggleOnboardingTask = defineArgsAction(async (
-  candidateId: string,
-  taskKey: OnboardingTaskKey,
-  value: boolean,
-) => {
+export const toggleOnboardingTask = createServerFn({ method: "POST" })
+  .validator((data: [string, OnboardingTaskKey, boolean]) => data)
+  .handler(async ({ data: [candidateId, taskKey, value] }) => {
   const [upserted] = await db
     .insert(candidateOnboarding)
     .values({
@@ -53,15 +51,14 @@ export const toggleOnboardingTask = defineArgsAction(async (
   return upserted;
 });
 
-export const updateOnboardingTasks = defineArgsAction(async (
-  candidateId: string,
-  tasks: {
+export const updateOnboardingTasks = createServerFn({ method: "POST" })
+  .validator((data: [string, {
     contractSigned: boolean;
     emailProvided: boolean;
     onboardingPacketSent: boolean;
     companyEmailActivate: boolean;
-  },
-) => {
+  }]) => data)
+  .handler(async ({ data: [candidateId, tasks] }) => {
   const session = await getSession();
 
   if (!session?.user) {

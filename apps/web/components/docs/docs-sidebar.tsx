@@ -1,9 +1,9 @@
 import { DocsNav } from "./docs-nav";
-import { ScrollArea } from "@workspace/ui/components/scroll-area";
-import { Button } from "@workspace/ui/components/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 export function DocsSidebar() {
   const [isOpen, setIsOpen] = useState(false);

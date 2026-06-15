@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense } from "react";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import PositionUploadForm from "@/components/forms/position-upload-form";
 import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";
 
@@ -15,11 +15,11 @@ function NewPositionPage() {
   return (
     <div className="narrow-container mx-auto space-y-8 py-6">
       <Button asChild variant="secondary" size="sm">
-        <Link to="/positions" search={{} as any}>Back to Positions</Link>
+        <Link to="/positions" search={{} as any}>
+          Back to Positions
+        </Link>
       </Button>
-      <Suspense fallback={<FormLoadingFallback />}>
-        <PositionUploadForm />
-      </Suspense>
+      <PositionUploadForm />
     </div>
   );
 }

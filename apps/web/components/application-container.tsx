@@ -7,8 +7,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@workspace/ui/components/table";
-import { Button } from "@workspace/ui/components/button";
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 type Application = {
   id: string;
   status: string;

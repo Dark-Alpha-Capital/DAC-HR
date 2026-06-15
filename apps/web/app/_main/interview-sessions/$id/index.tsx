@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Button } from "@workspace/ui/components/button";
-import { Badge } from "@workspace/ui/components/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card";
-import { Separator } from "@workspace/ui/components/separator";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { getSessionById, getResponsesBySessionId, getEvaluationBySessionId } from "@workspace/db/repositories/interview-session-repository";
 import { ArrowLeft, Copy, Check, Clock, Calendar } from "lucide-react";
 import { useState } from "react";

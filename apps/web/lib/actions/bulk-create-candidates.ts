@@ -1,4 +1,4 @@
-import { defineAction } from "./create-action";
+import { createServerFn } from "@tanstack/react-start";
 import { inArray } from "@workspace/db";
 import { db } from "@workspace/db/db";
 import {
@@ -49,9 +49,9 @@ const checkExistingEmails = async (emails: string[]): Promise<Set<string>> => {
   return new Set(existingCandidates.map((c) => c.email.toLowerCase()));
 };
 
-export const bulkCreateCandidates = defineAction(async (
-  candidates: BulkCandidateRow[],
-) => {
+export const bulkCreateCandidates = createServerFn({ method: "POST" })
+  .validator((data: BulkCandidateRow[],) => data)
+  .handler(async ({ data: candidates }) => {
   const session = await getSession();
 
   if (!session?.user) {

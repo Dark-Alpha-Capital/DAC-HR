@@ -4,7 +4,7 @@ import { getCandidateById } from "@workspace/db/repositories/candidate-repositor
 import { getPositions } from "@workspace/db/queries";
 import CandidateEditForm from "@/components/forms/candidate-edit-form";
 import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import BackButton from "@/components/back-button";
 
 export const Route = createFileRoute("/_main/candidates/$uid/edit")({

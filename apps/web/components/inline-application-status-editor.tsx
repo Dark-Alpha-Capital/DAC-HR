@@ -1,12 +1,12 @@
 import { useTransition, useState } from "react";
 import { useRouter } from "@tanstack/react-router";
-import { Badge } from "@workspace/ui/components/badge";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +16,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@workspace/ui/components/alert-dialog";
+} from "@/components/ui/alert-dialog";
 import { updateApplication } from "@/lib/actions/update-application";
 import { toast } from "sonner";
 import { ChevronDown } from "lucide-react";
@@ -92,8 +92,10 @@ export default function InlineApplicationStatusEditor({
   const updateStatus = (newStatus: ApplicationStatus) => {
     startTransition(async () => {
       const result = await updateApplication({
-        applicationId: application.id,
-        status: newStatus,
+        data: {
+          applicationId: application.id,
+          status: newStatus,
+        },
       });
 
       if (result.error) {

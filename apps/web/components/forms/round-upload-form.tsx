@@ -2,21 +2,21 @@ import * as React from "react";
 import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "@workspace/ui/components/field";
-import { Input } from "@workspace/ui/components/input";
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupText,
   InputGroupTextarea,
-} from "@workspace/ui/components/input-group";
+} from "@/components/ui/input-group";
 import {
   Select,
   SelectContent,
@@ -24,7 +24,7 @@ import {
   SelectSeparator,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select";
+} from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import { roundFormSchema } from "@/lib/schemas/round-form-schema";
@@ -54,7 +54,7 @@ const RoundUploadForm = ({
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
-        const result = await createRound(value);
+        const result = await createRound({ data: value });
         if (result.error) {
           toast.error(
             typeof result.error === "string"

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { Badge } from "@workspace/ui/components/badge";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardAction,
@@ -9,9 +9,9 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@workspace/ui/components/card";
-import { Separator } from "@workspace/ui/components/separator";
-import { Skeleton } from "@workspace/ui/components/skeleton";
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ShieldCheckIcon, UserPlusIcon } from "lucide-react";
 import { fetchSession } from "@/lib/auth-session";
 import GoogleSignInButton from "@/components/google-signin-button";

@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense } from "react";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import CandidateUploadForm from "@/components/forms/candidate-upload-form";
 import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";
 import { getPositions } from "@workspace/db/queries";

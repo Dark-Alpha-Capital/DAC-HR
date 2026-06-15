@@ -3,15 +3,15 @@ import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import * as z from "zod";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "@workspace/ui/components/field";
-import { Input } from "@workspace/ui/components/input";
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -19,7 +19,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import {
   positionFormSchema,
   hireLevelEnum,
@@ -33,11 +33,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select";
+} from "@/components/ui/select";
 import { createPosition } from "@/lib/actions/create-position";
 import { useRouter } from "@tanstack/react-router";
 import { RichTextEditorField } from "@/components/rich-text-editor";
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 const departmentLabels: Record<z.infer<typeof departmentEnum>, string> = {
   management: "Management",
@@ -83,7 +83,7 @@ const PositionUploadForm = () => {
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
-        const result = await createPosition(value);
+        const result = await createPosition({ data: value });
         if (result.success) {
           toast("Position uploaded successfully", {
             position: "bottom-right",
@@ -273,13 +273,9 @@ const PositionUploadForm = () => {
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Hire Level</FieldLabel>
                   <Select
-                    value={field.state.value || ""}
+                    value={field.state.value}
                     onValueChange={(value) =>
-                      field.handleChange(
-                        value === ""
-                          ? undefined
-                          : (value as z.infer<typeof hireLevelEnum>),
-                      )
+                      field.handleChange(value as z.infer<typeof hireLevelEnum>)
                     }
                   >
                     <SelectTrigger

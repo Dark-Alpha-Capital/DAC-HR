@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
-import { Button } from "@workspace/ui/components/button";
-import { Badge } from "@workspace/ui/components/badge";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@workspace/ui/components/card";
+} from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,7 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@workspace/ui/components/alert-dialog";
+} from "@/components/ui/alert-dialog";
 import {
   Loader2,
   CheckCircle,
@@ -32,7 +32,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/utils";
 import type { InterviewAiAnalysisData } from "@/lib/schemas/interview-ai-analysis-schema";
 

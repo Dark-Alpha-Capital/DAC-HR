@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { Edit, Plus, ChevronRight, Star } from "lucide-react";
-import { Badge } from "@workspace/ui/components/badge";
-import { cn } from "@workspace/ui/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import EditQuestionFeedbackDialog from "./dialogs/edit-question-feedback-dialog";
 
 interface QuestionFeedback {

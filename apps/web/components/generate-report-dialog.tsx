@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,16 +8,16 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
-} from "@workspace/ui/components/dialog";
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select";
-import { Input } from "@workspace/ui/components/input";
-import { Label } from "@workspace/ui/components/label";
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 

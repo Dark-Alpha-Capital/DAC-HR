@@ -2,22 +2,22 @@ import * as React from "react";
 import { useTransition, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "@workspace/ui/components/field";
-import { Input } from "@workspace/ui/components/input";
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupText,
   InputGroupTextarea,
-} from "@workspace/ui/components/input-group";
-import { Checkbox } from "@workspace/ui/components/checkbox";
+} from "@/components/ui/input-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2 } from "lucide-react";
 import { createDocument } from "@/lib/actions/create-document";
 import { useRouter } from "@tanstack/react-router";
@@ -102,8 +102,10 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
 
           // Create the document with the uploaded file URL
           const result = await createDocument({
-            ...value,
-            url: fileUrl,
+            data: {
+              ...value,
+              url: fileUrl,
+            },
           });
 
           if (result.success) {

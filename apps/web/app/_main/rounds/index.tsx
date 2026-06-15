@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { getPositions, getRoundsWithPositions } from "@workspace/db/queries";
 import RoundContainer from "@/components/round-container";
 import FilterPositionType from "@/components/filter-position-type";

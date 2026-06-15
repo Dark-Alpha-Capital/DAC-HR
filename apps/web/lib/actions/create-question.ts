@@ -1,4 +1,4 @@
-import { defineAction, defineArgsAction } from "./create-action";
+import { createServerFn } from "@tanstack/react-start";
 import { db } from "@workspace/db/db";
 import { questionBank, roundTemplateQuestions } from "@workspace/db/schema";
 import {
@@ -9,7 +9,9 @@ import { getSession } from "@/lib/middleware/auth-guard";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { normalizeMcqOptions } from "@/lib/question-options";
 
-export const createQuestion = defineAction(async (data: QuestionFormSchema) => {
+export const createQuestion = createServerFn({ method: "POST" })
+  .validator((data: QuestionFormSchema) => data)
+  .handler(async ({ data }) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -87,8 +89,10 @@ export const createQuestion = defineAction(async (data: QuestionFormSchema) => {
   }
 });
 
-export const createQuestionForRound = defineArgsAction(
-  async (data: QuestionFormSchema, roundId: string) => {
+export const createQuestionForRound = createServerFn({ method: "POST" })
+  .validator((data: [QuestionFormSchema, string]) => data)
+  .handler(async ({ data: [formData, roundId] }) => {
+    const data = formData;
     const session = await getSession();
 
     if (!session?.user) {
@@ -164,5 +168,4 @@ export const createQuestionForRound = defineArgsAction(
 
       return { error: "Failed to create question" };
     }
-  },
-);
+  });

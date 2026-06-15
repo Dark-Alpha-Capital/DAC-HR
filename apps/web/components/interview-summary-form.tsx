@@ -1,15 +1,15 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "@tanstack/react-router";
-import { Button } from "@workspace/ui/components/button";
-import { Label } from "@workspace/ui/components/label";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select";
-import { Textarea } from "@workspace/ui/components/textarea";
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { updateInterview } from "@/lib/actions/update-interview";
 import { toast } from "sonner";
 import { CheckCircle, XCircle, Clock, Circle, Loader2 } from "lucide-react";
@@ -60,10 +60,12 @@ export default function InterviewSummaryForm({
         rating && rating !== "none" ? parseInt(rating, 10) : undefined;
 
       const result = await updateInterview({
-        interviewId: interview.id,
-        status: status as "pending" | "move_forward" | "rejected",
-        rating: parsedRating,
-        overallFeedback: overallFeedback.trim() || undefined,
+        data: {
+          interviewId: interview.id,
+          status: status as "pending" | "move_forward" | "rejected",
+          rating: parsedRating,
+          overallFeedback: overallFeedback.trim() || undefined,
+        },
       });
 
       if (result.error) {

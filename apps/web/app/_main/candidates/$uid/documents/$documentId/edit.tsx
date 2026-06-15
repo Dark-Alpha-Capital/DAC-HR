@@ -8,8 +8,8 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "@workspace/ui/components/card";
-import { Button } from "@workspace/ui/components/button";
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";
 
 export const Route = createFileRoute(

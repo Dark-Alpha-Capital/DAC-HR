@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense } from "react";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import DocumentUploadForm from "@/components/forms/document-upload-form";
 import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";

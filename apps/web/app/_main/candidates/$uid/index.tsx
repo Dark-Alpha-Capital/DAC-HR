@@ -1,11 +1,11 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { Button } from "@workspace/ui/components/button";
-import { Badge } from "@workspace/ui/components/badge";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   TabsList,
   TabsTrigger,
   TabsContent,
-} from "@workspace/ui/components/tabs";
+} from "@/components/ui/tabs";
 import {
   Pencil,
   Calendar,

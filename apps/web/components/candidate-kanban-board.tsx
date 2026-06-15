@@ -1,4 +1,3 @@
-"use client";
 
 import { useOptimistic, useTransition, useState, useMemo } from "react";
 import { updateApplicationStatus } from "@/lib/actions/application-actions";
@@ -197,7 +196,9 @@ export default function KanbanBoard({
     startTransition(async () => {
       setOptimisticApplications({ applicationId, newStatus: targetStatus });
 
-      const result = await updateApplicationStatus(applicationId, targetStatus);
+      const result = await updateApplicationStatus({
+        data: [applicationId, targetStatus],
+      });
 
       if (!result.success) {
         setApplications(previousState);

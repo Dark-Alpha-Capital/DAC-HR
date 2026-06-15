@@ -1,4 +1,4 @@
-import { defineAction } from "./create-action";
+import { createServerFn } from "@tanstack/react-start";
 import { getSession } from "@/lib/middleware/auth-guard";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { deleteCandidateWithAssets } from "@/lib/application/candidate-service";
@@ -7,7 +7,9 @@ import { deleteCandidateWithAssets } from "@/lib/application/candidate-service";
  * Server Action to delete a candidate
  * Uses shared application service and invalidates Next.js cache tags
  */
-export const deleteCandidate = defineAction(async (candidateId: string) => {
+export const deleteCandidate = createServerFn({ method: "POST" })
+  .validator((data: string) => data)
+  .handler(async ({ data: candidateId }) => {
   const session = await getSession();
 
   if (!session?.user) {

@@ -1,14 +1,14 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "@tanstack/react-router";
-import { Button } from "@workspace/ui/components/button";
-import { Label } from "@workspace/ui/components/label";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select";
+} from "@/components/ui/select";
 import { updateApplication } from "@/lib/actions/update-application";
 import { toast } from "sonner";
 
@@ -66,8 +66,10 @@ export default function ApplicationStatusForm({
 
     startTransition(async () => {
       const result = await updateApplication({
-        applicationId: application.id,
-        status,
+        data: {
+          applicationId: application.id,
+          status,
+        },
       });
 
       if (result.error) {

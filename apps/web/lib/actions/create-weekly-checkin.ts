@@ -1,4 +1,4 @@
-import { defineAction } from "./create-action";
+import { createServerFn } from "@tanstack/react-start";
 import { db } from "@workspace/db/db";
 import { recruiterWeeklyCheckin } from "@workspace/db/schema";
 import { getSession } from "@/lib/middleware/auth-guard";
@@ -8,7 +8,9 @@ import {
   type WeeklyCheckinFormSchema,
 } from "@/lib/schemas/weekly-checkin-form-schema";
 
-export const createWeeklyCheckin = defineAction(async (data: WeeklyCheckinFormSchema) => {
+export const createWeeklyCheckin = createServerFn({ method: "POST" })
+  .validator((data: WeeklyCheckinFormSchema) => data)
+  .handler(async ({ data }) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -17,6 +19,8 @@ export const createWeeklyCheckin = defineAction(async (data: WeeklyCheckinFormSc
 
   // Validate input
   const parsed = weeklyCheckinFormSchema.safeParse(data);
+
+
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Invalid form data" };
   }
@@ -52,36 +56,38 @@ export const createWeeklyCheckin = defineAction(async (data: WeeklyCheckinFormSc
     }
 
     insertAuditLog({
-        userId: session.user.id,
-        action: "create_weekly_checkin",
-        entityType: "recruiter_weekly_checkin",
-        entityId: newCheckin.id,
-        details: {
-          checkin: {
-            id: newCheckin.id,
-            weekStartDate: newCheckin.weekStartDate.toISOString(),
-            weekEndDate: newCheckin.weekEndDate.toISOString(),
-            recruiterName: newCheckin.recruiterName,
-            positionsWorked: newCheckin.positionsWorked,
-            candidatesSourced: newCheckin.candidatesSourced,
-            candidatesScreened: newCheckin.candidatesScreened,
-            candidatesRejected: newCheckin.candidatesRejected,
-            candidatesAdvanced2ndRound: newCheckin.candidatesAdvanced2ndRound,
-            candidatesAdvanced3rdRound: newCheckin.candidatesAdvanced3rdRound,
-            offersExtended: newCheckin.offersExtended,
-            offersAccepted: newCheckin.offersAccepted,
-            bestPerformingChannels: newCheckin.bestPerformingChannels,
-          },
-          createdBy: {
-            id: session.user.id,
-            email: session.user.email,
-            name: session.user.name,
-          },
-          metadata: {
-            timestamp: new Date().toISOString(),
-          },
+      userId: session.user.id,
+      action: "create_weekly_checkin",
+      entityType: "recruiter_weekly_checkin",
+      entityId: newCheckin.id,
+      details: {
+        checkin: {
+          id: newCheckin.id,
+          weekStartDate: newCheckin.weekStartDate.toISOString(),
+          weekEndDate: newCheckin.weekEndDate.toISOString(),
+          recruiterName: newCheckin.recruiterName,
+          positionsWorked: newCheckin.positionsWorked,
+          candidatesSourced: newCheckin.candidatesSourced,
+          candidatesScreened: newCheckin.candidatesScreened,
+          candidatesRejected: newCheckin.candidatesRejected,
+          candidatesAdvanced2ndRound: newCheckin.candidatesAdvanced2ndRound,
+          candidatesAdvanced3rdRound: newCheckin.candidatesAdvanced3rdRound,
+          offersExtended: newCheckin.offersExtended,
+          offersAccepted: newCheckin.offersAccepted,
+          bestPerformingChannels: newCheckin.bestPerformingChannels,
         },
-      }).catch((error) => console.error("Audit log error:", error));
+        createdBy: {
+          id: session.user.id,
+          email: session.user.email,
+          name: session.user.name,
+        },
+        metadata: {
+          timestamp: new Date().toISOString(),
+        },
+      },
+    }).catch((error) => console.error("Audit log error:", error));
+
+
 
     return { success: true, data: newCheckin };
   } catch (error) {

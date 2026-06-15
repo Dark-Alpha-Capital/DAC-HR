@@ -1,4 +1,4 @@
-import { defineArgsAction } from "./create-action";
+import { createServerFn } from "@tanstack/react-start";
 import { db } from "@workspace/db/db";
 import { questionBank } from "@workspace/db/schema";
 import {
@@ -10,8 +10,10 @@ import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { normalizeMcqOptions } from "@/lib/question-options";
 
-export const updateQuestion = defineArgsAction(
-  async (questionId: string, data: QuestionEditFormSchema) => {
+export const updateQuestion = createServerFn({ method: "POST" })
+  .validator((data: [string, QuestionEditFormSchema]) => data)
+  .handler(async ({ data: [questionId, formData] }) => {
+    const data = formData;
     const session = await getSession();
 
     if (!session?.user) {
@@ -80,5 +82,4 @@ export const updateQuestion = defineArgsAction(
 
       return { error: "Failed to update question" };
     }
-  },
-);
+  });

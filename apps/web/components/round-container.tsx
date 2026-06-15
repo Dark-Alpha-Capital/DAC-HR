@@ -1,4 +1,3 @@
-"use client";
 
 import React from "react";
 import {
@@ -8,12 +7,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@workspace/ui/components/table";
-import { Button } from "@workspace/ui/components/button";
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { Eye, Pencil } from "lucide-react";
 import DeleteRoundButton from "@/components/delete-round-button";
-import { Badge } from "@workspace/ui/components/badge";
+import { Badge } from "@/components/ui/badge";
 
 interface Position {
   id: string;

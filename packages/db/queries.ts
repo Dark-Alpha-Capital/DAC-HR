@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { db } from "@workspace/db/db";
 import { ilike, jsonArrayOverlap, jsonArrayTagSearch } from "./sqlite-helpers";
 import {
   position,
@@ -996,7 +996,9 @@ function seededShuffle<T>(array: T[], seed: number): T[] {
   for (let i = shuffled.length - 1; i > 0; i--) {
     s = (s * 16807 + 0) % 2147483647;
     const j = s % (i + 1);
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    const temp = shuffled[i]!;
+    shuffled[i] = shuffled[j]!;
+    shuffled[j] = temp;
   }
   return shuffled;
 }
@@ -1751,8 +1753,8 @@ export async function getDocumentsByCandidateId(candidateId: string) {
 export const getDashboardStats = async () => {
   try {
     const now = Date.now();
-    const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
-    const sixtyDaysAgo = new Date(now - 60 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+    const sixtyDaysAgo = now - 60 * 24 * 60 * 60 * 1000;
 
     // Total candidates count
     const [totalCandidatesResult] = await db
@@ -1897,7 +1899,7 @@ export const getDashboardStats = async () => {
     // Average interview rating
     const [avgInterviewRatingResult] = await db
       .select({
-        avgRating: sql<number>`AVG(${interview.rating})::numeric`,
+        avgRating: sql<number>`AVG(${interview.rating})`,
       })
       .from(interview)
       .where(sql`${interview.rating} IS NOT NULL`);
@@ -2070,7 +2072,7 @@ export const getUpcomingInterviews = async (limit?: number) => {
       .where(
         and(
           eq(interview.status, "pending"),
-          sql`${interview.scheduledAt} >= ${new Date()}`,
+          sql`${interview.scheduledAt} >= ${Date.now()}`,
         ),
       )
       .orderBy(asc(interview.scheduledAt));
@@ -2372,6 +2374,7 @@ export const getApplicationsOverTime = async () => {
   try {
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const sixMonthsAgoMs = sixMonthsAgo.getTime();
     const monthExpr = sql<string>`strftime('%Y-%m', datetime(${application.createdAt} / 1000, 'unixepoch'))`;
 
     const results = await db
@@ -2380,7 +2383,7 @@ export const getApplicationsOverTime = async () => {
         count: sql<number>`count(*)`,
       })
       .from(application)
-      .where(sql`${application.createdAt} >= ${sixMonthsAgo}`)
+      .where(sql`${application.createdAt} >= ${sixMonthsAgoMs}`)
       .groupBy(monthExpr)
       .orderBy(monthExpr);
 

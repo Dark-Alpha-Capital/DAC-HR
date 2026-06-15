@@ -1,16 +1,16 @@
 import React from "react";
 import { Link } from "@tanstack/react-router";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@workspace/ui/components/card";
+} from "@/components/ui/card";
 import { Eye, Pencil } from "lucide-react";
 import DeletePositionButton from "./delete-position-button";
-import { Badge } from "@workspace/ui/components/badge";
+import { Badge } from "@/components/ui/badge";
 
 const hireLevelLabels: Record<string, string> = {
   "managing-director": "Managing Director",

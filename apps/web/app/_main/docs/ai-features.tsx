@@ -6,8 +6,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@workspace/ui/components/card";
-import { Badge } from "@workspace/ui/components/badge";
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Sparkles,
   ArrowRight,

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Badge } from "@workspace/ui/components/badge";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardAction,
@@ -8,7 +8,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@workspace/ui/components/card";
+} from "@/components/ui/card";
 import { ShieldXIcon } from "lucide-react";
 import { AuthLayout } from "@/components/auth-layout";
 

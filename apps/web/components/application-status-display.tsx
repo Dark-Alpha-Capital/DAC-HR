@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { Button } from "@workspace/ui/components/button";
-import { Badge } from "@workspace/ui/components/badge";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@workspace/ui/components/dialog";
+} from "@/components/ui/dialog";
 import { Edit } from "lucide-react";
 import ApplicationStatusForm from "./application-status-form";
 import {

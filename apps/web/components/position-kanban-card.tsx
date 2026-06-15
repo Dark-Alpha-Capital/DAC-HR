@@ -1,9 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { Eye, Pencil } from "lucide-react";
 
-import { Card, CardContent } from "@workspace/ui/components/card";
-import { Button } from "@workspace/ui/components/button";
-import { Badge } from "@workspace/ui/components/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 import DeletePositionButton from "@/components/delete-position-button";
 

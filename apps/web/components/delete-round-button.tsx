@@ -1,5 +1,5 @@
 import React, { useTransition } from "react";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
 import { deleteRound } from "@/lib/actions/delete-round";
 import { toast } from "sonner";
@@ -14,12 +14,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@workspace/ui/components/alert-dialog";
+} from "@/components/ui/alert-dialog";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@workspace/ui/components/tooltip";
+} from "@/components/ui/tooltip";
 
 const DeleteRoundButton = ({ roundId }: { roundId: string }) => {
   const [isPending, startTransition] = useTransition();
@@ -59,7 +59,7 @@ const DeleteRoundButton = ({ roundId }: { roundId: string }) => {
             <AlertDialogAction
               onClick={() => {
                 startTransition(async () => {
-                  const response = await deleteRound(roundId);
+                  const response = await deleteRound({ data: roundId });
                   if (response?.error) {
                     toast.error(response.error);
                   }

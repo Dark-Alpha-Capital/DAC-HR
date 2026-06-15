@@ -3,8 +3,8 @@ import {
   CardContent,
   CardFooter,
   CardHeader,
-} from "@workspace/ui/components/card";
-import { Skeleton } from "@workspace/ui/components/skeleton";
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const EmployeesListSkeleton = () => {
   return (

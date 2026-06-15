@@ -1,4 +1,4 @@
-import { defineAction } from "./create-action";
+import { createServerFn } from "@tanstack/react-start";
 import { db } from "@workspace/db/db";
 import {
   interview,
@@ -9,7 +9,9 @@ import { eq } from "@workspace/db";
 import { getSession } from "@/lib/middleware/auth-guard";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
-export const deleteInterview = defineAction(async (interviewId: string) => {
+export const deleteInterview = createServerFn({ method: "POST" })
+  .validator((data: string) => data)
+  .handler(async ({ data: interviewId }) => {
   const session = await getSession();
 
   if (!session?.user) {

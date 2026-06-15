@@ -1,4 +1,4 @@
-import { defineAction, defineArgsAction } from "./create-action";
+import { createServerFn } from "@tanstack/react-start";
 import { db } from "@workspace/db/db";
 import { candidateDocument } from "@workspace/db/schema";
 import {
@@ -8,7 +8,6 @@ import {
 import { getSession } from "@/lib/middleware/auth-guard";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
-export const createCandidateDocument = defineArgsAction(async (
-  candidateId: string,
-  data: CandidateDocumentFormSchema,
-) => {});
+export const createCandidateDocument = createServerFn({ method: "POST" })
+  .validator((data: [string, CandidateDocumentFormSchema]) => data)
+  .handler(async ({ data: [candidateId, data] }) => {});

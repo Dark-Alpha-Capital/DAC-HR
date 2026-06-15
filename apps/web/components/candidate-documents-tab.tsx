@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { Button } from "@workspace/ui/components/button";
-import { Badge } from "@workspace/ui/components/badge";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { FileText, Plus } from "lucide-react";
 import CandidateDocumentTable from "@/components/candidate-document-table";
 import { getCachedDocuments } from "@/lib/cache/candidate";

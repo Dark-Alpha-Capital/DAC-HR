@@ -50,7 +50,9 @@
  */
 
 import * as React from "react";
+import { ClientOnly } from "@tanstack/react-router";
 import { useEditor, EditorContent } from "@tiptap/react";
+import { Skeleton } from "@/components/ui/skeleton";
 import StarterKit from "@tiptap/starter-kit";
 import TextAlign from "@tiptap/extension-text-align";
 import Link from "@tiptap/extension-link";
@@ -59,15 +61,15 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
 import Placeholder from "@tiptap/extension-placeholder";
-import { Button } from "@workspace/ui/components/button";
-import { Toggle } from "@workspace/ui/components/toggle";
-import { Separator } from "@workspace/ui/components/separator";
+import { Button } from "@/components/ui/button";
+import { Toggle } from "@/components/ui/toggle";
+import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import {
   Bold,
   Italic,
@@ -92,7 +94,7 @@ import {
   Type,
   Palette,
 } from "lucide-react";
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 // Color presets
 const TEXT_COLORS = [
@@ -609,21 +611,35 @@ interface RichTextEditorFieldProps extends RichTextEditorProps {
   id?: string;
 }
 
+function RichTextEditorFallback({
+  minHeight = "200px",
+}: {
+  minHeight?: string;
+}) {
+  return <Skeleton className="w-full rounded-lg" style={{ minHeight }} />;
+}
+
 export function RichTextEditorField({
   value = "",
   onValueChange,
   error,
   className,
+  minHeight,
   ...props
 }: RichTextEditorFieldProps) {
   return (
     <div className={cn(error && "rounded-lg ring-2 ring-destructive")}>
-      <RichTextEditor
-        content={value}
-        onChange={onValueChange}
-        className={className}
-        {...props}
-      />
+      <ClientOnly
+        fallback={<RichTextEditorFallback minHeight={minHeight} />}
+      >
+        <RichTextEditor
+          content={value}
+          onChange={onValueChange}
+          className={className}
+          minHeight={minHeight}
+          {...props}
+        />
+      </ClientOnly>
     </div>
   );
 }

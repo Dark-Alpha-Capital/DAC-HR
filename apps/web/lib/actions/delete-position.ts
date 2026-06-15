@@ -1,4 +1,4 @@
-import { defineAction } from "./create-action";
+import { createServerFn } from "@tanstack/react-start";
 import { db } from "@workspace/db/db";
 import { position } from "@workspace/db/schema";
 
@@ -6,7 +6,9 @@ import { getSession } from "@/lib/middleware/auth-guard";
 import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
-export const deletePosition = defineAction(async (id: string) => {
+export const deletePosition = createServerFn({ method: "POST" })
+  .validator((data: string) => data)
+  .handler(async ({ data: id }) => {
   // calling get session on the server
   const session = await getSession();
 

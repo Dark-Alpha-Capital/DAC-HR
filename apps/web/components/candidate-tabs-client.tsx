@@ -1,7 +1,7 @@
 import { useUrlSearchParams } from "@/lib/hooks/use-url-search-params";
 
 import React from "react";
-import { Tabs } from "@workspace/ui/components/tabs";
+import { Tabs } from "@/components/ui/tabs";
 
 interface CandidateTabsClientProps {
   children: React.ReactNode;

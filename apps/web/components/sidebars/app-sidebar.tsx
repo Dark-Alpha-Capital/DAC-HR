@@ -30,9 +30,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
   SidebarSeparator,
-} from "@workspace/ui/components/sidebar";
+} from "@/components/ui/sidebar";
 
 import { SidebarUserNav } from "../sidebar-user-nav";
 
@@ -42,7 +41,11 @@ const recruitingLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/candidates", label: "Candidates", icon: Users },
   { href: "/documents", label: "Documents", icon: Folders },
-  { href: "/interview-sessions", label: "Interview Sessions", icon: MonitorPlay },
+  {
+    href: "/interview-sessions",
+    label: "Interview Sessions",
+    icon: MonitorPlay,
+  },
   { href: "/weekly-checkin", label: "Weekly Check-in", icon: ClipboardCheck },
   { href: "/docs", label: "Documentation", icon: BookOpen },
 ] as const;
@@ -80,14 +83,17 @@ export function AppSidebar({ session }: { session: AppSession }) {
       <SidebarHeader className="gap-1">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="DAC HR">
-              <Link to="/" className="gap-2">
-                <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-foreground">
-                  <ShieldCheckIcon className="size-4" />
-                </span>
-                <span className="font-semibold tracking-tight">DAC HR</span>
-              </Link>
-            </SidebarMenuButton>
+            <SidebarMenuButton
+              tooltip="DAC HR"
+              render={
+                <Link to="/" className="gap-2">
+                  <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-foreground">
+                    <ShieldCheckIcon className="size-4" />
+                  </span>
+                  <span className="font-semibold tracking-tight">DAC HR</span>
+                </Link>
+              }
+            />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
@@ -101,15 +107,15 @@ export function AppSidebar({ session }: { session: AppSession }) {
               {recruitingLinks.map((link) => (
                 <SidebarMenuItem key={link.href}>
                   <SidebarMenuButton
-                    asChild
                     isActive={isActive(link.href)}
                     tooltip={link.label}
-                  >
-                    <Link to={link.href}>
-                      <link.icon />
-                      <span>{link.label}</span>
-                    </Link>
-                  </SidebarMenuButton>
+                    render={
+                      <Link to={link.href}>
+                        <link.icon />
+                        <span>{link.label}</span>
+                      </Link>
+                    }
+                  />
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
@@ -123,15 +129,15 @@ export function AppSidebar({ session }: { session: AppSession }) {
               {configurationLinks.map((link) => (
                 <SidebarMenuItem key={link.href}>
                   <SidebarMenuButton
-                    asChild
                     isActive={isActive(link.href)}
                     tooltip={link.label}
-                  >
-                    <Link to={link.href}>
-                      <link.icon />
-                      <span>{link.label}</span>
-                    </Link>
-                  </SidebarMenuButton>
+                    render={
+                      <Link to={link.href}>
+                        <link.icon />
+                        <span>{link.label}</span>
+                      </Link>
+                    }
+                  />
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
@@ -146,15 +152,15 @@ export function AppSidebar({ session }: { session: AppSession }) {
                 {peopleOpsLinks.map((link) => (
                   <SidebarMenuItem key={link.href}>
                     <SidebarMenuButton
-                      asChild
                       isActive={isActive(link.href)}
                       tooltip={link.label}
-                    >
-                      <Link to={link.href}>
-                        <link.icon />
-                        <span>{link.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
+                      render={
+                        <Link to={link.href}>
+                          <link.icon />
+                          <span>{link.label}</span>
+                        </Link>
+                      }
+                    />
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>
@@ -170,15 +176,15 @@ export function AppSidebar({ session }: { session: AppSession }) {
                 {adminLinks.map((link) => (
                   <SidebarMenuItem key={link.href}>
                     <SidebarMenuButton
-                      asChild
                       isActive={isActive(link.href)}
                       tooltip={link.label}
-                    >
-                      <Link to={link.href}>
-                        <link.icon />
-                        <span>{link.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
+                      render={
+                        <Link to={link.href}>
+                          <link.icon />
+                          <span>{link.label}</span>
+                        </Link>
+                      }
+                    />
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>
@@ -189,7 +195,6 @@ export function AppSidebar({ session }: { session: AppSession }) {
       <SidebarFooter>
         <SidebarUserNav session={session} />
       </SidebarFooter>
-      <SidebarRail />
     </Sidebar>
   );
 }

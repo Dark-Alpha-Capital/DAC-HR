@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import {
   getDocumentCategories,
   getDocuments,
@@ -14,10 +14,14 @@ import {
   TabsList,
   TabsTrigger,
   TabsContent,
-} from "@workspace/ui/components/tabs";
+} from "@/components/ui/tabs";
 import DocumentCategoriesManager from "@/components/document-categories-manager";
 import PaginationControls from "@/components/pagination-controls";
-import { toOptionalString, toPageNumber, toStringArray } from "@/lib/parse-search";
+import {
+  toOptionalString,
+  toPageNumber,
+  toStringArray,
+} from "@/lib/parse-search";
 
 export const Route = createFileRoute("/_main/documents/")({
   head: () => ({
@@ -39,13 +43,7 @@ export const Route = createFileRoute("/_main/documents/")({
 
     const [categories, documentsResult] = await Promise.all([
       getDocumentCategories(),
-      getDocuments(
-        deps.category,
-        deps.name,
-        deps.tags,
-        currentPage,
-        limit,
-      ),
+      getDocuments(deps.category, deps.name, deps.tags, currentPage, limit),
     ]);
 
     const { documents, total } = documentsResult;
@@ -58,9 +56,7 @@ export const Route = createFileRoute("/_main/documents/")({
       totalPages,
       hasNextPage: currentPage < totalPages,
       hasPreviousPage: currentPage > 1,
-      hasFilters: Boolean(
-        deps.category?.length || deps.name || deps.tags,
-      ),
+      hasFilters: Boolean(deps.category?.length || deps.name || deps.tags),
     };
   },
   component: DocumentsPage,
@@ -82,7 +78,9 @@ function DocumentsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Documents</h1>
         <Button asChild>
-          <Link to="/documents/new" search="{}">New Document</Link>
+          <Link to="/documents/new" search="{}">
+            New Document
+          </Link>
         </Button>
       </div>
 
@@ -108,7 +106,9 @@ function DocumentsPage() {
                   : "No documents found. Create your first document to get started."}
               </p>
               <Button asChild className="mt-4">
-                <Link to="/documents/new" search="{}">Add your first document</Link>
+                <Link to="/documents/new" search="{}">
+                  Add your first document
+                </Link>
               </Button>
             </div>
           ) : (

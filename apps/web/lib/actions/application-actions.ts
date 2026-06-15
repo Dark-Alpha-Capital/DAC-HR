@@ -1,7 +1,4 @@
-import {
-  defineArgsAction,
-  defineQueryWithInput,
-} from "./create-action";
+import { createServerFn } from "@tanstack/react-start";
 import { db } from "@workspace/db/db";
 import {
   application,
@@ -23,10 +20,9 @@ type ApplicationStatus =
   | "rejected"
   | "withdrawn";
 
-export const updateApplicationStatus = defineArgsAction(async (
-  applicationId: string,
-  status: ApplicationStatus,
-) => {
+export const updateApplicationStatus = createServerFn({ method: "POST" })
+  .validator((data: [string, ApplicationStatus]) => data)
+  .handler(async ({ data: [applicationId, status] }) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -91,7 +87,9 @@ export const updateApplicationStatus = defineArgsAction(async (
 /**
  * Get application by ID with related data
  */
-export const getApplicationById = defineQueryWithInput(async (applicationId: string) => {
+export const getApplicationById = createServerFn({ method: "GET" })
+  .validator((data: string) => data)
+  .handler(async ({ data: applicationId }) => {
   try {
     const [applicationData] = await db
       .select()

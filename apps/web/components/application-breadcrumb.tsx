@@ -6,7 +6,7 @@ import {
   BreadcrumbLink,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@workspace/ui/components/breadcrumb";
+} from "@/components/ui/breadcrumb";
 
 interface ApplicationBreadcrumbProps {
   candidateName?: string;

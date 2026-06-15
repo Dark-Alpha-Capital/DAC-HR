@@ -1,4 +1,4 @@
-import { defineAction } from "./create-action";
+import { createServerFn } from "@tanstack/react-start";
 import { db } from "@workspace/db/db";
 import { application } from "@workspace/db/schema";
 import { getSession } from "@/lib/middleware/auth-guard";
@@ -35,7 +35,9 @@ export interface UpdateApplicationInput {
     | null;
 }
 
-export const updateApplication = defineAction(async (data: UpdateApplicationInput) => {
+export const updateApplication = createServerFn({ method: "POST" })
+  .validator((data: UpdateApplicationInput) => data)
+  .handler(async ({ data }) => {
   const session = await getSession();
 
   if (!session?.user) {

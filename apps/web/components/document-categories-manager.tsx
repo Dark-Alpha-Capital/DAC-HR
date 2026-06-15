@@ -1,5 +1,5 @@
 import React, { useState, useTransition } from "react";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -7,7 +7,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@workspace/ui/components/table";
+} from "@/components/ui/table";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -23,18 +23,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@workspace/ui/components/dialog";
-import { Input } from "@workspace/ui/components/input";
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldLabel,
-} from "@workspace/ui/components/field";
+} from "@/components/ui/field";
 import {
   InputGroup,
   InputGroupTextarea,
-} from "@workspace/ui/components/input-group";
+} from "@/components/ui/input-group";
 import type { DocumentCategory } from "@workspace/db/schema";
 
 interface DocumentCategoriesManagerProps {
@@ -80,10 +80,9 @@ export default function DocumentCategoriesManager({
     e.preventDefault();
     startTransition(async () => {
       try {
-        const result = await createCategory(
-          formData.name,
-          formData.description || undefined,
-        );
+        const result = await createCategory({
+          data: [formData.name, formData.description || undefined],
+        });
 
         if (result.success && result.data) {
           setCategories([...categories, result.data]);
@@ -105,11 +104,13 @@ export default function DocumentCategoriesManager({
 
     startTransition(async () => {
       try {
-        const result = await updateCategory(
-          selectedCategory.id,
-          formData.name,
-          formData.description || undefined,
-        );
+        const result = await updateCategory({
+          data: [
+            selectedCategory.id,
+            formData.name,
+            formData.description || undefined,
+          ],
+        });
 
         if (result.success && result.data) {
           const updatedCategory = result.data;
@@ -136,7 +137,7 @@ export default function DocumentCategoriesManager({
 
     startTransition(async () => {
       try {
-        const result = await deleteCategory(selectedCategory.id);
+        const result = await deleteCategory({ data: selectedCategory.id });
 
         if (result.success) {
           setCategories(

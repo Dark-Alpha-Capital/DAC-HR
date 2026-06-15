@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { getPositionBySlug } from "@workspace/db/queries";
 import PositionEditForm from "@/components/forms/position-edit-form";
 import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_main/positions/$slug/edit")({
   head: () => ({

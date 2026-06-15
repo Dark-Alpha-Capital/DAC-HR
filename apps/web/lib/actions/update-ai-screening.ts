@@ -1,4 +1,4 @@
-import { defineAction } from "./create-action";
+import { createServerFn } from "@tanstack/react-start";
 import { db } from "@workspace/db/db";
 import { candidateAiScreening } from "@workspace/db/schema";
 import { getSession } from "@/lib/middleware/auth-guard";
@@ -12,7 +12,9 @@ export interface UpdateAiScreeningInput {
   structuredData?: unknown | null; // Allow any structure to preserve existing data
 }
 
-export const updateAiScreening = defineAction(async (data: UpdateAiScreeningInput) => {
+export const updateAiScreening = createServerFn({ method: "POST" })
+  .validator((data: UpdateAiScreeningInput) => data)
+  .handler(async ({ data }) => {
   const session = await getSession();
 
   if (!session?.user) {

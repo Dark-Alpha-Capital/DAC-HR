@@ -1,7 +1,7 @@
 import { useUrlSearchParams } from "@/lib/hooks/use-url-search-params";
 
 import React, { useTransition, useEffect, useRef } from "react";
-import { Input } from "@workspace/ui/components/input";
+import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 
 const FilterQuestionSearch = () => {

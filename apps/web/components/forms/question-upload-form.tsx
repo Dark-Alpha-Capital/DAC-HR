@@ -1,38 +1,35 @@
 import * as React from "react";
-import { useTransition, useState, useEffect } from "react";
+import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "@workspace/ui/components/field";
+} from "@/components/ui/field";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupText,
   InputGroupTextarea,
-} from "@workspace/ui/components/input-group";
+} from "@/components/ui/input-group";
 import {
   Select,
   SelectContent,
   SelectItem,
-  SelectSeparator,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select";
+} from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
-import { useRouter } from "@tanstack/react-router";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouter } from "@tanstack/react-router";
 import {
   questionFormSchema,
   type QuestionFormSchema,
 } from "@/lib/schemas/question-form-schema";
 import { createQuestion } from "@/lib/actions/create-question";
-import { getRoundsByPosition } from "@/lib/actions/get-rounds-by-position";
 import { McqOptionsField } from "@/components/forms/mcq-options-field";
 
 interface QuestionUploadFormProps {
@@ -40,24 +37,27 @@ interface QuestionUploadFormProps {
     id: string;
     name: string;
   }[];
+  rounds: Array<{ id: string; name: string; description: string | null }>;
   preSelectedPositionId?: string;
   preSelectedRoundId?: string;
+  isLoadingRounds?: boolean;
+  onPositionChange: (positionId: string) => void;
+  onResetSearch?: () => void;
 }
 
 const defaultMcqOptions = () => [{ text: "" }, { text: "" }];
 
 const QuestionUploadForm = ({
   positions,
+  rounds,
   preSelectedPositionId = "",
   preSelectedRoundId = "",
+  isLoadingRounds = false,
+  onPositionChange,
+  onResetSearch,
 }: QuestionUploadFormProps) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [rounds, setRounds] = useState<
-    Array<{ id: string; name: string; description: string | null }>
-  >([]);
-  const [isLoadingRounds, setIsLoadingRounds] = useState(false);
-  const [positionId, setPositionId] = useState<string>(preSelectedPositionId);
 
   const form = useForm({
     defaultValues: {
@@ -91,7 +91,7 @@ const QuestionUploadForm = ({
       }
 
       startTransition(async () => {
-        const result = await createQuestion(parsed.data);
+        const result = await createQuestion({ data: parsed.data });
 
         if (result.error) {
           toast.error(
@@ -114,45 +114,11 @@ const QuestionUploadForm = ({
             },
           });
           form.reset();
-          setPositionId("");
+          onResetSearch?.();
         }
       });
     },
   });
-
-  useEffect(() => {
-    const fetchRounds = async () => {
-      if (!positionId) {
-        setRounds([]);
-        form.setFieldValue("roundTemplateId", "");
-        return;
-      }
-
-      setIsLoadingRounds(true);
-      try {
-        const fetchedRounds = await getRoundsByPosition(positionId);
-        setRounds(fetchedRounds);
-        const currentRoundId = form.getFieldValue("roundTemplateId");
-        if (
-          currentRoundId &&
-          !fetchedRounds.find((r) => r.id === currentRoundId)
-        ) {
-          form.setFieldValue("roundTemplateId", "");
-        }
-      } catch (error) {
-        console.error("Error fetching rounds:", error);
-        toast.error("Failed to load rounds for this position", {
-          position: "bottom-right",
-        });
-        setRounds([]);
-      } finally {
-        setIsLoadingRounds(false);
-      }
-    };
-
-    fetchRounds();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [positionId]);
 
   return (
     <div className="w-full space-y-6">
@@ -171,8 +137,7 @@ const QuestionUploadForm = ({
             variant="secondary"
             onClick={() => {
               form.reset();
-              setRounds([]);
-              setPositionId("");
+              onResetSearch?.();
             }}
             disabled={isPending}
           >
@@ -212,10 +177,11 @@ const QuestionUploadForm = ({
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Position</FieldLabel>
                   <Select
-                    value={field.state.value || ""}
+                    value={field.state.value || undefined}
                     onValueChange={(value) => {
                       field.handleChange(value);
-                      setPositionId(value);
+                      form.setFieldValue("roundTemplateId", "");
+                      onPositionChange(value);
                     }}
                     aria-invalid={isInvalid}
                   >
@@ -227,7 +193,6 @@ const QuestionUploadForm = ({
                       <SelectValue placeholder="Select a position" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectSeparator />
                       {positions.map((position) => (
                         <SelectItem key={position.id} value={position.id}>
                           {position.name}
@@ -244,112 +209,117 @@ const QuestionUploadForm = ({
             }}
           />
 
-          <form.Field
-            name="roundTemplateId"
-            children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
-              const isDisabled = !positionId || isLoadingRounds;
-              const selectedPosition = positions.find(
-                (p) => p.id === positionId,
-              );
+          <form.Subscribe
+            selector={(state) => state.values.positionId}
+            children={(positionId) => (
+              <form.Field
+                name="roundTemplateId"
+                children={(field) => {
+                  const isInvalid =
+                    field.state.meta.isTouched && !field.state.meta.isValid;
+                  const isDisabled = !positionId;
+                  const selectedPosition = positions.find(
+                    (p) => p.id === positionId,
+                  );
 
-              return (
-                <Field data-invalid={isInvalid}>
-                  <FieldLabel htmlFor={field.name}>Round</FieldLabel>
-                  <Select
-                    value={field.state.value || ""}
-                    onValueChange={(value) => {
-                      field.handleChange(value);
-                    }}
-                    disabled={isDisabled}
-                    aria-invalid={isInvalid}
-                  >
-                    <SelectTrigger
-                      id={field.name}
-                      aria-invalid={isInvalid}
-                      className="w-full"
-                      disabled={isDisabled}
-                    >
-                      <SelectValue
-                        placeholder={
-                          isLoadingRounds
-                            ? "Loading rounds..."
-                            : !positionId
-                              ? "Select a position first"
-                              : rounds.length === 0
-                                ? "No rounds available - Create one first"
-                                : "Select a round"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {isLoadingRounds ? (
-                        <div className="flex items-center justify-center py-4">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        </div>
-                      ) : rounds.length === 0 ? (
-                        <div className="py-4 text-center text-sm text-muted-foreground">
-                          {positionId
-                            ? "No rounds available"
-                            : "Select a position first"}
+                  return (
+                    <Field data-invalid={isInvalid}>
+                      <FieldLabel htmlFor={field.name}>Round</FieldLabel>
+                      <Select
+                        value={field.state.value || undefined}
+                        onValueChange={(value) => {
+                          field.handleChange(value);
+                        }}
+                        disabled={isDisabled}
+                        aria-invalid={isInvalid}
+                      >
+                        <SelectTrigger
+                          id={field.name}
+                          aria-invalid={isInvalid}
+                          className="w-full"
+                          disabled={isDisabled}
+                        >
+                          <SelectValue
+                            placeholder={
+                              isLoadingRounds
+                                ? "Loading rounds..."
+                                : !positionId
+                                  ? "Select a position first"
+                                  : rounds.length === 0
+                                    ? "No rounds available - Create one first"
+                                    : "Select a round"
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {isLoadingRounds ? (
+                            <div className="flex items-center justify-center py-4">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            </div>
+                          ) : rounds.length === 0 ? (
+                            <div className="py-4 text-center text-sm text-muted-foreground">
+                              {positionId
+                                ? "No rounds available"
+                                : "Select a position first"}
+                            </div>
+                          ) : (
+                            rounds.map((round) => (
+                              <SelectItem key={round.id} value={round.id}>
+                                {round.name}
+                                {round.description && (
+                                  <span className="text-muted-foreground ml-2 text-xs">
+                                    - {round.description}
+                                  </span>
+                                )}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {rounds.length === 0 && positionId && !isLoadingRounds ? (
+                        <div className="mt-3 p-4 border border-dashed rounded-lg bg-muted/50">
+                          <div className="space-y-3">
+                            <div className="space-y-1">
+                              <p className="text-sm font-medium text-foreground">
+                                No rounds found for{" "}
+                                <span className="font-semibold">
+                                  {selectedPosition?.name || "this position"}
+                                </span>
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                You need to create a round first before adding
+                                questions to this position.
+                              </p>
+                            </div>
+                            <Button
+                              asChild
+                              size="sm"
+                              variant="default"
+                              className="w-full"
+                            >
+                              <Link
+                                to={`/rounds/new?position=${positionId}` as any}
+                              >
+                                Create Round for{" "}
+                                {selectedPosition?.name || "Position"}
+                              </Link>
+                            </Button>
+                          </div>
                         </div>
                       ) : (
-                        <>
-                          <SelectSeparator />
-                          {rounds.map((round) => (
-                            <SelectItem key={round.id} value={round.id}>
-                              {round.name}
-                              {round.description && (
-                                <span className="text-muted-foreground ml-2 text-xs">
-                                  - {round.description}
-                                </span>
-                              )}
-                            </SelectItem>
-                          ))}
-                        </>
+                        <FieldDescription>
+                          Then, select the round where this question will be
+                          added.
+                        </FieldDescription>
                       )}
-                    </SelectContent>
-                  </Select>
-                  {rounds.length === 0 && positionId && !isLoadingRounds ? (
-                    <div className="mt-3 p-4 border border-dashed rounded-lg bg-muted/50">
-                      <div className="space-y-3">
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium text-foreground">
-                            No rounds found for{" "}
-                            <span className="font-semibold">
-                              {selectedPosition?.name || "this position"}
-                            </span>
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            You need to create a round first before adding
-                            questions to this position.
-                          </p>
-                        </div>
-                        <Button
-                          asChild
-                          size="sm"
-                          variant="default"
-                          className="w-full"
-                        >
-                          <Link
-                            to={`/rounds/new?position=${positionId}` as any}
-                          >
-                            Create Round for{" "}
-                            {selectedPosition?.name || "Position"}
-                          </Link>
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <FieldDescription>
-                      Then, select the round where this question will be added.
-                    </FieldDescription>
-                  )}
-                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                </Field>
-              );
-            }}
+                      {isInvalid && (
+                        <FieldError errors={field.state.meta.errors} />
+                      )}
+                    </Field>
+                  );
+                }}
+              />
+            )}
           />
 
           <form.Field

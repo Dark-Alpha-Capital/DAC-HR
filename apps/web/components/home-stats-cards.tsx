@@ -4,7 +4,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "@workspace/ui/components/card";
+} from "@/components/ui/card";
 import { Users, Calendar } from "lucide-react";
 
 export default async function HomeStatsCards() {

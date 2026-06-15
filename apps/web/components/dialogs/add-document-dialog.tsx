@@ -1,7 +1,7 @@
 import * as React from "react";
 
-import { cn } from "@workspace/ui/lib/utils";
-import { Button } from "@workspace/ui/components/button";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@workspace/ui/components/dialog";
+} from "@/components/ui/dialog";
 import {
   Drawer,
   DrawerClose,
@@ -19,10 +19,10 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from "@workspace/ui/components/drawer";
+} from "@/components/ui/drawer";
 import { useMediaQuery } from "@workspace/ui/hooks/use-media-query";
 import DocumentUploadForm from "../forms/document-upload-form";
-import { ScrollArea } from "@workspace/ui/components/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { getAllCategories } from "@/lib/actions/document-category-actions";
 
 export default async function AddDocumentDialog() {

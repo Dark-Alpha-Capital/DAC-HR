@@ -1,5 +1,5 @@
 import React, { useTransition } from "react";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "@tanstack/react-router";
@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@workspace/ui/components/alert-dialog";
+} from "@/components/ui/alert-dialog";
 
 const DeleteCandidateDocumentButton = ({
   documentId,

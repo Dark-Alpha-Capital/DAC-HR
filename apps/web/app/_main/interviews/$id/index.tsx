@@ -4,14 +4,14 @@ import {
   getApplicationWithInterviews,
   getInterviewById,
 } from "@workspace/db/repositories/interview-repository";
-import { Button } from "@workspace/ui/components/button";
-import { Badge } from "@workspace/ui/components/badge";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Tabs,
   TabsList,
   TabsTrigger,
   TabsContent,
-} from "@workspace/ui/components/tabs";
+} from "@/components/ui/tabs";
 import {
   Calendar,
   User,

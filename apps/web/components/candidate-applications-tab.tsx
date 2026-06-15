@@ -1,4 +1,4 @@
-import { Badge } from "@workspace/ui/components/badge";
+import { Badge } from "@/components/ui/badge";
 import { Briefcase, Calendar, ChevronDown, Users } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import InlineApplicationStatusEditor from "@/components/inline-application-status-editor";

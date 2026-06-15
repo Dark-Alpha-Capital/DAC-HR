@@ -1,17 +1,30 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Button } from "@workspace/ui/components/button";
-import { Textarea } from "@workspace/ui/components/textarea";
-import { Badge } from "@workspace/ui/components/badge";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@workspace/ui/components/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import {
   RadioGroup,
   RadioGroupItem,
-} from "@workspace/ui/components/radio-group";
-import { Label } from "@workspace/ui/components/label";
+} from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import type { QuestionOption } from "@workspace/db/question-types";
 
-import { Clock, ArrowLeft, ArrowRight, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import {
+  Clock,
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+} from "lucide-react";
 
 interface Question {
   id: string;
@@ -62,7 +75,9 @@ function hasAnswer(answer: AnswerValue | undefined): boolean {
 
 function InterviewPage() {
   const { token } = Route.useParams();
-  const [status, setStatus] = useState<"loading" | "invalid" | "ready" | "in_progress" | "completed">("loading");
+  const [status, setStatus] = useState<
+    "loading" | "invalid" | "ready" | "in_progress" | "completed"
+  >("loading");
   const [error, setError] = useState("");
   const [data, setData] = useState<InterviewData | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
@@ -80,7 +95,9 @@ function InterviewPage() {
 
     async function init() {
       try {
-        const validateRes = await fetch(`/api/interview-token/${token}/validate`);
+        const validateRes = await fetch(
+          `/api/interview-token/${token}/validate`,
+        );
         if (!validateRes.ok) {
           const body = await validateRes.json();
           if (!cancelled) {
@@ -114,38 +131,43 @@ function InterviewPage() {
     }
 
     init();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [token]);
 
-  const saveAnswer = useCallback(async (question: Question, answer: AnswerValue) => {
-    if (!hasAnswer(answer)) {
-      return;
-    }
+  const saveAnswer = useCallback(
+    async (question: Question, answer: AnswerValue) => {
+      if (!hasAnswer(answer)) {
+        return;
+      }
 
-    setSaving(true);
-    try {
-      const body =
-        answer.type === "mcq"
-          ? {
-              questionId: question.id,
-              selectedOptionId: answer.selectedOptionId,
-            }
-          : {
-              questionId: question.id,
-              answerText: answer.text,
-            };
+      setSaving(true);
+      try {
+        const body =
+          answer.type === "mcq"
+            ? {
+                questionId: question.id,
+                selectedOptionId: answer.selectedOptionId,
+              }
+            : {
+                questionId: question.id,
+                answerText: answer.text,
+              };
 
-      await fetch(`/api/interview-token/${token}/responses`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-    } catch {
-      // continue regardless
-    } finally {
-      setSaving(false);
-    }
-  }, [token]);
+        await fetch(`/api/interview-token/${token}/responses`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+      } catch {
+        // continue regardless
+      } finally {
+        setSaving(false);
+      }
+    },
+    [token],
+  );
 
   const handleNext = useCallback(async () => {
     if (!data) return;
@@ -161,6 +183,7 @@ function InterviewPage() {
 
   const handlePrev = useCallback(async () => {
     if (!data) return;
+
     const question = data.questions[currentStep];
     const answer = answers[question.id];
     if (answer && hasAnswer(answer)) {
@@ -230,7 +253,8 @@ function InterviewPage() {
             </div>
             <CardTitle className="mt-3">Interview Completed</CardTitle>
             <CardDescription>
-              Thank you for completing the interview. Your responses have been recorded.
+              Thank you for completing the interview. Your responses have been
+              recorded.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -355,11 +379,7 @@ function InterviewPage() {
                 Submit Interview
               </Button>
             ) : (
-              <Button
-                onClick={handleNext}
-                disabled={saving}
-                size="sm"
-              >
+              <Button onClick={handleNext} disabled={saving} size="sm">
                 Next
                 <ArrowRight className="ml-1.5 size-4" />
               </Button>

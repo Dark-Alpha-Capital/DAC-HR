@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useState, useTransition } from "react";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,8 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@workspace/ui/components/dialog";
-import { Input } from "@workspace/ui/components/input";
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -18,12 +18,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@workspace/ui/components/table";
+} from "@/components/ui/table";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from "@workspace/ui/components/alert";
+} from "@/components/ui/alert";
 import {
   Upload,
   FileSpreadsheet,
@@ -310,7 +310,7 @@ export default function BulkUploadCandidatesDialog() {
           }),
         );
 
-        const result = await bulkCreateCandidates(candidatesToUpload);
+        const result = await bulkCreateCandidates({ data: candidatesToUpload });
 
         if (result.success) {
           toast.success(

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { getEmployees, getPositions } from "@workspace/db/queries";
 import EmployeeFilters from "@/components/employee-filters";
 import EmployeeContainer from "@/components/employee-container";

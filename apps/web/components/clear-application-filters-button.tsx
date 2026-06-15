@@ -1,7 +1,7 @@
 import { useUrlSearchParams } from "@/lib/hooks/use-url-search-params";
 
 import React from "react";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 
 const ClearApplicationFiltersButton = () => {

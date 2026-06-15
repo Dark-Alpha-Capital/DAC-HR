@@ -1,4 +1,4 @@
-import { defineAction } from "./create-action";
+import { createServerFn } from "@tanstack/react-start";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import {
   CandidateFormSchema,
@@ -7,43 +7,45 @@ import {
 import { getSession } from "@/lib/middleware/auth-guard";
 import { createCandidateWithOptionalPosition } from "@/lib/application/candidate-service";
 
-export const createCandidate = defineAction(async (data: CandidateFormSchema) => {
-  const session = await getSession();
+export const createCandidate = createServerFn({ method: "POST" })
+  .validator((data: CandidateFormSchema) => data)
+  .handler(async ({ data }) => {
+    const session = await getSession();
 
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+    if (!session?.user) {
+      return { error: "Unauthorized" };
+    }
 
-  const result = candidateFormSchema.safeParse(data);
-  if (!result.success) {
-    return { error: result.error.flatten().fieldErrors };
-  }
+    const result = candidateFormSchema.safeParse(data);
+    if (!result.success) {
+      return { error: result.error.flatten().fieldErrors };
+    }
 
-  const {
-    firstName,
-    lastName,
-    email,
-    phone,
-    location,
-    source,
-    sourceUrl,
-    note,
-    positionId,
-  } = result.data;
-  try {
-    const { candidate: newCandidate, hasPosition, normalizedPositionId } =
-      await createCandidateWithOptionalPosition({
-        firstName,
-        lastName,
-        email,
-        phone,
-        location,
-        source,
-        sourceUrl,
-        note,
-        positionId,
-      });
-    insertAuditLog({
+    const {
+      firstName,
+      lastName,
+      email,
+      phone,
+      location,
+      source,
+      sourceUrl,
+      note,
+      positionId,
+    } = result.data;
+    try {
+      const { candidate: newCandidate, hasPosition, normalizedPositionId } =
+        await createCandidateWithOptionalPosition({
+          firstName,
+          lastName,
+          email,
+          phone,
+          location,
+          source,
+          sourceUrl,
+          note,
+          positionId,
+        });
+      insertAuditLog({
         userId: session.user.id,
         action: "create_candidate",
         entityType: "candidate",
@@ -90,14 +92,14 @@ export const createCandidate = defineAction(async (data: CandidateFormSchema) =>
         },
       }).catch((error) => console.error("Audit log error:", error));
 
-    return { success: true, data: newCandidate };
-  } catch (error) {
-    console.error(error);
+      return { success: true, data: newCandidate };
+    } catch (error) {
+      console.error(error);
 
-    if (error instanceof Error) {
-      return { error: error.message };
+      if (error instanceof Error) {
+        return { error: error.message };
+      }
+
+      return { error: "Failed to create candidate" };
     }
-
-    return { error: "Failed to create candidate" };
-  }
-});
+  });

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense } from "react";
 import RoundUploadForm from "@/components/forms/round-upload-form";
 import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { getPositions } from "@workspace/db/queries";
 import { toOptionalString } from "@/lib/parse-search";
 

@@ -1,4 +1,4 @@
-import { defineAction, defineArgsAction } from "./create-action";
+import { createServerFn } from "@tanstack/react-start";
 import { db } from "@workspace/db/db";
 import { position } from "@workspace/db/schema";
 import slugify from "slugify";
@@ -10,10 +10,9 @@ import { getSession } from "@/lib/middleware/auth-guard";
 import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
-export const updatePosition = defineArgsAction(async (
-  positionId: string,
-  data: PositionFormSchema,
-) => {
+export const updatePosition = createServerFn({ method: "POST" })
+  .validator((data: [string, PositionFormSchema]) => data)
+  .handler(async ({ data: [positionId, data] }) => {
   const session = await getSession();
 
   if (!session?.user) {

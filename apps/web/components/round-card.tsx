@@ -1,14 +1,14 @@
 import React from "react";
 import { Link } from "@tanstack/react-router";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@workspace/ui/components/card";
-import { Badge } from "@workspace/ui/components/badge";
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Eye, Pencil } from "lucide-react";
 import DeleteRoundButton from "./delete-round-button";
 

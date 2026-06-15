@@ -1,4 +1,4 @@
-import { defineAction } from "./create-action";
+import { createServerFn } from "@tanstack/react-start";
 import { db } from "@workspace/db/db";
 import { roundTemplate } from "@workspace/db/schema";
 
@@ -7,7 +7,9 @@ import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { getRoundById } from "@workspace/db/queries";
 
-export const deleteRound = defineAction(async (id: string) => {
+export const deleteRound = createServerFn({ method: "POST" })
+  .validator((data: string) => data)
+  .handler(async ({ data: id }) => {
   const session = await getSession();
 
   if (!session?.user) {

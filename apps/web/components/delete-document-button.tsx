@@ -1,5 +1,5 @@
 import React, { useTransition } from "react";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
 import { deleteDocument } from "@/lib/actions/delete-document";
 import { toast } from "sonner";
@@ -14,12 +14,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@workspace/ui/components/alert-dialog";
+} from "@/components/ui/alert-dialog";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@workspace/ui/components/tooltip";
+} from "@/components/ui/tooltip";
 
 const DeleteDocumentButton = ({ documentId }: { documentId: string }) => {
   const router = useRouter();
@@ -27,7 +27,7 @@ const DeleteDocumentButton = ({ documentId }: { documentId: string }) => {
 
   const handleDelete = () => {
     startTransition(async () => {
-      const response = await deleteDocument(documentId);
+      const response = await deleteDocument({ data: documentId });
 
       if (response?.error) {
         toast.error(response.error);

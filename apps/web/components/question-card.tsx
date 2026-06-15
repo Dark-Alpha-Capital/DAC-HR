@@ -1,12 +1,12 @@
 import React from "react";
 import { Link } from "@tanstack/react-router";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@workspace/ui/components/card";
+} from "@/components/ui/card";
 import { Eye, Pencil } from "lucide-react";
 import type { Question } from "@workspace/db/schema";
 import DeleteQuestionButton from "./delete-question-button";

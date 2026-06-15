@@ -4,12 +4,12 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "@workspace/ui/components/card";
-import { Badge } from "@workspace/ui/components/badge";
-import { ScrollArea } from "@workspace/ui/components/scroll-area";
-import { Button } from "@workspace/ui/components/button";
-import { Textarea } from "@workspace/ui/components/textarea";
-import { Label } from "@workspace/ui/components/label";
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@workspace/ui/components/dialog";
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,7 +27,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@workspace/ui/components/alert-dialog";
+} from "@/components/ui/alert-dialog";
 import {
   Sparkles,
   Clock,
@@ -54,7 +54,7 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@workspace/ui/components/collapsible";
+} from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 
 // Full structured data type based on candidateAiScreeningSchema
@@ -206,7 +206,9 @@ export default function CandidateAiScreeningsClient({
     if (!selectedScreening || !candidateId) return;
 
     startTransition(async () => {
-      const result = await deleteAiScreening(selectedScreening.id, candidateId);
+      const result = await deleteAiScreening({
+        data: [selectedScreening.id, candidateId],
+      });
 
       if (result.error) {
         toast.error(result.error, {
@@ -260,7 +262,7 @@ export default function CandidateAiScreeningsClient({
         // Don't include structuredData - action will preserve existing data
       };
 
-      const result = await updateAiScreening(updateData);
+      const result = await updateAiScreening({ data: updateData });
 
       if (result.error) {
         toast.error(result.error, {

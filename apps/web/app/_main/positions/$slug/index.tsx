@@ -4,14 +4,10 @@ import {
   getRoundsByPositionId,
   getCandidatesByPositionId,
 } from "@workspace/db/queries";
-import { Button } from "@workspace/ui/components/button";
-import { Separator } from "@workspace/ui/components/separator";
-import { Badge } from "@workspace/ui/components/badge";
-import {
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "@workspace/ui/components/tabs";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Pencil,
   Calendar,
@@ -23,7 +19,6 @@ import {
   ClipboardList,
 } from "lucide-react";
 import DeletePositionButton from "@/components/delete-position-button";
-import { formatDate } from "@/lib/utils";
 import PositionTabsClient from "@/components/position-tabs-client";
 
 function htmlToPlainText(html: string) {
@@ -67,7 +62,9 @@ function PositionDetailPage() {
           removed.
         </p>
         <Button variant="secondary" asChild>
-          <Link to="/positions" search={{} as any}>Back to positions</Link>
+          <Link to="/positions" search={{} as any}>
+            Back to positions
+          </Link>
         </Button>
       </div>
     );
@@ -111,25 +108,11 @@ function PositionDetailPage() {
                   {position.hireLevel === "intern" && "Intern"}
                 </Badge>
               ) : null}
-              <Badge variant="secondary" className="text-xs gap-1.5">
-                <Calendar className="h-3 w-3" />
-                Created {formatDate(position.createdAt)}
-              </Badge>
-              {position.updatedAt &&
-              position.updatedAt.getTime() !== position.createdAt.getTime() ? (
-                <Badge variant="secondary" className="text-xs gap-1.5">
-                  <Clock className="h-3 w-3" />
-                  Updated {formatDate(position.updatedAt)}
-                </Badge>
-              ) : null}
             </div>
           </div>
           <div className="flex gap-2">
             <Button variant="secondary" size="sm" asChild>
-              <Link
-                to="/positions/$slug/edit"
-                params={{ slug: position.slug }}
-              >
+              <Link to="/positions/$slug/edit" params={{ slug: position.slug }}>
                 <Pencil className="h-4 w-4 mr-2" />
                 Edit Position
               </Link>
@@ -225,10 +208,7 @@ function PositionDetailPage() {
                     No rounds are currently linked to this position.
                   </p>
                   <Button size="sm" variant="secondary" asChild>
-                    <Link
-                      to="/rounds/new"
-                      search={{ position: position.id }}
-                    >
+                    <Link to="/rounds/new" search={{ position: position.id }}>
                       Create a round
                     </Link>
                   </Button>
@@ -251,10 +231,7 @@ function PositionDetailPage() {
                           )}
                         </div>
                         <Button variant="secondary" size="sm" asChild>
-                          <Link
-                            to="/rounds/$id"
-                            params={{ id: round.id }}
-                          >
+                          <Link to="/rounds/$id" params={{ id: round.id }}>
                             <Eye className="h-3 w-3 mr-1" />
                             View
                           </Link>

@@ -4,7 +4,7 @@ import { getQuestionById } from "@workspace/db/queries";
 import BackButton from "@/components/back-button";
 import QuestionEditForm from "@/components/forms/question-edit-form";
 import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_main/questions/$id/edit")({
   head: () => ({

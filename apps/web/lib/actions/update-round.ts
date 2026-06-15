@@ -1,4 +1,4 @@
-import { defineAction, defineArgsAction } from "./create-action";
+import { createServerFn } from "@tanstack/react-start";
 import { db } from "@workspace/db/db";
 import { roundTemplate } from "@workspace/db/schema";
 import {
@@ -10,12 +10,10 @@ import { getSession } from "@/lib/middleware/auth-guard";
 import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
-export const updateRound = defineArgsAction(async (
-  roundId: string,
-  data:
-    | RoundFormSchema
-    | { name: string; description: string; positionId?: string },
-) => {
+export const updateRound = createServerFn({ method: "POST" })
+  .validator((data: [string, | RoundFormSchema
+    | { name: string; description: string; positionId?: string }]) => data)
+  .handler(async ({ data: [roundId, data] }) => {
   const session = await getSession();
 
   if (!session?.user) {

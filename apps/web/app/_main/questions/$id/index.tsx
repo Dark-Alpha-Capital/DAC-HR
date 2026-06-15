@@ -1,15 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { getQuestionById } from "@workspace/db/queries";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardFooter,
   CardHeader,
   CardTitle,
   CardContent,
-} from "@workspace/ui/components/card";
-import { Separator } from "@workspace/ui/components/separator";
-import { Badge } from "@workspace/ui/components/badge";
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import BackButton from "@/components/back-button";
 import { Pencil, Calendar, Clock } from "lucide-react";
 import DeleteQuestionButton from "@/components/delete-question-button";

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "@tanstack/react-router";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,16 +8,16 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@workspace/ui/components/dialog";
-import { Input } from "@workspace/ui/components/input";
-import { Label } from "@workspace/ui/components/label";
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select";
+} from "@/components/ui/select";
 import { createInterview } from "@/lib/actions/create-interview";
 import { toast } from "sonner";
 import { Calendar } from "lucide-react";
@@ -80,10 +80,12 @@ export default function RecordInterviewDialog({
 
     try {
       const result = await createInterview({
-        applicationId,
-        positionRoundTemplateId,
-        interviewerId,
-        scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
+        data: {
+          applicationId,
+          positionRoundTemplateId,
+          interviewerId,
+          scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
+        },
       });
 
       if (result.error) {

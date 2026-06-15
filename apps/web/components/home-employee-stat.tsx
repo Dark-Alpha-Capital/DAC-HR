@@ -4,7 +4,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "@workspace/ui/components/card";
+} from "@/components/ui/card";
 import { UserCheck } from "lucide-react";
 
 export default async function HomeEmployeeStat() {

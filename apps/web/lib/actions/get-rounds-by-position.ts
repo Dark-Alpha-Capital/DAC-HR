@@ -1,7 +1,9 @@
-import { defineQueryWithInput } from "./create-action";
+import { createServerFn } from "@tanstack/react-start";
 import { getRoundsByPositionId } from "@workspace/db/queries";
 
-export const getRoundsByPosition = defineQueryWithInput(async (positionId: string) => {
+export const getRoundsByPosition = createServerFn({ method: "GET" })
+  .validator((data: string) => data)
+  .handler(async ({ data: positionId }) => {
   if (!positionId) {
     return [];
   }

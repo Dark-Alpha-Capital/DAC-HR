@@ -3,21 +3,21 @@ import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import * as z from "zod";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "@workspace/ui/components/field";
-import { Input } from "@workspace/ui/components/input";
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupText,
   InputGroupTextarea,
-} from "@workspace/ui/components/input-group";
+} from "@/components/ui/input-group";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import { candidateFormSchema } from "@/lib/schemas/candidate-form-schema";
@@ -27,7 +27,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select";
+} from "@/components/ui/select";
 import { updateCandidate } from "@/lib/actions/update-candidate";
 import type { Candidate } from "@workspace/db/schema";
 
@@ -81,9 +81,14 @@ const CandidateEditForm = ({
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
-        const result = await updateCandidate(candidate.id, {
-          ...value,
-          positionId: value.positionId || "",
+        const result = await updateCandidate({
+          data: [
+            candidate.id,
+            {
+              ...value,
+              positionId: value.positionId || "",
+            },
+          ],
         });
         if (result.error) {
           toast.error(

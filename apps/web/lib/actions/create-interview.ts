@@ -1,4 +1,4 @@
-import { defineAction } from "./create-action";
+import { createServerFn } from "@tanstack/react-start";
 import { db } from "@workspace/db/db";
 import { interview, application } from "@workspace/db/schema";
 import { getSession } from "@/lib/middleware/auth-guard";
@@ -12,7 +12,9 @@ export interface CreateInterviewInput {
   scheduledAt?: Date;
 }
 
-export const createInterview = defineAction(async (data: CreateInterviewInput) => {
+export const createInterview = createServerFn({ method: "POST" })
+  .validator((data: CreateInterviewInput) => data)
+  .handler(async ({ data }) => {
   const session = await getSession();
 
   if (!session?.user) {

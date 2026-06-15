@@ -1,5 +1,5 @@
-import { Card, CardHeader, CardContent } from "@workspace/ui/components/card";
-import { Skeleton } from "@workspace/ui/components/skeleton";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const CandidateLoadingSkeleton = () => {
   return (

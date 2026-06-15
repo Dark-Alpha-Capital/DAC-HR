@@ -4,7 +4,7 @@ import {
   getQuestionsByRoundId,
   getPositionsByRoundId,
 } from "@workspace/db/queries";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -12,7 +12,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@workspace/ui/components/table";
+} from "@/components/ui/table";
 import BackButton from "@/components/back-button";
 import {
   Pencil,
@@ -26,7 +26,7 @@ import {
 import DeleteRoundButton from "@/components/delete-round-button";
 import DeleteQuestionButton from "@/components/delete-question-button";
 import { formatDate } from "@/lib/utils";
-import { Badge } from "@workspace/ui/components/badge";
+import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_main/rounds/$id/")({
   head: () => ({

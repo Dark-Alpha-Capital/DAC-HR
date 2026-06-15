@@ -1,9 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Suspense } from "react";
+import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
 import QuestionUploadForm from "@/components/forms/question-upload-form";
-import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";
-import { Button } from "@workspace/ui/components/button";
-import { getPositions } from "@workspace/db/queries";
+import { Button } from "@/components/ui/button";
+import { getPositions, getRoundsByPositionId } from "@workspace/db/queries";
 import { toOptionalString } from "@/lib/parse-search";
 
 export const Route = createFileRoute("/_main/questions/new")({
@@ -17,11 +15,20 @@ export const Route = createFileRoute("/_main/questions/new")({
   loaderDeps: ({ search }) => search,
   loader: async ({ deps }) => {
     const { positions } = await getPositions();
+    const rounds = deps.position
+      ? (await getRoundsByPositionId(deps.position)).map((round) => ({
+          id: round.id,
+          name: round.name,
+          description: round.description,
+        }))
+      : [];
+
     return {
       positions: positions.map((position) => ({
         id: position.id,
         name: position.name,
       })),
+      rounds,
       preSelectedPositionId: deps.position,
       preSelectedRoundId: deps.round,
     };
@@ -30,22 +37,40 @@ export const Route = createFileRoute("/_main/questions/new")({
 });
 
 function NewQuestionPage() {
-  const { positions, preSelectedPositionId, preSelectedRoundId } =
-    Route.useLoaderData();
+  const {
+    positions,
+    rounds,
+    preSelectedPositionId,
+    preSelectedRoundId,
+  } = Route.useLoaderData();
+  const navigate = Route.useNavigate();
+  const isLoadingRounds = useRouterState({
+    select: (s) => s.isLoading,
+  });
 
   return (
     <div className="container mx-auto py-8 space-y-6">
       <Button asChild>
-        <Link to="/questions" search={{} as any}>Back to Questions</Link>
+        <Link to="/questions" search={{} as any}>
+          Back to Questions
+        </Link>
       </Button>
 
-      <Suspense fallback={<FormLoadingFallback />}>
-        <QuestionUploadForm
-          positions={positions}
-          preSelectedPositionId={preSelectedPositionId}
-          preSelectedRoundId={preSelectedRoundId}
-        />
-      </Suspense>
+      <QuestionUploadForm
+        positions={positions}
+        rounds={rounds}
+        preSelectedPositionId={preSelectedPositionId}
+        preSelectedRoundId={preSelectedRoundId}
+        isLoadingRounds={isLoadingRounds}
+        onPositionChange={(positionId) => {
+          navigate({
+            search: { position: positionId, round: "" },
+          });
+        }}
+        onResetSearch={() => {
+          navigate({ search: { position: "", round: "" } });
+        }}
+      />
     </div>
   );
 }

@@ -2,16 +2,16 @@ import * as React from "react";
 import { useRouter } from "@tanstack/react-router";
 import { useUrlSearchParams } from "@/lib/hooks/use-url-search-params";
 import { authClient } from "@/auth-client";
-import { cn } from "@workspace/ui/lib/utils";
-import { Button } from "@workspace/ui/components/button";
-import { Badge } from "@workspace/ui/components/badge";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@workspace/ui/components/card";
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -19,18 +19,18 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@workspace/ui/components/table";
+} from "@/components/ui/table";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@workspace/ui/components/tabs";
+} from "@/components/ui/tabs";
 import {
   Avatar,
   AvatarImage,
   AvatarFallback,
-} from "@workspace/ui/components/avatar";
+} from "@/components/ui/avatar";
 import {
   AlertCircle,
   Ban,
@@ -42,7 +42,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { Input } from "@workspace/ui/components/input";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import type { AdminUser } from "@/lib/admin/fetch-non-admin-users";
 

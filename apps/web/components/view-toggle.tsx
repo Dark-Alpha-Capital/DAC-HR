@@ -1,6 +1,5 @@
-"use client";
 
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { LayoutGrid, Table } from "lucide-react";
 
 type ViewMode = "table" | "kanban";

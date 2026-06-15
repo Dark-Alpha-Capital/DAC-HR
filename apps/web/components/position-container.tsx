@@ -6,11 +6,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@workspace/ui/components/table";
-import { Button } from "@workspace/ui/components/button";
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { Eye, Pencil } from "lucide-react";
 import DeletePositionButton from "@/components/delete-position-button";
-import { Badge } from "@workspace/ui/components/badge";
+import { Badge } from "@/components/ui/badge";
 
 const hireLevelLabels: Record<string, string> = {
   "managing-director": "Managing Director",

@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { getRoundById } from "@workspace/db/queries";
 import RoundEditForm from "@/components/forms/round-edit-form";
 import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_main/rounds/$id/edit")({
   head: () => ({

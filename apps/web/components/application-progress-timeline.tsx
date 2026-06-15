@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { Badge } from "@workspace/ui/components/badge";
-import { Button } from "@workspace/ui/components/button";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -8,7 +8,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@workspace/ui/components/table";
+} from "@/components/ui/table";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +18,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@workspace/ui/components/alert-dialog";
+} from "@/components/ui/alert-dialog";
 import {
   Eye,
   Trash2,
@@ -175,7 +175,7 @@ export default function ApplicationProgressTimeline({
 
     setIsDeleting(true);
     try {
-      const result = await deleteInterview(interviewToDelete);
+      const result = await deleteInterview({ data: interviewToDelete });
       if (result.error) {
         toast.error(result.error);
       } else {

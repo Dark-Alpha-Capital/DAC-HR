@@ -1,20 +1,20 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { getWeeklyCheckins, getPositions } from "@workspace/db/queries";
-import { Button } from "@workspace/ui/components/button";
-import { Badge } from "@workspace/ui/components/badge";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@workspace/ui/components/card";
+} from "@/components/ui/card";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@workspace/ui/components/accordion";
+} from "@/components/ui/accordion";
 import { ShieldAlert, Calendar, Users, BarChart3, FileText } from "lucide-react";
 import { hasWeeklyCheckinViewerAccess } from "@/lib/config/weekly-checkin-access";
 import { sourcingChannelLabels } from "@/lib/schemas/weekly-checkin-form-schema";

@@ -1,4 +1,4 @@
-import { defineAction } from "./create-action";
+import { createServerFn } from "@tanstack/react-start";
 import { db } from "@workspace/db/db";
 import { interviewFeedback } from "@workspace/db/schema";
 import { getSession } from "@/lib/middleware/auth-guard";
@@ -24,9 +24,9 @@ export interface BulkCreateInterviewFeedbackInput {
 /**
  * Creates or updates feedback for a single question in an interview
  */
-export const createInterviewFeedback = defineAction(async (
-  data: CreateInterviewFeedbackInput,
-) => {
+export const createInterviewFeedback = createServerFn({ method: "POST" })
+  .validator((data: CreateInterviewFeedbackInput,) => data)
+  .handler(async ({ data }) => {
   const session = await getSession();
 
   if (!session?.user) {
@@ -103,9 +103,9 @@ export const createInterviewFeedback = defineAction(async (
 /**
  * Creates or updates feedback for multiple questions at once
  */
-export const bulkCreateInterviewFeedback = defineAction(async (
-  data: BulkCreateInterviewFeedbackInput,
-) => {
+export const bulkCreateInterviewFeedback = createServerFn({ method: "POST" })
+  .validator((data: BulkCreateInterviewFeedbackInput,) => data)
+  .handler(async ({ data }) => {
   const session = await getSession();
 
   if (!session?.user) {

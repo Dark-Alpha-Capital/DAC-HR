@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Button } from "@workspace/ui/components/button";
-import { Textarea } from "@workspace/ui/components/textarea";
-import { Label } from "@workspace/ui/components/label";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 

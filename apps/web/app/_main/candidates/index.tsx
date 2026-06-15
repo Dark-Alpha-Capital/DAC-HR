@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import CandidateFilters from "@/components/candidate-filters";
 import BulkUploadCandidatesDialog from "@/components/bulk-upload-candidates-dialog";
 import CandidatesViewWrapper from "@/components/candidates-view-wrapper";

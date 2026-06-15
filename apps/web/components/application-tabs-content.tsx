@@ -4,7 +4,7 @@ import {
   TabsList,
   TabsTrigger,
   TabsContent,
-} from "@workspace/ui/components/tabs";
+} from "@/components/ui/tabs";
 import { FileText, MessageSquare } from "lucide-react";
 import ApplicationProgressTimeline from "@/components/application-progress-timeline";
 import ApplicationStatusDisplay from "@/components/application-status-display";

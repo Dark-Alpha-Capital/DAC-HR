@@ -6,14 +6,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@workspace/ui/components/table";
-import { Button } from "@workspace/ui/components/button";
-import { Checkbox } from "@workspace/ui/components/checkbox";
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "@tanstack/react-router";
 import { Eye, Pencil } from "lucide-react";
 import DeleteCandidateButton from "@/components/delete-candidate-button";
 import BulkDeleteCandidatesButton from "@/components/bulk-delete-candidates-button";
-import { Badge } from "@workspace/ui/components/badge";
+import { Badge } from "@/components/ui/badge";
 import type { Candidate } from "@workspace/db/schema";
 const applicationStatusColors: Record<
   string,

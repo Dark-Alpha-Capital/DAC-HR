@@ -6,8 +6,8 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { Providers } from "@/components/providers";
-import { Toaster } from "@workspace/ui/components/sonner";
-import appCss from "@workspace/ui/globals.css?url";
+import { Toaster } from "@/components/ui/sonner";
+import appCss from "@/app/styles/globals.css?url";
 
 export const Route = createRootRoute({
   head: () => ({

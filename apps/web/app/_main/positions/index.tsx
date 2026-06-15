@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { getPositions } from "@workspace/db/queries";
 import FilterPositionHireLevel from "@/components/filter-position-hire-level";
 import FilterPositionStatus from "@/components/filter-position-status";
@@ -16,9 +16,9 @@ export const Route = createFileRoute("/_main/positions/")({
     hireLevel: toStringArray(search.hireLevel as string | string[] | undefined),
     status: toStringArray(search.status as string | string[] | undefined),
     page:
-      search.page !== undefined ? toPageNumber(search.page) : (undefined as
-          | number
-          | undefined),
+      search.page !== undefined
+        ? toPageNumber(search.page)
+        : (undefined as number | undefined),
   }),
   loaderDeps: ({ search }) => search,
   loader: async ({ deps }) => {
@@ -45,20 +45,17 @@ export const Route = createFileRoute("/_main/positions/")({
 });
 
 function PositionsPage() {
-  const {
-    positions,
-    currentPage,
-    totalPages,
-    hasNextPage,
-    hasPreviousPage,
-  } = Route.useLoaderData();
+  const { positions, currentPage, totalPages, hasNextPage, hasPreviousPage } =
+    Route.useLoaderData();
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Positions</h1>
         <Button asChild>
-          <Link to="/positions/new" search="{}">New Position</Link>
+          <Link to="/positions/new" search="{}">
+            New Position
+          </Link>
         </Button>
       </div>
 
@@ -72,7 +69,9 @@ function PositionsPage() {
         <div className="rounded-xl border bg-card p-10 text-center">
           <p className="text-muted-foreground">No positions found.</p>
           <Button asChild className="mt-4">
-            <Link to="/positions/new" search="{}">Create your first position</Link>
+            <Link to="/positions/new" search="{}">
+              Create your first position
+            </Link>
           </Button>
         </div>
       ) : (

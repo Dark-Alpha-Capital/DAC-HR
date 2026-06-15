@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useRouterState } from "@tanstack/react-router";
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@/lib/utils";
 import {
   BookOpen,
   Briefcase,

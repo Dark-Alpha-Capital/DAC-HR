@@ -1,4 +1,4 @@
-import { defineAction } from "./create-action";
+import { createServerFn } from "@tanstack/react-start";
 import { db } from "@workspace/db/db";
 import { employee } from "@workspace/db/schema";
 import {
@@ -8,7 +8,9 @@ import {
 import { getSession } from "@/lib/middleware/auth-guard";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
-export const createEmployee = defineAction(async (data: EmployeeFormSchema) => {
+export const createEmployee = createServerFn({ method: "POST" })
+  .validator((data: EmployeeFormSchema) => data)
+  .handler(async ({ data }) => {
   const session = await getSession();
 
   if (!session?.user) {

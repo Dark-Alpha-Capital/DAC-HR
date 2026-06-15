@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Download, Eye, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@workspace/ui/components/button";
-import { Badge } from "@workspace/ui/components/badge";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -10,7 +10,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@workspace/ui/components/table";
+} from "@/components/ui/table";
 import type { CandidateDocument } from "@workspace/db/schema";
 import DeleteCandidateDocumentButton from "./delete-candidate-document-button";
 

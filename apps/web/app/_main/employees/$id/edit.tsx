@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense } from "react";
 import EmployeeEditForm from "@/components/forms/employee-edit-form";
 import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { getEmployeeById, getPositions } from "@workspace/db/queries";
 import BackButton from "@/components/back-button";
 

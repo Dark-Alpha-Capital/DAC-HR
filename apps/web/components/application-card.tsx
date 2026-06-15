@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { Eye, Users, Pencil } from "lucide-react";
 import DeleteCandidateButton from "./delete-candidate-button";
 

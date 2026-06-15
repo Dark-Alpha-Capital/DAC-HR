@@ -23,6 +23,7 @@
     "@workspace/eslint-config": "*",
     "@workspace/typescript-config": "*",
     "prettier": "^3.6.2",
+    "shadcn": "^4.11.0",
     "turbo": "^2.5.5",
     "typescript": "5.7.3"
   },
@@ -30,7 +31,7 @@
     "node": ">=20"
   },
   "overrides": {
-    "@radix-ui/react-dismissable-layer": "1.1.12",
-    "@radix-ui/react-focus-scope": "1.1.9"
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
   }
 }

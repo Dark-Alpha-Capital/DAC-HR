@@ -6,8 +6,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@workspace/ui/components/table";
-import { Button } from "@workspace/ui/components/button";
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { Link, useRouter } from "@tanstack/react-router";
 import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
 import { deleteEmployee } from "@/lib/actions/delete-employee";
@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@workspace/ui/components/alert-dialog";
+} from "@/components/ui/alert-dialog";
 
 type EmployeeWithPosition = Employee & {
   position: { id: string; name: string; slug: string } | null;
@@ -41,7 +41,7 @@ const DeleteEmployeeIconButton = ({ employeeId }: { employeeId: string }) => {
 
   const handleDelete = async () => {
     startTransition(async () => {
-      const response = await deleteEmployee(employeeId);
+      const response = await deleteEmployee({ data: employeeId });
       if (response?.error) {
         toast.error(response.error);
         setOpen(false);

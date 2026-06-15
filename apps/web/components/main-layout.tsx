@@ -1,7 +1,7 @@
 import {
   SidebarInset,
   SidebarProvider,
-} from "@workspace/ui/components/sidebar";
+} from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/sidebars/app-sidebar";
 import { MainSiteTopbar } from "@/components/main-site/topbar";
 import type { AppSession } from "@/lib/auth-session";

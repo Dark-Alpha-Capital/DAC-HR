@@ -6,7 +6,7 @@ import {
   Avatar,
   AvatarImage,
   AvatarFallback,
-} from "@workspace/ui/components/avatar";
+} from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +14,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -22,17 +22,17 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
-} from "@workspace/ui/components/navigation-menu";
+} from "@/components/ui/navigation-menu";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@workspace/ui/components/sheet";
-import { Button } from "@workspace/ui/components/button";
-import { Spinner } from "@workspace/ui/components/spinner";
-import { useIsMobile } from "@workspace/ui/hooks/use-mobile";
+} from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { User, LogOut, Menu } from "lucide-react";
 
 const managementLinks = [{ href: "/employees", label: "Employees" }] as const;

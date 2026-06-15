@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Card,
@@ -6,10 +6,10 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@workspace/ui/components/card";
-import { Button } from "@workspace/ui/components/button";
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Briefcase, FileText, Folders, Users } from "lucide-react";
-import { Skeleton } from "@workspace/ui/components/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import HomeStatsCards from "@/components/home-stats-cards";
 import HomeEmployeeStat from "@/components/home-employee-stat";
 
@@ -92,13 +92,17 @@ function HomeContent() {
                   1. Create a position
                 </span>
                 <Button asChild variant="secondary" size="sm">
-                  <Link to="/positions" search={{} as any}>Open</Link>
+                  <Link to="/positions" search={{} as any}>
+                    Open
+                  </Link>
                 </Button>
               </li>
               <li className="flex items-center justify-between gap-3">
                 <span className="text-muted-foreground">2. Add candidates</span>
                 <Button asChild variant="secondary" size="sm">
-                  <Link to="/candidates" search="{}">Open</Link>
+                  <Link to="/candidates" search="{}">
+                    Open
+                  </Link>
                 </Button>
               </li>
               <li className="flex items-center justify-between gap-3">
@@ -106,7 +110,9 @@ function HomeContent() {
                   3. Track applications and rounds
                 </span>
                 <Button asChild variant="secondary" size="sm">
-                  <Link to="/applications" search="{}">Open</Link>
+                  <Link to="/applications" search="{}">
+                    Open
+                  </Link>
                 </Button>
               </li>
               <li className="flex items-center justify-between gap-3">
@@ -114,7 +120,9 @@ function HomeContent() {
                   4. Prepare question bank
                 </span>
                 <Button asChild variant="secondary" size="sm">
-                  <Link to="/questions" search="{}">Open</Link>
+                  <Link to="/questions" search="{}">
+                    Open
+                  </Link>
                 </Button>
               </li>
             </ol>

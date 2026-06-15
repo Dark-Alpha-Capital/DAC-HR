@@ -5,7 +5,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select";
+} from "@/components/ui/select";
 import { updateApplication } from "@/lib/actions/update-application";
 import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -68,8 +68,10 @@ export default function ApplicationPersonalitySelector({
 
     startTransition(async () => {
       const result = await updateApplication({
-        applicationId,
-        personality: personalityValue,
+        data: {
+          applicationId,
+          personality: personalityValue,
+        },
       });
 
       if (result.error) {

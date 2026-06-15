@@ -1,11 +1,14 @@
-import { defineAction } from "./create-action";
-export const resetCacheForCandidates = defineAction(async () => {
+import { createServerFn } from "@tanstack/react-start";
+export const resetCacheForCandidates = createServerFn({ method: "POST" })
+  .handler(async () => {
 });
 
-export const resetCacheForCandidateDocuments = defineAction(async (candidateId: string) => {
+export const resetCacheForCandidateDocuments = createServerFn({ method: "POST" })
+  .validator((data: string) => data)
+  .handler(async ({ data: candidateId }) => {
 });
 
-export const resetCacheForCandidateAiScreenings = defineAction(async (
-  candidateId: string,
-) => {
+export const resetCacheForCandidateAiScreenings = createServerFn({ method: "POST" })
+  .validator((data: string,) => data)
+  .handler(async ({ data: candidateId }) => {
 });

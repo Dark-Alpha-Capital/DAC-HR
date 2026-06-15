@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useTransition } from "react";
-import { Button } from "@workspace/ui/components/button";
-import { Checkbox } from "@workspace/ui/components/checkbox";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { updateOnboardingTasks } from "@/lib/actions/update-onboarding";
 import { toast } from "sonner";
 import {
@@ -11,7 +11,7 @@ import {
   Save,
   Loader2,
 } from "lucide-react";
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 type OnboardingCardProps = {
   candidateId: string;
@@ -99,11 +99,16 @@ const OnboardingCard: React.FC<OnboardingCardProps> = ({
 
     startTransition(async () => {
       try {
-        const result = await updateOnboardingTasks(candidateId, {
-          contractSigned: tasks.contractSigned,
-          emailProvided: tasks.registrationEmailSent,
-          onboardingPacketSent: tasks.packetSent,
-          companyEmailActivate: tasks.companyEmailActivate,
+        const result = await updateOnboardingTasks({
+          data: [
+            candidateId,
+            {
+              contractSigned: tasks.contractSigned,
+              emailProvided: tasks.registrationEmailSent,
+              onboardingPacketSent: tasks.packetSent,
+              companyEmailActivate: tasks.companyEmailActivate,
+            },
+          ],
         });
 
         if (result.success) {

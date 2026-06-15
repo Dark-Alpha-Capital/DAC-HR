@@ -5,7 +5,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@workspace/ui/components/dialog";
+} from "@/components/ui/dialog";
 import InterviewQuestionFeedbackForm from "../interview-question-feedback-form";
 
 interface QuestionFeedback {

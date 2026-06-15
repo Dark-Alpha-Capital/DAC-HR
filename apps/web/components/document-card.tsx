@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@workspace/ui/components/card";
-import { Badge } from "@workspace/ui/components/badge";
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Eye, Pencil, FileText } from "lucide-react";
 import type { Document } from "@workspace/db/schema";
 import DeleteDocumentButton from "./delete-document-button";

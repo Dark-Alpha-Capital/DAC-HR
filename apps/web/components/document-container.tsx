@@ -1,4 +1,3 @@
-"use client";
 
 import React, { useState } from "react";
 import {
@@ -8,8 +7,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@workspace/ui/components/table";
-import { Button } from "@workspace/ui/components/button";
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { Download, Loader2, Eye } from "lucide-react";
 import DeleteDocumentButton from "@/components/delete-document-button";
 import DocumentPreviewDialog from "@/components/document-preview-dialog";
@@ -17,7 +16,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@workspace/ui/components/tooltip";
+} from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import type { Document, DocumentCategory } from "@workspace/db/schema";
 

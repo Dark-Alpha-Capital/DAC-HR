@@ -1,15 +1,15 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "@tanstack/react-router";
-import { Button } from "@workspace/ui/components/button";
-import { Label } from "@workspace/ui/components/label";
-import { Textarea } from "@workspace/ui/components/textarea";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select";
+} from "@/components/ui/select";
 import { createInterviewFeedback } from "@/lib/actions/create-interview-feedback";
 import { toast } from "sonner";
 
@@ -53,10 +53,12 @@ export default function InterviewQuestionFeedbackForm({
         rating && rating !== "none" ? parseInt(rating, 10) : undefined;
 
       const result = await createInterviewFeedback({
-        interviewId,
-        questionId: question.id,
-        notes: notes.trim() === "" ? undefined : notes.trim(),
-        rating: parsedRating,
+        data: {
+          interviewId,
+          questionId: question.id,
+          notes: notes.trim() === "" ? undefined : notes.trim(),
+          rating: parsedRating,
+        },
       });
 
       if (result.error) {

@@ -2,21 +2,21 @@ import * as React from "react";
 import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "@workspace/ui/components/field";
-import { Input } from "@workspace/ui/components/input";
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupText,
   InputGroupTextarea,
-} from "@workspace/ui/components/input-group";
+} from "@/components/ui/input-group";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -24,7 +24,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import {
   positionFormSchema,
   hireLevelEnum,
@@ -39,12 +39,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select";
+} from "@/components/ui/select";
 import { updatePosition } from "@/lib/actions/update-position";
 import { useRouter } from "@tanstack/react-router";
 import type { Position } from "@workspace/db/schema";
 import { RichTextEditorField } from "@/components/rich-text-editor";
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@/lib/utils";
 import * as z from "zod";
 
 interface PositionEditFormProps {
@@ -97,10 +97,9 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
-        const result = await updatePosition(
-          position.id,
-          value as PositionFormSchema,
-        );
+        const result = await updatePosition({
+          data: [position.id, value as PositionFormSchema],
+        });
         if (result.success) {
           toast("Position updated successfully", {
             position: "bottom-right",

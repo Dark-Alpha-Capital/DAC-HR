@@ -2,29 +2,29 @@ import * as React from "react";
 import { useTransition, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@workspace/ui/components/tabs";
+} from "@/components/ui/tabs";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "@workspace/ui/components/field";
-import { Input } from "@workspace/ui/components/input";
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupText,
   InputGroupTextarea,
-} from "@workspace/ui/components/input-group";
-import { Checkbox } from "@workspace/ui/components/checkbox";
-import { Label } from "@workspace/ui/components/label";
+} from "@/components/ui/input-group";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import {
   Calendar,
   Users,
@@ -54,11 +54,14 @@ export default function WeeklyCheckinForm({
   userName,
 }: WeeklyCheckinFormProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const [activeTab, setActiveTab] = useState("week-info");
-  const [selectedPositions, setSelectedPositions] = useState<string[]>([]);
-  const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
 
+  const [isPending, startTransition] = useTransition();
+
+  const [activeTab, setActiveTab] = useState("week-info");
+
+  const [selectedPositions, setSelectedPositions] = useState<string[]>([]);
+
+  const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
   // Calculate default week range (current week)
   const today = new Date();
   const dayOfWeek = today.getDay();
@@ -95,9 +98,11 @@ export default function WeeklyCheckinForm({
       startTransition(async () => {
         try {
           const result = await createWeeklyCheckin({
-            ...value,
-            positionsWorked: selectedPositions,
-            bestPerformingChannels: selectedChannels as any,
+            data: {
+              ...value,
+              positionsWorked: selectedPositions,
+              bestPerformingChannels: selectedChannels as any,
+            },
           });
 
           if (result.error) {

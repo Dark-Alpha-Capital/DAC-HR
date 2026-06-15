@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense } from "react";
 import CandidateDocumentUploadForm from "@/components/forms/candidate-document-upload-form";
 import { FormLoadingFallback } from "@/components/skeletons/form-loading-skeleton";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_main/candidates/$uid/add-document")({
   head: () => ({

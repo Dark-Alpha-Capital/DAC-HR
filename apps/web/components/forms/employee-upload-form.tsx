@@ -2,15 +2,15 @@ import * as React from "react";
 import { useTransition, useState, useEffect } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "@workspace/ui/components/field";
-import { Input } from "@workspace/ui/components/input";
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -18,14 +18,14 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select";
+} from "@/components/ui/select";
 import { Loader2, ChevronDown } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import {
@@ -35,7 +35,7 @@ import {
 } from "@/lib/schemas/employee-form-schema";
 import { createEmployee } from "@/lib/actions/create-employee";
 import { RichTextEditor } from "@/components/rich-text-editor";
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@/lib/utils";
 import * as z from "zod";
 import EmployeeProfileImage from "../employee-profile-image";
 
@@ -137,12 +137,14 @@ const EmployeeUploadForm = ({
 
           // Create the employee with the final image URL
           const result = await createEmployee({
-            firstName: value.firstName,
-            lastName: value.lastName,
-            department: value.department,
-            positionId: value.positionId || null,
-            profileImage: finalImageUrl || null,
-            bio: value.bio && value.bio.trim() !== "" ? value.bio : null,
+            data: {
+              firstName: value.firstName,
+              lastName: value.lastName,
+              department: value.department,
+              positionId: value.positionId || null,
+              profileImage: finalImageUrl || null,
+              bio: value.bio && value.bio.trim() !== "" ? value.bio : null,
+            },
           });
 
           if (result.error) {

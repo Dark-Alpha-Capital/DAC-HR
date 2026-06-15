@@ -2,21 +2,21 @@ import * as React from "react";
 import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "@workspace/ui/components/field";
+} from "@/components/ui/field";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupText,
   InputGroupTextarea,
-} from "@workspace/ui/components/input-group";
-import { Badge } from "@workspace/ui/components/badge";
+} from "@/components/ui/input-group";
+import { Badge } from "@/components/ui/badge";
 import {
   questionEditFormSchema,
   type QuestionEditFormSchema,
@@ -72,7 +72,9 @@ const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
       }
 
       startTransition(async () => {
-        const result = await updateQuestion(question.id, parsed.data);
+        const result = await updateQuestion({
+          data: [question.id, parsed.data],
+        });
         if (result.success) {
           toast.success("Question updated successfully", {
             position: "bottom-right",

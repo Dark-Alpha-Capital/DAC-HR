@@ -1,4 +1,4 @@
-import { Badge } from "@workspace/ui/components/badge";
+import { Badge } from "@/components/ui/badge";
 import {
   Calendar,
   User,
@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 
 interface InterviewDetailCardProps {
   interview: {

@@ -1,4 +1,3 @@
-"use client";
 
 import React from "react";
 import {
@@ -8,12 +7,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@workspace/ui/components/table";
-import { Button } from "@workspace/ui/components/button";
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { Eye, Pencil } from "lucide-react";
 import DeleteQuestionButton from "@/components/delete-question-button";
-import { Badge } from "@workspace/ui/components/badge";
+import { Badge } from "@/components/ui/badge";
 import { getQuestionTypeLabel } from "@/lib/question-type-label";
 
 type QuestionPosition = { id: string; name: string };

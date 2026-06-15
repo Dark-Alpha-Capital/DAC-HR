@@ -4,7 +4,7 @@ import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import { useUrlSearchParams } from "@/lib/hooks/use-url-search-params";
 import * as z from "zod";
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@/components/ui/button";
 import {
   Field,
   FieldDescription,
@@ -12,14 +12,14 @@ import {
   FieldContent,
   FieldGroup,
   FieldLabel,
-} from "@workspace/ui/components/field";
-import { Input } from "@workspace/ui/components/input";
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupText,
   InputGroupTextarea,
-} from "@workspace/ui/components/input-group";
+} from "@/components/ui/input-group";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import {
@@ -33,7 +33,7 @@ import {
   SelectSeparator,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select";
+} from "@/components/ui/select";
 import { Session } from "better-auth";
 import { resetCacheForCandidates } from "@/lib/actions/reset-cache";
 
