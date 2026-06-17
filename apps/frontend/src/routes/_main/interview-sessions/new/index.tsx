@@ -1,10 +1,23 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Separator } from "~/components/ui/separator";
 import { loadInterviewSessionsNew } from "~/lib/loaders/interview-sessions";
 import { toast } from "sonner";
@@ -20,6 +33,7 @@ export const Route = createFileRoute("/_main/interview-sessions/new/")({
 
 function NewSessionPage() {
   const { applications } = Route.useLoaderData();
+
   const navigate = useNavigate();
   const [applicationId, setApplicationId] = useState("");
   const [roundId, setRoundId] = useState("");
@@ -28,10 +42,15 @@ function NewSessionPage() {
   const [result, setResult] = useState<{ link: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const selectedApp = applications.find((a: typeof applications[number]) => a.id === applicationId);
+  const selectedApp = applications.find(
+    (a: (typeof applications)[number]) => a.id === applicationId,
+  );
   const filteredRounds = selectedApp
     ? selectedApp.interviews
-        .filter((i: { roundTemplate?: { id: string; name: string } }) => i.roundTemplate)
+        .filter(
+          (i: { roundTemplate?: { id: string; name: string } }) =>
+            i.roundTemplate,
+        )
         .map((i: { roundTemplate: { id: string; name: string } }) => ({
           id: i.roundTemplate.id,
           name: i.roundTemplate.name,
@@ -95,7 +114,11 @@ function NewSessionPage() {
                 {result.link}
               </code>
               <Button variant="secondary" size="icon" onClick={handleCopy}>
-                {copied ? <Check className="size-4 text-green-600" /> : <Copy className="size-4" />}
+                {copied ? (
+                  <Check className="size-4 text-green-600" />
+                ) : (
+                  <Copy className="size-4" />
+                )}
               </Button>
             </div>
           </CardContent>
@@ -115,13 +138,18 @@ function NewSessionPage() {
   return (
     <div className="mx-auto max-w-lg space-y-6 pt-8">
       <div className="flex items-center gap-3">
-        <Button variant="link" size="icon" onClick={() => navigate({ to: "/interview-sessions" })}>
+        <Button
+          variant="link"
+          size="icon"
+          onClick={() => navigate({ to: "/interview-sessions" })}
+        >
           <ArrowLeft className="size-4" />
         </Button>
         <div>
           <h1 className="text-xl font-semibold">New Interview Session</h1>
           <p className="text-sm text-muted-foreground">
-            Create a tokenized link for a candidate to complete a self-serve interview.
+            Create a tokenized link for a candidate to complete a self-serve
+            interview.
           </p>
         </div>
       </div>
@@ -135,14 +163,21 @@ function NewSessionPage() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Candidate</Label>
-            <Select value={applicationId} onValueChange={(v) => { setApplicationId(v); setRoundId(""); }}>
+            <Select
+              value={applicationId}
+              onValueChange={(v) => {
+                setApplicationId(v);
+                setRoundId("");
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select a candidate application..." />
               </SelectTrigger>
               <SelectContent>
-                {applications.map((app: typeof applications[number]) => (
+                {applications.map((app: (typeof applications)[number]) => (
                   <SelectItem key={app.id} value={app.id}>
-                    {app.candidate.firstName} {app.candidate.lastName} — {app.position.name}
+                    {app.candidate.firstName} {app.candidate.lastName} —{" "}
+                    {app.position.name}
                     {app.status ? ` (${app.status.replace(/_/g, " ")})` : ""}
                   </SelectItem>
                 ))}
@@ -152,9 +187,19 @@ function NewSessionPage() {
 
           <div className="space-y-2">
             <Label>Round</Label>
-            <Select value={roundId} onValueChange={setRoundId} disabled={!applicationId}>
+            <Select
+              value={roundId}
+              onValueChange={setRoundId}
+              disabled={!applicationId}
+            >
               <SelectTrigger>
-                <SelectValue placeholder={applicationId ? "Select a round..." : "Select a candidate first"} />
+                <SelectValue
+                  placeholder={
+                    applicationId
+                      ? "Select a round..."
+                      : "Select a candidate first"
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
                 {filteredRounds.map((r: { id: string; name: string }) => (

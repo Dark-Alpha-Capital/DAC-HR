@@ -27,7 +27,8 @@
     "db:migrate:remote": "bun run migrate.ts --remote",
     "db:studio": "drizzle-kit studio",
     "db:push": "drizzle-kit push",
-    "db:seed": "bun run seed.ts"
+    "db:seed": "bun run seed.ts",
+    "db:seed:remote": "bun run seed.ts --remote"
   },
   "peerDependencies": {
     "typescript": "^5.9.3"
