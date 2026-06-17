@@ -24,6 +24,10 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  ClipboardList,
+  Wifi,
+  Eye,
+  Save,
 } from "lucide-react";
 
 interface Question {
@@ -41,6 +45,12 @@ interface InterviewData {
   positionName: string;
   roundName: string;
   questions: Question[];
+}
+
+interface WelcomeData {
+  candidateName: string;
+  positionName: string;
+  roundName: string;
 }
 
 type AnswerValue =
@@ -73,16 +83,161 @@ function hasAnswer(answer: AnswerValue | undefined): boolean {
   return answer.selectedOptionId.length > 0;
 }
 
+async function loadInterviewSchema(token: string): Promise<InterviewData> {
+  const schemaRes = await fetch(`/api/interview-token/${token}/schema`);
+  if (!schemaRes.ok) {
+    const body = await schemaRes.json();
+    throw new Error(body.error || "Failed to load interview");
+  }
+  return schemaRes.json();
+}
+
+const INSTRUCTIONS = [
+  {
+    icon: ClipboardList,
+    title: "Read each question carefully",
+    description:
+      "Take your time to understand what is being asked before answering.",
+  },
+  {
+    icon: Save,
+    title: "Your progress is saved automatically",
+    description:
+      "Answers are saved as you move between questions. You can go back to review or change responses.",
+  },
+  {
+    icon: Wifi,
+    title: "Use a stable internet connection",
+    description:
+      "Find a quiet place with reliable connectivity so you can focus without interruptions.",
+  },
+  {
+    icon: Eye,
+    title: "Stay on this tab during the interview",
+    description:
+      "Switching tabs or windows may be recorded. Keep this page open until you submit.",
+  },
+] as const;
+
+function WelcomeScreen({
+  data,
+  onStart,
+  starting,
+}: {
+  data: WelcomeData;
+  onStart: () => void;
+  starting: boolean;
+}) {
+  return (
+    <div className="flex min-h-svh flex-col bg-background">
+      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="mx-auto flex max-w-2xl items-center justify-center px-4 py-5">
+          <p className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+            Dark Alpha Capital
+          </p>
+        </div>
+      </header>
+
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-8 sm:py-12">
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            Welcome to Your Interview
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            Hi {data.candidateName}, thank you for taking the time to interview
+            with us.
+          </p>
+        </div>
+
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle className="text-base">Interview Details</CardTitle>
+            <CardDescription>
+              Please confirm the information below before you begin.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 text-sm">
+            <div className="flex items-center justify-between gap-4 rounded-lg border bg-muted/40 px-4 py-3">
+              <span className="text-muted-foreground">Position</span>
+              <span className="font-medium text-right">{data.positionName}</span>
+            </div>
+            <div className="flex items-center justify-between gap-4 rounded-lg border bg-muted/40 px-4 py-3">
+              <span className="text-muted-foreground">Round</span>
+              <span className="font-medium text-right">{data.roundName}</span>
+            </div>
+            <div className="flex items-center justify-between gap-4 rounded-lg border bg-muted/40 px-4 py-3">
+              <span className="text-muted-foreground">Candidate</span>
+              <span className="font-medium text-right">{data.candidateName}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="mt-8">
+          <h2 className="text-lg font-medium">Before You Begin</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Review these instructions to ensure a smooth interview experience.
+          </p>
+          <ul className="mt-4 space-y-3">
+            {INSTRUCTIONS.map((item) => (
+              <li
+                key={item.title}
+                className="flex gap-3 rounded-lg border p-4"
+              >
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                  <item.icon className="size-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{item.title}</p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    {item.description}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="mt-auto pt-8">
+          <Button
+            className="w-full sm:w-auto"
+            size="lg"
+            onClick={onStart}
+            disabled={starting}
+          >
+            {starting ? (
+              <>
+                <Loader2 className="mr-2 size-4 animate-spin" />
+                Preparing interview...
+              </>
+            ) : (
+              <>
+                Start Interview
+                <ArrowRight className="ml-2 size-4" />
+              </>
+            )}
+          </Button>
+          <p className="mt-3 text-xs text-muted-foreground">
+            By clicking Start Interview, you confirm you are ready to begin and
+            your session will be recorded.
+          </p>
+        </div>
+      </main>
+    </div>
+  );
+}
+
 function InterviewPage() {
   const { token } = Route.useParams();
   const [status, setStatus] = useState<
-    "loading" | "invalid" | "ready" | "in_progress" | "completed"
+    "loading" | "invalid" | "welcome" | "in_progress" | "completed"
   >("loading");
   const [error, setError] = useState("");
+  const [welcomeData, setWelcomeData] = useState<WelcomeData | null>(null);
   const [data, setData] = useState<InterviewData | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [saving, setSaving] = useState(false);
+  const [starting, setStarting] = useState(false);
   const [completing, setCompleting] = useState(false);
   const answersRef = useRef(answers);
 
@@ -107,25 +262,33 @@ function InterviewPage() {
           return;
         }
 
-        const schemaRes = await fetch(`/api/interview-token/${token}/schema`);
-        if (!schemaRes.ok) {
-          const body = await schemaRes.json();
+        const validation = await validateRes.json();
+
+        if (validation.status === "in_progress") {
+          const interviewData = await loadInterviewSchema(token);
           if (!cancelled) {
-            setStatus("invalid");
-            setError(body.error || "Failed to load interview");
+            setData(interviewData);
+            setStatus("in_progress");
           }
           return;
         }
 
-        const interviewData = await schemaRes.json();
         if (!cancelled) {
-          setData(interviewData);
-          setStatus("ready");
+          setWelcomeData({
+            candidateName: validation.candidateName,
+            positionName: validation.positionName,
+            roundName: validation.roundName,
+          });
+          setStatus("welcome");
         }
-      } catch {
+      } catch (err) {
         if (!cancelled) {
           setStatus("invalid");
-          setError("Failed to connect. Please try again.");
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Failed to connect. Please try again.",
+          );
         }
       }
     }
@@ -134,6 +297,24 @@ function InterviewPage() {
     return () => {
       cancelled = true;
     };
+  }, [token]);
+
+  const handleStartInterview = useCallback(async () => {
+    setStarting(true);
+    try {
+      const interviewData = await loadInterviewSchema(token);
+      setData(interviewData);
+      setStatus("in_progress");
+    } catch (err) {
+      setStatus("invalid");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to start interview. Please try again.",
+      );
+    } finally {
+      setStarting(false);
+    }
   }, [token]);
 
   const saveAnswer = useCallback(
@@ -259,6 +440,16 @@ function InterviewPage() {
           </CardHeader>
         </Card>
       </div>
+    );
+  }
+
+  if (status === "welcome" && welcomeData) {
+    return (
+      <WelcomeScreen
+        data={welcomeData}
+        onStart={handleStartInterview}
+        starting={starting}
+      />
     );
   }
 
