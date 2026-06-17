@@ -19,7 +19,7 @@ import { ShieldAlert, Calendar, Users, BarChart3, FileText } from "lucide-react"
 import { hasWeeklyCheckinViewerAccess } from "~/lib/config/weekly-checkin-access";
 import { sourcingChannelLabels } from "~/lib/schemas/weekly-checkin-form-schema";
 import PaginationControls from "~/components/pagination-controls";
-import { getSession } from "~/lib/middleware/auth-guard";
+import { getSession } from "~/lib/get-session";
 import { toPageNumber } from "~/lib/parse-search";
 
 export const Route = createFileRoute("/_main/weekly-checkin/records")({

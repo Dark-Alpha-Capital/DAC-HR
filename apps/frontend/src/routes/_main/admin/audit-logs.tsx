@@ -4,7 +4,7 @@ import {
   type AuditLog,
 } from "~/components/admin/audit-logs-client";
 import { getAuditLogs } from "@workspace/db/repositories/audit-repository";
-import { getSession } from "~/lib/middleware/auth-guard";
+import { getSession } from "~/lib/get-session";
 import { toOptionalString, toPageNumber } from "~/lib/parse-search";
 
 export const Route = createFileRoute("/_main/admin/audit-logs")({

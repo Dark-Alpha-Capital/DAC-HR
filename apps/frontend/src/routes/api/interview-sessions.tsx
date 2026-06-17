@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getSession } from "~/lib/get-session";
 import { z } from "zod";
-import { getSession } from "~/lib/middleware/auth-guard";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import {
   createSession,

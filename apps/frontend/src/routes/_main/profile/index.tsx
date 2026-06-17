@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { getSession } from "~/lib/middleware/auth-guard";
+import { getSession } from "~/lib/get-session";
 
 export const Route = createFileRoute("/_main/profile/")({
   head: () => ({

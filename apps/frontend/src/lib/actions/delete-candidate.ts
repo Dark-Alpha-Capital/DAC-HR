@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getSession } from "~/lib/middleware/auth-guard";
+import { getSession } from "~/lib/get-session";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { deleteCandidateWithAssets } from "~/lib/application/candidate-service";
 

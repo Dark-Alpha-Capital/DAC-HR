@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getSession } from "~/lib/get-session";
 import { saveCandidateAiScreening } from "@workspace/db/queries";
 import { getCandidateWithApplications } from "@workspace/db/repositories/candidate-repository";
 import {
@@ -6,7 +7,6 @@ import {
   generateContentWithFileSearch,
 } from "@workspace/file-search";
 import { googleAIClient, CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME } from "~/lib/ai/models";
-import { getSession } from "~/lib/middleware/auth-guard";
 import { generateText, Output } from "ai";
 import { candidateAiScreeningSchema } from "~/lib/schemas/candidate-ai-screening-schema";
 

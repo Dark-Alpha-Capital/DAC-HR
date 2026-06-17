@@ -35,7 +35,7 @@ import {
   getCachedCandidate,
   getCachedDocuments,
 } from "~/lib/cache/candidate";
-import { getSession } from "~/lib/middleware/auth-guard";
+import { getSession } from "~/lib/get-session";
 import { toOptionalString } from "~/lib/parse-search";
 
 export const Route = createFileRoute("/_main/candidates/$uid/")({

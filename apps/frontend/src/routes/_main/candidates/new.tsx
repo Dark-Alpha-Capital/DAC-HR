@@ -4,7 +4,7 @@ import { Button } from "~/components/ui/button";
 import CandidateUploadForm from "~/components/forms/candidate-upload-form";
 import { FormLoadingFallback } from "~/components/skeletons/form-loading-skeleton";
 import { getPositions } from "@workspace/db/queries";
-import { getSession } from "~/lib/middleware/auth-guard";
+import { getSession } from "~/lib/get-session";
 
 export const Route = createFileRoute("/_main/candidates/new")({
   head: () => ({

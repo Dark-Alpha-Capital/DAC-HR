@@ -4,7 +4,7 @@ import {
   CandidateFormSchema,
   candidateFormSchema,
 } from "../schemas/candidate-form-schema";
-import { getSession } from "~/lib/middleware/auth-guard";
+import { getSession } from "~/lib/get-session";
 import { createCandidateWithOptionalPosition } from "~/lib/application/candidate-service";
 
 export const createCandidate = createServerFn({ method: "POST" })

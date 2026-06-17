@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getSession } from "~/lib/get-session";
 import { db } from "@workspace/db/db";
 import { eq } from "@workspace/db";
 import { candidateDocument as candidateDocumentSchema } from "@workspace/db/schema";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import { getSession } from "~/lib/middleware/auth-guard";
 
 export const Route = createFileRoute(
   "/api/candidate/$id/documents/$documentId",

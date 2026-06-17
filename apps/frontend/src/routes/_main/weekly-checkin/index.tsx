@@ -2,7 +2,7 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { getPositions } from "@workspace/db/queries";
 import WeeklyCheckinForm from "~/components/forms/weekly-checkin-form";
 import { Button } from "~/components/ui/button";
-import { getSession } from "~/lib/middleware/auth-guard";
+import { getSession } from "~/lib/get-session";
 import { hasWeeklyCheckinViewerAccess } from "~/lib/config/weekly-checkin-access";
 
 export const Route = createFileRoute("/_main/weekly-checkin/")({

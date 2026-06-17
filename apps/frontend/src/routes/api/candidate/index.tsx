@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getSession } from "~/lib/get-session";
 import { candidateFormSchema } from "~/lib/schemas/candidate-form-schema";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import { getSession } from "~/lib/middleware/auth-guard";
 import { createCandidateWithOptionalPosition } from "~/lib/application/candidate-service";
 
 const redactEmail = (email: string | null | undefined): string => {

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getSession } from "~/lib/get-session";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import { getSession } from "~/lib/middleware/auth-guard";
 import { deleteCandidateWithAssets } from "~/lib/application/candidate-service";
 
 export const Route = createFileRoute("/api/candidate/bulk")({

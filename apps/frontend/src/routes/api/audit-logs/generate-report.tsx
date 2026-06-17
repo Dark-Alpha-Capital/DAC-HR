@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getSession } from "~/lib/get-session";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import { getSession } from "~/lib/middleware/auth-guard";
 
 export const Route = createFileRoute("/api/audit-logs/generate-report")({
   server: {

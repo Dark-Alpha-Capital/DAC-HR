@@ -6,7 +6,7 @@ import {
   getDocumentCategories,
   getDocumentCategoryById,
 } from "@workspace/db/repositories/document-repository";
-import { getSession } from "~/lib/middleware/auth-guard";
+import { getSession } from "~/lib/get-session";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const createCategory = createServerFn({ method: "POST" })

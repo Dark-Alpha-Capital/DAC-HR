@@ -5,7 +5,7 @@ import {
   QuestionFormSchema,
   questionFormSchema,
 } from "../schemas/question-form-schema";
-import { getSession } from "~/lib/middleware/auth-guard";
+import { getSession } from "~/lib/get-session";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { normalizeMcqOptions } from "~/lib/question-options";
 

@@ -9,7 +9,7 @@ import {
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { candidateFormSchema } from "../schemas/candidate-form-schema";
 import type { CandidateFormSchema } from "../schemas/candidate-form-schema";
-import { getSession } from "~/lib/middleware/auth-guard";
+import { getSession } from "~/lib/get-session";
 
 export type BulkCandidateRow = {
   firstName: string;

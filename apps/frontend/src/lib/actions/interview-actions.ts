@@ -6,7 +6,7 @@ import {
   application,
 } from "@workspace/db/schema";
 import { and, eq } from "@workspace/db";
-import { getSession } from "~/lib/middleware/auth-guard";
+import { getSession } from "~/lib/get-session";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export type InterviewRoundData = {

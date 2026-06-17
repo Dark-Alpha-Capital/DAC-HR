@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSession } from "~/lib/middleware/auth-guard";
+import { getSession } from "~/lib/get-session";
 import { getSignedUrl } from "~/lib/storage";
 
 export const Route = createFileRoute("/api/documents/view")({

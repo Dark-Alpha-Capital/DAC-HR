@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "@workspace/db/db";
 import { interviewFeedback } from "@workspace/db/schema";
-import { getSession } from "~/lib/middleware/auth-guard";
+import { getSession } from "~/lib/get-session";
 import { getInterviewById } from "@workspace/db/repositories/interview-repository";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 

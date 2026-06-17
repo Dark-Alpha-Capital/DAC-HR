@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { AdminUsersClient } from "~/components/admin/admin-users-client";
 import { fetchNonAdminUsers } from "~/lib/admin/fetch-non-admin-users";
-import { getSession } from "~/lib/middleware/auth-guard";
+import { getSession } from "~/lib/get-session";
 import { toOptionalString, toPageNumber } from "~/lib/parse-search";
 
 export const Route = createFileRoute("/_main/admin/")({

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getSession } from "~/lib/get-session";
 import {
   getApplicationById,
   saveInterviewAiAnalysis,
@@ -9,7 +10,6 @@ import {
   deleteInterviewAiAnalysisForInterview,
 } from "@workspace/db/repositories/interview-repository";
 import { googleAIClient } from "~/lib/ai/models";
-import { getSession } from "~/lib/middleware/auth-guard";
 import { generateText, Output } from "ai";
 import { interviewAiAnalysisSchema } from "~/lib/schemas/interview-ai-analysis-schema";
 

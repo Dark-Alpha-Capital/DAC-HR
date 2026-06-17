@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getSession } from "~/lib/get-session";
 import { db } from "@workspace/db/db";
 import { eq } from "@workspace/db";
 import { candidateDocument as candidateDocumentSchema } from "@workspace/db/schema";
@@ -10,7 +11,6 @@ import {
   createNextcloudClient,
   uploadFile as uploadToNextcloud,
 } from "@workspace/nextcloud";
-import { getSession } from "~/lib/middleware/auth-guard";
 
 const getNextcloudConfig = () => {
   const url = process.env.NEXTCLOUD_URL;
