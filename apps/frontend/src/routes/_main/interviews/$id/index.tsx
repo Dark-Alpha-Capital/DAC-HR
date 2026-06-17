@@ -1,9 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
-import {
-  getApplicationWithInterviews,
-  getInterviewById,
-} from "@workspace/db/repositories/interview-repository";
+import { loadInterviewById } from "~/lib/loaders/interviews";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -36,22 +32,7 @@ export const Route = createFileRoute("/_main/interviews/$id/")({
   head: () => ({
     meta: [{ title: "Interview Detail" }],
   }),
-  loader: async ({ params }) => {
-    const interview = await getInterviewById(params.id);
-
-    if (!interview) {
-      return { interview: null, application: null, candidate: null };
-    }
-
-    const application = await getApplicationWithInterviews(
-      interview.applicationId,
-    );
-    const candidate = application
-      ? await getCandidateById(application.candidateId)
-      : null;
-
-    return { interview, application, candidate };
-  },
+  loader: async ({ params }) => loadInterviewById({ data: params.id }),
   component: InterviewDetailPage,
 });
 

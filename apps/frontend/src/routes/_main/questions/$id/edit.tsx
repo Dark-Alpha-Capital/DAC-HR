@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense } from "react";
-import { getQuestionById } from "@workspace/db/queries";
+import { loadQuestionById } from "~/lib/loaders/questions";
 import BackButton from "~/components/back-button";
 import QuestionEditForm from "~/components/forms/question-edit-form";
 import { FormLoadingFallback } from "~/components/skeletons/form-loading-skeleton";
@@ -10,10 +10,7 @@ export const Route = createFileRoute("/_main/questions/$id/edit")({
   head: () => ({
     meta: [{ title: "Edit Question" }],
   }),
-  loader: async ({ params }) => {
-    const question = await getQuestionById(params.id);
-    return { question };
-  },
+  loader: async ({ params }) => loadQuestionById({ data: params.id }),
   component: EditQuestionPage,
 });
 

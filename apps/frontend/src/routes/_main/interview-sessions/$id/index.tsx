@@ -3,7 +3,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
-import { getSessionById, getResponsesBySessionId, getEvaluationBySessionId } from "@workspace/db/repositories/interview-session-repository";
+import { loadInterviewSessionDetail } from "~/lib/loaders/interview-sessions";
 import { ArrowLeft, Copy, Check, Clock, Calendar } from "lucide-react";
 import { useState } from "react";
 import { getOptionLabel } from "~/lib/question-options";
@@ -61,15 +61,8 @@ export const Route = createFileRoute("/_main/interview-sessions/$id/")({
   head: () => ({
     meta: [{ title: "Session Detail" }],
   }),
-  loader: async ({ params }) => {
-    const row = await getSessionById(params.id);
-    if (!row) {
-      throw new Error("Session not found");
-    }
-    const responses = await getResponsesBySessionId(params.id);
-    const evaluation = await getEvaluationBySessionId(params.id);
-    return { session: row.session, candidate: row.candidate, position: row.position, round: row.round, responses, evaluation };
-  },
+  loader: async ({ params }) =>
+    loadInterviewSessionDetail({ data: { id: params.id } }),
   component: SessionDetailPage,
 });
 

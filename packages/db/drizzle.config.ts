@@ -5,7 +5,7 @@ import { defineConfig } from "drizzle-kit";
 
 const webDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  "../../apps/web",
+  "../../apps/frontend",
 );
 config({ path: path.join(webDir, ".env") });
 

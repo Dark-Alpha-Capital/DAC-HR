@@ -1,13 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
-import { getAllSessions } from "@workspace/db/repositories/interview-session-repository";
-import { getAllApplications, getPositions } from "@workspace/db/queries";
+import { loadInterviewSessionsIndex } from "~/lib/loaders/interview-sessions";
 import { Plus, Clock, Eye } from "lucide-react";
 
-function statusVariant(status: string): "default" | "secondary" | "destructive" {
+function statusVariant(
+  status: string,
+): "default" | "secondary" | "destructive" {
   switch (status) {
     case "in_progress":
       return "default";
@@ -33,15 +40,7 @@ export const Route = createFileRoute("/_main/interview-sessions/")({
   head: () => ({
     meta: [{ title: "Interview Sessions" }],
   }),
-  loader: async () => {
-    const [sessions, applications, { positions }] = await Promise.all([
-      getAllSessions(),
-      getAllApplications(),
-      getPositions(),
-    ]);
-
-    return { sessions, applications, positions };
-  },
+  loader: async () => loadInterviewSessionsIndex(),
   component: InterviewSessionsPage,
 });
 
@@ -73,12 +72,13 @@ function InterviewSessionsPage() {
         <div className="flex flex-col items-center gap-3 py-12 text-center">
           <Clock className="size-10 text-muted-foreground/50" />
           <p className="text-sm text-muted-foreground">
-            No interview sessions yet. Create one to send a candidate a self-serve interview link.
+            No interview sessions yet. Create one to send a candidate a
+            self-serve interview link.
           </p>
         </div>
       ) : (
         <div className="grid gap-4">
-          {sessions.map((s: typeof sessions[number]) => (
+          {sessions.map((s: (typeof sessions)[number]) => (
             <Link
               key={s.id}
               to="/interview-sessions/$id"
@@ -104,8 +104,12 @@ function InterviewSessionsPage() {
                 <CardContent>
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <span>Created: {formatDate(s.createdAt)}</span>
-                    {s.startedAt && <span>Started: {formatDate(s.startedAt)}</span>}
-                    {s.completedAt && <span>Completed: {formatDate(s.completedAt)}</span>}
+                    {s.startedAt && (
+                      <span>Started: {formatDate(s.startedAt)}</span>
+                    )}
+                    {s.completedAt && (
+                      <span>Completed: {formatDate(s.completedAt)}</span>
+                    )}
                     <span className="ml-auto flex items-center gap-1">
                       <Eye className="size-3.5" />
                       View details

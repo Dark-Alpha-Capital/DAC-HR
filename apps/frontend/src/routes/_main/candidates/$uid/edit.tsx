@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense } from "react";
-import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
-import { getPositions } from "@workspace/db/queries";
+import { loadCandidateEdit } from "~/lib/loaders/candidates";
 import CandidateEditForm from "~/components/forms/candidate-edit-form";
 import { FormLoadingFallback } from "~/components/skeletons/form-loading-skeleton";
 import { Button } from "~/components/ui/button";
@@ -11,20 +10,7 @@ export const Route = createFileRoute("/_main/candidates/$uid/edit")({
   head: () => ({
     meta: [{ title: "Edit Candidate" }],
   }),
-  loader: async ({ params }) => {
-    const [candidate, { positions }] = await Promise.all([
-      getCandidateById(params.uid),
-      getPositions(),
-    ]);
-
-    return {
-      candidate,
-      positions: positions.map((p) => ({
-        id: p.id,
-        name: p.name,
-      })),
-    };
-  },
+  loader: async ({ params }) => loadCandidateEdit({ data: params.uid }),
   component: EditCandidatePage,
 });
 

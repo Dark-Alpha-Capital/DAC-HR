@@ -1,10 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
-import {
-  getQuestionsWithRounds,
-  getPositions,
-  getRounds,
-} from "@workspace/db/queries";
+import { loadQuestionsIndex } from "~/lib/loaders/questions";
 import QuestionContainer from "~/components/question-container";
 import FilterQuestionSearch from "~/components/filter-question-search";
 import FilterQuestionPosition from "~/components/filter-question-position";
@@ -27,38 +23,7 @@ export const Route = createFileRoute("/_main/questions/")({
         : (undefined as number | undefined),
   }),
   loaderDeps: ({ search }) => search,
-  loader: async ({ deps }) => {
-    const limit = 50;
-    const currentPage = deps.page ?? 1;
-
-    const [{ positions }, rounds, questionsResult] = await Promise.all([
-      getPositions(),
-      getRounds(),
-      getQuestionsWithRounds(
-        deps.search || undefined,
-        deps.position.length > 0 ? deps.position : undefined,
-        deps.round.length > 0 ? deps.round : undefined,
-        currentPage,
-        limit,
-      ),
-    ]);
-
-    const { questions, total } = questionsResult;
-    const totalPages = Math.ceil(total / limit);
-
-    return {
-      positions: positions.positions,
-      rounds,
-      questions,
-      currentPage,
-      totalPages,
-      hasNextPage: currentPage < totalPages,
-      hasPreviousPage: currentPage > 1,
-      hasFilters: Boolean(
-        deps.search || deps.position.length > 0 || deps.round.length > 0,
-      ),
-    };
-  },
+  loader: async ({ deps }) => loadQuestionsIndex({ data: deps }),
   component: QuestionsPage,
 });
 

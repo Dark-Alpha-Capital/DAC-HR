@@ -1,9 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  getRoundById,
-  getQuestionsByRoundId,
-  getPositionsByRoundId,
-} from "@workspace/db/queries";
+import { loadRoundById } from "~/lib/loaders/rounds";
 import { Button } from "~/components/ui/button";
 import {
   Table,
@@ -32,15 +28,7 @@ export const Route = createFileRoute("/_main/rounds/$id/")({
   head: () => ({
     meta: [{ title: "Round Detail" }],
   }),
-  loader: async ({ params }) => {
-    const [round, positions, questions] = await Promise.all([
-      getRoundById(params.id),
-      getPositionsByRoundId(params.id),
-      getQuestionsByRoundId(params.id),
-    ]);
-
-    return { round, positions, questions };
-  },
+  loader: async ({ params }) => loadRoundById({ data: params.id }),
   component: RoundDetailPage,
 });
 

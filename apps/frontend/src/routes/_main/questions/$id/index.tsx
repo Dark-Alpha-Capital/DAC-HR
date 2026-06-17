@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { getQuestionById } from "@workspace/db/queries";
+import { loadQuestionById } from "~/lib/loaders/questions";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -20,10 +20,7 @@ export const Route = createFileRoute("/_main/questions/$id/")({
   head: () => ({
     meta: [{ title: "Question Detail" }],
   }),
-  loader: async ({ params }) => {
-    const question = await getQuestionById(params.id);
-    return { question };
-  },
+  loader: async ({ params }) => loadQuestionById({ data: params.id }),
   component: QuestionDetailPage,
 });
 

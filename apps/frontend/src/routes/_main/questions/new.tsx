@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
 import QuestionUploadForm from "~/components/forms/question-upload-form";
 import { Button } from "~/components/ui/button";
-import { getPositions, getRoundsByPositionId } from "@workspace/db/queries";
+import { loadQuestionsNew } from "~/lib/loaders/questions";
 import { toOptionalString } from "~/lib/parse-search";
 
 export const Route = createFileRoute("/_main/questions/new")({
@@ -13,26 +13,7 @@ export const Route = createFileRoute("/_main/questions/new")({
     round: toOptionalString(search.round) ?? "",
   }),
   loaderDeps: ({ search }) => search,
-  loader: async ({ deps }) => {
-    const { positions } = await getPositions();
-    const rounds = deps.position
-      ? (await getRoundsByPositionId(deps.position)).map((round) => ({
-          id: round.id,
-          name: round.name,
-          description: round.description,
-        }))
-      : [];
-
-    return {
-      positions: positions.map((position) => ({
-        id: position.id,
-        name: position.name,
-      })),
-      rounds,
-      preSelectedPositionId: deps.position,
-      preSelectedRoundId: deps.round,
-    };
-  },
+  loader: async ({ deps }) => loadQuestionsNew({ data: deps }),
   component: NewQuestionPage,
 });
 

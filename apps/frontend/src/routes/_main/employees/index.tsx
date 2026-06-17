@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
-import { getEmployees, getPositions } from "@workspace/db/queries";
+import { loadEmployeesIndex } from "~/lib/loaders/employees";
 import EmployeeFilters from "~/components/employee-filters";
 import EmployeeContainer from "~/components/employee-container";
 import PaginationControls from "~/components/pagination-controls";
@@ -27,47 +27,13 @@ export const Route = createFileRoute("/_main/employees/")({
         : (undefined as number | undefined),
   }),
   loaderDeps: ({ search }) => search,
-  loader: async ({ deps }) => {
-    const limit = 50;
-    const currentPage = deps.page ?? 1;
-
-    const [{ positions }, employeesResult] = await Promise.all([
-      getPositions(),
-      getEmployees(
-        deps.position,
-        deps.department,
-        deps.name,
-        deps.email,
-        currentPage,
-        limit,
-      ),
-    ]);
-
-    const { employees, total } = employeesResult;
-    const totalPages = Math.ceil(total / limit);
-
-    return {
-      positions: positions.map((p) => ({
-        id: p.id,
-        name: p.name,
-      })),
-      employees,
-      currentPage,
-      totalPages,
-      hasNextPage: currentPage < totalPages,
-      hasPreviousPage: currentPage > 1,
-      hasFilters: Boolean(
-        deps.position?.length ||
-        deps.department?.length ||
-        deps.name ||
-        deps.email,
-      ),
-    };
-  },
+  loader: async ({ deps }) => loadEmployeesIndex({ data: deps }),
   component: EmployeesPage,
 });
 
 function EmployeesPage() {
+  console.log("is this real or am i tripping");
+
   const {
     positions,
     employees,

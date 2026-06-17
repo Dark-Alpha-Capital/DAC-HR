@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const webDir = path.resolve(__dirname, "../../apps/web");
+const webDir = path.resolve(__dirname, "../../apps/frontend");
 const target = process.argv.includes("--remote") ? "--remote" : "--local";
 
 console.log(`⏳ Applying D1 migrations (${target.replace("--", "")})...`);

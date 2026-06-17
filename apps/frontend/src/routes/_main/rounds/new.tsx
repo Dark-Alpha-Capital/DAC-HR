@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import RoundUploadForm from "~/components/forms/round-upload-form";
 import { FormLoadingFallback } from "~/components/skeletons/form-loading-skeleton";
 import { Button } from "~/components/ui/button";
-import { getPositions } from "@workspace/db/queries";
+import { loadRoundsNew } from "~/lib/loaders/rounds";
 import { toOptionalString } from "~/lib/parse-search";
 
 export const Route = createFileRoute("/_main/rounds/new")({
@@ -14,16 +14,7 @@ export const Route = createFileRoute("/_main/rounds/new")({
     position: toOptionalString(search.position) ?? "",
   }),
   loaderDeps: ({ search }) => search,
-  loader: async ({ deps }) => {
-    const positionsResult = await getPositions();
-    return {
-      positions: positionsResult.positions.map((position) => ({
-        id: position.id,
-        name: position.name,
-      })),
-      preSelectedPositionId: deps.position,
-    };
-  },
+  loader: async ({ deps }) => loadRoundsNew({ data: deps }),
   component: NewRoundPage,
 });
 

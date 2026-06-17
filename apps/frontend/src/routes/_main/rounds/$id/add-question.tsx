@@ -1,12 +1,7 @@
 import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
 import QuestionUploadForm from "~/components/forms/question-upload-form";
 import { Button } from "~/components/ui/button";
-import {
-  getFirstPositionIdForRoundTemplate,
-  getRoundById,
-  getPositions,
-  getRoundsByPositionId,
-} from "@workspace/db/queries";
+import { loadRoundAddQuestion } from "~/lib/loaders/rounds";
 import BackButton from "~/components/back-button";
 import { toOptionalString } from "~/lib/parse-search";
 
@@ -18,43 +13,10 @@ export const Route = createFileRoute("/_main/rounds/$id/add-question")({
     position: toOptionalString(search.position) ?? "",
   }),
   loaderDeps: ({ search }) => search,
-  loader: async ({ params, deps }) => {
-    const round = await getRoundById(params.id);
-
-    if (!round) {
-      return {
-        round: null,
-        positions: [],
-        rounds: [],
-        preSelectedPositionId: "",
-        preSelectedRoundId: params.id,
-      };
-    }
-
-    const defaultPositionId = await getFirstPositionIdForRoundTemplate(
-      params.id,
-    );
-    const positionId = deps.position || defaultPositionId || "";
-    const { positions } = await getPositions();
-    const rounds = positionId
-      ? (await getRoundsByPositionId(positionId)).map((r) => ({
-          id: r.id,
-          name: r.name,
-          description: r.description,
-        }))
-      : [];
-
-    return {
-      round,
-      positions: positions.map((position) => ({
-        id: position.id,
-        name: position.name,
-      })),
-      rounds,
-      preSelectedPositionId: positionId,
-      preSelectedRoundId: params.id,
-    };
-  },
+  loader: async ({ params, deps }) =>
+    loadRoundAddQuestion({
+      data: { roundId: params.id, position: deps.position },
+    }),
   component: AddQuestionPage,
 });
 

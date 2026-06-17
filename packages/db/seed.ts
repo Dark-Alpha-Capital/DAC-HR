@@ -3,19 +3,27 @@ import { readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Database } from "bun:sqlite";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import {
+  application,
+  candidate,
+  candidatePosition,
+  interview,
   position,
-  roundTemplate,
-  questionBank,
-  roundTemplateQuestions,
   positionRoundTemplates,
+  questionBank,
+  roundTemplate,
+  roundTemplateQuestions,
+  user,
 } from "./schema";
 
 const webDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  "../../apps/web",
+  "../../apps/frontend",
 );
+
+const SEED_USER_ID = "00000000-0000-4000-8000-000000000001";
 
 function getLocalD1SqlitePath(): string {
   const d1Dir = path.join(
@@ -55,7 +63,29 @@ async function seed() {
   const sqlite = new Database(getLocalD1SqlitePath());
   const db = drizzle(sqlite);
 
+  const [existingPosition] = await db
+    .select({ id: position.id })
+    .from(position)
+    .where(eq(position.slug, "frontend-developer"))
+    .limit(1);
+
+  if (existingPosition) {
+    console.log("ℹ️  Seed data already exists — skipping (delete local D1 to reseed)");
+    return;
+  }
+
   console.log("🌱 Seeding local D1 database...");
+
+  await db
+    .insert(user)
+    .values({
+      id: SEED_USER_ID,
+      name: "Seed Admin",
+      email: "seed-admin@darkalphacapital.com",
+      emailVerified: true,
+      role: "admin",
+    })
+    .onConflictDoNothing();
 
   const positions = [
     {
@@ -145,6 +175,20 @@ async function seed() {
       timeLimitSeconds: 180,
       orderIndex: 4,
     },
+    {
+      questionText:
+        "Which of the following best describes your experience with TypeScript?",
+      questionType: "mcq" as const,
+      category: "technical" as const,
+      options: [
+        { id: "a", text: "No experience" },
+        { id: "b", text: "Basic — used occasionally" },
+        { id: "c", text: "Intermediate — use regularly" },
+        { id: "d", text: "Advanced — expert level" },
+      ],
+      timeLimitSeconds: 120,
+      orderIndex: 5,
+    },
   ];
 
   const insertedQuestions = await db
@@ -156,8 +200,9 @@ async function seed() {
 
   const screeningRound = insertedRounds.find((r) => r.name === "Screening");
   const technicalRound = insertedRounds.find((r) => r.name === "Technical");
+  const finalRound = insertedRounds.find((r) => r.name === "Final Executive");
 
-  if (screeningRound && technicalRound) {
+  if (screeningRound && technicalRound && finalRound) {
     await db.insert(roundTemplateQuestions).values([
       {
         roundTemplateId: screeningRound.id,
@@ -171,19 +216,133 @@ async function seed() {
         roundTemplateId: technicalRound.id,
         questionId: insertedQuestions[1]!.id,
       },
+      {
+        roundTemplateId: technicalRound.id,
+        questionId: insertedQuestions[4]!.id,
+      },
+      {
+        roundTemplateId: finalRound.id,
+        questionId: insertedQuestions[2]!.id,
+      },
     ]);
 
+    const positionRoundRows: Array<{
+      positionId: string;
+      roundTemplateId: string;
+    }> = [];
+
     for (const pos of insertedPositions) {
-      await db.insert(positionRoundTemplates).values([
+      positionRoundRows.push(
         { positionId: pos.id, roundTemplateId: screeningRound.id },
         { positionId: pos.id, roundTemplateId: technicalRound.id },
-      ]);
+      );
+      if (pos.slug === "frontend-developer" || pos.slug === "fullstack-developer") {
+        positionRoundRows.push({
+          positionId: pos.id,
+          roundTemplateId: finalRound.id,
+        });
+      }
     }
+
+    await db.insert(positionRoundTemplates).values(positionRoundRows);
 
     console.log("✅ Linked rounds, questions, and positions");
   }
 
+  const frontendPosition = insertedPositions.find(
+    (p) => p.slug === "frontend-developer",
+  )!;
+  const backendPosition = insertedPositions.find(
+    (p) => p.slug === "backend-developer",
+  )!;
+
+  const seedCandidates = [
+    {
+      firstName: "Alice",
+      lastName: "Johnson",
+      email: "alice.johnson@seed.demo",
+      phone: "+1-555-0101",
+      location: "New York, NY",
+      source: "LinkedIn",
+      positionId: frontendPosition.id,
+    },
+    {
+      firstName: "Bob",
+      lastName: "Chen",
+      email: "bob.chen@seed.demo",
+      phone: "+1-555-0102",
+      location: "San Francisco, CA",
+      source: "Referral",
+      positionId: frontendPosition.id,
+    },
+    {
+      firstName: "Carol",
+      lastName: "Martinez",
+      email: "carol.martinez@seed.demo",
+      phone: "+1-555-0103",
+      location: "Austin, TX",
+      source: "Company Website",
+      positionId: backendPosition.id,
+    },
+  ];
+
+  for (const seed of seedCandidates) {
+    const [newCandidate] = await db
+      .insert(candidate)
+      .values({
+        firstName: seed.firstName,
+        lastName: seed.lastName,
+        email: seed.email,
+        phone: seed.phone,
+        location: seed.location,
+        source: seed.source,
+      })
+      .returning();
+
+    if (!newCandidate) continue;
+
+    const [newApplication] = await db
+      .insert(application)
+      .values({
+        candidateId: newCandidate.id,
+        positionId: seed.positionId,
+        status: "second_round_technical_screening",
+      })
+      .returning();
+
+    await db.insert(candidatePosition).values({
+      candidateId: newCandidate.id,
+      positionId: seed.positionId,
+    });
+
+    if (!newApplication) continue;
+
+    const roundsForPosition = await db
+      .select()
+      .from(positionRoundTemplates)
+      .where(eq(positionRoundTemplates.positionId, seed.positionId));
+
+    for (const prt of roundsForPosition) {
+      await db
+        .insert(interview)
+        .values({
+          applicationId: newApplication.id,
+          positionRoundTemplateId: prt.id,
+          interviewerId: SEED_USER_ID,
+          status: "pending",
+        })
+        .onConflictDoNothing();
+    }
+  }
+
+  console.log(`✅ Created ${seedCandidates.length} candidates with applications and interview rounds`);
+
   console.log("🎉 Seed completed successfully");
+  console.log("");
+  console.log("Try interview sessions:");
+  console.log("  1. Go to /interview-sessions/new");
+  console.log("  2. Pick Alice Johnson or Bob Chen — Frontend Developer");
+  console.log("  3. Select Screening or Technical round");
 }
 
 seed().catch((error) => {

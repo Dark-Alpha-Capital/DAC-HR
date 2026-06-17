@@ -1,32 +1,30 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { getPositions } from "@workspace/db/queries";
+import { loadWeeklyCheckinForm } from "~/lib/loaders/weekly-checkin";
 import WeeklyCheckinForm from "~/components/forms/weekly-checkin-form";
 import { Button } from "~/components/ui/button";
-import { getSession } from "~/lib/get-session";
-import { hasWeeklyCheckinViewerAccess } from "~/lib/config/weekly-checkin-access";
 
 export const Route = createFileRoute("/_main/weekly-checkin/")({
   head: () => ({
     meta: [{ title: "Weekly Check-in" }],
   }),
   loader: async () => {
-    const session = await getSession();
-    if (!session?.user) {
+    const result = (await loadWeeklyCheckinForm()) as
+      | { unauthorized: true }
+      | { accessDenied: true }
+      | {
+          unauthorized: false;
+          accessDenied: false;
+          positions: { id: string; name: string }[];
+          userName?: string;
+        };
+    if ("unauthorized" in result && result.unauthorized) {
       throw redirect({ to: "/login" });
     }
-    if (!hasWeeklyCheckinViewerAccess(session.user.email)) {
+    if ("accessDenied" in result && result.accessDenied) {
       throw redirect({ to: "/dashboard" });
     }
-
-    const { positions } = await getPositions();
-
-    return {
-      positions: positions.map((position) => ({
-        id: position.id,
-        name: position.name,
-      })),
-      userName: session.user.name || undefined,
-    };
+    const { unauthorized: _, accessDenied: __, ...data } = result;
+    return data;
   },
   component: WeeklyCheckinPage,
 });

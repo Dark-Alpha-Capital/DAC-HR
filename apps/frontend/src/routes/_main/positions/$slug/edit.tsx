@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense } from "react";
-import { getPositionBySlug } from "@workspace/db/queries";
+import { loadPositionEdit } from "~/lib/loaders/positions";
 import PositionEditForm from "~/components/forms/position-edit-form";
 import { FormLoadingFallback } from "~/components/skeletons/form-loading-skeleton";
 import { Button } from "~/components/ui/button";
@@ -9,10 +9,7 @@ export const Route = createFileRoute("/_main/positions/$slug/edit")({
   head: () => ({
     meta: [{ title: "Edit Position" }],
   }),
-  loader: async ({ params }) => {
-    const position = await getPositionBySlug(params.slug);
-    return { position };
-  },
+  loader: async ({ params }) => loadPositionEdit({ data: params.slug }),
   component: EditPositionPage,
 });
 

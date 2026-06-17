@@ -3,9 +3,22 @@ import {
   AuditLogsClient,
   type AuditLog,
 } from "~/components/admin/audit-logs-client";
-import { getAuditLogs } from "@workspace/db/repositories/audit-repository";
-import { getSession } from "~/lib/get-session";
+import { loadAuditLogs } from "~/lib/loaders/admin";
 import { toOptionalString, toPageNumber } from "~/lib/parse-search";
+
+type AuditLogsLoaderResult =
+  | { unauthorized: true }
+  | { forbidden: true }
+  | {
+      unauthorized: false;
+      forbidden: false;
+      logs: AuditLog[];
+      total: number;
+      currentPage: number;
+      totalPages: number;
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+    };
 
 export const Route = createFileRoute("/_main/admin/audit-logs")({
   head: () => ({
@@ -25,38 +38,17 @@ export const Route = createFileRoute("/_main/admin/audit-logs")({
   }),
   loaderDeps: ({ search }) => search,
   loader: async ({ deps }) => {
-    const session = await getSession();
-    if (!session?.user) {
+    const result = (await loadAuditLogs({
+      data: deps,
+    })) as AuditLogsLoaderResult;
+    if ("unauthorized" in result && result.unauthorized) {
       throw redirect({ to: "/login" });
     }
-    if (session.user.role !== "admin") {
+    if ("forbidden" in result && result.forbidden) {
       throw redirect({ to: "/" });
     }
-
-    const currentPage = deps.page ?? 1;
-    const limit = 20;
-
-    const result = await getAuditLogs({
-      action: deps.action,
-      entityType: deps.entityType,
-      userId: deps.userId,
-      search: deps.search,
-      page: currentPage,
-      limit,
-      startDate: deps.startDate ? new Date(deps.startDate) : undefined,
-      endDate: deps.endDate ? new Date(deps.endDate) : undefined,
-    });
-
-    const totalPages = Math.ceil(result.total / limit);
-
-    return {
-      logs: result.logs as AuditLog[],
-      total: result.total,
-      currentPage,
-      totalPages,
-      hasNextPage: currentPage < totalPages,
-      hasPreviousPage: currentPage > 1,
-    };
+    const { unauthorized: _, forbidden: __, ...data } = result;
+    return data;
   },
   component: AuditLogsPage,
 });

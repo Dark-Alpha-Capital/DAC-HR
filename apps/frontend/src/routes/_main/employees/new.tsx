@@ -3,10 +3,7 @@ import { Suspense } from "react";
 import { Button } from "~/components/ui/button";
 import EmployeeUploadForm from "~/components/forms/employee-upload-form";
 import { FormLoadingFallback } from "~/components/skeletons/form-loading-skeleton";
-import {
-  getCandidateWithApplications,
-  getPositions,
-} from "@workspace/db/queries";
+import { loadEmployeeNew } from "~/lib/loaders/employees";
 
 export const Route = createFileRoute("/_main/employees/new")({
   head: () => ({
@@ -20,30 +17,7 @@ export const Route = createFileRoute("/_main/employees/new")({
     const candidateId = params.get("candidateId") ?? undefined;
     const applicationId = params.get("applicationId") ?? undefined;
 
-    const { positions } = await getPositions();
-    const cleanedPositions = positions.map((position) => ({
-      id: position.id,
-      name: position.name,
-    }));
-
-    let candidateData = null;
-    let applicationData = null;
-
-    if (candidateId) {
-      candidateData = await getCandidateWithApplications(candidateId);
-      if (candidateData && applicationId) {
-        applicationData =
-          candidateData.applications.find((app) => app.id === applicationId) ??
-          null;
-      }
-    }
-
-    return {
-      positions: cleanedPositions,
-      candidateId,
-      candidateData,
-      applicationData,
-    };
+    return loadEmployeeNew({ data: { candidateId, applicationId } });
   },
   component: NewEmployeePage,
 });

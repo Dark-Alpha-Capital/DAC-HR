@@ -1,9 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  getPositionBySlug,
-  getRoundsByPositionId,
-  getCandidatesByPositionId,
-} from "@workspace/db/queries";
+import { loadPositionBySlug } from "~/lib/loaders/positions";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { Badge } from "~/components/ui/badge";
@@ -33,20 +29,7 @@ export const Route = createFileRoute("/_main/positions/$slug/")({
   head: () => ({
     meta: [{ title: "Position Detail" }],
   }),
-  loader: async ({ params }) => {
-    const position = await getPositionBySlug(params.slug);
-
-    if (!position) {
-      return { position: null, rounds: [], candidates: [] };
-    }
-
-    const [rounds, candidates] = await Promise.all([
-      getRoundsByPositionId(position.id),
-      getCandidatesByPositionId(position.id),
-    ]);
-
-    return { position, rounds, candidates };
-  },
+  loader: async ({ params }) => loadPositionBySlug({ data: params.slug }),
   component: PositionDetailPage,
 });
 

@@ -1,9 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
-import {
-  getDocumentCategories,
-  getDocuments,
-} from "@workspace/db/repositories/document-repository";
+import { loadDocumentsIndex } from "~/lib/loaders/documents";
 import DocumentContainer from "~/components/document-container";
 import FilterDocumentCategory from "~/components/filter-document-category";
 import FilterDocumentName from "~/components/filter-document-name";
@@ -37,28 +34,7 @@ export const Route = createFileRoute("/_main/documents/")({
         : (undefined as number | undefined),
   }),
   loaderDeps: ({ search }) => search,
-  loader: async ({ deps }) => {
-    const limit = 50;
-    const currentPage = deps.page ?? 1;
-
-    const [categories, documentsResult] = await Promise.all([
-      getDocumentCategories(),
-      getDocuments(deps.category, deps.name, deps.tags, currentPage, limit),
-    ]);
-
-    const { documents, total } = documentsResult;
-    const totalPages = Math.ceil(total / limit);
-
-    return {
-      categories,
-      documents,
-      currentPage,
-      totalPages,
-      hasNextPage: currentPage < totalPages,
-      hasPreviousPage: currentPage > 1,
-      hasFilters: Boolean(deps.category?.length || deps.name || deps.tags),
-    };
-  },
+  loader: async ({ deps }) => loadDocumentsIndex({ data: deps }),
   component: DocumentsPage,
 });
 

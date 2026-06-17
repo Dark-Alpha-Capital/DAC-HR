@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Briefcase } from "lucide-react";
-import { getApplicationsFiltered, getPositions } from "@workspace/db/queries";
+import { loadApplicationsIndex } from "~/lib/loaders/candidates";
 import ApplicationContainer from "~/components/application-container";
 import FilterCandidatePosition from "~/components/filter-candidate-position";
 import FilterApplicationStatus from "~/components/filter-application-status";
@@ -25,37 +25,7 @@ export const Route = createFileRoute("/_main/applications/")({
         : (undefined as number | undefined),
   }),
   loaderDeps: ({ search }) => search,
-  loader: async ({ deps }) => {
-    const limit = 50;
-    const currentPage = deps.page ?? 1;
-
-    const [{ positions }, applicationsResult] = await Promise.all([
-      getPositions(),
-      getApplicationsFiltered(
-        deps.name,
-        deps.email,
-        deps.position,
-        deps.status,
-        currentPage,
-        limit,
-      ),
-    ]);
-
-    const { applications, total } = applicationsResult;
-    const totalPages = Math.ceil(total / limit);
-
-    return {
-      positions: positions.map((p) => ({ id: p.id, name: p.name })),
-      applications,
-      currentPage,
-      totalPages,
-      hasNextPage: currentPage < totalPages,
-      hasPreviousPage: currentPage > 1,
-      hasFilters: Boolean(
-        deps.name || deps.email || deps.position?.length || deps.status?.length,
-      ),
-    };
-  },
+  loader: async ({ deps }) => loadApplicationsIndex({ data: deps }),
   component: ApplicationsPage,
 });
 

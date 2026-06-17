@@ -25,17 +25,7 @@ import { CandidateDocumentsTab } from "~/components/candidate-documents-tab";
 import CandidateAiScreeningsClient from "~/components/candidate-ai-screenings-client";
 import CandidateAiAnalysis from "~/components/candidate-ai-analysis";
 import OnboardingCard from "~/components/onboarding-card";
-import {
-  getCandidateAiScreenings,
-  getOrCreateCandidateOnboarding,
-  getUsers,
-} from "@workspace/db/queries";
-import { getApplicationWithInterviews } from "@workspace/db/repositories/interview-repository";
-import {
-  getCachedCandidate,
-  getCachedDocuments,
-} from "~/lib/cache/candidate";
-import { getSession } from "~/lib/get-session";
+import { loadCandidateDetail } from "~/lib/loaders/candidates";
 import { toOptionalString } from "~/lib/parse-search";
 
 export const Route = createFileRoute("/_main/candidates/$uid/")({
@@ -48,63 +38,16 @@ export const Route = createFileRoute("/_main/candidates/$uid/")({
   }),
   loaderDeps: ({ search }) => search,
   loader: async ({ params, deps }) => {
-    const session = await getSession();
-    if (!session?.user) {
+    const result = await loadCandidateDetail({
+      data: { uid: params.uid, application: deps.application },
+    });
+    if ((result as { unauthorized?: boolean }).unauthorized) {
       throw redirect({ to: "/login" });
     }
-
-    const [users, candidate, documents, screenings] = await Promise.all([
-      getUsers(),
-      getCachedCandidate(params.uid),
-      getCachedDocuments(params.uid),
-      getCandidateAiScreenings(params.uid),
-    ]);
-
-    if (!candidate) {
-      return {
-        candidate: null,
-        users: [],
-        session: session.session,
-        currentUser: session.user,
-        documents: [],
-        screenings: [],
-        onboardingData: null,
-        applicationDetails: [] as Awaited<
-          ReturnType<typeof getApplicationWithInterviews>
-        >[],
-        initialApplicationId: deps.application,
-      };
-    }
-
-    const [applicationDetails, rawOnboarding] = await Promise.all([
-      Promise.all(
-        candidate.applications.map((app) =>
-          getApplicationWithInterviews(app.id),
-        ),
-      ),
-      getOrCreateCandidateOnboarding(candidate.id),
-    ]);
-
-    const onboardingData = rawOnboarding
-      ? {
-          contractSigned: rawOnboarding.contractSigned ?? false,
-          registrationEmailSent: rawOnboarding.emailProvided ?? false,
-          packetSent: rawOnboarding.onboardingPacketSent ?? false,
-          companyEmailActivate: rawOnboarding.companyEmailActivate ?? false,
-        }
-      : null;
-
-    return {
-      candidate,
-      users,
-      session: session.session,
-      currentUser: session.user,
-      documents,
-      screenings,
-      onboardingData,
-      applicationDetails,
-      initialApplicationId: deps.application,
-    };
+    const { unauthorized: _, ...data } = result as {
+      unauthorized: false;
+    } & Record<string, unknown>;
+    return data;
   },
   component: CandidateDetailPage,
 });

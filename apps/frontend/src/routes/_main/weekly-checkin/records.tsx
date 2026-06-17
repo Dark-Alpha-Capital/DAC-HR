@@ -1,5 +1,5 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { getWeeklyCheckins, getPositions } from "@workspace/db/queries";
+import { loadWeeklyCheckinRecords } from "~/lib/loaders/weekly-checkin";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -15,12 +15,29 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "~/components/ui/accordion";
-import { ShieldAlert, Calendar, Users, BarChart3, FileText } from "lucide-react";
-import { hasWeeklyCheckinViewerAccess } from "~/lib/config/weekly-checkin-access";
+import {
+  ShieldAlert,
+  Calendar,
+  Users,
+  BarChart3,
+  FileText,
+} from "lucide-react";
 import { sourcingChannelLabels } from "~/lib/schemas/weekly-checkin-form-schema";
 import PaginationControls from "~/components/pagination-controls";
-import { getSession } from "~/lib/get-session";
 import { toPageNumber } from "~/lib/parse-search";
+import type { getWeeklyCheckins } from "@workspace/db/queries";
+
+type WeeklyCheckinRecordsData =
+  | { accessDenied: true }
+  | {
+      accessDenied: false;
+      checkins: Awaited<ReturnType<typeof getWeeklyCheckins>>["checkins"];
+      currentPage: number;
+      totalPages: number;
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+      positionMap: Record<string, string>;
+    };
 
 export const Route = createFileRoute("/_main/weekly-checkin/records")({
   head: () => ({
@@ -34,38 +51,11 @@ export const Route = createFileRoute("/_main/weekly-checkin/records")({
   }),
   loaderDeps: ({ search }) => search,
   loader: async ({ deps }) => {
-    const session = await getSession();
-    if (!session?.user) {
+    const result = await loadWeeklyCheckinRecords({ data: deps });
+    if ((result as { unauthorized?: boolean }).unauthorized) {
       throw redirect({ to: "/login" });
     }
-
-    const hasAccess = hasWeeklyCheckinViewerAccess(session.user.email);
-    if (!hasAccess) {
-      return { accessDenied: true as const };
-    }
-
-    const currentPage = deps.page ?? 1;
-    const limit = 50;
-
-    const [{ checkins, total }, { positions }] = await Promise.all([
-      getWeeklyCheckins(currentPage, limit),
-      getPositions(),
-    ]);
-
-    const totalPages = Math.ceil(total / limit);
-    const positionMap = Object.fromEntries(
-      positions.map((p) => [p.id, p.name]),
-    );
-
-    return {
-      accessDenied: false as const,
-      checkins,
-      currentPage,
-      totalPages,
-      hasNextPage: currentPage < totalPages,
-      hasPreviousPage: currentPage > 1,
-      positionMap,
-    };
+    return result as unknown as WeeklyCheckinRecordsData;
   },
   component: WeeklyCheckinRecordsPage,
 });
@@ -125,7 +115,9 @@ function WeeklyCheckinRecordsPage() {
             </p>
           </div>
           <Button variant="secondary" asChild>
-            <Link to="/weekly-checkin" search="{}">Submit New Check-in</Link>
+            <Link to="/weekly-checkin" search="{}">
+              Submit New Check-in
+            </Link>
           </Button>
         </div>
 
@@ -133,7 +125,9 @@ function WeeklyCheckinRecordsPage() {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-16">
               <Calendar className="h-12 w-12 text-muted-foreground opacity-50 mb-4" />
-              <p className="text-muted-foreground">No check-ins recorded yet.</p>
+              <p className="text-muted-foreground">
+                No check-ins recorded yet.
+              </p>
             </CardContent>
           </Card>
         ) : (

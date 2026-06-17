@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { getEmployeeById } from "@workspace/db/queries";
+import { loadEmployeeDetail } from "~/lib/loaders/employees";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { Badge } from "~/components/ui/badge";
@@ -21,10 +21,8 @@ export const Route = createFileRoute("/_main/employees/$id/")({
   head: () => ({
     meta: [{ title: "Employee Detail" }],
   }),
-  loader: async ({ params }) => {
-    const employee = await getEmployeeById(params.id);
-    return { employee };
-  },
+  loader: async ({ params }) =>
+    loadEmployeeDetail({ data: { id: params.id } }),
   component: EmployeeDetailPage,
 });
 

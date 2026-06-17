@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
-import { getPositions, getRoundsWithPositions } from "@workspace/db/queries";
+import { loadRoundsIndex } from "~/lib/loaders/rounds";
 import RoundContainer from "~/components/round-container";
 import FilterPositionType from "~/components/filter-position-type";
 import ClearParamsButton from "~/components/clear-params-button";
@@ -19,31 +19,7 @@ export const Route = createFileRoute("/_main/rounds/")({
         : (undefined as number | undefined),
   }),
   loaderDeps: ({ search }) => search,
-  loader: async ({ deps }) => {
-    const limit = 50;
-    const currentPage = deps.page ?? 1;
-
-    const [{ positions }, roundsResult] = await Promise.all([
-      getPositions(),
-      getRoundsWithPositions(deps.type, currentPage, limit),
-    ]);
-
-    const { rounds, total } = roundsResult;
-    const totalPages = Math.ceil(total / limit);
-
-    return {
-      positions: positions.map((p) => ({
-        id: p.id,
-        name: p.name,
-      })),
-      rounds,
-      currentPage,
-      totalPages,
-      hasNextPage: currentPage < totalPages,
-      hasPreviousPage: currentPage > 1,
-      hasFilters: Boolean(deps.type?.length),
-    };
-  },
+  loader: async ({ deps }) => loadRoundsIndex({ data: deps }),
   component: RoundsPage,
 });
 

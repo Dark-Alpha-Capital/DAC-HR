@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
-import { getPositions } from "@workspace/db/queries";
+import { loadPositionsIndex } from "~/lib/loaders/positions";
 import FilterPositionHireLevel from "~/components/filter-position-hire-level";
 import FilterPositionStatus from "~/components/filter-position-status";
 import ClearPositionFiltersButton from "~/components/clear-position-filters-button";
@@ -21,26 +21,7 @@ export const Route = createFileRoute("/_main/positions/")({
         : (undefined as number | undefined),
   }),
   loaderDeps: ({ search }) => search,
-  loader: async ({ deps }) => {
-    const limit = 50;
-    const currentPage = deps.page ?? 1;
-    const { positions, total } = await getPositions(
-      deps.hireLevel,
-      deps.status,
-      currentPage,
-      limit,
-    );
-
-    const totalPages = Math.ceil(total / limit);
-
-    return {
-      positions,
-      currentPage,
-      totalPages,
-      hasNextPage: deps.page < totalPages,
-      hasPreviousPage: deps.page > 1,
-    };
-  },
+  loader: async ({ deps }) => loadPositionsIndex({ data: deps }),
   component: PositionsPage,
 });
 

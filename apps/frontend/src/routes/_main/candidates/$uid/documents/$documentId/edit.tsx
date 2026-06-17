@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense } from "react";
 import BackButton from "~/components/back-button";
 import CandidateDocumentEditForm from "~/components/forms/candidate-document-edit-form";
-import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
+import { loadCandidateDocumentEdit } from "~/lib/loaders/candidates";
 import {
   Card,
   CardContent,
@@ -18,11 +18,10 @@ export const Route = createFileRoute(
   head: () => ({
     meta: [{ title: "Edit Document" }],
   }),
-  loader: async ({ params }) => {
-    const documents = await getDocumentsByCandidateId(params.uid);
-    const document = documents.find((doc) => doc.id === params.documentId);
-    return { document };
-  },
+  loader: async ({ params }) =>
+    loadCandidateDocumentEdit({
+      data: { uid: params.uid, documentId: params.documentId },
+    }),
   component: EditCandidateDocumentPage,
 });
 

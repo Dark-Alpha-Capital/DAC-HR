@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense } from "react";
-import { getRoundById } from "@workspace/db/queries";
+import { loadRoundEdit } from "~/lib/loaders/rounds";
 import RoundEditForm from "~/components/forms/round-edit-form";
 import { FormLoadingFallback } from "~/components/skeletons/form-loading-skeleton";
 import { Button } from "~/components/ui/button";
@@ -9,10 +9,7 @@ export const Route = createFileRoute("/_main/rounds/$id/edit")({
   head: () => ({
     meta: [{ title: "Edit Round" }],
   }),
-  loader: async ({ params }) => {
-    const round = await getRoundById(params.id);
-    return { round };
-  },
+  loader: async ({ params }) => loadRoundEdit({ data: params.id }),
   component: EditRoundPage,
 });
 
