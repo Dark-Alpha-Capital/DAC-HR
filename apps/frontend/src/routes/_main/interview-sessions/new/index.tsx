@@ -20,6 +20,7 @@ import {
 } from "~/components/ui/select";
 import { Separator } from "~/components/ui/separator";
 import { loadInterviewSessionsNew } from "~/lib/loaders/interview-sessions";
+import { getApplicationStatusLabel } from "@workspace/db/application-status";
 import { toast } from "sonner";
 import { ArrowLeft, Copy, Check, Loader2 } from "lucide-react";
 
@@ -178,7 +179,9 @@ function NewSessionPage() {
                   <SelectItem key={app.id} value={app.id}>
                     {app.candidate.firstName} {app.candidate.lastName} —{" "}
                     {app.position.name}
-                    {app.status ? ` (${app.status.replace(/_/g, " ")})` : ""}
+                    {app.status
+                      ? ` (${getApplicationStatusLabel(app.status)})`
+                      : ""}
                   </SelectItem>
                 ))}
               </SelectContent>

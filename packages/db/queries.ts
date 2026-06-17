@@ -35,6 +35,7 @@ import {
   gte,
   lte,
 } from "drizzle-orm";
+import type { ApplicationStatus } from "./application-status";
 
 /**
  *
@@ -323,16 +324,7 @@ export const getApplicationsFiltered = async (
       conditions.push(
         inArray(
           application.status,
-          statuses as Array<
-            | "ai_screening"
-            | "first_round_recruiter_call"
-            | "second_round_technical_screening"
-            | "third_round_final_ceo"
-            | "contract_offer"
-            | "onboarding"
-            | "rejected"
-            | "withdrawn"
-          >,
+          statuses as ApplicationStatus[],
         ),
       );
     }
@@ -1780,11 +1772,12 @@ export const getDashboardStats = async () => {
 
     const activePipelineStatuses = [
       "ai_screening",
-      "first_round_recruiter_call",
-      "second_round_technical_screening",
-      "third_round_final_ceo",
+      "first_round",
+      "offer_agreement",
+      "technical_round",
       "contract_offer",
-    ] as const;
+      "onboarding",
+    ] as const satisfies readonly ApplicationStatus[];
 
     // Active candidates count (applications still in the hiring pipeline)
     const [activeCandidatesResult] = await db

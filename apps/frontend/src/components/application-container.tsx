@@ -8,7 +8,8 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { Button } from "~/components/ui/button";
+import InlineApplicationStatusEditor from "~/components/inline-application-status-editor";
+import type { ApplicationStatus } from "@workspace/db/application-status";
 type Application = {
   id: string;
   status: string;
@@ -77,8 +78,14 @@ const ApplicationContainer = ({
               <TableCell className="py-1.5 px-2 text-sm">
                 {application.position.name}
               </TableCell>
-              <TableCell className="py-1.5 px-2 text-sm capitalize">
-                {application.status}
+              <TableCell className="py-1.5 px-2 text-sm">
+                <InlineApplicationStatusEditor
+                  application={{
+                    id: application.id,
+                    status: application.status as ApplicationStatus,
+                  }}
+                  candidateId={application.candidate.id}
+                />
               </TableCell>
               <TableCell className="py-1.5 px-2 text-sm">
                 {application.interviews.length}

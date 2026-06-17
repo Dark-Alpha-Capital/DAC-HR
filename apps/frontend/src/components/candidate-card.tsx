@@ -8,30 +8,16 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
 import { Eye, Pencil } from "lucide-react";
 import type { Candidate } from "@workspace/db/schema";
 import DeleteCandidateButton from "./delete-candidate-button";
+import { ApplicationStatusBadge } from "~/components/application-status-badge";
 
 interface CandidateCardProps {
   candidate: Candidate & {
     applicationStatus?: string | null;
   };
 }
-
-const applicationStatusColors: Record<
-  string,
-  "default" | "secondary" | "destructive"
-> = {
-  ai_screening: "secondary",
-  first_round_recruiter_call: "default",
-  second_round_technical_screening: "default",
-  third_round_final_ceo: "default",
-  contract_offer: "default",
-  onboarding: "default",
-  rejected: "destructive",
-  withdrawn: "secondary",
-} as const;
 
 const CandidateCard = ({ candidate }: CandidateCardProps) => {
   const fullName = `${candidate.firstName} ${candidate.lastName}`;
@@ -41,18 +27,12 @@ const CandidateCard = ({ candidate }: CandidateCardProps) => {
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="">{fullName}</CardTitle>
-          {candidate.applicationStatus && (
-            <Badge
-              variant={
-                applicationStatusColors[candidate.applicationStatus] ||
-                "secondary"
-              }
-              className="shrink-0 text-xs"
-            >
-              {candidate.applicationStatus.charAt(0).toUpperCase() +
-                candidate.applicationStatus.slice(1)}
-            </Badge>
-          )}
+          {candidate.applicationStatus ? (
+            <ApplicationStatusBadge
+              status={candidate.applicationStatus}
+              className="shrink-0"
+            />
+          ) : null}
         </div>
       </CardHeader>
       <CardContent>

@@ -52,11 +52,11 @@ export const createInterview = createServerFn({ method: "POST" })
       return { error: "Failed to create interview" };
     }
 
-    // Update application status to "second_round_technical_screening" if it's still in AI screening
+    // Advance from AI screening when an interview is scheduled
     if (app.status === "ai_screening") {
       await db
         .update(application)
-        .set({ status: "second_round_technical_screening" })
+        .set({ status: "first_round" })
         .where(eq(application.id, applicationId));
     }
     insertAuditLog({

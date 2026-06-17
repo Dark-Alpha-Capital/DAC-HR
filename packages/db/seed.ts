@@ -456,7 +456,7 @@ async function seed() {
       location: "New York, NY",
       source: "LinkedIn",
       positionSlug: "frontend-developer",
-      status: "second_round_technical_screening",
+      status: "technical_round",
     },
     {
       firstName: "Bob",
@@ -466,7 +466,7 @@ async function seed() {
       location: "San Francisco, CA",
       source: "Referral",
       positionSlug: "frontend-developer",
-      status: "second_round_technical_screening",
+      status: "technical_round",
     },
     {
       firstName: "Diana",
@@ -476,7 +476,7 @@ async function seed() {
       location: "Chicago, IL",
       source: "LinkedIn",
       positionSlug: "frontend-developer",
-      status: "first_round_recruiter_call",
+      status: "first_round",
     },
     {
       firstName: "Ethan",
@@ -496,7 +496,7 @@ async function seed() {
       location: "Austin, TX",
       source: "Company Website",
       positionSlug: "backend-developer",
-      status: "second_round_technical_screening",
+      status: "technical_round",
     },
     {
       firstName: "Frank",
@@ -506,7 +506,7 @@ async function seed() {
       location: "Denver, CO",
       source: "LinkedIn",
       positionSlug: "backend-developer",
-      status: "third_round_final_ceo",
+      status: "offer_agreement",
     },
     {
       firstName: "Grace",
@@ -516,7 +516,7 @@ async function seed() {
       location: "Boston, MA",
       source: "Referral",
       positionSlug: "backend-developer",
-      status: "first_round_recruiter_call",
+      status: "first_round",
     },
     {
       firstName: "Henry",
@@ -526,7 +526,7 @@ async function seed() {
       location: "Miami, FL",
       source: "Handshake",
       positionSlug: "fullstack-developer",
-      status: "second_round_technical_screening",
+      status: "contract_offer",
     },
     {
       firstName: "Ivy",
@@ -546,7 +546,7 @@ async function seed() {
       location: "Los Angeles, CA",
       source: "Agency",
       positionSlug: "fullstack-developer",
-      status: "third_round_final_ceo",
+      status: "onboarding",
     },
     {
       firstName: "Karen",
@@ -556,7 +556,7 @@ async function seed() {
       location: "Philadelphia, PA",
       source: "LinkedIn",
       positionSlug: "devops-engineer",
-      status: "second_round_technical_screening",
+      status: "technical_round",
     },
     {
       firstName: "Leo",
@@ -566,7 +566,7 @@ async function seed() {
       location: "Dallas, TX",
       source: "Referral",
       positionSlug: "devops-engineer",
-      status: "first_round_recruiter_call",
+      status: "first_round",
     },
     {
       firstName: "Mia",
@@ -586,7 +586,7 @@ async function seed() {
       location: "Nashville, TN",
       source: "Indeed",
       positionSlug: "hr-assistant",
-      status: "first_round_recruiter_call",
+      status: "first_round",
     },
     {
       firstName: "Olivia",
@@ -596,7 +596,7 @@ async function seed() {
       location: "Remote",
       source: "LinkedIn",
       positionSlug: "frontend-developer",
-      status: "second_round_technical_screening",
+      status: "rejected",
     },
   ];
 

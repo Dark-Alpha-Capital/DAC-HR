@@ -20,16 +20,13 @@ import {
 import { updateApplication } from "~/lib/actions/update-application";
 import { toast } from "sonner";
 import { ChevronDown } from "lucide-react";
-
-type ApplicationStatus =
-  | "ai_screening"
-  | "first_round_recruiter_call"
-  | "second_round_technical_screening"
-  | "third_round_final_ceo"
-  | "contract_offer"
-  | "onboarding"
-  | "rejected"
-  | "withdrawn";
+import {
+  applicationStatuses,
+  applicationStatusBadgeVariants,
+  applicationStatusLabels,
+  isApplicationStatus,
+  type ApplicationStatus,
+} from "@workspace/db/application-status";
 
 interface InlineApplicationStatusEditorProps {
   application: {
@@ -38,31 +35,6 @@ interface InlineApplicationStatusEditorProps {
   };
   candidateId?: string;
 }
-
-const statusLabels: Record<ApplicationStatus, string> = {
-  ai_screening: "AI Screening",
-  first_round_recruiter_call: "1st Round Recruiter Call",
-  second_round_technical_screening: "2nd Round Technical Screening",
-  third_round_final_ceo: "3rd Round Final Round with CEO",
-  contract_offer: "Contract/Offer",
-  onboarding: "Onboarding",
-  rejected: "Rejected",
-  withdrawn: "Withdrawn",
-};
-
-const statusColors: Record<
-  ApplicationStatus,
-  "default" | "secondary" | "destructive"
-> = {
-  ai_screening: "secondary",
-  first_round_recruiter_call: "default",
-  second_round_technical_screening: "default",
-  third_round_final_ceo: "default",
-  contract_offer: "default",
-  onboarding: "default",
-  rejected: "destructive",
-  withdrawn: "secondary",
-};
 
 export default function InlineApplicationStatusEditor({
   application,
@@ -74,9 +46,12 @@ export default function InlineApplicationStatusEditor({
   const [pendingStatus, setPendingStatus] = useState<ApplicationStatus | null>(
     null,
   );
+  const currentStatus = isApplicationStatus(application.status)
+    ? application.status
+    : "ai_screening";
 
   const handleStatusChange = (newStatus: ApplicationStatus) => {
-    if (newStatus === application.status) return;
+    if (newStatus === currentStatus) return;
 
     // If changing to "onboarding" and candidateId is available, show dialog
     if (newStatus === "onboarding" && candidateId) {
@@ -139,30 +114,30 @@ export default function InlineApplicationStatusEditor({
             aria-label="Change application status"
           >
             <Badge
-              variant={statusColors[application.status]}
+              variant={applicationStatusBadgeVariants[currentStatus]}
               className="text-xs h-5 cursor-pointer"
             >
-              {statusLabels[application.status]}
+              {applicationStatusLabels[currentStatus]}
             </Badge>
             <ChevronDown className="h-3 w-3 text-muted-foreground" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[180px]">
-          {Object.entries(statusLabels).map(([value, label]) => (
+          {applicationStatuses.map((value) => (
             <DropdownMenuItem
               key={value}
-              onClick={() => handleStatusChange(value as ApplicationStatus)}
+              onClick={() => handleStatusChange(value)}
               className="cursor-pointer"
-              disabled={value === application.status || isPending}
+              disabled={value === currentStatus || isPending}
             >
               <div className="flex items-center gap-2 w-full">
                 <Badge
-                  variant={statusColors[value as ApplicationStatus]}
+                  variant={applicationStatusBadgeVariants[value]}
                   className="text-xs h-5"
                 >
-                  {label}
+                  {applicationStatusLabels[value]}
                 </Badge>
-                {value === application.status && (
+                {value === currentStatus && (
                   <span className="text-xs text-muted-foreground ml-auto">
                     Current
                   </span>

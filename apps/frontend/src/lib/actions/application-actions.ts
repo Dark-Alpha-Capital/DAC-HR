@@ -9,16 +9,7 @@ import {
 import { eq, inArray } from "@workspace/db";
 import { getSession } from "~/lib/get-session";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-
-type ApplicationStatus =
-  | "ai_screening"
-  | "first_round_recruiter_call"
-  | "second_round_technical_screening"
-  | "third_round_final_ceo"
-  | "contract_offer"
-  | "onboarding"
-  | "rejected"
-  | "withdrawn";
+import type { ApplicationStatus } from "@workspace/db/application-status";
 
 export const updateApplicationStatus = createServerFn({ method: "POST" })
   .validator((data: [string, ApplicationStatus]) => data)

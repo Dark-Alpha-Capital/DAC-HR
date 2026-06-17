@@ -14,22 +14,17 @@ import {
   Sparkles,
   Phone,
   Code,
-  UserCircle,
   FileText,
+  Handshake,
   CheckCircle2,
   XCircle,
-  UserX,
 } from "lucide-react";
-
-type ApplicationStatus =
-  | "ai_screening"
-  | "first_round_recruiter_call"
-  | "second_round_technical_screening"
-  | "third_round_final_ceo"
-  | "contract_offer"
-  | "onboarding"
-  | "rejected"
-  | "withdrawn";
+import {
+  applicationStatusBadgeVariants,
+  applicationStatusLabels,
+  isApplicationStatus,
+  type ApplicationStatus,
+} from "@workspace/db/application-status";
 
 interface ApplicationStatusDisplayProps {
   application: {
@@ -38,47 +33,24 @@ interface ApplicationStatusDisplayProps {
   };
 }
 
-const statusLabels: Record<ApplicationStatus, string> = {
-  ai_screening: "AI Screening",
-  first_round_recruiter_call: "1st Round Recruiter Call",
-  second_round_technical_screening: "2nd Round Technical Screening",
-  third_round_final_ceo: "3rd Round Final Round with CEO",
-  contract_offer: "Contract/Offer",
-  onboarding: "Onboarding",
-  rejected: "Rejected",
-  withdrawn: "Withdrawn",
-};
-
 const statusIcons: Record<ApplicationStatus, typeof Sparkles> = {
   ai_screening: Sparkles,
-  first_round_recruiter_call: Phone,
-  second_round_technical_screening: Code,
-  third_round_final_ceo: UserCircle,
+  first_round: Phone,
+  offer_agreement: Handshake,
+  technical_round: Code,
   contract_offer: FileText,
   onboarding: CheckCircle2,
   rejected: XCircle,
-  withdrawn: UserX,
-};
-
-const statusColors: Record<
-  ApplicationStatus,
-  "default" | "secondary" | "destructive"
-> = {
-  ai_screening: "secondary",
-  first_round_recruiter_call: "default",
-  second_round_technical_screening: "default",
-  third_round_final_ceo: "default",
-  contract_offer: "default",
-  onboarding: "default",
-  rejected: "destructive",
-  withdrawn: "secondary",
 };
 
 export default function ApplicationStatusDisplay({
   application,
 }: ApplicationStatusDisplayProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const StatusIcon = statusIcons[application.status];
+  const status = isApplicationStatus(application.status)
+    ? application.status
+    : "ai_screening";
+  const StatusIcon = statusIcons[status];
 
   return (
     <>
@@ -87,10 +59,10 @@ export default function ApplicationStatusDisplay({
           <div className="flex items-center gap-3">
             <StatusIcon className="h-5 w-5 text-muted-foreground" />
             <Badge
-              variant={statusColors[application.status]}
+              variant={applicationStatusBadgeVariants[status]}
               className="text-sm font-medium"
             >
-              {statusLabels[application.status]}
+              {applicationStatusLabels[status]}
             </Badge>
           </div>
           <Button variant="secondary" size="sm" onClick={() => setIsOpen(true)}>
@@ -110,7 +82,7 @@ export default function ApplicationStatusDisplay({
             </DialogDescription>
           </DialogHeader>
           <ApplicationStatusForm
-            application={application}
+            application={{ ...application, status }}
             onSuccess={() => setIsOpen(false)}
           />
         </DialogContent>

@@ -13,21 +13,8 @@ import { Link } from "@tanstack/react-router";
 import { Eye, Pencil } from "lucide-react";
 import DeleteCandidateButton from "~/components/delete-candidate-button";
 import BulkDeleteCandidatesButton from "~/components/bulk-delete-candidates-button";
-import { Badge } from "~/components/ui/badge";
 import type { Candidate } from "@workspace/db/schema";
-const applicationStatusColors: Record<
-  string,
-  "default" | "secondary" | "destructive"
-> = {
-  ai_screening: "secondary",
-  first_round_recruiter_call: "default",
-  second_round_technical_screening: "default",
-  third_round_final_ceo: "default",
-  contract_offer: "default",
-  onboarding: "default",
-  rejected: "destructive",
-  withdrawn: "secondary",
-} as const;
+import { ApplicationStatusBadge } from "~/components/application-status-badge";
 
 type CandidateWithPosition = Candidate & {
   position: { id: string; name: string } | null;
@@ -158,16 +145,7 @@ const CandidateContainer = ({
                 </TableCell>
                 <TableCell className="py-1.5 px-2 text-sm">
                   {candidate.applicationStatus ? (
-                    <Badge
-                      variant={
-                        applicationStatusColors[candidate.applicationStatus] ||
-                        "secondary"
-                      }
-                      className="text-xs"
-                    >
-                      {candidate.applicationStatus.charAt(0).toUpperCase() +
-                        candidate.applicationStatus.slice(1)}
-                    </Badge>
+                    <ApplicationStatusBadge status={candidate.applicationStatus} />
                   ) : (
                     "-"
                   )}

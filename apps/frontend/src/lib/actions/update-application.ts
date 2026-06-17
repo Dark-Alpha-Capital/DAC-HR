@@ -4,18 +4,11 @@ import { application } from "@workspace/db/schema";
 import { getSession } from "~/lib/get-session";
 import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
+import type { ApplicationStatus } from "@workspace/db/application-status";
 
 export interface UpdateApplicationInput {
   applicationId: string;
-  status?:
-    | "ai_screening"
-    | "first_round_recruiter_call"
-    | "second_round_technical_screening"
-    | "third_round_final_ceo"
-    | "contract_offer"
-    | "onboarding"
-    | "rejected"
-    | "withdrawn";
+  status?: ApplicationStatus;
   personality?:
     | "ENFJ"
     | "ENFP"

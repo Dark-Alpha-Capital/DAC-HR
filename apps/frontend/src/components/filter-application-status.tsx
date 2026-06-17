@@ -11,17 +11,15 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { Button } from "~/components/ui/button";
 import { Filter } from "lucide-react";
+import {
+  applicationStatuses,
+  applicationStatusLabels,
+} from "@workspace/db/application-status";
 
-const statuses = [
-  { value: "ai_screening", label: "AI Screening" },
-  { value: "first_round_recruiter_call", label: "1st Round Recruiter Call" },
-  { value: "second_round_technical_screening", label: "2nd Round Technical Screening" },
-  { value: "third_round_final_ceo", label: "3rd Round Final Round with CEO" },
-  { value: "contract_offer", label: "Contract/Offer" },
-  { value: "onboarding", label: "Onboarding" },
-  { value: "rejected", label: "Rejected" },
-  { value: "withdrawn", label: "Withdrawn" },
-];
+const statuses = applicationStatuses.map((value) => ({
+  value,
+  label: applicationStatusLabels[value],
+}));
 
 const FilterApplicationStatus = () => {
   const { searchParams, setSearchParams } = useUrlSearchParams();
@@ -43,7 +41,7 @@ const FilterApplicationStatus = () => {
       setSelectedStatuses(newSelected);
 
       setSearchParams(params);
-  });
+    });
   };
 
   return (

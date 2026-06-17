@@ -13,6 +13,11 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import {
+  applicationStatusChartColors,
+  getApplicationStatusLabel,
+  isApplicationStatus,
+} from "@workspace/db/application-status";
 
 // Client component for Pie Chart
 export function CandidatesByStatusChart({
@@ -20,20 +25,12 @@ export function CandidatesByStatusChart({
 }: {
   data: { status: string; count: number }[];
 }) {
-  const COLORS: Record<string, string> = {
-    pending: "#93C5FD",
-    reviewed: "#A78BFA",
-    shortlisted: "#6366F1",
-    interviewing: "#60A5FA",
-    hired: "#34D399",
-    rejected: "#EF4444",
-    withdrawn: "#9CA3AF",
-  };
-
   const chartData = data.map((item) => ({
-    name: item.status.charAt(0).toUpperCase() + item.status.slice(1),
+    name: getApplicationStatusLabel(item.status),
     value: item.count,
-    color: COLORS[item.status] || "#9CA3AF",
+    color: isApplicationStatus(item.status)
+      ? applicationStatusChartColors[item.status]
+      : "#9CA3AF",
   }));
 
   return (

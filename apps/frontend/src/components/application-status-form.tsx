@@ -11,16 +11,12 @@ import {
 } from "~/components/ui/select";
 import { updateApplication } from "~/lib/actions/update-application";
 import { toast } from "sonner";
-
-type ApplicationStatus =
-  | "ai_screening"
-  | "first_round_recruiter_call"
-  | "second_round_technical_screening"
-  | "third_round_final_ceo"
-  | "contract_offer"
-  | "onboarding"
-  | "rejected"
-  | "withdrawn";
+import {
+  applicationStatuses,
+  applicationStatusDescriptions,
+  applicationStatusLabels,
+  type ApplicationStatus,
+} from "@workspace/db/application-status";
 
 interface ApplicationStatusFormProps {
   application: {
@@ -29,29 +25,6 @@ interface ApplicationStatusFormProps {
   };
   onSuccess?: () => void;
 }
-
-const statusLabels: Record<ApplicationStatus, string> = {
-  ai_screening: "AI Screening",
-  first_round_recruiter_call: "1st Round Recruiter Call",
-  second_round_technical_screening: "2nd Round Technical Screening",
-  third_round_final_ceo: "3rd Round Final Round with CEO",
-  contract_offer: "Contract/Offer",
-  onboarding: "Onboarding",
-  rejected: "Rejected",
-  withdrawn: "Withdrawn",
-};
-
-const statusDescriptions: Record<ApplicationStatus, string> = {
-  ai_screening: "AI analysis is being performed on the candidate",
-  first_round_recruiter_call: "First round interview with recruiter",
-  second_round_technical_screening:
-    "Second round technical screening interview",
-  third_round_final_ceo: "Final round interview with CEO",
-  contract_offer: "Contract has been requested or sent",
-  onboarding: "Candidate is in the onboarding process",
-  rejected: "Application has been rejected",
-  withdrawn: "Application has been withdrawn",
-};
 
 export default function ApplicationStatusForm({
   application,
@@ -99,12 +72,12 @@ export default function ApplicationStatusForm({
             <SelectValue placeholder="Select status" />
           </SelectTrigger>
           <SelectContent>
-            {Object.entries(statusLabels).map(([value, label]) => (
+            {applicationStatuses.map((value) => (
               <SelectItem key={value} value={value}>
                 <div className="flex flex-col">
-                  <span>{label}</span>
+                  <span>{applicationStatusLabels[value]}</span>
                   <span className="text-xs text-muted-foreground">
-                    {statusDescriptions[value as ApplicationStatus]}
+                    {applicationStatusDescriptions[value]}
                   </span>
                 </div>
               </SelectItem>
