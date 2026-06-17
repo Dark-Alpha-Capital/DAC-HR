@@ -4,15 +4,18 @@ import { Button } from "~/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import DocumentUploadForm from "~/components/forms/document-upload-form";
 import { FormLoadingFallback } from "~/components/skeletons/form-loading-skeleton";
-import { getDocumentCategories } from "@workspace/db/repositories/document-repository";
+import { getAllCategories } from "~/lib/actions/document-category-actions";
 
 export const Route = createFileRoute("/_main/documents/new")({
   head: () => ({
     meta: [{ title: "New Document" }],
   }),
   loader: async () => {
-    const categories = await getDocumentCategories();
-    return { categories };
+    const categoriesResult = await getAllCategories();
+    if (!categoriesResult.success) {
+      throw new Error(categoriesResult.error ?? "Failed to fetch categories");
+    }
+    return { categories: categoriesResult.data };
   },
   component: NewDocumentPage,
 });
