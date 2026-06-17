@@ -19,23 +19,11 @@ import {
 } from "~/components/ui/input-group";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Loader2 } from "lucide-react";
-import { createDocument } from "~/lib/actions/create-document";
 import { useRouter } from "@tanstack/react-router";
 import type { DocumentCategory } from "@workspace/db/schema";
-import * as z from "zod";
+import { documentUploadInputSchema } from "~/lib/schemas/document-form-schema";
 
-// Form validation schema (without url - it's added after file upload)
-const formValidationSchema = z.object({
-  name: z
-    .string()
-    .min(1, "Document name is required.")
-    .max(255, "Document name must be at most 255 characters."),
-  description: z
-    .string()
-    .max(1000, "Description must be at most 1000 characters."),
-  categoryIds: z.array(z.string()).min(1, "At least one category is required."),
-  tags: z.array(z.string()),
-});
+const formValidationSchema = documentUploadInputSchema;
 
 interface DocumentUploadFormProps {
   categories: DocumentCategory[];
@@ -58,9 +46,6 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
       onSubmit: formValidationSchema,
     },
     onSubmit: async ({ value }) => {
-      console.log("onSubmit handler called", { value, file });
-
-      // Validate that file is provided
       if (!file) {
         toast.error("Please upload a file", {
           position: "bottom-right",
@@ -68,10 +53,8 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
         return;
       }
 
-      // Validate form values
       const validationResult = formValidationSchema.safeParse(value);
       if (!validationResult.success) {
-        console.log("Validation failed", validationResult.error);
         const errors = validationResult.error.flatten().fieldErrors;
         const firstError = Object.values(errors)[0]?.[0];
         toast.error(firstError || "Please check the form for errors", {
@@ -80,33 +63,25 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
         return;
       }
 
-      console.log("Validation passed, starting file upload");
-
       startTransition(async () => {
         try {
-          // Upload file first
           const formData = new FormData();
           formData.append("file", file);
+          formData.append("name", value.name);
+          formData.append("description", value.description);
+          formData.append("categoryIds", JSON.stringify(value.categoryIds));
+          formData.append("tags", JSON.stringify(value.tags));
 
           const uploadResponse = await fetch("/api/documents/upload", {
             method: "POST",
             body: formData,
           });
 
+          const result = await uploadResponse.json();
+
           if (!uploadResponse.ok) {
-            const errorData = await uploadResponse.json();
-            throw new Error(errorData.error || "Failed to upload file");
+            throw new Error(result.error || "Failed to upload document");
           }
-
-          const { url: fileUrl } = await uploadResponse.json();
-
-          // Create the document with the uploaded file URL
-          const result = await createDocument({
-            data: {
-              ...value,
-              url: fileUrl,
-            },
-          });
 
           if (result.success) {
             toast.success("Document uploaded successfully", {
@@ -238,7 +213,6 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
         onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          console.log("Form submitted, calling handleSubmit");
           form.handleSubmit();
         }}
         className="space-y-6"

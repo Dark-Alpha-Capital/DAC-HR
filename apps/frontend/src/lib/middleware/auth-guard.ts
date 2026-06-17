@@ -1,10 +1,8 @@
 import { createMiddleware } from "@tanstack/react-start";
 import { redirect } from "@tanstack/react-router";
-import { getServerSession } from "~/lib/server/session";
+import { getSession } from "~/lib/server/session";
 
-export async function getSession() {
-  return getServerSession();
-}
+export { getSession };
 
 export const authGuard = createMiddleware().server(async ({ next }) => {
   const session = await getSession();

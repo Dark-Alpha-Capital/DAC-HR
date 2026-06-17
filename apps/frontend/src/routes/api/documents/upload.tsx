@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { getSession } from "~/lib/middleware/auth-guard";
+import { createDocumentRecord } from "~/lib/documents/create-document-record";
 import { uploadFile } from "~/lib/storage";
 
 const VIDEO_TYPES = [
@@ -16,14 +16,30 @@ const VIDEO_TYPES = [
   "video/x-flv",
 ];
 
+function parseStringArray(value: FormDataEntryValue | null): string[] {
+  if (typeof value !== "string" || value.trim() === "") {
+    return [];
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 export const Route = createFileRoute("/api/documents/upload")({
   server: {
     handlers: {
       POST: async ({ request }) => {
         try {
           const authSession = await getSession();
-          if (!authSession?.user)
+          if (!authSession?.user) {
             return Response.json({ error: "Unauthorized" }, { status: 401 });
+          }
 
           const { user } = authSession;
           const formData = await request.formData();
@@ -60,30 +76,43 @@ export const Route = createFileRoute("/api/documents/upload")({
             );
           }
 
-          insertAuditLog({
-            userId: user.id,
-            action: "upload_document",
-            entityType: "document",
-            entityId: url,
-            details: {
-              file: {
-                name: file.name,
-                size: file.size,
-                type: file.type,
-                url,
-              },
-              uploadedBy: {
-                id: user.id,
-                email: user.email,
-                name: user.name,
-              },
-              metadata: {
-                timestamp: new Date().toISOString(),
-              },
-            },
-          }).catch((err) => console.error("Audit log error:", err));
+          const name = formData.get("name");
+          if (typeof name !== "string" || name.trim() === "") {
+            return Response.json({ url }, { status: 200 });
+          }
 
-          return Response.json({ url }, { status: 200 });
+          const result = await createDocumentRecord({
+            name,
+            description:
+              typeof formData.get("description") === "string"
+                ? formData.get("description")
+                : "",
+            categoryIds: parseStringArray(formData.get("categoryIds")),
+            tags: parseStringArray(formData.get("tags")),
+            url,
+            user: {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+            },
+          });
+
+          if (!result.success) {
+            return Response.json(
+              {
+                error:
+                  typeof result.error === "string"
+                    ? result.error
+                    : "Failed to create document",
+              },
+              { status: 400 },
+            );
+          }
+
+          return Response.json(
+            { success: true, url, document: result.data },
+            { status: 200 },
+          );
         } catch (error) {
           console.error("Error uploading file:", error);
           return Response.json(
