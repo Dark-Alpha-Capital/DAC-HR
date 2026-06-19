@@ -1,25 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { env } from "cloudflare:workers";
 import { getSession } from "~/lib/get-session";
 import { db } from "@workspace/db/db";
 import { eq } from "@workspace/db";
 import { candidateDocument as candidateDocumentSchema } from "@workspace/db/schema";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
 import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
 import { candidateDocumentFormSchema } from "~/lib/schemas/candidate-document-form-schema";
 import {
-  createNextcloudClient,
+  getNextcloudClient,
   uploadFile as uploadToNextcloud,
 } from "@workspace/nextcloud";
-
-const getNextcloudConfig = () => {
-  const url = process.env.NEXTCLOUD_URL;
-  const user = process.env.NEXTCLOUD_USER;
-  const password = process.env.NEXTCLOUD_PASSWORD;
-  if (!url || !user || !password)
-    throw new Error("Nextcloud configuration missing");
-  return { url, user, password };
-};
 
 const VIDEO_TYPES = [
   "video/mp4",
@@ -106,6 +97,7 @@ export const Route = createFileRoute("/api/candidate/$id/documents")({
           }
 
           let finalUrl: string;
+          let nextcloudFilePath: string | undefined;
           if (file) {
             const maxSize = 500 * 1024 * 1024;
             if (file.size > maxSize)
@@ -119,9 +111,8 @@ export const Route = createFileRoute("/api/candidate/$id/documents")({
                 { status: 400 },
               );
 
-            const nextcloudClient = createNextcloudClient(getNextcloudConfig());
             const nextcloudUploadResult = await uploadToNextcloud({
-              client: nextcloudClient,
+              client: getNextcloudClient(),
               file,
               folderPath: `/ATS/candidates/${candidateId}`,
             });
@@ -136,6 +127,7 @@ export const Route = createFileRoute("/api/candidate/$id/documents")({
               );
             }
             finalUrl = nextcloudUploadResult.downloadUrl;
+            nextcloudFilePath = nextcloudUploadResult.filePath;
           } else if (urlField && urlField.trim() !== "") {
             try {
               new URL(urlField);
@@ -199,6 +191,39 @@ export const Route = createFileRoute("/api/candidate/$id/documents")({
               metadata: { timestamp: new Date().toISOString() },
             },
           }).catch((err) => console.error("Audit log error:", err));
+
+          if (newCandidateDocument && nextcloudFilePath) {
+            (env as Record<string, unknown>).DOCUMENT_INDEXING_WORKFLOW &&
+              (
+                (env as Record<string, unknown>)
+                  .DOCUMENT_INDEXING_WORKFLOW as {
+                  create: (opts: {
+                    id: string;
+                    params: Record<string, unknown>;
+                  }) => Promise<{ id: string }>;
+                }
+              )
+                .create({
+                  id: `index-${newCandidateDocument.id}`,
+                  params: {
+                    documentId: newCandidateDocument.id,
+                    candidateId,
+                    nextcloudFilePath,
+                    metadata: {
+                      name: validatedData.name,
+                      category: validatedData.category,
+                      candidateId,
+                      url: validatedData.url,
+                    },
+                  },
+                })
+                .catch((err: unknown) =>
+                  console.error(
+                    "Failed to start document indexing workflow:",
+                    err,
+                  ),
+                );
+          }
 
           return Response.json(
             { success: true, data: newCandidateDocument },

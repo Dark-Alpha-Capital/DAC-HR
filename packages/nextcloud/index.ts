@@ -11,6 +11,7 @@ export type NextcloudConfig = {
 export type NextcloudErrorCode =
   | "INVALID_CONFIG"
   | "UPLOAD_FAILED"
+  | "DOWNLOAD_FAILED"
   | "DELETE_FAILED"
   | "NOT_FOUND"
   | "NETWORK"
@@ -26,6 +27,11 @@ export type UploadFileResult = NextcloudOperationResult & {
   filePath?: string;
   downloadUrl?: string;
   fileName?: string;
+};
+
+export type DownloadFileResult = NextcloudOperationResult & {
+  filePath?: string;
+  buffer?: Buffer;
 };
 
 const normalizeBaseUrl = (url: string) => url.replace(/\/+$/, "");
@@ -60,6 +66,38 @@ export const createNextcloudClient = (
       password: config.password,
     },
   );
+};
+
+export const getNextcloudConfigFromEnv = (): NextcloudConfig => {
+  const url = process.env.NEXTCLOUD_URL;
+  const user = process.env.NEXTCLOUD_USER;
+  const password = process.env.NEXTCLOUD_PASSWORD;
+
+  if (!url || !user || !password) {
+    throw new Error(
+      "Nextcloud configuration is missing. Please set NEXTCLOUD_URL, NEXTCLOUD_USER, and NEXTCLOUD_PASSWORD environment variables.",
+    );
+  }
+
+  return { url, user, password };
+};
+
+let _client: WebDAVClient | null = null;
+
+export const getNextcloudClient = (config?: NextcloudConfig): WebDAVClient => {
+  if (!_client) {
+    _client = createNextcloudClient(config ?? getNextcloudConfigFromEnv());
+  }
+
+  return _client;
+};
+
+export type NextcloudFileEntry = {
+  name: string;
+  size: number;
+  lastModified: string;
+  mimeType: string;
+  downloadUrl: string;
 };
 
 const asBuffer = async (file: File | Blob) => {
@@ -175,6 +213,37 @@ export const resolveFilePath = (filePathOrUrl: string): string => {
 export const getDownloadUrl = (client: WebDAVClient, filePath: string) =>
   client.getFileDownloadLink(resolveFilePath(filePath));
 
+export const downloadFile = async ({
+  client,
+  filePathOrUrl,
+}: {
+  client: WebDAVClient;
+  filePathOrUrl: string;
+}): Promise<DownloadFileResult> => {
+  try {
+    const filePath = resolveFilePath(filePathOrUrl);
+    const contents = await client.getFileContents(filePath);
+    const buffer = Buffer.isBuffer(contents)
+      ? contents
+      : typeof contents === "string"
+        ? Buffer.from(contents)
+        : Buffer.from(new Uint8Array(contents as ArrayBuffer));
+
+    return {
+      success: true,
+      filePath,
+      buffer,
+    };
+  } catch (error) {
+    const code = mapErrorCode(error);
+    return {
+      success: false,
+      code: code === "UNKNOWN" ? "DOWNLOAD_FAILED" : code,
+      error: error instanceof Error ? error.message : "Failed to download file",
+    };
+  }
+};
+
 export const deleteFile = async ({
   client,
   filePathOrUrl,
@@ -193,4 +262,39 @@ export const deleteFile = async ({
       error: error instanceof Error ? error.message : "Failed to delete file",
     };
   }
+};
+
+export const listDirectoryFiles = async (
+  folderPath: string,
+  client: WebDAVClient = getNextcloudClient(),
+): Promise<NextcloudFileEntry[]> => {
+  const contents = await client.getDirectoryContents(
+    normalizeFolderPath(folderPath),
+  );
+
+  const files = (Array.isArray(contents) ? contents : [contents]).map(
+    (item) => {
+      const file = item as {
+        basename?: string;
+        size?: number;
+        lastmod?: string;
+        mime?: string;
+        filename?: string;
+        type?: string;
+      };
+
+      return {
+        name: file.basename ?? "",
+        size: file.size ?? 0,
+        lastModified: file.lastmod ?? "",
+        mimeType: file.mime ?? "",
+        downloadUrl: getDownloadUrl(client, file.filename ?? ""),
+        type: file.type ?? "",
+      };
+    },
+  );
+
+  return files
+    .filter((file) => file.type !== "directory")
+    .map(({ type: _ignored, ...file }) => file);
 };

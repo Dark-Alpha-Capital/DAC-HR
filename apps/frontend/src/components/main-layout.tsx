@@ -8,10 +8,10 @@ export function MainLayout({ session, children }: { session: AppSession; childre
   return (
     <SidebarProvider>
       <AppSidebar session={session} />
-      <SidebarInset>
+      <SidebarInset className="min-w-0 overflow-x-hidden">
         <div
           id="main-content"
-          className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 md:px-6 md:py-8 overflow-x-hidden"
+          className="mx-auto w-full min-w-0 max-w-7xl flex-1 px-4 py-6 md:px-6 md:py-8"
         >
           {children}
         </div>

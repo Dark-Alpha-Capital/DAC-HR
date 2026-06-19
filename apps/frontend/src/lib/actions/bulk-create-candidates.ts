@@ -1,11 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { inArray } from "@workspace/db";
 import { db } from "@workspace/db/db";
-import {
-  candidate,
-  application,
-  candidatePosition,
-} from "@workspace/db/schema";
+import { candidate, application } from "@workspace/db/schema";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { candidateFormSchema } from "../schemas/candidate-form-schema";
 import type { CandidateFormSchema } from "../schemas/candidate-form-schema";
@@ -93,7 +89,9 @@ export const bulkCreateCandidates = createServerFn({ method: "POST" })
       source: candidateData.source,
       sourceUrl: candidateData.sourceUrl || "",
       note: candidateData.note || "",
-      positionId: candidateData.positionId || "",
+      positionIds: candidateData.positionId
+        ? [candidateData.positionId]
+        : [],
     });
 
     if (!validation.success) {
@@ -143,7 +141,8 @@ export const bulkCreateCandidates = createServerFn({ method: "POST" })
   try {
     await db.transaction(async (tx) => {
       for (const { row, data } of validatedCandidates) {
-        const { positionId, ...candidateFields } = data;
+        const { positionIds: pIds, ...candidateFields } = data;
+        const normalizedPositionIds = pIds.map((id) => id.trim()).filter(Boolean);
 
         // Insert candidate
         const [newCandidate] = await tx
@@ -164,19 +163,13 @@ export const bulkCreateCandidates = createServerFn({ method: "POST" })
           throw new Error(`Failed to create candidate at row ${row}`);
         }
 
-        // Link position if provided
-        if (positionId?.trim()) {
-          await Promise.all([
-            tx.insert(application).values({
-              candidateId: newCandidate.id,
-              positionId,
-              status: "ai_screening",
-            }),
-            tx.insert(candidatePosition).values({
-              candidateId: newCandidate.id,
-              positionId,
-            }),
-          ]);
+        // Create applications for each position
+        for (const positionId of normalizedPositionIds) {
+          await tx.insert(application).values({
+            candidateId: newCandidate.id,
+            positionId,
+            status: "ai_screening",
+          });
         }
 
         createdCandidates.push({
@@ -201,6 +194,7 @@ export const bulkCreateCandidates = createServerFn({ method: "POST" })
               sourceUrl: newCandidate.sourceUrl,
               note: newCandidate.note,
             },
+            positionIds: normalizedPositionIds,
             bulkUpload: { row, totalRows: candidates.length },
           },
         });

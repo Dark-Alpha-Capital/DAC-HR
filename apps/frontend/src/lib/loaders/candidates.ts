@@ -4,11 +4,13 @@ import {
   getCandidateAiScreenings,
   getOrCreateCandidateOnboarding,
   getPositions,
+  getRoundsByPositionId,
   getUsers,
 } from "@workspace/db/queries";
 import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
 import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
 import { getApplicationWithInterviews } from "@workspace/db/repositories/interview-repository";
+import { getSessionsByApplicationId } from "@workspace/db/repositories/interview-session-repository";
 import {
   getCachedApplicationsFiltered,
   getCachedCandidate,
@@ -73,8 +75,25 @@ export const loadCandidatesNew = createServerFn({ method: "GET" }).handler(
   async () => {
     const session = await getSession();
     const { positions } = await getPositions();
+
+    // Preload rounds for all positions
+    const positionRounds: Record<
+      string,
+      Array<{ roundTemplateId: string; name: string }>
+    > = {};
+    await Promise.all(
+      positions.map(async (p) => {
+        const rounds = await getRoundsByPositionId(p.id);
+        positionRounds[p.id] = rounds.map((r) => ({
+          roundTemplateId: r.id,
+          name: r.name,
+        }));
+      }),
+    );
+
     return {
       positions: positions.map((p) => ({ id: p.id, name: p.name })),
+      positionRounds,
       userSession: session?.session,
     };
   },
@@ -216,5 +235,34 @@ export const loadApplicationsIndex = createServerFn({ method: "GET" })
         deps.position?.length ||
         deps.status?.length,
       ),
+    };
+  });
+
+export const loadApplicationDetail = createServerFn({ method: "GET" })
+  .validator((data: string) => data)
+  .handler(async ({ data: applicationId }) => {
+    const [application, users] = await Promise.all([
+      getApplicationWithInterviews(applicationId),
+      getUsers(),
+    ]);
+
+    if (!application) {
+      return { application: null, candidate: null, sessions: [], users };
+    }
+
+    const [candidate, sessions, aiScreenings, documents] = await Promise.all([
+      getCandidateById(application.candidateId),
+      getSessionsByApplicationId(applicationId).catch(() => []),
+      getCandidateAiScreenings(application.candidateId).catch(() => []),
+      getDocumentsByCandidateId(application.candidateId).catch(() => []),
+    ]);
+
+    return {
+      application,
+      candidate,
+      sessions,
+      aiScreenings,
+      documents,
+      users,
     };
   });

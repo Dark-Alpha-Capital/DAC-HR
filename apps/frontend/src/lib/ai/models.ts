@@ -1,9 +1,6 @@
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { getOpenAIProvider } from "@workspace/ai-config";
 
-export const CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME =
-  process.env.CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME ??
-  "fileSearchStores/candidatedocumentssearchsto-ihh3ywli34wi";
-
-export const googleAIClient = createGoogleGenerativeAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
+export const getAiModel = (modelName: string = "gpt-4o-mini") => {
+  const openai = getOpenAIProvider();
+  return openai(modelName);
+};

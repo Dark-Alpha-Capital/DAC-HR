@@ -32,7 +32,7 @@ import { updateCandidate } from "~/lib/actions/update-candidate";
 import type { Candidate } from "@workspace/db/schema";
 
 interface CandidateEditFormProps {
-  candidate: Candidate & { positionId?: string };
+  candidate: Candidate & { positionIds?: string[] };
   positions: {
     id: string;
     name: string;
@@ -68,7 +68,7 @@ const CandidateEditForm = ({
           : undefined,
       sourceUrl: (candidate as any).sourceUrl || "",
       note: candidate.note || "",
-      positionId: candidate.positionId || positions[0]?.id || "",
+      positionIds: candidate.positionIds || [],
     },
     validators: {
       onSubmit: ({ value }) => {
@@ -82,13 +82,7 @@ const CandidateEditForm = ({
     onSubmit: async ({ value }) => {
       startTransition(async () => {
         const result = await updateCandidate({
-          data: [
-            candidate.id,
-            {
-              ...value,
-              positionId: value.positionId || "",
-            },
-          ],
+          data: [candidate.id, value],
         });
         if (result.error) {
           toast.error(
@@ -353,17 +347,18 @@ const CandidateEditForm = ({
           )}
 
           <form.Field
-            name="positionId"
+            name="positionIds"
             children={(field) => {
               const isInvalid =
                 field.state.meta.isTouched && !field.state.meta.isValid;
+              const selectedId = field.state.value?.[0] || "";
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Position</FieldLabel>
                   <Select
-                    value={field.state.value || ""}
+                    value={selectedId}
                     onValueChange={(value) => {
-                      field.handleChange(value);
+                      field.handleChange(value ? [value] : []);
                     }}
                   >
                     <SelectTrigger

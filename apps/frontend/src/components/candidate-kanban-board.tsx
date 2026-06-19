@@ -72,15 +72,15 @@ export default function KanbanBoard({ applications }: KanbanBoardProps) {
   }
 
   return (
-    <div className="w-full overflow-hidden">
-      <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4 -mx-4 px-4 md:-mx-6 md:px-6">
+    <div className="w-full min-w-0 overflow-x-auto overscroll-x-contain">
+      <div className="flex w-max gap-3 md:gap-4 pb-4 pe-6">
         {applicationStatuses.map((status) => {
           const columnApps = columns.get(status) || [];
 
           return (
             <div
               key={status}
-              className="w-64 sm:w-72 shrink-0 flex flex-col gap-3"
+              className="w-64 shrink-0 lg:w-72 flex flex-col gap-3"
             >
               <KanbanStatusHeader status={status} count={columnApps.length} />
 

@@ -61,8 +61,6 @@ function CandidateDetailPage() {
     documents,
     screenings,
     onboardingData,
-    applicationDetails,
-    initialApplicationId,
   } = Route.useLoaderData();
   const { uid } = Route.useParams();
 
@@ -82,7 +80,6 @@ function CandidateDetailPage() {
   }
 
   const fullName = `${candidate.firstName} ${candidate.lastName}`;
-  const positionId = candidate.applications[0]?.position.id ?? "";
 
   return (
     <div className="space-y-6">
@@ -171,13 +168,7 @@ function CandidateDetailPage() {
         </TabsContent>
 
         <TabsContent value="applications" className="mt-6">
-          <CandidateApplicationsTab
-            candidate={candidate}
-            users={users}
-            applicationDetails={applicationDetails}
-            initialApplicationId={initialApplicationId}
-            currentUser={currentUser}
-          />
+          <CandidateApplicationsTab candidate={candidate} />
         </TabsContent>
 
         <TabsContent value="documents" className="mt-6">
@@ -194,7 +185,7 @@ function CandidateDetailPage() {
         <TabsContent value="ai-analysis" className="mt-6">
           <CandidateAiAnalysis
             candidateId={uid}
-            positionId={positionId}
+            positionId={candidate.applications[0]?.position.id ?? ""}
             session={session}
             documents={documents}
           />

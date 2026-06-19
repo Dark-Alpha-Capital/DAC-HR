@@ -54,6 +54,9 @@ export const interviewStatuses = [
 ] as const;
 export type InterviewStatus = (typeof interviewStatuses)[number];
 
+export const interviewModes = ["manual", "ai_session"] as const;
+export type InterviewMode = (typeof interviewModes)[number];
+
 export const applicationStatuses = [
   "ai_screening",
   "first_round",

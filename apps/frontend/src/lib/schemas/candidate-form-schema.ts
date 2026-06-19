@@ -42,7 +42,7 @@ export const candidateFormSchema = z
     source: z.union([candidateSourceEnum, z.undefined()]),
     sourceUrl: z.string(),
     note: z.string().max(1000, "Note must be at most 1000 characters."),
-    positionId: z.string(),
+    positionIds: z.array(z.string()),
   })
   .refine(
     (data) => {

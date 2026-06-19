@@ -28,8 +28,12 @@ import { useRouter } from "@tanstack/react-router";
 
 const CandidateDocumentUploadForm = ({
   candidateId,
+  compact = false,
+  onSuccess,
 }: {
   candidateId: string;
+  compact?: boolean;
+  onSuccess?: () => void;
 }) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -92,7 +96,11 @@ const CandidateDocumentUploadForm = ({
             if (fileInputRef.current) {
               fileInputRef.current.value = "";
             }
-            router.navigate({ to: `/candidates/${candidateId}` });
+            if (onSuccess) {
+              onSuccess();
+            } else {
+              router.navigate({ to: `/candidates/${candidateId}` });
+            }
           } else {
             const errorMessage =
               typeof result.error === "string"
@@ -130,49 +138,53 @@ const CandidateDocumentUploadForm = ({
     form.setFieldValue("tags", tagsArray);
   };
 
+  const resetForm = () => {
+    form.reset();
+    setFile(null);
+    setTagsInput("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-2">
-          <h2 className="text-2xl font-semibold tracking-tight">
-            Upload Candidate Document
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Upload a file and fill in the details below.
-          </p>
+      {!compact ? (
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-2">
+            <h2 className="text-2xl font-semibold tracking-tight">
+              Upload Candidate Document
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Upload a file and fill in the details below.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={resetForm}
+              disabled={isPending}
+            >
+              Reset
+            </Button>
+            <Button
+              type="submit"
+              form="candidate-document-upload-form"
+              disabled={isPending}
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                "Submit"
+              )}
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              form.reset();
-              setFile(null);
-              setTagsInput("");
-              if (fileInputRef.current) {
-                fileInputRef.current.value = "";
-              }
-            }}
-            disabled={isPending}
-          >
-            Reset
-          </Button>
-          <Button
-            type="submit"
-            form="candidate-document-upload-form"
-            disabled={isPending}
-          >
-            {isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              "Submit"
-            )}
-          </Button>
-        </div>
-      </div>
+      ) : null}
       <form
         id="candidate-document-upload-form"
         onSubmit={(e) => {
@@ -316,6 +328,28 @@ const CandidateDocumentUploadForm = ({
             )}
           />
         </FieldGroup>
+        {compact ? (
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={resetForm}
+              disabled={isPending}
+            >
+              Reset
+            </Button>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                "Upload"
+              )}
+            </Button>
+          </div>
+        ) : null}
       </form>
     </div>
   );

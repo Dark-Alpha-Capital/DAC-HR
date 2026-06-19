@@ -1,12 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { env } from "cloudflare:workers";
 import { getSession } from "~/lib/get-session";
 import { saveCandidateAiScreening } from "@workspace/db/queries";
 import { getCandidateWithApplications } from "@workspace/db/repositories/candidate-repository";
-import {
-  createFileSearchClient,
-  generateContentWithFileSearch,
-} from "@workspace/file-search";
-import { googleAIClient, CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME } from "~/lib/ai/models";
+import { getOpenAIProvider, generateEmbedding } from "@workspace/ai-config";
 import { generateText, Output } from "ai";
 import { candidateAiScreeningSchema } from "~/lib/schemas/candidate-ai-screening-schema";
 
@@ -55,7 +52,7 @@ export const Route = createFileRoute("/api/candidate/$id/ai-analysis")({
             : candidateRecord.applications[0] || null;
 
           const targetPosition = targetApplication?.position ?? null;
-          const storeName = CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME;
+
           let documentInstruction = "Search all candidate documents.";
           if (documentIds?.length) {
             documentInstruction = `Focus on ${documentIds.length} selected document(s).`;
@@ -65,7 +62,7 @@ export const Route = createFileRoute("/api/candidate/$id/ai-analysis")({
           if (customPrompt?.trim())
             customPromptSection = `\n\nUser requirements: ${customPrompt.trim()}`;
 
-          const rawAnalysisPrompt =
+          const analysisPrompt =
             `Evaluate candidate fit for Dark Alpha Capital's position.
 
 ${documentInstruction}
@@ -76,37 +73,65 @@ ${customPromptSection}
 
 Provide concise markdown analysis: background, skills, experience fit, culture fit, suitability.`.trim();
 
-          const fileSearchClient = createFileSearchClient();
-          const rawAnalysisResponse = await generateContentWithFileSearch({
-            client: fileSearchClient,
-            model: "gemini-2.5-flash",
-            prompt: rawAnalysisPrompt,
-            fileSearchStoreNames: [storeName],
-            metadataFilter: `candidate_id="${candidateId}"`,
-          });
+          const queryEmbedding = await generateEmbedding(analysisPrompt);
 
-          const rawAnalysisText = rawAnalysisResponse.text || "";
+          const namespace = `candidate-${candidateId}`;
+          const filter = documentIds?.length
+            ? { documentId: { $in: documentIds } }
+            : undefined;
 
+          const matches = await (
+            env as Record<string, unknown>
+          ).VECTORIZE && typeof (env as Record<string, unknown>).VECTORIZE === "object"
+            ? await (
+                (env as Record<string, unknown>).VECTORIZE as {
+                  query: (
+                    vector: number[],
+                    opts: {
+                      topK: number;
+                      namespace: string;
+                      returnMetadata: string;
+                      filter?: Record<string, { $in: string[] }>;
+                    },
+                  ) => Promise<{
+                    matches: Array<{ metadata?: { text?: string } }>;
+                  }>;
+                }
+              ).query(queryEmbedding, {
+                topK: 10,
+                namespace,
+                returnMetadata: "indexed",
+                filter,
+              })
+            : { matches: [] };
+
+          const contextChunks = matches.matches
+            .map((m) => m.metadata?.text)
+            .filter(Boolean) as string[];
+          const context = contextChunks.join("\n\n");
+
+          const openai = getOpenAIProvider();
           const { output: structuredData } = await generateText({
-            model: googleAIClient("gemini-3-flash-preview"),
+            model: openai("gpt-4o-mini"),
             output: Output.object({ schema: candidateAiScreeningSchema }),
-            prompt: `Extract structured evaluation: score (0-10), recommendation, markdown analysis, strengths (3-7), concerns, experience/skills/culture fit.\n\n${rawAnalysisText}`,
+            prompt: `Context from candidate documents:\n${context || "No document context available."}\n\nAnalysis request:\n${analysisPrompt}`,
           });
 
           const savedScreening = await saveCandidateAiScreening({
             candidateId,
             positionId: targetApplication?.position.id || null,
             applicationId: targetApplication?.id || null,
-            analysis: rawAnalysisText,
-            model: "gemini-3-flash-preview",
+            analysis: analysisPrompt,
+            model: "gpt-4o-mini",
             structuredData,
           });
 
           return Response.json(
             {
-              analysis: rawAnalysisText,
+              analysis: analysisPrompt,
               score: structuredData.score,
               screeningId: savedScreening?.id || null,
+              contextChunks: contextChunks.length,
             },
             { status: 200 },
           );

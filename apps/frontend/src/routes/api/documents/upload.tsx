@@ -67,7 +67,7 @@ export const Route = createFileRoute("/api/documents/upload")({
             );
           }
 
-          const url = await uploadFile(file, "/Documents");
+          const url = await uploadFile(file, "/ATS");
 
           if (!url) {
             return Response.json(

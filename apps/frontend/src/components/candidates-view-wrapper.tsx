@@ -65,14 +65,14 @@ export default function CandidatesViewWrapper({
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
 
   return (
-    <div className="space-y-6 w-full overflow-x-hidden">
+    <div className="space-y-6 w-full min-w-0">
       <div className="flex items-center justify-end">
         <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
       </div>
 
-      <div className="w-full overflow-x-hidden">
+      <div className="min-w-0 w-full overflow-hidden">
         {viewMode === "table" ? (
-          <div className="overflow-x-auto -mx-4 px-4 md:-mx-6 md:px-6">
+          <div className="overflow-x-auto">
             <CandidateContainer
               candidates={candidates}
               currentPage={currentPage}

@@ -5,7 +5,7 @@ import {
   candidateFormSchema,
 } from "../schemas/candidate-form-schema";
 import { getSession } from "~/lib/get-session";
-import { createCandidateWithOptionalPosition } from "~/lib/application/candidate-service";
+import { createCandidateWithPositions } from "~/lib/application/candidate-service";
 
 export const createCandidate = createServerFn({ method: "POST" })
   .validator((data: CandidateFormSchema) => data)
@@ -30,11 +30,13 @@ export const createCandidate = createServerFn({ method: "POST" })
       source,
       sourceUrl,
       note,
-      positionId,
+      positionIds,
     } = result.data;
     try {
-      const { candidate: newCandidate, hasPosition, normalizedPositionId } =
-        await createCandidateWithOptionalPosition({
+      const {
+        candidate: newCandidate,
+        positionIds: createdPositionIds,
+      } = await createCandidateWithPositions({
           firstName,
           lastName,
           email,
@@ -43,15 +45,16 @@ export const createCandidate = createServerFn({ method: "POST" })
           source,
           sourceUrl,
           note,
-          positionId,
+          positionIds,
         });
+      const hasPositions = createdPositionIds.length > 0;
+
       insertAuditLog({
         userId: session.user.id,
         action: "create_candidate",
         entityType: "candidate",
         entityId: newCandidate.id,
         details: {
-          // Candidate information
           candidate: {
             id: newCandidate.id,
             firstName: newCandidate.firstName,
@@ -65,7 +68,6 @@ export const createCandidate = createServerFn({ method: "POST" })
             createdAt: newCandidate.createdAt.toISOString(),
             updatedAt: newCandidate.updatedAt.toISOString(),
           },
-          // Input data provided
           input: {
             firstName,
             lastName,
@@ -75,19 +77,17 @@ export const createCandidate = createServerFn({ method: "POST" })
             source: source || null,
             sourceUrl: sourceUrl?.trim() || null,
             note: note?.trim() || null,
-            positionId: normalizedPositionId,
+            positionIds: createdPositionIds,
           },
-          // User information (who created the candidate)
           createdBy: {
             id: session.user.id,
             email: session.user.email,
             name: session.user.name,
           },
-          // Metadata
           metadata: {
             timestamp: new Date().toISOString(),
-            hasPosition,
-            applicationCreated: hasPosition,
+            hasPositions,
+            applicationsCreated: createdPositionIds.length,
           },
         },
       }).catch((error) => console.error("Audit log error:", error));

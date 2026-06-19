@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "hr-automation",
-  "main": "@tanstack/react-start/server-entry",
+  "main": "src/server.ts",
   "compatibility_date": "2026-06-01",
   "compatibility_flags": ["nodejs_compat"],
 
@@ -11,7 +11,11 @@
   },
 
   "vars": {
-    "BETTER_AUTH_URL": "https://recruiting.darkalphacapital.com"
+    "BETTER_AUTH_URL": "https://recruiting.darkalphacapital.com",
+    "OPENAI_API_KEY": "",
+    "NEXTCLOUD_URL": "",
+    "NEXTCLOUD_USER": "",
+    "NEXTCLOUD_PASSWORD": ""
   },
 
   "d1_databases": [
@@ -29,6 +33,14 @@
       "binding": "VECTORIZE",
       "index_name": "hr-documents-index",
       "remote": true
+    }
+  ],
+
+  "workflows": [
+    {
+      "name": "document-indexing",
+      "binding": "DOCUMENT_INDEXING_WORKFLOW",
+      "class_name": "DocumentIndexingWorkflow"
     }
   ],
 

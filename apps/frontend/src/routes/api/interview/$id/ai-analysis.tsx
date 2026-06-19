@@ -9,7 +9,7 @@ import {
   getInterviewById,
   deleteInterviewAiAnalysisForInterview,
 } from "@workspace/db/repositories/interview-repository";
-import { googleAIClient } from "~/lib/ai/models";
+import { getAiModel } from "~/lib/ai/models";
 import { generateText, Output } from "ai";
 import { interviewAiAnalysisSchema } from "~/lib/schemas/interview-ai-analysis-schema";
 
@@ -94,7 +94,7 @@ export const Route = createFileRoute("/api/interview/$id/ai-analysis")({
             .join("\n\n");
 
           const { output: structuredData } = await generateText({
-            model: googleAIClient("gemini-2.5-flash"),
+            model: getAiModel("gpt-4o-mini"),
             output: Output.object({ schema: interviewAiAnalysisSchema }),
             prompt,
           });
@@ -105,7 +105,7 @@ export const Route = createFileRoute("/api/interview/$id/ai-analysis")({
             positionId: application.position.id,
             analysis: structuredData.overallSummary,
             customPrompt: customPrompt || null,
-            model: "gemini-2.5-flash",
+            model: "gpt-4o-mini",
             structuredData,
           });
 

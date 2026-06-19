@@ -14,7 +14,6 @@ import {
   BookOpen,
   ClipboardList,
   ShieldCheckIcon,
-  MonitorPlay,
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import type { AppSession } from "~/lib/auth-session";
@@ -41,11 +40,6 @@ const recruitingLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/candidates", label: "Candidates", icon: Users },
   { href: "/documents", label: "Documents", icon: Folders },
-  {
-    href: "/interview-sessions",
-    label: "Interview Sessions",
-    icon: MonitorPlay,
-  },
   { href: "/weekly-checkin", label: "Weekly Check-in", icon: ClipboardCheck },
   { href: "/docs", label: "Documentation", icon: BookOpen },
 ] as const;

@@ -28,7 +28,6 @@ import { Route as MainQuestionsIndexRouteImport } from './routes/_main/questions
 import { Route as MainProfileIndexRouteImport } from './routes/_main/profile/index'
 import { Route as MainPositionsIndexRouteImport } from './routes/_main/positions/index'
 import { Route as MainInterviewsIndexRouteImport } from './routes/_main/interviews/index'
-import { Route as MainInterviewSessionsIndexRouteImport } from './routes/_main/interview-sessions/index'
 import { Route as MainEmployeesIndexRouteImport } from './routes/_main/employees/index'
 import { Route as MainDocumentsIndexRouteImport } from './routes/_main/documents/index'
 import { Route as MainDocsIndexRouteImport } from './routes/_main/docs/index'
@@ -60,16 +59,14 @@ import { Route as MainDocsApplicationsRouteImport } from './routes/_main/docs/ap
 import { Route as MainDocsAiFeaturesRouteImport } from './routes/_main/docs/ai-features'
 import { Route as MainCandidatesNewRouteImport } from './routes/_main/candidates/new'
 import { Route as MainAdminAuditLogsRouteImport } from './routes/_main/admin/audit-logs'
-import { Route as ApiInterviewSessionsIdIndexRouteImport } from './routes/api/interview-sessions/$id/index'
 import { Route as ApiCandidateIdIndexRouteImport } from './routes/api/candidate/$id/index'
 import { Route as MainRoundsIdIndexRouteImport } from './routes/_main/rounds/$id/index'
 import { Route as MainQuestionsIdIndexRouteImport } from './routes/_main/questions/$id/index'
 import { Route as MainPositionsSlugIndexRouteImport } from './routes/_main/positions/$slug/index'
 import { Route as MainInterviewsIdIndexRouteImport } from './routes/_main/interviews/$id/index'
-import { Route as MainInterviewSessionsNewIndexRouteImport } from './routes/_main/interview-sessions/new/index'
-import { Route as MainInterviewSessionsIdIndexRouteImport } from './routes/_main/interview-sessions/$id/index'
 import { Route as MainEmployeesIdIndexRouteImport } from './routes/_main/employees/$id/index'
 import { Route as MainCandidatesUidIndexRouteImport } from './routes/_main/candidates/$uid/index'
+import { Route as MainApplicationsIdIndexRouteImport } from './routes/_main/applications/$id/index'
 import { Route as ApiInterviewIdAiAnalysisRouteImport } from './routes/api/interview/$id/ai-analysis'
 import { Route as ApiInterviewTokenTokenValidateRouteImport } from './routes/api/interview-token/$token/validate'
 import { Route as ApiInterviewTokenTokenSchemaRouteImport } from './routes/api/interview-token/$token/schema'
@@ -84,7 +81,6 @@ import { Route as MainQuestionsIdEditRouteImport } from './routes/_main/question
 import { Route as MainPositionsSlugEditRouteImport } from './routes/_main/positions/$slug/edit'
 import { Route as MainEmployeesIdEditRouteImport } from './routes/_main/employees/$id/edit'
 import { Route as MainCandidatesUidEditRouteImport } from './routes/_main/candidates/$uid/edit'
-import { Route as MainCandidatesUidAddDocumentRouteImport } from './routes/_main/candidates/$uid/add-document'
 import { Route as ApiCandidateIdDocumentsDocumentIdRouteImport } from './routes/api/candidate/$id/documents/$documentId'
 import { Route as MainCandidatesUidDocumentsDocumentIdEditRouteImport } from './routes/_main/candidates/$uid/documents/$documentId/edit'
 
@@ -182,12 +178,6 @@ const MainInterviewsIndexRoute = MainInterviewsIndexRouteImport.update({
   path: '/interviews/',
   getParentRoute: () => MainRouteRoute,
 } as any)
-const MainInterviewSessionsIndexRoute =
-  MainInterviewSessionsIndexRouteImport.update({
-    id: '/interview-sessions/',
-    path: '/interview-sessions/',
-    getParentRoute: () => MainRouteRoute,
-  } as any)
 const MainEmployeesIndexRoute = MainEmployeesIndexRouteImport.update({
   id: '/employees/',
   path: '/employees/',
@@ -345,12 +335,6 @@ const MainAdminAuditLogsRoute = MainAdminAuditLogsRouteImport.update({
   path: '/audit-logs',
   getParentRoute: () => MainAdminRouteRoute,
 } as any)
-const ApiInterviewSessionsIdIndexRoute =
-  ApiInterviewSessionsIdIndexRouteImport.update({
-    id: '/$id/',
-    path: '/$id/',
-    getParentRoute: () => ApiInterviewSessionsRoute,
-  } as any)
 const ApiCandidateIdIndexRoute = ApiCandidateIdIndexRouteImport.update({
   id: '/api/candidate/$id/',
   path: '/api/candidate/$id/',
@@ -376,18 +360,6 @@ const MainInterviewsIdIndexRoute = MainInterviewsIdIndexRouteImport.update({
   path: '/interviews/$id/',
   getParentRoute: () => MainRouteRoute,
 } as any)
-const MainInterviewSessionsNewIndexRoute =
-  MainInterviewSessionsNewIndexRouteImport.update({
-    id: '/interview-sessions/new/',
-    path: '/interview-sessions/new/',
-    getParentRoute: () => MainRouteRoute,
-  } as any)
-const MainInterviewSessionsIdIndexRoute =
-  MainInterviewSessionsIdIndexRouteImport.update({
-    id: '/interview-sessions/$id/',
-    path: '/interview-sessions/$id/',
-    getParentRoute: () => MainRouteRoute,
-  } as any)
 const MainEmployeesIdIndexRoute = MainEmployeesIdIndexRouteImport.update({
   id: '/employees/$id/',
   path: '/employees/$id/',
@@ -396,6 +368,11 @@ const MainEmployeesIdIndexRoute = MainEmployeesIdIndexRouteImport.update({
 const MainCandidatesUidIndexRoute = MainCandidatesUidIndexRouteImport.update({
   id: '/candidates/$uid/',
   path: '/candidates/$uid/',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainApplicationsIdIndexRoute = MainApplicationsIdIndexRouteImport.update({
+  id: '/applications/$id/',
+  path: '/applications/$id/',
   getParentRoute: () => MainRouteRoute,
 } as any)
 const ApiInterviewIdAiAnalysisRoute =
@@ -475,12 +452,6 @@ const MainCandidatesUidEditRoute = MainCandidatesUidEditRouteImport.update({
   path: '/candidates/$uid/edit',
   getParentRoute: () => MainRouteRoute,
 } as any)
-const MainCandidatesUidAddDocumentRoute =
-  MainCandidatesUidAddDocumentRouteImport.update({
-    id: '/candidates/$uid/add-document',
-    path: '/candidates/$uid/add-document',
-    getParentRoute: () => MainRouteRoute,
-  } as any)
 const ApiCandidateIdDocumentsDocumentIdRoute =
   ApiCandidateIdDocumentsDocumentIdRouteImport.update({
     id: '/$documentId',
@@ -504,7 +475,7 @@ export interface FileRoutesByFullPath {
   '/docs': typeof MainDocsRouteRouteWithChildren
   '/dashboard': typeof MainDashboardRoute
   '/api/health': typeof ApiHealthRoute
-  '/api/interview-sessions': typeof ApiInterviewSessionsRouteWithChildren
+  '/api/interview-sessions': typeof ApiInterviewSessionsRoute
   '/admin/audit-logs': typeof MainAdminAuditLogsRoute
   '/candidates/new': typeof MainCandidatesNewRoute
   '/docs/ai-features': typeof MainDocsAiFeaturesRoute
@@ -536,7 +507,6 @@ export interface FileRoutesByFullPath {
   '/docs/': typeof MainDocsIndexRoute
   '/documents/': typeof MainDocumentsIndexRoute
   '/employees/': typeof MainEmployeesIndexRoute
-  '/interview-sessions/': typeof MainInterviewSessionsIndexRoute
   '/interviews/': typeof MainInterviewsIndexRoute
   '/positions/': typeof MainPositionsIndexRoute
   '/profile/': typeof MainProfileIndexRoute
@@ -545,7 +515,6 @@ export interface FileRoutesByFullPath {
   '/weekly-checkin/': typeof MainWeeklyCheckinIndexRoute
   '/api/candidate/': typeof ApiCandidateIndexRoute
   '/interview/$token/': typeof InterviewTokenIndexRoute
-  '/candidates/$uid/add-document': typeof MainCandidatesUidAddDocumentRoute
   '/candidates/$uid/edit': typeof MainCandidatesUidEditRoute
   '/employees/$id/edit': typeof MainEmployeesIdEditRoute
   '/positions/$slug/edit': typeof MainPositionsSlugEditRoute
@@ -560,16 +529,14 @@ export interface FileRoutesByFullPath {
   '/api/interview-token/$token/schema': typeof ApiInterviewTokenTokenSchemaRoute
   '/api/interview-token/$token/validate': typeof ApiInterviewTokenTokenValidateRoute
   '/api/interview/$id/ai-analysis': typeof ApiInterviewIdAiAnalysisRoute
+  '/applications/$id/': typeof MainApplicationsIdIndexRoute
   '/candidates/$uid/': typeof MainCandidatesUidIndexRoute
   '/employees/$id/': typeof MainEmployeesIdIndexRoute
-  '/interview-sessions/$id/': typeof MainInterviewSessionsIdIndexRoute
-  '/interview-sessions/new/': typeof MainInterviewSessionsNewIndexRoute
   '/interviews/$id/': typeof MainInterviewsIdIndexRoute
   '/positions/$slug/': typeof MainPositionsSlugIndexRoute
   '/questions/$id/': typeof MainQuestionsIdIndexRoute
   '/rounds/$id/': typeof MainRoundsIdIndexRoute
   '/api/candidate/$id/': typeof ApiCandidateIdIndexRoute
-  '/api/interview-sessions/$id/': typeof ApiInterviewSessionsIdIndexRoute
   '/api/candidate/$id/documents/$documentId': typeof ApiCandidateIdDocumentsDocumentIdRoute
   '/candidates/$uid/documents/$documentId/edit': typeof MainCandidatesUidDocumentsDocumentIdEditRoute
 }
@@ -580,7 +547,7 @@ export interface FileRoutesByTo {
   '/unauthorized': typeof UnauthorizedRoute
   '/dashboard': typeof MainDashboardRoute
   '/api/health': typeof ApiHealthRoute
-  '/api/interview-sessions': typeof ApiInterviewSessionsRouteWithChildren
+  '/api/interview-sessions': typeof ApiInterviewSessionsRoute
   '/': typeof MainIndexRoute
   '/admin/audit-logs': typeof MainAdminAuditLogsRoute
   '/candidates/new': typeof MainCandidatesNewRoute
@@ -613,7 +580,6 @@ export interface FileRoutesByTo {
   '/docs': typeof MainDocsIndexRoute
   '/documents': typeof MainDocumentsIndexRoute
   '/employees': typeof MainEmployeesIndexRoute
-  '/interview-sessions': typeof MainInterviewSessionsIndexRoute
   '/interviews': typeof MainInterviewsIndexRoute
   '/positions': typeof MainPositionsIndexRoute
   '/profile': typeof MainProfileIndexRoute
@@ -622,7 +588,6 @@ export interface FileRoutesByTo {
   '/weekly-checkin': typeof MainWeeklyCheckinIndexRoute
   '/api/candidate': typeof ApiCandidateIndexRoute
   '/interview/$token': typeof InterviewTokenIndexRoute
-  '/candidates/$uid/add-document': typeof MainCandidatesUidAddDocumentRoute
   '/candidates/$uid/edit': typeof MainCandidatesUidEditRoute
   '/employees/$id/edit': typeof MainEmployeesIdEditRoute
   '/positions/$slug/edit': typeof MainPositionsSlugEditRoute
@@ -637,16 +602,14 @@ export interface FileRoutesByTo {
   '/api/interview-token/$token/schema': typeof ApiInterviewTokenTokenSchemaRoute
   '/api/interview-token/$token/validate': typeof ApiInterviewTokenTokenValidateRoute
   '/api/interview/$id/ai-analysis': typeof ApiInterviewIdAiAnalysisRoute
+  '/applications/$id': typeof MainApplicationsIdIndexRoute
   '/candidates/$uid': typeof MainCandidatesUidIndexRoute
   '/employees/$id': typeof MainEmployeesIdIndexRoute
-  '/interview-sessions/$id': typeof MainInterviewSessionsIdIndexRoute
-  '/interview-sessions/new': typeof MainInterviewSessionsNewIndexRoute
   '/interviews/$id': typeof MainInterviewsIdIndexRoute
   '/positions/$slug': typeof MainPositionsSlugIndexRoute
   '/questions/$id': typeof MainQuestionsIdIndexRoute
   '/rounds/$id': typeof MainRoundsIdIndexRoute
   '/api/candidate/$id': typeof ApiCandidateIdIndexRoute
-  '/api/interview-sessions/$id': typeof ApiInterviewSessionsIdIndexRoute
   '/api/candidate/$id/documents/$documentId': typeof ApiCandidateIdDocumentsDocumentIdRoute
   '/candidates/$uid/documents/$documentId/edit': typeof MainCandidatesUidDocumentsDocumentIdEditRoute
 }
@@ -661,7 +624,7 @@ export interface FileRoutesById {
   '/_main/docs': typeof MainDocsRouteRouteWithChildren
   '/_main/dashboard': typeof MainDashboardRoute
   '/api/health': typeof ApiHealthRoute
-  '/api/interview-sessions': typeof ApiInterviewSessionsRouteWithChildren
+  '/api/interview-sessions': typeof ApiInterviewSessionsRoute
   '/_main/': typeof MainIndexRoute
   '/_main/admin/audit-logs': typeof MainAdminAuditLogsRoute
   '/_main/candidates/new': typeof MainCandidatesNewRoute
@@ -694,7 +657,6 @@ export interface FileRoutesById {
   '/_main/docs/': typeof MainDocsIndexRoute
   '/_main/documents/': typeof MainDocumentsIndexRoute
   '/_main/employees/': typeof MainEmployeesIndexRoute
-  '/_main/interview-sessions/': typeof MainInterviewSessionsIndexRoute
   '/_main/interviews/': typeof MainInterviewsIndexRoute
   '/_main/positions/': typeof MainPositionsIndexRoute
   '/_main/profile/': typeof MainProfileIndexRoute
@@ -703,7 +665,6 @@ export interface FileRoutesById {
   '/_main/weekly-checkin/': typeof MainWeeklyCheckinIndexRoute
   '/api/candidate/': typeof ApiCandidateIndexRoute
   '/interview/$token/': typeof InterviewTokenIndexRoute
-  '/_main/candidates/$uid/add-document': typeof MainCandidatesUidAddDocumentRoute
   '/_main/candidates/$uid/edit': typeof MainCandidatesUidEditRoute
   '/_main/employees/$id/edit': typeof MainEmployeesIdEditRoute
   '/_main/positions/$slug/edit': typeof MainPositionsSlugEditRoute
@@ -718,16 +679,14 @@ export interface FileRoutesById {
   '/api/interview-token/$token/schema': typeof ApiInterviewTokenTokenSchemaRoute
   '/api/interview-token/$token/validate': typeof ApiInterviewTokenTokenValidateRoute
   '/api/interview/$id/ai-analysis': typeof ApiInterviewIdAiAnalysisRoute
+  '/_main/applications/$id/': typeof MainApplicationsIdIndexRoute
   '/_main/candidates/$uid/': typeof MainCandidatesUidIndexRoute
   '/_main/employees/$id/': typeof MainEmployeesIdIndexRoute
-  '/_main/interview-sessions/$id/': typeof MainInterviewSessionsIdIndexRoute
-  '/_main/interview-sessions/new/': typeof MainInterviewSessionsNewIndexRoute
   '/_main/interviews/$id/': typeof MainInterviewsIdIndexRoute
   '/_main/positions/$slug/': typeof MainPositionsSlugIndexRoute
   '/_main/questions/$id/': typeof MainQuestionsIdIndexRoute
   '/_main/rounds/$id/': typeof MainRoundsIdIndexRoute
   '/api/candidate/$id/': typeof ApiCandidateIdIndexRoute
-  '/api/interview-sessions/$id/': typeof ApiInterviewSessionsIdIndexRoute
   '/api/candidate/$id/documents/$documentId': typeof ApiCandidateIdDocumentsDocumentIdRoute
   '/_main/candidates/$uid/documents/$documentId/edit': typeof MainCandidatesUidDocumentsDocumentIdEditRoute
 }
@@ -775,7 +734,6 @@ export interface FileRouteTypes {
     | '/docs/'
     | '/documents/'
     | '/employees/'
-    | '/interview-sessions/'
     | '/interviews/'
     | '/positions/'
     | '/profile/'
@@ -784,7 +742,6 @@ export interface FileRouteTypes {
     | '/weekly-checkin/'
     | '/api/candidate/'
     | '/interview/$token/'
-    | '/candidates/$uid/add-document'
     | '/candidates/$uid/edit'
     | '/employees/$id/edit'
     | '/positions/$slug/edit'
@@ -799,16 +756,14 @@ export interface FileRouteTypes {
     | '/api/interview-token/$token/schema'
     | '/api/interview-token/$token/validate'
     | '/api/interview/$id/ai-analysis'
+    | '/applications/$id/'
     | '/candidates/$uid/'
     | '/employees/$id/'
-    | '/interview-sessions/$id/'
-    | '/interview-sessions/new/'
     | '/interviews/$id/'
     | '/positions/$slug/'
     | '/questions/$id/'
     | '/rounds/$id/'
     | '/api/candidate/$id/'
-    | '/api/interview-sessions/$id/'
     | '/api/candidate/$id/documents/$documentId'
     | '/candidates/$uid/documents/$documentId/edit'
   fileRoutesByTo: FileRoutesByTo
@@ -852,7 +807,6 @@ export interface FileRouteTypes {
     | '/docs'
     | '/documents'
     | '/employees'
-    | '/interview-sessions'
     | '/interviews'
     | '/positions'
     | '/profile'
@@ -861,7 +815,6 @@ export interface FileRouteTypes {
     | '/weekly-checkin'
     | '/api/candidate'
     | '/interview/$token'
-    | '/candidates/$uid/add-document'
     | '/candidates/$uid/edit'
     | '/employees/$id/edit'
     | '/positions/$slug/edit'
@@ -876,16 +829,14 @@ export interface FileRouteTypes {
     | '/api/interview-token/$token/schema'
     | '/api/interview-token/$token/validate'
     | '/api/interview/$id/ai-analysis'
+    | '/applications/$id'
     | '/candidates/$uid'
     | '/employees/$id'
-    | '/interview-sessions/$id'
-    | '/interview-sessions/new'
     | '/interviews/$id'
     | '/positions/$slug'
     | '/questions/$id'
     | '/rounds/$id'
     | '/api/candidate/$id'
-    | '/api/interview-sessions/$id'
     | '/api/candidate/$id/documents/$documentId'
     | '/candidates/$uid/documents/$documentId/edit'
   id:
@@ -932,7 +883,6 @@ export interface FileRouteTypes {
     | '/_main/docs/'
     | '/_main/documents/'
     | '/_main/employees/'
-    | '/_main/interview-sessions/'
     | '/_main/interviews/'
     | '/_main/positions/'
     | '/_main/profile/'
@@ -941,7 +891,6 @@ export interface FileRouteTypes {
     | '/_main/weekly-checkin/'
     | '/api/candidate/'
     | '/interview/$token/'
-    | '/_main/candidates/$uid/add-document'
     | '/_main/candidates/$uid/edit'
     | '/_main/employees/$id/edit'
     | '/_main/positions/$slug/edit'
@@ -956,16 +905,14 @@ export interface FileRouteTypes {
     | '/api/interview-token/$token/schema'
     | '/api/interview-token/$token/validate'
     | '/api/interview/$id/ai-analysis'
+    | '/_main/applications/$id/'
     | '/_main/candidates/$uid/'
     | '/_main/employees/$id/'
-    | '/_main/interview-sessions/$id/'
-    | '/_main/interview-sessions/new/'
     | '/_main/interviews/$id/'
     | '/_main/positions/$slug/'
     | '/_main/questions/$id/'
     | '/_main/rounds/$id/'
     | '/api/candidate/$id/'
-    | '/api/interview-sessions/$id/'
     | '/api/candidate/$id/documents/$documentId'
     | '/_main/candidates/$uid/documents/$documentId/edit'
   fileRoutesById: FileRoutesById
@@ -977,7 +924,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   UnauthorizedRoute: typeof UnauthorizedRoute
   ApiHealthRoute: typeof ApiHealthRoute
-  ApiInterviewSessionsRoute: typeof ApiInterviewSessionsRouteWithChildren
+  ApiInterviewSessionsRoute: typeof ApiInterviewSessionsRoute
   ApiAuditLogsGenerateReportRoute: typeof ApiAuditLogsGenerateReportRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCandidateBulkRoute: typeof ApiCandidateBulkRoute
@@ -1130,13 +1077,6 @@ declare module '@tanstack/react-router' {
       path: '/interviews'
       fullPath: '/interviews/'
       preLoaderRoute: typeof MainInterviewsIndexRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/interview-sessions/': {
-      id: '/_main/interview-sessions/'
-      path: '/interview-sessions'
-      fullPath: '/interview-sessions/'
-      preLoaderRoute: typeof MainInterviewSessionsIndexRouteImport
       parentRoute: typeof MainRouteRoute
     }
     '/_main/employees/': {
@@ -1356,13 +1296,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainAdminAuditLogsRouteImport
       parentRoute: typeof MainAdminRouteRoute
     }
-    '/api/interview-sessions/$id/': {
-      id: '/api/interview-sessions/$id/'
-      path: '/$id'
-      fullPath: '/api/interview-sessions/$id/'
-      preLoaderRoute: typeof ApiInterviewSessionsIdIndexRouteImport
-      parentRoute: typeof ApiInterviewSessionsRoute
-    }
     '/api/candidate/$id/': {
       id: '/api/candidate/$id/'
       path: '/api/candidate/$id'
@@ -1398,20 +1331,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainInterviewsIdIndexRouteImport
       parentRoute: typeof MainRouteRoute
     }
-    '/_main/interview-sessions/new/': {
-      id: '/_main/interview-sessions/new/'
-      path: '/interview-sessions/new'
-      fullPath: '/interview-sessions/new/'
-      preLoaderRoute: typeof MainInterviewSessionsNewIndexRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/interview-sessions/$id/': {
-      id: '/_main/interview-sessions/$id/'
-      path: '/interview-sessions/$id'
-      fullPath: '/interview-sessions/$id/'
-      preLoaderRoute: typeof MainInterviewSessionsIdIndexRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
     '/_main/employees/$id/': {
       id: '/_main/employees/$id/'
       path: '/employees/$id'
@@ -1424,6 +1343,13 @@ declare module '@tanstack/react-router' {
       path: '/candidates/$uid'
       fullPath: '/candidates/$uid/'
       preLoaderRoute: typeof MainCandidatesUidIndexRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/applications/$id/': {
+      id: '/_main/applications/$id/'
+      path: '/applications/$id'
+      fullPath: '/applications/$id/'
+      preLoaderRoute: typeof MainApplicationsIdIndexRouteImport
       parentRoute: typeof MainRouteRoute
     }
     '/api/interview/$id/ai-analysis': {
@@ -1524,13 +1450,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainCandidatesUidEditRouteImport
       parentRoute: typeof MainRouteRoute
     }
-    '/_main/candidates/$uid/add-document': {
-      id: '/_main/candidates/$uid/add-document'
-      path: '/candidates/$uid/add-document'
-      fullPath: '/candidates/$uid/add-document'
-      preLoaderRoute: typeof MainCandidatesUidAddDocumentRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
     '/api/candidate/$id/documents/$documentId': {
       id: '/api/candidate/$id/documents/$documentId'
       path: '/$documentId'
@@ -1611,24 +1530,21 @@ interface MainRouteRouteChildren {
   MainCandidatesIndexRoute: typeof MainCandidatesIndexRoute
   MainDocumentsIndexRoute: typeof MainDocumentsIndexRoute
   MainEmployeesIndexRoute: typeof MainEmployeesIndexRoute
-  MainInterviewSessionsIndexRoute: typeof MainInterviewSessionsIndexRoute
   MainInterviewsIndexRoute: typeof MainInterviewsIndexRoute
   MainPositionsIndexRoute: typeof MainPositionsIndexRoute
   MainProfileIndexRoute: typeof MainProfileIndexRoute
   MainQuestionsIndexRoute: typeof MainQuestionsIndexRoute
   MainRoundsIndexRoute: typeof MainRoundsIndexRoute
   MainWeeklyCheckinIndexRoute: typeof MainWeeklyCheckinIndexRoute
-  MainCandidatesUidAddDocumentRoute: typeof MainCandidatesUidAddDocumentRoute
   MainCandidatesUidEditRoute: typeof MainCandidatesUidEditRoute
   MainEmployeesIdEditRoute: typeof MainEmployeesIdEditRoute
   MainPositionsSlugEditRoute: typeof MainPositionsSlugEditRoute
   MainQuestionsIdEditRoute: typeof MainQuestionsIdEditRoute
   MainRoundsIdAddQuestionRoute: typeof MainRoundsIdAddQuestionRoute
   MainRoundsIdEditRoute: typeof MainRoundsIdEditRoute
+  MainApplicationsIdIndexRoute: typeof MainApplicationsIdIndexRoute
   MainCandidatesUidIndexRoute: typeof MainCandidatesUidIndexRoute
   MainEmployeesIdIndexRoute: typeof MainEmployeesIdIndexRoute
-  MainInterviewSessionsIdIndexRoute: typeof MainInterviewSessionsIdIndexRoute
-  MainInterviewSessionsNewIndexRoute: typeof MainInterviewSessionsNewIndexRoute
   MainInterviewsIdIndexRoute: typeof MainInterviewsIdIndexRoute
   MainPositionsSlugIndexRoute: typeof MainPositionsSlugIndexRoute
   MainQuestionsIdIndexRoute: typeof MainQuestionsIdIndexRoute
@@ -1653,24 +1569,21 @@ const MainRouteRouteChildren: MainRouteRouteChildren = {
   MainCandidatesIndexRoute: MainCandidatesIndexRoute,
   MainDocumentsIndexRoute: MainDocumentsIndexRoute,
   MainEmployeesIndexRoute: MainEmployeesIndexRoute,
-  MainInterviewSessionsIndexRoute: MainInterviewSessionsIndexRoute,
   MainInterviewsIndexRoute: MainInterviewsIndexRoute,
   MainPositionsIndexRoute: MainPositionsIndexRoute,
   MainProfileIndexRoute: MainProfileIndexRoute,
   MainQuestionsIndexRoute: MainQuestionsIndexRoute,
   MainRoundsIndexRoute: MainRoundsIndexRoute,
   MainWeeklyCheckinIndexRoute: MainWeeklyCheckinIndexRoute,
-  MainCandidatesUidAddDocumentRoute: MainCandidatesUidAddDocumentRoute,
   MainCandidatesUidEditRoute: MainCandidatesUidEditRoute,
   MainEmployeesIdEditRoute: MainEmployeesIdEditRoute,
   MainPositionsSlugEditRoute: MainPositionsSlugEditRoute,
   MainQuestionsIdEditRoute: MainQuestionsIdEditRoute,
   MainRoundsIdAddQuestionRoute: MainRoundsIdAddQuestionRoute,
   MainRoundsIdEditRoute: MainRoundsIdEditRoute,
+  MainApplicationsIdIndexRoute: MainApplicationsIdIndexRoute,
   MainCandidatesUidIndexRoute: MainCandidatesUidIndexRoute,
   MainEmployeesIdIndexRoute: MainEmployeesIdIndexRoute,
-  MainInterviewSessionsIdIndexRoute: MainInterviewSessionsIdIndexRoute,
-  MainInterviewSessionsNewIndexRoute: MainInterviewSessionsNewIndexRoute,
   MainInterviewsIdIndexRoute: MainInterviewsIdIndexRoute,
   MainPositionsSlugIndexRoute: MainPositionsSlugIndexRoute,
   MainQuestionsIdIndexRoute: MainQuestionsIdIndexRoute,
@@ -1682,17 +1595,6 @@ const MainRouteRouteChildren: MainRouteRouteChildren = {
 const MainRouteRouteWithChildren = MainRouteRoute._addFileChildren(
   MainRouteRouteChildren,
 )
-
-interface ApiInterviewSessionsRouteChildren {
-  ApiInterviewSessionsIdIndexRoute: typeof ApiInterviewSessionsIdIndexRoute
-}
-
-const ApiInterviewSessionsRouteChildren: ApiInterviewSessionsRouteChildren = {
-  ApiInterviewSessionsIdIndexRoute: ApiInterviewSessionsIdIndexRoute,
-}
-
-const ApiInterviewSessionsRouteWithChildren =
-  ApiInterviewSessionsRoute._addFileChildren(ApiInterviewSessionsRouteChildren)
 
 interface ApiCandidateIdDocumentsRouteChildren {
   ApiCandidateIdDocumentsDocumentIdRoute: typeof ApiCandidateIdDocumentsDocumentIdRoute
@@ -1716,7 +1618,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   UnauthorizedRoute: UnauthorizedRoute,
   ApiHealthRoute: ApiHealthRoute,
-  ApiInterviewSessionsRoute: ApiInterviewSessionsRouteWithChildren,
+  ApiInterviewSessionsRoute: ApiInterviewSessionsRoute,
   ApiAuditLogsGenerateReportRoute: ApiAuditLogsGenerateReportRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCandidateBulkRoute: ApiCandidateBulkRoute,

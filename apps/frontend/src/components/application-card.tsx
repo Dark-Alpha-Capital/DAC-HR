@@ -50,10 +50,10 @@ const ApplicationCard = ({ application, status }: ApplicationCardProps) => {
 
   return (
     <div
-      className={`bg-white dark:bg-card border border-border rounded-md p-3 hover:shadow-md transition-all ${borderColor} border-l-4`}
+      className={`bg-white dark:bg-card border border-border rounded-md p-3 hover:shadow-md transition-all ${borderColor} border-l-4 min-w-0`}
     >
-      <div className="mb-3">
-        <h3 className="font-semibold text-sm leading-tight mb-1">
+      <div className="mb-3 min-w-0">
+        <h3 className="font-semibold text-sm leading-tight mb-1 wrap-break-word">
           {application.candidate.firstName} {application.candidate.lastName} -{" "}
           {application.position.name}
         </h3>

@@ -12,8 +12,7 @@
         "NEXTCLOUD_URL",
         "NEXTCLOUD_USER",
         "NEXTCLOUD_PASSWORD",
-        "GEMINI_API_KEY",
-        "CANDIDATE_DOCUMENTS_SEARCH_STORE_NAME"
+        "OPENAI_API_KEY"
       ],
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],

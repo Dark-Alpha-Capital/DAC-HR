@@ -39,7 +39,7 @@ function EditCandidatePage() {
           <CandidateEditForm
             candidate={{
               ...candidate,
-              positionId: candidate.positionId || undefined,
+              positionIds: (candidate as any).positionIds || [],
             }}
             positions={positions}
           />

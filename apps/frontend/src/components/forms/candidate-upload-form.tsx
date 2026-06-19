@@ -20,7 +20,11 @@ import {
   InputGroupText,
   InputGroupTextarea,
 } from "~/components/ui/input-group";
-import { Loader2 } from "lucide-react";
+import { Checkbox } from "~/components/ui/checkbox";
+import { Label } from "~/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Separator } from "~/components/ui/separator";
+import { Loader2, Copy, Check, Sparkles } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import {
   candidateFormSchema,
@@ -37,14 +41,18 @@ import {
 import { Session } from "better-auth";
 import { resetCacheForCandidates } from "~/lib/actions/reset-cache";
 
+type Round = { roundTemplateId: string; name: string };
+
 const CandidateUploadForm = ({
   positions,
+  positionRounds,
   userSession,
 }: {
   positions: {
     id: string;
     name: string;
   }[];
+  positionRounds: Record<string, Round[]>;
   userSession: Session;
 }) => {
   const router = useRouter();
@@ -54,6 +62,12 @@ const CandidateUploadForm = ({
     "LinkedIn" | "Upwork" | "Handshake" | "Indeed" | undefined
   >(undefined);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+
+  // AI session generation state
+  const [generateAiSession, setGenerateAiSession] = useState(false);
+  const [selectedRoundId, setSelectedRoundId] = useState("");
+  const [generatedLink, setGeneratedLink] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   // Get the pre-selected position from URL params
   const preSelectedPositionId = searchParams.get("position");
@@ -80,7 +94,7 @@ const CandidateUploadForm = ({
         | undefined,
       sourceUrl: "",
       note: "",
-      positionId: defaultPositionId, // Use the pre-selected or default position
+      positionIds: defaultPositionId ? [defaultPositionId] : [],
     },
     validators: {
       onSubmit: candidateFormSchema,
@@ -101,10 +115,7 @@ const CandidateUploadForm = ({
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              ...value,
-              positionId: value.positionId || "",
-            }),
+            body: JSON.stringify(value),
           });
 
           const result = await response.json();
@@ -124,6 +135,7 @@ const CandidateUploadForm = ({
           }
 
           const candidateId = result.data?.id;
+          const applicationIds: string[] = result.applicationIds || [];
 
           if (!candidateId) {
             toast.error("Candidate created but no ID returned", {
@@ -144,72 +156,69 @@ const CandidateUploadForm = ({
                 "Resume uploaded during candidate creation",
               );
 
-              const documentResponse = await fetch(
+              await fetch(
                 `/api/candidate/${candidateId}/documents`,
                 {
                   method: "POST",
                   body: formData,
                 },
               );
-
-              const documentResult = await documentResponse.json();
-
-              if (!documentResponse.ok) {
-                console.error("Failed to upload resume:", documentResult);
-                toast.warning("Candidate created but resume upload failed", {
-                  position: "bottom-right",
-                  description:
-                    typeof documentResult.error === "string"
-                      ? documentResult.error
-                      : "The resume could not be uploaded. You can add it later.",
-                });
-              } else {
-                toast.success("Candidate and resume created successfully", {
-                  position: "bottom-right",
-                  description:
-                    "The candidate and resume have been created successfully.",
-                  action: {
-                    label: "View Candidate",
-                    onClick: () => {
-                      router.navigate({ to: `/candidates/${candidateId}` });
-                    },
-                  },
-                });
-              }
             } catch (documentError) {
               console.error("Error uploading resume:", documentError);
-              toast.warning("Candidate created but resume upload failed", {
-                position: "bottom-right",
-                description:
-                  "The resume could not be uploaded. You can add it later.",
-              });
             }
-          } else {
-            toast.success("Candidate created successfully", {
-              position: "bottom-right",
-              description: "The candidate has been created successfully.",
-              action: {
-                label: "View Candidate",
-                onClick: () => {
-                  router.navigate({ to: `/candidates/${candidateId}` });
-                },
-              },
-            });
           }
+
+          // Generate AI interview session if requested
+          if (generateAiSession && selectedRoundId && applicationIds.length > 0) {
+            try {
+              const sessionResponse = await fetch("/api/interview-sessions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  applicationId: applicationIds[0],
+                  roundId: selectedRoundId,
+                  expiryHours: 72,
+                }),
+              });
+
+              if (sessionResponse.ok) {
+                const sessionResult = await sessionResponse.json();
+                setGeneratedLink(sessionResult.interviewLink);
+                toast.success("Interview link generated", {
+                  position: "bottom-right",
+                });
+              } else {
+                console.error("Failed to create AI session");
+              }
+            } catch (sessionError) {
+              console.error("Error creating AI session:", sessionError);
+            }
+          }
+
+          toast.success("Candidate created successfully", {
+            position: "bottom-right",
+            description: "The candidate has been created successfully.",
+            action: {
+              label: "View Candidate",
+              onClick: () => {
+                router.navigate({ to: `/candidates/${candidateId}` });
+              },
+            },
+          });
 
           await resetCacheForCandidates();
 
           form.reset();
           setSelectedSource(undefined);
           setResumeFile(null);
-          // Clear file input
+          setGenerateAiSession(false);
+          setSelectedRoundId("");
           const fileInput = document.getElementById(
             "resume-upload",
           ) as HTMLInputElement;
           if (fileInput) {
             fileInput.value = "";
           }
-          router.navigate({ to: `/candidates` });
         } catch (error) {
           toast.error(
             error instanceof Error
@@ -223,6 +232,18 @@ const CandidateUploadForm = ({
       });
     },
   });
+
+  const selectedPositionId = form.state.values.positionIds?.[0] || "";
+  const roundsForPosition = positionRounds[selectedPositionId] || [];
+  const showRoundSelector = generateAiSession && selectedPositionId !== "";
+
+  const handleCopyLink = () => {
+    if (generatedLink) {
+      navigator.clipboard.writeText(generatedLink);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    }
+  };
 
   return (
     <div className="w-full space-y-6">
@@ -243,7 +264,9 @@ const CandidateUploadForm = ({
               form.reset();
               setSelectedSource(undefined);
               setResumeFile(null);
-              // Clear file input
+              setGenerateAiSession(false);
+              setSelectedRoundId("");
+              setGeneratedLink(null);
               const fileInput = document.getElementById(
                 "resume-upload",
               ) as HTMLInputElement;
@@ -271,6 +294,36 @@ const CandidateUploadForm = ({
           </Button>
         </div>
       </div>
+
+      {generatedLink && (
+        <Card className="border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-green-600" />
+              AI Interview Link Generated
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="flex items-center gap-2">
+              <code className="flex-1 truncate rounded bg-muted px-3 py-2 text-sm">
+                {generatedLink}
+              </code>
+              <Button variant="secondary" size="icon" onClick={handleCopyLink}>
+                {linkCopied ? (
+                  <Check className="size-4 text-green-600" />
+                ) : (
+                  <Copy className="size-4" />
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Share this link with the candidate. They can complete the
+              interview at their convenience.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       <form
         id="candidate-upload-form"
         onSubmit={(e) => {
@@ -356,10 +409,8 @@ const CandidateUploadForm = ({
             name="phone"
             validators={{
               onChange: ({ value }) => {
-                if (!value || value.trim() === "") return undefined; // Allow empty phone numbers
-                // Remove common formatting characters
+                if (!value || value.trim() === "") return undefined;
                 const cleaned = value.replace(/[\s\-\(\)\+\.]/g, "");
-                // Check if it's all digits and has reasonable length (7-15 digits)
                 if (!/^\d{7,15}$/.test(cleaned)) {
                   return [
                     {
@@ -443,7 +494,6 @@ const CandidateUploadForm = ({
                               | "Indeed");
                       field.handleChange(newSource);
                       setSelectedSource(newSource);
-                      // Clear sourceUrl when source is cleared
                       if (value === "") {
                         form.setFieldValue("sourceUrl", "");
                       }
@@ -508,17 +558,19 @@ const CandidateUploadForm = ({
           )}
 
           <form.Field
-            name="positionId"
+            name="positionIds"
             children={(field) => {
               const isInvalid =
                 field.state.meta.isTouched && !field.state.meta.isValid;
+              const selectedId = field.state.value?.[0] || "";
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Position</FieldLabel>
                   <Select
-                    value={field.state.value || ""}
+                    value={selectedId}
                     onValueChange={(value) => {
-                      field.handleChange(value);
+                      field.handleChange(value ? [value] : []);
+                      setSelectedRoundId("");
                     }}
                   >
                     <SelectTrigger
@@ -554,8 +606,7 @@ const CandidateUploadForm = ({
                 onChange={(e) => {
                   const selectedFile = e.target.files?.[0];
                   if (selectedFile) {
-                    // Validate file size (max 500MB)
-                    const maxSize = 500 * 1024 * 1024; // 500MB
+                    const maxSize = 500 * 1024 * 1024;
                     if (selectedFile.size > maxSize) {
                       toast.error("File size exceeds 500MB limit", {
                         position: "bottom-right",
@@ -563,8 +614,6 @@ const CandidateUploadForm = ({
                       e.target.value = "";
                       return;
                     }
-
-                    // Block video file types
                     const videoTypes = [
                       "video/mp4",
                       "video/mpeg",
@@ -577,7 +626,6 @@ const CandidateUploadForm = ({
                       "video/3gpp",
                       "video/x-flv",
                     ];
-
                     if (videoTypes.includes(selectedFile.type)) {
                       toast.error(
                         "Video files are not allowed. Please upload other file types.",
@@ -588,7 +636,6 @@ const CandidateUploadForm = ({
                       e.target.value = "";
                       return;
                     }
-
                     setResumeFile(selectedFile);
                   } else {
                     setResumeFile(null);
@@ -644,6 +691,64 @@ const CandidateUploadForm = ({
               );
             }}
           />
+
+          <Separator />
+
+          {/* AI Interview Session Generation */}
+          <div className="space-y-4 rounded-lg border p-4">
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="generate-ai-session"
+                checked={generateAiSession}
+                onCheckedChange={(checked) => {
+                  setGenerateAiSession(checked === true);
+                  if (!checked) setSelectedRoundId("");
+                }}
+              />
+              <div className="grid gap-1">
+                <Label htmlFor="generate-ai-session" className="text-sm font-medium cursor-pointer">
+                  Generate AI Interview Link
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Automatically create a shareable interview link for this
+                  candidate after submission
+                </p>
+              </div>
+            </div>
+
+            {showRoundSelector && (
+              <div className="pl-8 space-y-2">
+                <Label className="text-sm">Select Round</Label>
+                <Select
+                  value={selectedRoundId}
+                  onValueChange={setSelectedRoundId}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choose an interview round..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roundsForPosition.length === 0 ? (
+                      <div className="px-2 py-4 text-sm text-muted-foreground text-center">
+                        No rounds configured for this position
+                      </div>
+                    ) : (
+                      roundsForPosition.map((round) => (
+                        <SelectItem
+                          key={round.roundTemplateId}
+                          value={round.roundTemplateId}
+                        >
+                          {round.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  The interview link will expire in 72 hours
+                </p>
+              </div>
+            )}
+          </div>
         </FieldGroup>
       </form>
     </div>

@@ -15,7 +15,6 @@ export type InterviewRoundData = {
   interviewerId: string;
   scheduledAt?: Date;
   overallFeedback?: string;
-  proceedToNextRound?: boolean | null;
   responses: Record<string, string>;
   questionIds: string[];
 };
@@ -41,7 +40,6 @@ export const saveInterviewRound = createServerFn({ method: "POST" })
         .update(interview)
         .set({
           overallFeedback: data.overallFeedback,
-          proceedToNextRound: data.proceedToNextRound,
           status: "pending",
         })
         .where(eq(interview.id, interviewId));
@@ -55,7 +53,6 @@ export const saveInterviewRound = createServerFn({ method: "POST" })
           scheduledAt: data.scheduledAt,
           status: "pending",
           overallFeedback: data.overallFeedback,
-          proceedToNextRound: data.proceedToNextRound,
         })
         .onConflictDoUpdate({
           target: [interview.applicationId, interview.positionRoundTemplateId],
@@ -64,7 +61,6 @@ export const saveInterviewRound = createServerFn({ method: "POST" })
             scheduledAt: data.scheduledAt,
             status: "pending",
             overallFeedback: data.overallFeedback,
-            proceedToNextRound: data.proceedToNextRound,
           },
         })
         .returning();
@@ -114,7 +110,6 @@ export const saveInterviewRound = createServerFn({ method: "POST" })
             interviewerId: data.interviewerId,
             scheduledAt: data.scheduledAt?.toISOString() || null,
             overallFeedback: data.overallFeedback,
-            proceedToNextRound: data.proceedToNextRound,
           },
           input: {
             interviewId: data.interviewId,
@@ -123,7 +118,6 @@ export const saveInterviewRound = createServerFn({ method: "POST" })
             interviewerId: data.interviewerId,
             scheduledAt: data.scheduledAt?.toISOString() || null,
             overallFeedback: data.overallFeedback,
-            proceedToNextRound: data.proceedToNextRound,
             questionIds: data.questionIds,
             responsesCount: Object.keys(data.responses).length,
           },

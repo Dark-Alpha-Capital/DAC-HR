@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_main/candidates/new")({
 });
 
 function NewCandidatePage() {
-  const { positions, userSession } = Route.useLoaderData();
+  const { positions, positionRounds, userSession } = Route.useLoaderData();
 
   return (
     <div className="narrow-container mx-auto py-6 space-y-8">
@@ -23,7 +23,11 @@ function NewCandidatePage() {
         </Button>
         <div className="mt-4 md:mt-6 lg:mt-8">
           <Suspense fallback={<FormLoadingFallback />}>
-            <CandidateUploadForm positions={positions} userSession={userSession as any} />
+            <CandidateUploadForm
+              positions={positions}
+              positionRounds={positionRounds as any}
+              userSession={userSession as any}
+            />
           </Suspense>
         </div>
       </div>

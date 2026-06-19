@@ -41,8 +41,8 @@ function CandidatesPage() {
   } = Route.useLoaderData();
 
   return (
-    <div className="space-y-6 w-full overflow-x-hidden">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div className="space-y-6 w-full min-w-0">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 min-w-0">
         <h1 className="text-2xl font-semibold tracking-tight">Candidates</h1>
         <div className="flex items-center gap-2">
           <BulkUploadCandidatesDialog />

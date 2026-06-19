@@ -19,6 +19,7 @@ export const getInterviewsByApplicationId = async (applicationId: string) => {
           id: interview.id,
           applicationId: interview.applicationId,
           status: interview.status,
+          mode: interview.mode,
           rating: interview.rating,
           scheduledAt: interview.scheduledAt,
           overallFeedback: interview.overallFeedback,
@@ -69,6 +70,7 @@ export const getInterviewById = async (interviewId: string) => {
         interview: {
           id: interview.id,
           applicationId: interview.applicationId,
+          mode: interview.mode,
           status: interview.status,
           rating: interview.rating,
           scheduledAt: interview.scheduledAt,

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { getSession } from "~/lib/get-session";
 import { candidateFormSchema } from "~/lib/schemas/candidate-form-schema";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import { createCandidateWithOptionalPosition } from "~/lib/application/candidate-service";
+import { createCandidateWithPositions } from "~/lib/application/candidate-service";
 
 const redactEmail = (email: string | null | undefined): string => {
   if (!email) return "unknown";
@@ -48,14 +48,14 @@ export const Route = createFileRoute("/api/candidate/")({
             source,
             sourceUrl,
             note,
-            positionId,
+            positionIds,
           } = result.data;
 
           const {
             candidate: newCandidate,
-            hasPosition,
-            normalizedPositionId,
-          } = await createCandidateWithOptionalPosition({
+            positionIds: createdPositionIds,
+            applicationIds: createdApplicationIds,
+          } = await createCandidateWithPositions({
             firstName,
             lastName,
             email,
@@ -64,8 +64,9 @@ export const Route = createFileRoute("/api/candidate/")({
             source,
             sourceUrl,
             note,
-            positionId,
+            positionIds,
           });
+          const hasPositions = createdPositionIds.length > 0;
 
           insertAuditLog({
             userId: user.id,
@@ -95,13 +96,13 @@ export const Route = createFileRoute("/api/candidate/")({
                 source: source || null,
                 sourceUrl: sourceUrl?.trim() || null,
                 note: note?.trim() || null,
-                positionId: normalizedPositionId,
+                positionIds: createdPositionIds,
               },
               createdBy: { id: user.id, email: user.email, name: user.name },
               metadata: {
                 timestamp: new Date().toISOString(),
-                hasPosition,
-                applicationCreated: hasPosition,
+                hasPositions,
+                applicationsCreated: createdPositionIds.length,
               },
             },
           }).catch((error) =>
@@ -109,7 +110,11 @@ export const Route = createFileRoute("/api/candidate/")({
           );
 
           return Response.json(
-            { success: true, data: newCandidate },
+            {
+              success: true,
+              data: newCandidate,
+              applicationIds: createdApplicationIds,
+            },
             { status: 201 },
           );
         } catch (error) {

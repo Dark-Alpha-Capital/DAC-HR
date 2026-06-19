@@ -1,16 +1,11 @@
 import { db } from "@workspace/db/db";
 import { eq } from "@workspace/db";
-import {
-  application,
-  candidate,
-  candidatePosition,
-} from "@workspace/db/schema";
-import { deleteFileSearchDocument } from "@workspace/file-search";
+import { application, candidate } from "@workspace/db/schema";
 import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
 import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
 import { deleteFile } from "~/lib/storage";
 
-export type CreateCandidateWithOptionalPositionInput = {
+export type CreateCandidateWithPositionsInput = {
   firstName: string;
   lastName: string;
   email: string;
@@ -19,14 +14,14 @@ export type CreateCandidateWithOptionalPositionInput = {
   source?: string | null;
   sourceUrl?: string | null;
   note?: string | null;
-  positionId?: string | null;
+  positionIds?: string[];
 };
 
-export const createCandidateWithOptionalPosition = async (
-  input: CreateCandidateWithOptionalPositionInput,
+export const createCandidateWithPositions = async (
+  input: CreateCandidateWithPositionsInput,
 ) => {
-  const normalizedPositionId = input.positionId?.trim() || "";
-  const hasPosition = normalizedPositionId !== "";
+  const positionIds =
+    input.positionIds?.map((id) => id.trim()).filter(Boolean) ?? [];
 
   const createdCandidate = await db.transaction(async (tx) => {
     const [newCandidate] = await tx
@@ -47,26 +42,28 @@ export const createCandidateWithOptionalPosition = async (
       throw new Error("Failed to create candidate");
     }
 
-    if (hasPosition) {
-      await tx.insert(application).values({
-        candidateId: newCandidate.id,
-        positionId: normalizedPositionId,
-        status: "ai_screening",
-      });
-
-      await tx.insert(candidatePosition).values({
-        candidateId: newCandidate.id,
-        positionId: normalizedPositionId,
-      });
+    const appIds: string[] = [];
+    for (const positionId of positionIds) {
+      const [app] = await tx
+        .insert(application)
+        .values({
+          candidateId: newCandidate.id,
+          positionId,
+          status: "ai_screening",
+        })
+        .returning({ id: application.id });
+      if (app) {
+        appIds.push(app.id);
+      }
     }
 
-    return newCandidate;
+    return { candidate: newCandidate, applicationIds: appIds };
   });
 
   return {
-    candidate: createdCandidate,
-    hasPosition,
-    normalizedPositionId: normalizedPositionId || null,
+    candidate: createdCandidate.candidate,
+    applicationIds: createdCandidate.applicationIds,
+    positionIds,
   };
 };
 
@@ -92,21 +89,7 @@ export const deleteCandidateWithAssets = async (
       promises.push(
         deleteFile(doc.url).catch((error) => {
           console.error(
-            `[deleteCandidateWithAssets] Failed deleting GCS object for doc ${doc.id}:`,
-            error,
-          );
-          return false;
-        }),
-      );
-    }
-
-    if (doc.fileSearchDocumentName) {
-      promises.push(
-        deleteFileSearchDocument({
-          fileSearchDocumentName: doc.fileSearchDocumentName,
-        }).catch((error) => {
-          console.error(
-            `[deleteCandidateWithAssets] Failed deleting FileSearchStore doc ${doc.id}:`,
+            `[deleteCandidateWithAssets] Failed deleting Nextcloud doc ${doc.id}:`,
             error,
           );
           return false;

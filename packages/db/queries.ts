@@ -2637,7 +2637,7 @@ export const saveCandidateAiScreening = async (params: {
         positionId: params.positionId || null,
         applicationId: params.applicationId || null,
         analysis: params.analysis,
-        model: params.model || "gemini-2.5-flash",
+        model: params.model || "gpt-4o-mini",
         structuredData: params.structuredData || null,
       })
       .returning();
@@ -2894,7 +2894,7 @@ export const saveInterviewAiAnalysis = async (params: {
         positionId: params.positionId || null,
         analysis: params.analysis,
         customPrompt: params.customPrompt || null,
-        model: params.model || "gemini-2.5-flash",
+        model: params.model || "gpt-4o-mini",
         structuredData: params.structuredData || null,
       })
       .returning();

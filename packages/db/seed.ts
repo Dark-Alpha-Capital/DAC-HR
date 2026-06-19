@@ -726,9 +726,7 @@ async function seed() {
       : "🎉 Local seed completed successfully",
   );
   console.log("");
-  console.log("Interview sessions:");
-  console.log("  • Create new: /interview-sessions/new");
-  console.log("  • List all:   /interview-sessions");
+  console.log("AI Interview links (create from Application detail page):");
   console.log("");
   console.log("Pre-seeded candidate interview links (Alice Johnson):");
   console.log(`  • Pending:      /interview/${SEED_SESSION_TOKEN_PENDING}`);

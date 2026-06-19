@@ -43,6 +43,7 @@ export const createInterview = createServerFn({ method: "POST" })
         applicationId,
         positionRoundTemplateId,
         interviewerId,
+        mode: "manual" as const,
         scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
         status: "pending",
       })

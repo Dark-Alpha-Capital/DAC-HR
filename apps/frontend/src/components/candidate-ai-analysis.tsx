@@ -97,13 +97,10 @@ export default function CandidateAiAnalysis({
   };
 
   const handleSelectAll = () => {
-    const documentsWithFileSearch = documents.filter(
-      (doc) => doc.fileSearchDocumentName,
-    );
-    if (selectedDocumentIds.length === documentsWithFileSearch.length) {
+    if (selectedDocumentIds.length === documents.length) {
       setSelectedDocumentIds([]);
     } else {
-      setSelectedDocumentIds(documentsWithFileSearch.map((doc) => doc.id));
+      setSelectedDocumentIds(documents.map((doc) => doc.id));
     }
   };
 
@@ -183,12 +180,9 @@ export default function CandidateAiAnalysis({
     });
   };
 
-  const documentsWithFileSearch = documents.filter(
-    (doc) => doc.fileSearchDocumentName,
-  );
   const allSelected =
-    documentsWithFileSearch.length > 0 &&
-    selectedDocumentIds.length === documentsWithFileSearch.length;
+    documents.length > 0 &&
+    selectedDocumentIds.length === documents.length;
 
   return (
     <div className="space-y-6">
@@ -216,7 +210,7 @@ export default function CandidateAiAnalysis({
               Select Documents to Analyze{" "}
               <span className="text-destructive">*</span>
             </Label>
-            {documentsWithFileSearch.length > 0 && (
+            {documents.length > 0 && (
               <Button
                 variant="secondary"
                 size="sm"
@@ -227,18 +221,17 @@ export default function CandidateAiAnalysis({
               </Button>
             )}
           </div>
-          {documentsWithFileSearch.length === 0 ? (
+          {documents.length === 0 ? (
             <div className="text-sm text-muted-foreground py-6 border rounded-lg text-center bg-muted/30">
               <FileText className="h-6 w-6 mx-auto mb-2 opacity-50" />
               <p>No documents available for analysis.</p>
               <p className="text-xs mt-1">
-                Documents need to be uploaded to the file search store to be
-                analyzed.
+                Upload documents to enable AI-powered analysis.
               </p>
             </div>
           ) : (
             <div className="space-y-2 max-h-96 overflow-y-auto border rounded-lg p-4 bg-muted/30">
-              {documentsWithFileSearch.map((document) => (
+              {documents.map((document) => (
                 <div
                   key={document.id}
                   className="flex items-start gap-3 p-3 rounded-md hover:bg-background transition-colors border border-transparent hover:border-border"
@@ -271,7 +264,7 @@ export default function CandidateAiAnalysis({
               ))}
             </div>
           )}
-          {documentsWithFileSearch.length > 0 && (
+          {documents.length > 0 && (
             <p className="text-xs text-muted-foreground">
               {selectedDocumentIds.length === 0
                 ? "Please select at least one document to proceed with the analysis."
@@ -355,7 +348,7 @@ export default function CandidateAiAnalysis({
           disabled={
             isPending ||
             selectedDocumentIds.length === 0 ||
-            documentsWithFileSearch.length === 0
+            documents.length === 0
           }
           className="w-full sm:w-auto"
         >
@@ -372,7 +365,7 @@ export default function CandidateAiAnalysis({
           )}
         </Button>
         {selectedDocumentIds.length === 0 &&
-          documentsWithFileSearch.length > 0 && (
+          documents.length > 0 && (
             <p className="text-xs text-destructive">
               Please select at least one document to proceed
             </p>

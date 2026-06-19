@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { loadInterviewById } from "~/lib/loaders/interviews";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import {
   Tabs,
   TabsList,
@@ -20,6 +21,9 @@ import {
   FileText,
   Sparkles,
   History,
+  Copy,
+  Check,
+  Bot,
 } from "lucide-react";
 import { formatDate } from "~/lib/utils";
 import InterviewQuestionFeedbackDisplay from "~/components/interview-question-feedback-display";
@@ -27,6 +31,10 @@ import InterviewSummaryForm from "~/components/interview-summary-form";
 import InterviewAiAnalysisTab from "~/components/interview-ai-analysis-tab";
 import InterviewScreeningsTab from "~/components/interview-screenings-tab";
 import ApplicationBreadcrumb from "~/components/application-breadcrumb";
+import { useState } from "react";
+import { getOptionLabel } from "~/lib/question-options";
+import type { QuestionOption } from "@workspace/db/question-types";
+import type { InferSelectModel } from "@workspace/db";
 
 export const Route = createFileRoute("/_main/interviews/$id/")({
   head: () => ({
@@ -66,8 +74,24 @@ const statusConfig = {
   },
 };
 
+function formatResponseAnswer(response: any): string {
+  if (response.question?.questionType === "mcq") {
+    return (
+      getOptionLabel(
+        response.question.options as QuestionOption[],
+        response.selectedOptionId,
+      ) ??
+      response.selectedOptionId ??
+      "No answer"
+    );
+  }
+  return response.answerText || "No answer";
+}
+
 function InterviewDetailPage() {
-  const { interview, application, candidate } = Route.useLoaderData();
+  const { interview, application, candidate, session, responses, evaluation } =
+    Route.useLoaderData();
+  const [copied, setCopied] = useState(false);
 
   if (!interview) {
     return (
@@ -77,11 +101,16 @@ function InterviewDetailPage() {
           This interview doesn&apos;t exist or has been removed.
         </p>
         <Button asChild variant="secondary" className="mt-4">
-          <Link to="/applications" search={{} as any}>View Applications</Link>
+          <Link to="/applications" search={{} as any}>
+            View Applications
+          </Link>
         </Button>
       </div>
     );
   }
+
+  const mode = (interview as any).mode as string;
+  const isAiSession = mode === "ai_session";
 
   const config =
     statusConfig[interview.status as keyof typeof statusConfig] ||
@@ -92,6 +121,11 @@ function InterviewDetailPage() {
     ? `${candidate.firstName} ${candidate.lastName}`
     : undefined;
   const positionName = application?.position?.name;
+
+  const interviewLink =
+    session?.session?.token
+      ? `${typeof window !== "undefined" ? window.location.origin : ""}/interview/${session.session.token}`
+      : "";
 
   return (
     <div className="container mx-auto py-6 max-w-4xl space-y-6">
@@ -107,9 +141,20 @@ function InterviewDetailPage() {
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-4 flex-1">
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold tracking-tight">
-                {interview.roundTemplate.name}
-              </h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-bold tracking-tight">
+                  {interview.roundTemplate.name}
+                </h1>
+                {isAiSession ? (
+                  <Badge
+                    variant="secondary"
+                    className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-0"
+                  >
+                    <Bot className="h-3 w-3 mr-1" />
+                    AI Session
+                  </Badge>
+                ) : null}
+              </div>
               {candidate ? (
                 <div className="flex items-center gap-4">
                   <p className="text-lg text-muted-foreground">
@@ -163,21 +208,41 @@ function InterviewDetailPage() {
         </div>
       </header>
 
-      <Tabs defaultValue="questions" className="w-full">
+      <Tabs defaultValue={isAiSession ? "session" : "questions"} className="w-full">
         <TabsList>
-          <TabsTrigger value="questions" className="gap-2">
-            <MessageSquare className="h-4 w-4" />
-            Questions
-            {questions.length > 0 ? (
-              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                {questions.length}
-              </Badge>
-            ) : null}
-          </TabsTrigger>
-          <TabsTrigger value="summary" className="gap-2">
-            <FileText className="h-4 w-4" />
-            Summary
-          </TabsTrigger>
+          {isAiSession ? (
+            <>
+              <TabsTrigger value="session" className="gap-2">
+                <Bot className="h-4 w-4" />
+                Session
+              </TabsTrigger>
+              <TabsTrigger value="responses" className="gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Responses
+                {responses?.length != null && responses.length > 0 ? (
+                  <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                    {responses.length}
+                  </Badge>
+                ) : null}
+              </TabsTrigger>
+            </>
+          ) : (
+            <>
+              <TabsTrigger value="questions" className="gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Questions
+                {questions.length > 0 ? (
+                  <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                    {questions.length}
+                  </Badge>
+                ) : null}
+              </TabsTrigger>
+              <TabsTrigger value="summary" className="gap-2">
+                <FileText className="h-4 w-4" />
+                Summary
+              </TabsTrigger>
+            </>
+          )}
           <TabsTrigger value="ai-analysis" className="gap-2">
             <Sparkles className="h-4 w-4" />
             AI Analysis
@@ -188,32 +253,158 @@ function InterviewDetailPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="questions" className="mt-6">
-          {questions.length > 0 ? (
-            <div className="space-y-3">
-              {questions.map((question, index) => (
-                <InterviewQuestionFeedbackDisplay
-                  key={question.id}
-                  interviewId={interview.id}
-                  question={question}
-                  index={index}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              <MessageSquare className="h-10 w-10 mx-auto mb-3 opacity-40" />
-              <p>No questions for this interview</p>
-            </div>
-          )}
-        </TabsContent>
+        {isAiSession ? (
+          <>
+            <TabsContent value="session" className="mt-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Session Info</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Calendar className="size-3.5" />
+                      Created: {formatDate(session?.session?.createdAt ?? interview.createdAt)}
+                    </div>
+                    {session?.session?.startedAt && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Clock className="size-3.5" />
+                        Started: {formatDate(session.session.startedAt)}
+                      </div>
+                    )}
+                    {session?.session?.completedAt && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Clock className="size-3.5" />
+                        Completed: {formatDate(session.session.completedAt)}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Calendar className="size-3.5" />
+                      Expires: {formatDate(session?.session?.expiresAt ?? new Date())}
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      Tab switches: {session?.session?.tabSwitches ?? 0}
+                    </div>
+                  </CardContent>
+                </Card>
 
-        <TabsContent value="summary" className="mt-6">
-          <InterviewSummaryForm
-            interview={interview}
-            applicationId={application?.id ?? interview.applicationId}
-          />
-        </TabsContent>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Interview Link</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 truncate rounded bg-muted px-2 py-1 text-xs">
+                        {interviewLink || "No link available"}
+                      </code>
+                      {interviewLink && (
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          onClick={() => {
+                            navigator.clipboard.writeText(interviewLink);
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 2000);
+                          }}
+                          className="shrink-0"
+                        >
+                          {copied ? (
+                            <Check className="size-3.5 text-green-600" />
+                          ) : (
+                            <Copy className="size-3.5" />
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {evaluation && (
+                <Card className="mt-4">
+                  <CardHeader>
+                    <CardTitle>Evaluation</CardTitle>
+                  </CardHeader>
+                  {evaluation.summary && (
+                    <CardContent>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">
+                            Score: {evaluation.score}/100
+                          </Badge>
+                          <Badge variant="secondary">
+                            {evaluation.recommendation?.replace(/_/g, " ") ?? "N/A"}
+                          </Badge>
+                        </div>
+                        <p className="text-muted-foreground">{evaluation.summary}</p>
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="responses" className="mt-6">
+              {responses && responses.length > 0 ? (
+                <div className="space-y-3">
+                  {responses.map((r: any) => (
+                    <Card key={r.id}>
+                      <CardHeader className="pb-1">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="text-xs">
+                            {r.question?.category || "General"}
+                          </Badge>
+                          <CardTitle className="text-sm font-medium">
+                            {r.question?.questionText ?? "Question"}
+                          </CardTitle>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                          {formatResponseAnswer(r)}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <MessageSquare className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                  <p>No responses yet.</p>
+                </div>
+              )}
+            </TabsContent>
+          </>
+        ) : (
+          <>
+            <TabsContent value="questions" className="mt-6">
+              {questions.length > 0 ? (
+                <div className="space-y-3">
+                  {questions.map((question, index) => (
+                    <InterviewQuestionFeedbackDisplay
+                      key={question.id}
+                      interviewId={interview.id}
+                      question={question}
+                      index={index}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <MessageSquare className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                  <p>No questions for this interview</p>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="summary" className="mt-6">
+              <InterviewSummaryForm
+                interview={interview}
+                applicationId={application?.id ?? interview.applicationId}
+              />
+            </TabsContent>
+          </>
+        )}
 
         <TabsContent value="ai-analysis" className="mt-6">
           <InterviewAiAnalysisTab interviewId={interview.id} />

@@ -1,11 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "@workspace/db/db";
-import {
-  candidate,
-  candidatePosition,
-  application,
-  interview,
-} from "@workspace/db/schema";
+import { candidate, application } from "@workspace/db/schema";
 import {
   CandidateFormSchema,
   candidateFormSchema,
@@ -37,8 +32,12 @@ export const updateCandidate = createServerFn({ method: "POST" })
     source,
     sourceUrl,
     note,
-    positionId,
+    positionIds,
   } = result.data;
+
+  const normalizedPositionIds = positionIds
+    .map((id) => id.trim())
+    .filter(Boolean);
 
   try {
     const [updatedCandidate] = await db
@@ -61,145 +60,27 @@ export const updateCandidate = createServerFn({ method: "POST" })
       return { error: "Candidate not found" };
     }
 
-    // Get the current positionId before updating
-    const [existingRelation] = await db
-      .select()
-      .from(candidatePosition)
-      .where(eq(candidatePosition.candidateId, candidateId))
-      .limit(1);
+    // Get existing applications for this candidate
+    const existingApplications = await db
+      .select({ positionId: application.positionId })
+      .from(application)
+      .where(eq(application.candidateId, candidateId));
 
-    const oldPositionId = existingRelation?.positionId;
-    const positionChanged = oldPositionId !== positionId;
+    const existingPositionIds = new Set(
+      existingApplications.map((a) => a.positionId),
+    );
 
-    // Update the candidatePosition relationship
-    if (positionId) {
-      if (existingRelation) {
-        // Update existing relationship if positionId changed
-        if (positionChanged) {
-          await db
-            .update(candidatePosition)
-            .set({
-              positionId,
-              updatedAt: new Date(),
-            })
-            .where(eq(candidatePosition.candidateId, candidateId));
-        }
-      } else {
-        // Create new relationship if it doesn't exist
-        await db.insert(candidatePosition).values({
+    // Create applications for new positions (skip already applied positions)
+    let applicationsCreated = 0;
+    for (const positionId of normalizedPositionIds) {
+      if (!existingPositionIds.has(positionId)) {
+        await db.insert(application).values({
           candidateId,
           positionId,
+          status: "ai_screening",
         });
+        applicationsCreated++;
       }
-    }
-
-    // Handle application updates when position changes
-    if (positionId) {
-      // Check if an application already exists for the new position
-      const [existingApplicationForNewPosition] = await db
-        .select()
-        .from(application)
-        .where(
-          and(
-            eq(application.candidateId, candidateId),
-            eq(application.positionId, positionId),
-          ),
-        )
-        .limit(1);
-
-      if (positionChanged && oldPositionId) {
-        // Position changed - find application for old position
-        const [oldApplication] = await db
-          .select()
-          .from(application)
-          .where(
-            and(
-              eq(application.candidateId, candidateId),
-              eq(application.positionId, oldPositionId),
-            ),
-          )
-          .limit(1);
-
-        if (oldApplication) {
-          // Application exists for old position
-          if (!existingApplicationForNewPosition) {
-            // No application for new position - update old one to point to new position
-            // CRITICAL: When position changes, interviews become invalid because they
-            // reference round templates for the old position. We need to handle them.
-
-            // Get all interviews for this application
-            const existingInterviews = await db
-              .select({ id: interview.id, status: interview.status })
-              .from(interview)
-              .where(eq(interview.applicationId, oldApplication.id));
-
-            // Delete pending/scheduled interviews - they're not meaningful for the new position
-            // Keep completed interviews for historical purposes (they'll be orphaned but that's acceptable)
-            const interviewsToDelete = existingInterviews.filter(
-              (inv) => inv.status === "pending" || inv.status === "scheduled",
-            );
-
-            if (interviewsToDelete.length > 0) {
-              const interviewIdsToDelete = interviewsToDelete.map(
-                (inv) => inv.id,
-              );
-              await db
-                .delete(interview)
-                .where(inArray(interview.id, interviewIdsToDelete));
-            }
-
-            // Invalidate cache for all affected interviews (including completed ones we kept)
-            for (const inv of existingInterviews) {
-            }
-
-            // Invalidate cache for the old application (before position update)
-            // Now update the application position
-            await db
-              .update(application)
-              .set({
-                positionId,
-                updatedAt: new Date(),
-              })
-              .where(eq(application.id, oldApplication.id));
-          }
-          // If application already exists for new position, leave both as is
-          // (candidate can have applications for multiple positions)
-        } else if (!existingApplicationForNewPosition) {
-          // No application for old position and none for new position - create one
-          await db.insert(application).values({
-            candidateId,
-            positionId,
-            status: "ai_screening",
-          });
-        }
-      } else if (!oldPositionId) {
-        // Position is being set for the first time - create application if it doesn't exist
-        if (!existingApplicationForNewPosition) {
-          await db.insert(application).values({
-            candidateId,
-            positionId,
-            status: "ai_screening",
-          });
-        }
-      }
-    }
-
-    // Get the application ID for cache invalidation
-    let applicationId: string | undefined;
-    if (positionId) {
-      const [currentApplication] = await db
-        .select()
-        .from(application)
-        .where(
-          and(
-            eq(application.candidateId, candidateId),
-            eq(application.positionId, positionId),
-          ),
-        )
-        .limit(1);
-      applicationId = currentApplication?.id;
-    }
-    if (applicationId) {
     }
 
     insertAuditLog({
@@ -229,7 +110,7 @@ export const updateCandidate = createServerFn({ method: "POST" })
             source: source || null,
             sourceUrl: sourceUrl?.trim() || null,
             note: note || null,
-            positionId: positionId?.trim() || null,
+            positionIds: normalizedPositionIds,
           },
           updatedBy: {
             id: session.user.id,
@@ -238,7 +119,9 @@ export const updateCandidate = createServerFn({ method: "POST" })
           },
           metadata: {
             timestamp: new Date().toISOString(),
-            positionUpdated: !!positionId,
+            positionIdsUpdated: normalizedPositionIds,
+            applicationsCreated,
+            existingApplicationCount: existingApplications.length,
           },
         },
       }).catch((error) => console.error("Audit log error:", error));

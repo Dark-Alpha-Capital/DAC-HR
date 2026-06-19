@@ -16,7 +16,7 @@ const cfWorkersStub = path.resolve(appRoot, "src/lib/cloudflare-workers-stub.ts"
 
 const repoPackages = [
   "@workspace/db",
-  "@workspace/file-search",
+  "@workspace/ai-config",
   "@workspace/nextcloud",
 ];
 
