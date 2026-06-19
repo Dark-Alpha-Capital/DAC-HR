@@ -9,6 +9,11 @@ import {
   chunkText,
 } from "@workspace/ai-config";
 import { createNextcloudClient, downloadFile } from "@workspace/nextcloud";
+import { db } from "@workspace/db/db";
+import { candidateDocument } from "@workspace/db/schema";
+import { eq } from "@workspace/db";
+import { extractText as unpdfExtract } from "unpdf";
+import mammoth from "mammoth";
 
 type Env = {
   NEXTCLOUD_URL: string;
@@ -78,6 +83,11 @@ function toBuffer(data: Buffer | Uint8Array | ArrayBuffer): Buffer {
   return Buffer.from(data as Uint8Array);
 }
 
+function toUint8Array(data: Buffer | Uint8Array | ArrayBuffer): Uint8Array {
+  if (data instanceof Uint8Array && !Buffer.isBuffer(data)) return data;
+  return Uint8Array.from(toBuffer(data));
+}
+
 function detectFormat(buffer: Buffer | Uint8Array, fileName: string): DocumentFormat {
   const bytes = toBuffer(buffer);
   const ext = getFileExtension(fileName);
@@ -113,12 +123,11 @@ function detectFormat(buffer: Buffer | Uint8Array, fileName: string): DocumentFo
 }
 
 async function extractPdfText(
-  buffer: Buffer,
+  buffer: Buffer | Uint8Array,
   fileName: string,
   startTime: number,
 ): Promise<string | null> {
-  const { extractText: unpdfExtract } = await import("unpdf");
-  const result = await unpdfExtract(buffer, { mergePages: true });
+  const result = await unpdfExtract(toUint8Array(buffer), { mergePages: true });
 
   if (typeof result?.text === "string" && result.text.trim().length > 0) {
     log("log", "PDF text extracted", {
@@ -155,7 +164,6 @@ async function extractDocxText(
   fileName: string,
   startTime: number,
 ): Promise<string | null> {
-  const mammoth = await import("mammoth");
   const result = await mammoth.extractRawText({
     buffer: toBuffer(buffer),
   });
@@ -385,10 +393,6 @@ export class DocumentIndexingWorkflow extends WorkflowEntrypoint<Env, Params> {
 
     // Step 7: Update database
     await step.do("update database", async () => {
-      const { db } = await import("@workspace/db/db");
-      const { candidateDocument } = await import("@workspace/db/schema");
-      const { eq } = await import("@workspace/db");
-
       await db
         .update(candidateDocument)
         .set({ vectorizeNamespace: namespace })
