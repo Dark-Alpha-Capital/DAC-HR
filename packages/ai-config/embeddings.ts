@@ -1,7 +1,8 @@
 import { openai } from "./openai-client";
 
 const EMBEDDING_MODEL = "text-embedding-3-small";
-const EMBEDDING_DIMENSIONS = 1536;
+// Must match hr-documents-index dimensions (wrangler vectorize binding).
+const EMBEDDING_DIMENSIONS = 768;
 const MAX_TOKENS_PER_CHUNK = 500;
 
 export function chunkText(

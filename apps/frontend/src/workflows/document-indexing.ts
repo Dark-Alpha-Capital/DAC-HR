@@ -7,6 +7,7 @@ import type { VectorizeIndex } from "cloudflare:workers";
 import {
   generateEmbeddings,
   chunkText,
+  EMBEDDING_DIMENSIONS,
 } from "@workspace/ai-config";
 import { createNextcloudClient, downloadFile } from "@workspace/nextcloud";
 import { db } from "@workspace/db/db";
@@ -357,21 +358,43 @@ export class DocumentIndexingWorkflow extends WorkflowEntrypoint<Env, Params> {
     });
 
     // Step 5: Upsert to Vectorize
-    const vectorCount = await step.do("upsert to vectorize", async () => {
+    const vectorCount = await step.do("upsert to vectorize", {
+      retries: { limit: 3, delay: "5 seconds", backoff: "exponential" },
+    }, async () => {
+      const indexInfo = await this.env.VECTORIZE.describe();
+      if (indexInfo.dimensions !== EMBEDDING_DIMENSIONS) {
+        throw new Error(
+          `Vectorize index expects ${indexInfo.dimensions} dimensions but embeddings use ${EMBEDDING_DIMENSIONS}`,
+        );
+      }
+
       const vectors = chunks.map((chunk, i) => ({
         id: `${documentId}-chunk-${i}`,
         values: embeddings[i],
         metadata: {
           documentId,
           candidateId,
-          name: metadata.name,
+          name: metadata.name.slice(0, 64),
           category: metadata.category,
-          url: metadata.url,
+          url: metadata.url.slice(0, 64),
           chunkIndex: i,
           text: chunk.substring(0, 64),
         },
         namespace,
       }));
+
+      if (vectors.some((vector) => vector.values.length !== indexInfo.dimensions)) {
+        throw new Error(
+          `Embedding vector length does not match index (${indexInfo.dimensions})`,
+        );
+      }
+
+      log("log", "Upserting vectors to Vectorize", {
+        documentId,
+        namespace,
+        vectorCount: vectors.length,
+        dimensions: indexInfo.dimensions,
+      });
 
       for (let i = 0; i < vectors.length; i += 1000) {
         await this.env.VECTORIZE.upsert(vectors.slice(i, i + 1000));
