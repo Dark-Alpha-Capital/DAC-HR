@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import {
   getPositions,
   getQuestionById,
@@ -15,8 +16,9 @@ type QuestionsIndexInput = {
 };
 
 export const loadQuestionsIndex = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: QuestionsIndexInput) => data)
-  .handler(async ({ data: deps }) => {
+  .handler(async ({ data: deps, context: { session } }) => {
     const limit = 50;
     const currentPage = deps.page ?? 1;
 
@@ -55,8 +57,9 @@ type QuestionsNewInput = {
 };
 
 export const loadQuestionsNew = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: QuestionsNewInput) => data)
-  .handler(async ({ data: deps }) => {
+  .handler(async ({ data: deps, context: { session } }) => {
     const { positions } = await getPositions();
     const rounds = deps.position
       ? (await getRoundsByPositionId(deps.position)).map((round) => ({
@@ -78,8 +81,9 @@ export const loadQuestionsNew = createServerFn({ method: "GET" })
   });
 
 export const loadQuestionById = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: string) => data)
-  .handler(async ({ data: id }) => {
+  .handler(async ({ data: id, context: { session } }) => {
     const question = await getQuestionById(id);
     return { question };
   });

@@ -1,21 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
 import { employee } from "@workspace/db/schema";
 import {
   EmployeeFormSchema,
   employeeFormSchema,
 } from "../schemas/employee-form-schema";
-import { getSession } from "~/lib/get-session";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const createEmployee = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
   .validator((data: EmployeeFormSchema) => data)
-  .handler(async ({ data }) => {
-  const session = await getSession();
-
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  .handler(async ({ data, context: { session } }) => {
 
   const result = employeeFormSchema.safeParse(data);
   if (!result.success) {

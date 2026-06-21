@@ -8,22 +8,11 @@ export const Route = createFileRoute("/_main/weekly-checkin/")({
     meta: [{ title: "Weekly Check-in" }],
   }),
   loader: async () => {
-    const result = (await loadWeeklyCheckinForm()) as
-      | { unauthorized: true }
-      | { accessDenied: true }
-      | {
-          unauthorized: false;
-          accessDenied: false;
-          positions: { id: string; name: string }[];
-          userName?: string;
-        };
-    if ("unauthorized" in result && result.unauthorized) {
-      throw redirect({ to: "/login" });
-    }
+    const result = await loadWeeklyCheckinForm();
     if ("accessDenied" in result && result.accessDenied) {
       throw redirect({ to: "/dashboard" });
     }
-    const { unauthorized: _, accessDenied: __, ...data } = result;
+    const { accessDenied: _, ...data } = result;
     return data;
   },
   component: WeeklyCheckinPage,

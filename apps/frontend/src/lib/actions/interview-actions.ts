@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
 import {
   interview,
@@ -6,7 +7,6 @@ import {
   application,
 } from "@workspace/db/schema";
 import { and, eq } from "@workspace/db";
-import { getSession } from "~/lib/get-session";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export type InterviewRoundData = {
@@ -23,13 +23,9 @@ export type InterviewRoundData = {
  * Create or update an interview round
  */
 export const saveInterviewRound = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
   .validator((data: InterviewRoundData & { interviewId?: string },) => data)
-  .handler(async ({ data }) => {
-  const session = await getSession();
-
-  if (!session?.user) {
-    return { success: false, error: "Unauthorized" };
-  }
+  .handler(async ({ data, context: { session } }) => {
 
   try {
     let interviewId = data.interviewId;
@@ -144,17 +140,13 @@ export const saveInterviewRound = createServerFn({ method: "POST" })
  * Start an interview round (mark as in-progress)
  */
 export const startInterviewRound = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
   .validator((data: {
   applicationId: string;
   positionRoundTemplateId: string;
   interviewerId: string;
 }) => data)
-  .handler(async ({ data }) => {
-  const session = await getSession();
-
-  if (!session?.user) {
-    return { success: false, error: "Unauthorized" };
-  }
+  .handler(async ({ data, context: { session } }) => {
 
   try {
     const [newInterview] = await db
@@ -232,8 +224,9 @@ export const startInterviewRound = createServerFn({ method: "POST" })
  * Get interview details for a specific application and round
  */
 export const getInterviewForRound = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: [string, string]) => data)
-  .handler(async ({ data: [applicationId, positionRoundTemplateId] }) => {
+  .handler(async ({ data: [applicationId, positionRoundTemplateId], context: { session } }) => {
   try {
     const [interviewData] = await db
       .select()

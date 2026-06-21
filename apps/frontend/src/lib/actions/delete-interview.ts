@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
 import {
   interview,
@@ -6,17 +7,12 @@ import {
   application,
 } from "@workspace/db/schema";
 import { eq } from "@workspace/db";
-import { getSession } from "~/lib/get-session";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const deleteInterview = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
   .validator((data: string) => data)
-  .handler(async ({ data: interviewId }) => {
-  const session = await getSession();
-
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  .handler(async ({ data: interviewId, context: { session } }) => {
 
   try {
     // Get the interview to verify it exists and get application info

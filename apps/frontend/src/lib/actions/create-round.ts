@@ -1,18 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
 import { roundTemplate, positionRoundTemplates } from "@workspace/db/schema";
 import { RoundFormSchema, roundFormSchema } from "../schemas/round-form-schema";
-import { getSession } from "~/lib/get-session";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const createRound = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
   .validator((data: RoundFormSchema) => data)
-  .handler(async ({ data }) => {
-    const session = await getSession();
-
-    if (!session?.user) {
-      return { error: "Unauthorized" };
-    }
+  .handler(async ({ data, context: { session } }) => {
 
     if (session.user.role !== "admin") {
       return { error: "Only admins are allowed to create rounds" };

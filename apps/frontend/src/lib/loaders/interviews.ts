@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
 import {
   getApplicationWithInterviews,
@@ -12,6 +13,7 @@ import {
 } from "@workspace/db/repositories/interview-session-repository";
 
 export const loadInterviewById = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: string) => data)
   .handler(async ({ data: id }) => {
     const interview = await getInterviewById(id);

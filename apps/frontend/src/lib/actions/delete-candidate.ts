@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getSession } from "~/lib/get-session";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { deleteCandidateWithAssets } from "~/lib/application/candidate-service";
 
@@ -8,13 +8,9 @@ import { deleteCandidateWithAssets } from "~/lib/application/candidate-service";
  * Uses shared application service and invalidates Next.js cache tags
  */
 export const deleteCandidate = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
   .validator((data: string) => data)
-  .handler(async ({ data: candidateId }) => {
-  const session = await getSession();
-
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  .handler(async ({ data: candidateId, context: { session } }) => {
 
   try {
     const deleteResult = await deleteCandidateWithAssets(candidateId);

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
 import { interview, application } from "@workspace/db/schema";
-import { getSession } from "~/lib/get-session";
 import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
@@ -13,54 +13,50 @@ export interface CreateInterviewInput {
 }
 
 export const createInterview = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
   .validator((data: CreateInterviewInput) => data)
-  .handler(async ({ data }) => {
-  const session = await getSession();
+  .handler(async ({ data, context: { session } }) => {
 
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+    const { applicationId, positionRoundTemplateId, interviewerId, scheduledAt } =
+      data;
 
-  const { applicationId, positionRoundTemplateId, interviewerId, scheduledAt } =
-    data;
+    try {
+      // Get the application to verify it exists
+      const [app] = await db
+        .select()
+        .from(application)
+        .where(eq(application.id, applicationId))
+        .limit(1);
 
-  try {
-    // Get the application to verify it exists
-    const [app] = await db
-      .select()
-      .from(application)
-      .where(eq(application.id, applicationId))
-      .limit(1);
+      if (!app) {
+        return { error: "Application not found" };
+      }
 
-    if (!app) {
-      return { error: "Application not found" };
-    }
+      // Create the interview
+      const [newInterview] = await db
+        .insert(interview)
+        .values({
+          applicationId,
+          positionRoundTemplateId,
+          interviewerId,
+          mode: "manual" as const,
+          scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+          status: "pending",
+        })
+        .returning();
 
-    // Create the interview
-    const [newInterview] = await db
-      .insert(interview)
-      .values({
-        applicationId,
-        positionRoundTemplateId,
-        interviewerId,
-        mode: "manual" as const,
-        scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
-        status: "pending",
-      })
-      .returning();
+      if (!newInterview) {
+        return { error: "Failed to create interview" };
+      }
 
-    if (!newInterview) {
-      return { error: "Failed to create interview" };
-    }
-
-    // Advance from AI screening when an interview is scheduled
-    if (app.status === "ai_screening") {
-      await db
-        .update(application)
-        .set({ status: "first_round" })
-        .where(eq(application.id, applicationId));
-    }
-    insertAuditLog({
+      // Advance from AI screening when an interview is scheduled
+      if (app.status === "ai_screening") {
+        await db
+          .update(application)
+          .set({ status: "first_round" })
+          .where(eq(application.id, applicationId));
+      }
+      insertAuditLog({
         userId: session.user.id,
         action: "create_interview",
         entityType: "interview",
@@ -95,14 +91,14 @@ export const createInterview = createServerFn({ method: "POST" })
         },
       }).catch((error) => console.error("Audit log error:", error));
 
-    return { success: true, data: newInterview };
-  } catch (error) {
-    console.error("Error creating interview", error);
+      return { success: true, data: newInterview };
+    } catch (error) {
+      console.error("Error creating interview", error);
 
-    if (error instanceof Error) {
-      return { error: error.message };
+      if (error instanceof Error) {
+        return { error: error.message };
+      }
+
+      return { error: "Failed to create interview" };
     }
-
-    return { error: "Failed to create interview" };
-  }
-});
+  });

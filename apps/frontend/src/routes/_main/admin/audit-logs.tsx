@@ -1,24 +1,7 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import {
-  AuditLogsClient,
-  type AuditLog,
-} from "~/components/admin/audit-logs-client";
-import { loadAuditLogs } from "~/lib/loaders/admin";
+import { createFileRoute } from "@tanstack/react-router";
+import { AuditLogsClient } from "~/components/admin/audit-logs-client";
+import { loadAuditLogs, type AuditLogsPageData } from "~/lib/loaders/admin";
 import { toOptionalString, toPageNumber } from "~/lib/parse-search";
-
-type AuditLogsLoaderResult =
-  | { unauthorized: true }
-  | { forbidden: true }
-  | {
-      unauthorized: false;
-      forbidden: false;
-      logs: AuditLog[];
-      total: number;
-      currentPage: number;
-      totalPages: number;
-      hasNextPage: boolean;
-      hasPreviousPage: boolean;
-    };
 
 export const Route = createFileRoute("/_main/admin/audit-logs")({
   head: () => ({
@@ -37,31 +20,15 @@ export const Route = createFileRoute("/_main/admin/audit-logs")({
         : (undefined as number | undefined),
   }),
   loaderDeps: ({ search }) => search,
-  loader: async ({ deps }) => {
-    const result = (await loadAuditLogs({
-      data: deps,
-    })) as AuditLogsLoaderResult;
-    if ("unauthorized" in result && result.unauthorized) {
-      throw redirect({ to: "/login" });
-    }
-    if ("forbidden" in result && result.forbidden) {
-      throw redirect({ to: "/" });
-    }
-    const { unauthorized: _, forbidden: __, ...data } = result;
-    return data;
+  loader: async ({ deps }): Promise<AuditLogsPageData> => {
+    return loadAuditLogs({ data: deps });
   },
   component: AuditLogsPage,
 });
 
 function AuditLogsPage() {
-  const {
-    logs,
-    total,
-    currentPage,
-    totalPages,
-    hasNextPage,
-    hasPreviousPage,
-  } = Route.useLoaderData();
+  const { logs, total, currentPage, totalPages, hasNextPage, hasPreviousPage } =
+    Route.useLoaderData();
 
   return (
     <div className="container mx-auto py-8 space-y-6">

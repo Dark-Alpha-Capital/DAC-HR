@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
 import { position } from "@workspace/db/schema";
 import slugify from "slugify";
@@ -6,21 +7,13 @@ import {
   PositionFormSchema,
   positionFormSchema,
 } from "../schemas/position-form-schema";
-import { getSession } from "~/lib/get-session";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const createPosition = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
   .validator((data: PositionFormSchema) => data)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context: { session } }) => {
   console.log("data", data);
-
-  const session = await getSession();
-
-  if (!session?.user) {
-    console.log("unauthorized");
-
-    return { error: "Unauthorized" };
-  }
 
   if (session.user.role !== "admin") {
     return { error: "Only admins are allowed to create positions" };

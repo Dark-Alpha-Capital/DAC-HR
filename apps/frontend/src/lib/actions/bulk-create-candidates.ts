@@ -1,11 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { inArray } from "@workspace/db";
 import { db } from "@workspace/db/db";
 import { candidate, application } from "@workspace/db/schema";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { candidateFormSchema } from "../schemas/candidate-form-schema";
 import type { CandidateFormSchema } from "../schemas/candidate-form-schema";
-import { getSession } from "~/lib/get-session";
 
 export type BulkCandidateRow = {
   firstName: string;
@@ -46,18 +46,9 @@ const checkExistingEmails = async (emails: string[]): Promise<Set<string>> => {
 };
 
 export const bulkCreateCandidates = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
   .validator((data: BulkCandidateRow[],) => data)
-  .handler(async ({ data: candidates }) => {
-  const session = await getSession();
-
-  if (!session?.user) {
-    return {
-      success: false,
-      created: 0,
-      failed: candidates.length,
-      errors: [{ row: 0, field: "auth", message: "Unauthorized" }],
-    };
-  }
+  .handler(async ({ data: candidates, context: { session } }) => {
 
   const errors: BulkCandidateValidationError[] = [];
   const validatedCandidates: Array<{

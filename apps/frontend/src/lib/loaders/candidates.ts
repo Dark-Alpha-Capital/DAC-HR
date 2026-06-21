@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import {
   getApplicationsFiltered,
   getCandidateAiScreenings,
@@ -18,7 +19,6 @@ import {
   getCachedDocuments,
   getCachedPositions,
 } from "~/lib/cache/candidate";
-import { getSession } from "~/lib/server/session.server";
 
 type CandidatesIndexInput = {
   name?: string;
@@ -28,6 +28,7 @@ type CandidatesIndexInput = {
 };
 
 export const loadCandidatesIndex = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: CandidatesIndexInput) => data)
   .handler(async ({ data: deps }) => {
     const limit = 50;
@@ -71,9 +72,9 @@ export const loadCandidatesIndex = createServerFn({ method: "GET" })
     };
   });
 
-export const loadCandidatesNew = createServerFn({ method: "GET" }).handler(
-  async () => {
-    const session = await getSession();
+export const loadCandidatesNew = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
+  .handler(async ({ context: { session } }) => {
     const { positions } = await getPositions();
 
     // Preload rounds for all positions
@@ -94,10 +95,9 @@ export const loadCandidatesNew = createServerFn({ method: "GET" }).handler(
     return {
       positions: positions.map((p) => ({ id: p.id, name: p.name })),
       positionRounds,
-      userSession: session?.session,
+      userSession: session.session,
     };
-  },
-);
+  });
 
 type CandidateDetailInput = {
   uid: string;
@@ -105,12 +105,9 @@ type CandidateDetailInput = {
 };
 
 export const loadCandidateDetail = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: CandidateDetailInput) => data)
-  .handler(async ({ data }) => {
-    const session = await getSession();
-    if (!session?.user) {
-      return { unauthorized: true as const };
-    }
+  .handler(async ({ data, context: { session } }) => {
 
     const [users, candidate, documents, screenings] = await Promise.all([
       getUsers(),
@@ -121,7 +118,6 @@ export const loadCandidateDetail = createServerFn({ method: "GET" })
 
     if (!candidate) {
       return {
-        unauthorized: false as const,
         candidate: null,
         users: [],
         session: session.session,
@@ -153,7 +149,6 @@ export const loadCandidateDetail = createServerFn({ method: "GET" })
       : null;
 
     return {
-      unauthorized: false as const,
       candidate,
       users,
       session: session.session,
@@ -167,6 +162,7 @@ export const loadCandidateDetail = createServerFn({ method: "GET" })
   });
 
 export const loadCandidateEdit = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: string) => data)
   .handler(async ({ data: uid }) => {
     const [candidate, { positions }] = await Promise.all([
@@ -186,6 +182,7 @@ type CandidateDocumentEditInput = {
 };
 
 export const loadCandidateDocumentEdit = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: CandidateDocumentEditInput) => data)
   .handler(async ({ data }) => {
     const documents = await getDocumentsByCandidateId(data.uid);
@@ -202,6 +199,7 @@ type ApplicationsIndexInput = {
 };
 
 export const loadApplicationsIndex = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: ApplicationsIndexInput) => data)
   .handler(async ({ data: deps }) => {
     const limit = 50;
@@ -239,6 +237,7 @@ export const loadApplicationsIndex = createServerFn({ method: "GET" })
   });
 
 export const loadApplicationDetail = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: string) => data)
   .handler(async ({ data: applicationId }) => {
     const [application, users] = await Promise.all([

@@ -1,19 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
 import { employee } from "@workspace/db/schema";
-import { getSession } from "~/lib/get-session";
 import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { getEmployeeById } from "@workspace/db/queries";
 
 export const deleteEmployee = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
   .validator((data: string) => data)
-  .handler(async ({ data: id }) => {
-  const session = await getSession();
-
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  .handler(async ({ data: id, context: { session } }) => {
 
   try {
     // Get employee data before deletion for audit log

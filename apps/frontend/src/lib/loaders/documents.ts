@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import {
   getDocumentCategories,
   getDocuments,
@@ -12,8 +13,9 @@ type DocumentsIndexInput = {
 };
 
 export const loadDocumentsIndex = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: DocumentsIndexInput) => data)
-  .handler(async ({ data: deps }) => {
+  .handler(async ({ data: deps, context: { session } }) => {
     const limit = 50;
     const currentPage = deps.page ?? 1;
 

@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import {
   getCandidatesByPositionId,
   getPositionBySlug,
@@ -13,8 +14,9 @@ type PositionsIndexInput = {
 };
 
 export const loadPositionsIndex = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: PositionsIndexInput) => data)
-  .handler(async ({ data: deps }) => {
+  .handler(async ({ data: deps, context: { session } }) => {
     const limit = 50;
     const currentPage = deps.page ?? 1;
     const { positions, total } = await getPositions(
@@ -36,8 +38,9 @@ export const loadPositionsIndex = createServerFn({ method: "GET" })
   });
 
 export const loadPositionBySlug = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: string) => data)
-  .handler(async ({ data: slug }) => {
+  .handler(async ({ data: slug, context: { session } }) => {
     const position = await getPositionBySlug(slug);
 
     if (!position) {
@@ -53,8 +56,9 @@ export const loadPositionBySlug = createServerFn({ method: "GET" })
   });
 
 export const loadPositionEdit = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: string) => data)
-  .handler(async ({ data: slug }) => {
+  .handler(async ({ data: slug, context: { session } }) => {
     const position = await getPositionBySlug(slug);
     return { position };
   });

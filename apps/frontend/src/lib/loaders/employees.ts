@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import {
   getCandidateWithApplications,
   getEmployeeById,
@@ -15,8 +16,9 @@ type EmployeesIndexInput = {
 };
 
 export const loadEmployeesIndex = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: EmployeesIndexInput) => data)
-  .handler(async ({ data: deps }) => {
+  .handler(async ({ data: deps, context: { session } }) => {
     const limit = 50;
     const currentPage = deps.page ?? 1;
 
@@ -52,8 +54,9 @@ export const loadEmployeesIndex = createServerFn({ method: "GET" })
   });
 
 export const loadEmployeeDetail = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: { id: string }) => data)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context: { session } }) => {
     const employee = await getEmployeeById(data.id);
     return { employee };
   });
@@ -64,8 +67,9 @@ type EmployeeNewInput = {
 };
 
 export const loadEmployeeNew = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: EmployeeNewInput) => data)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context: { session } }) => {
     const { positions } = await getPositions();
     const cleanedPositions = positions.map((position) => ({
       id: position.id,
@@ -93,8 +97,9 @@ export const loadEmployeeNew = createServerFn({ method: "GET" })
   });
 
 export const loadEmployeeEdit = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: { id: string }) => data)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context: { session } }) => {
     const [employee, { positions }] = await Promise.all([
       getEmployeeById(data.id),
       getPositions(),

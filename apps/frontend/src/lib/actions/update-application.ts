@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
 import { application } from "@workspace/db/schema";
-import { getSession } from "~/lib/get-session";
 import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import type { ApplicationStatus } from "@workspace/db/application-status";
@@ -29,13 +29,9 @@ export interface UpdateApplicationInput {
 }
 
 export const updateApplication = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
   .validator((data: UpdateApplicationInput) => data)
-  .handler(async ({ data }) => {
-  const session = await getSession();
-
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  .handler(async ({ data, context: { session } }) => {
 
   const { applicationId, status, personality } = data;
 

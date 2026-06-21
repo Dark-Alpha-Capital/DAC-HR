@@ -1,9 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAdminGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
 import { sql, and, count } from "@workspace/db";
 import { ilike } from "@workspace/db/sqlite-helpers";
 import { user } from "@workspace/db/schema";
-import { getSession } from "~/lib/get-session";
 
 export type AdminUser = {
   id: string;
@@ -82,17 +82,9 @@ async function queryNonAdminUsers(
 }
 
 export const fetchNonAdminUsers = createServerFn({ method: "GET" })
+  .middleware([serverFnAdminGuard])
   .validator((data: FetchNonAdminUsersInput) => data)
   .handler(async ({ data }) => {
-    const session = await getSession();
-
-    if (!session?.user) {
-      throw new Error("Unauthorized");
-    }
-
-    if (session.user.role !== "admin") {
-      throw new Error("Forbidden");
-    }
 
     return queryNonAdminUsers(
       data.name,

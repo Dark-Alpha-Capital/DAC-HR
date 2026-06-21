@@ -1,22 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
 import { candidate, application } from "@workspace/db/schema";
 import {
   CandidateFormSchema,
   candidateFormSchema,
 } from "../schemas/candidate-form-schema";
-import { getSession } from "~/lib/get-session";
 import { eq, and, inArray } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const updateCandidate = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
   .validator((data: [string, CandidateFormSchema]) => data)
-  .handler(async ({ data: [candidateId, data] }) => {
-  const session = await getSession();
-
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  .handler(async ({ data: [candidateId, data], context: { session } }) => {
 
   const result = candidateFormSchema.safeParse(data);
   if (!result.success) {

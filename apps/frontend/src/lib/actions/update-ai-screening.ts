@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
 import { candidateAiScreening } from "@workspace/db/schema";
-import { getSession } from "~/lib/get-session";
 import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
@@ -13,13 +13,9 @@ export interface UpdateAiScreeningInput {
 }
 
 export const updateAiScreening = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
   .validator((data: UpdateAiScreeningInput) => data)
-  .handler(async ({ data }) => {
-  const session = await getSession();
-
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  .handler(async ({ data, context: { session } }) => {
 
   const { screeningId, candidateId, analysis, structuredData } = data;
 

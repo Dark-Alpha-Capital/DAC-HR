@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
 import { candidateOnboarding } from "@workspace/db/schema";
-import { getSession } from "~/lib/get-session";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 type OnboardingTaskKey =
@@ -33,8 +33,9 @@ const buildTaskUpdate = (
 };
 
 export const toggleOnboardingTask = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
   .validator((data: [string, OnboardingTaskKey, boolean]) => data)
-  .handler(async ({ data: [candidateId, taskKey, value] }) => {
+  .handler(async ({ data: [candidateId, taskKey, value], context: { session } }) => {
   const [upserted] = await db
     .insert(candidateOnboarding)
     .values({
@@ -52,18 +53,14 @@ export const toggleOnboardingTask = createServerFn({ method: "POST" })
 });
 
 export const updateOnboardingTasks = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
   .validator((data: [string, {
     contractSigned: boolean;
     emailProvided: boolean;
     onboardingPacketSent: boolean;
     companyEmailActivate: boolean;
   }]) => data)
-  .handler(async ({ data: [candidateId, tasks] }) => {
-  const session = await getSession();
-
-  if (!session?.user) {
-    return { success: false, error: "Unauthorized" };
-  }
+  .handler(async ({ data: [candidateId, tasks], context: { session } }) => {
 
   try {
     const [upserted] = await db

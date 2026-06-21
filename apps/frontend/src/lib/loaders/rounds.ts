@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import {
   getFirstPositionIdForRoundTemplate,
   getPositions,
@@ -15,8 +16,9 @@ type RoundsIndexInput = {
 };
 
 export const loadRoundsIndex = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: RoundsIndexInput) => data)
-  .handler(async ({ data: deps }) => {
+  .handler(async ({ data: deps, context: { session } }) => {
     const limit = 50;
     const currentPage = deps.page ?? 1;
 
@@ -44,8 +46,9 @@ type RoundsNewInput = {
 };
 
 export const loadRoundsNew = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: RoundsNewInput) => data)
-  .handler(async ({ data: deps }) => {
+  .handler(async ({ data: deps, context: { session } }) => {
     const positionsResult = await getPositions();
     return {
       positions: positionsResult.positions.map((position) => ({
@@ -57,8 +60,9 @@ export const loadRoundsNew = createServerFn({ method: "GET" })
   });
 
 export const loadRoundById = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: string) => data)
-  .handler(async ({ data: id }) => {
+  .handler(async ({ data: id, context: { session } }) => {
     const [round, positions, questions] = await Promise.all([
       getRoundById(id),
       getPositionsByRoundId(id),
@@ -68,8 +72,9 @@ export const loadRoundById = createServerFn({ method: "GET" })
   });
 
 export const loadRoundEdit = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: string) => data)
-  .handler(async ({ data: id }) => {
+  .handler(async ({ data: id, context: { session } }) => {
     const round = await getRoundById(id);
     return { round };
   });
@@ -80,8 +85,9 @@ type RoundAddQuestionInput = {
 };
 
 export const loadRoundAddQuestion = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: RoundAddQuestionInput) => data)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context: { session } }) => {
     const round = await getRoundById(data.roundId);
 
     if (!round) {

@@ -1,9 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { getRoundsByPositionId } from "@workspace/db/queries";
 
 export const getRoundsByPosition = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: string) => data)
-  .handler(async ({ data: positionId }) => {
+  .handler(async ({ data: positionId, context: { session } }) => {
   if (!positionId) {
     return [];
   }

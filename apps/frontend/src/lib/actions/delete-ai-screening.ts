@@ -1,18 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
 import { candidateAiScreening } from "@workspace/db/schema";
-import { getSession } from "~/lib/get-session";
 import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const deleteAiScreening = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
   .validator((data: [string, string]) => data)
-  .handler(async ({ data: [screeningId, candidateId] }) => {
-  const session = await getSession();
-
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  .handler(async ({ data: [screeningId, candidateId], context: { session } }) => {
 
   try {
     // Get screening data before deletion for audit log

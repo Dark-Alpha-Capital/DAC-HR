@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import {
   createDocumentCategory,
   updateDocumentCategory,
@@ -6,17 +7,12 @@ import {
   getDocumentCategories,
   getDocumentCategoryById,
 } from "@workspace/db/repositories/document-repository";
-import { getSession } from "~/lib/get-session";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const createCategory = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
   .validator((data: [string, string | undefined]) => data)
-  .handler(async ({ data: [name, description] }) => {
-    const session = await getSession();
-
-    if (!session?.user) {
-      return { error: "Unauthorized" };
-    }
+  .handler(async ({ data: [name, description], context: { session } }) => {
 
     if (!name || name.trim() === "") {
       return { error: "Category name is required" };
@@ -75,13 +71,9 @@ export const createCategory = createServerFn({ method: "POST" })
   });
 
 export const updateCategory = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
   .validator((data: [string, string, string | undefined]) => data)
-  .handler(async ({ data: [id, name, description] }) => {
-    const session = await getSession();
-
-    if (!session?.user) {
-      return { error: "Unauthorized" };
-    }
+  .handler(async ({ data: [id, name, description], context: { session } }) => {
 
     if (!name || name.trim() === "") {
       return { error: "Category name is required" };
@@ -145,13 +137,9 @@ export const updateCategory = createServerFn({ method: "POST" })
   });
 
 export const deleteCategory = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
   .validator((data: string) => data)
-  .handler(async ({ data: id }) => {
-    const session = await getSession();
-
-    if (!session?.user) {
-      return { error: "Unauthorized" };
-    }
+  .handler(async ({ data: id, context: { session } }) => {
 
     try {
       // Get category before deleting for audit log
@@ -208,12 +196,8 @@ export const deleteCategory = createServerFn({ method: "POST" })
   });
 
 export const getAllCategories = createServerFn({ method: "GET" })
-  .handler(async () => {
-    const session = await getSession();
-
-    if (!session?.user) {
-      return { error: "Unauthorized" };
-    }
+  .middleware([serverFnAuthGuard])
+  .handler(async ({ context: { session } }) => {
 
     try {
       const categories = await getDocumentCategories();

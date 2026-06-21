@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAdminGuard } from "~/lib/middleware/auth-guard";
 import { getAuditLogs } from "@workspace/db/repositories/audit-repository";
-import { getSession } from "~/lib/server/session.server";
 
 type AuditLogsInput = {
   action?: string;
@@ -12,17 +12,32 @@ type AuditLogsInput = {
   page?: number;
 };
 
+export type AuditLogRow = {
+  id: string;
+  userId: string;
+  userName: string | null;
+  userEmail: string | null;
+  action: string;
+  entityType: string;
+  entityId: string;
+  details: Record<string, string | number | boolean | null> | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AuditLogsPageData = {
+  logs: AuditLogRow[];
+  total: number;
+  currentPage: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+};
+
 export const loadAuditLogs = createServerFn({ method: "GET" })
+  .middleware([serverFnAdminGuard])
   .validator((data: AuditLogsInput) => data)
   .handler(async ({ data: deps }) => {
-    const session = await getSession();
-    if (!session?.user) {
-      return { unauthorized: true as const };
-    }
-    if (session.user.role !== "admin") {
-      return { forbidden: true as const };
-    }
-
     const currentPage = deps.page ?? 1;
     const limit = 20;
 
@@ -40,9 +55,10 @@ export const loadAuditLogs = createServerFn({ method: "GET" })
     const totalPages = Math.ceil(result.total / limit);
 
     return {
-      unauthorized: false as const,
-      forbidden: false as const,
-      logs: result.logs,
+      logs: result.logs.map((log) => ({
+        ...log,
+        details: log.details as AuditLogRow["details"],
+      })),
       total: result.total,
       currentPage,
       totalPages,

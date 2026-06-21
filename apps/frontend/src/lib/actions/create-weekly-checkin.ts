@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
 import { recruiterWeeklyCheckin } from "@workspace/db/schema";
-import { getSession } from "~/lib/get-session";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import {
   weeklyCheckinFormSchema,
@@ -9,13 +9,9 @@ import {
 } from "~/lib/schemas/weekly-checkin-form-schema";
 
 export const createWeeklyCheckin = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
   .validator((data: WeeklyCheckinFormSchema) => data)
-  .handler(async ({ data }) => {
-  const session = await getSession();
-
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  .handler(async ({ data, context: { session } }) => {
 
   // Validate input
   const parsed = weeklyCheckinFormSchema.safeParse(data);

@@ -1,14 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { getPositions, getWeeklyCheckins } from "@workspace/db/queries";
-import { getSession } from "~/lib/server/session.server";
 import { hasWeeklyCheckinViewerAccess } from "~/lib/config/weekly-checkin-access";
 
-export const loadWeeklyCheckinForm = createServerFn({ method: "GET" }).handler(
-  async () => {
-    const session = await getSession();
-    if (!session?.user) {
-      return { unauthorized: true as const };
-    }
+export const loadWeeklyCheckinForm = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
+  .handler(async ({ context: { session } }) => {
     if (!hasWeeklyCheckinViewerAccess(session.user.email)) {
       return { accessDenied: true as const };
     }
@@ -16,7 +13,6 @@ export const loadWeeklyCheckinForm = createServerFn({ method: "GET" }).handler(
     const { positions } = await getPositions();
 
     return {
-      unauthorized: false as const,
       accessDenied: false as const,
       positions: positions.map((position) => ({
         id: position.id,
@@ -24,24 +20,20 @@ export const loadWeeklyCheckinForm = createServerFn({ method: "GET" }).handler(
       })),
       userName: session.user.name || undefined,
     };
-  },
-);
+  });
 
 type WeeklyCheckinRecordsInput = {
   page?: number;
 };
 
 export const loadWeeklyCheckinRecords = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
   .validator((data: WeeklyCheckinRecordsInput) => data)
-  .handler(async ({ data: deps }) => {
-    const session = await getSession();
-    if (!session?.user) {
-      return { unauthorized: true as const };
-    }
+  .handler(async ({ data: deps, context: { session } }) => {
 
     const hasAccess = hasWeeklyCheckinViewerAccess(session.user.email);
     if (!hasAccess) {
-      return { unauthorized: false as const, accessDenied: true as const };
+      return { accessDenied: true as const };
     }
 
     const currentPage = deps.page ?? 1;
@@ -58,7 +50,6 @@ export const loadWeeklyCheckinRecords = createServerFn({ method: "GET" })
     );
 
     return {
-      unauthorized: false as const,
       accessDenied: false as const,
       checkins,
       currentPage,

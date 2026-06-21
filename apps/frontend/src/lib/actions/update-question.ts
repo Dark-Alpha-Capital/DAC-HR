@@ -1,24 +1,20 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
 import { questionBank } from "@workspace/db/schema";
 import {
   QuestionEditFormSchema,
   questionEditFormSchema,
 } from "../schemas/question-form-schema";
-import { getSession } from "~/lib/get-session";
 import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { normalizeMcqOptions } from "~/lib/question-options";
 
 export const updateQuestion = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
   .validator((data: [string, QuestionEditFormSchema]) => data)
-  .handler(async ({ data: [questionId, formData] }) => {
+  .handler(async ({ data: [questionId, formData], context: { session } }) => {
     const data = formData;
-    const session = await getSession();
-
-    if (!session?.user) {
-      return { error: "Unauthorized" };
-    }
 
     const result = questionEditFormSchema.safeParse(data);
     if (!result.success) {

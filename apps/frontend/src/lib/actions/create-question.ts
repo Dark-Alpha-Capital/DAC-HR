@@ -1,22 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
+import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
 import { questionBank, roundTemplateQuestions } from "@workspace/db/schema";
 import {
   QuestionFormSchema,
   questionFormSchema,
 } from "../schemas/question-form-schema";
-import { getSession } from "~/lib/get-session";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { normalizeMcqOptions } from "~/lib/question-options";
 
 export const createQuestion = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
   .validator((data: QuestionFormSchema) => data)
-  .handler(async ({ data }) => {
-  const session = await getSession();
-
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  .handler(async ({ data, context: { session } }) => {
 
   const result = questionFormSchema.safeParse(data);
   if (!result.success) {
@@ -90,14 +86,10 @@ export const createQuestion = createServerFn({ method: "POST" })
 });
 
 export const createQuestionForRound = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
   .validator((data: [QuestionFormSchema, string]) => data)
-  .handler(async ({ data: [formData, roundId] }) => {
+  .handler(async ({ data: [formData, roundId], context: { session } }) => {
     const data = formData;
-    const session = await getSession();
-
-    if (!session?.user) {
-      return { error: "Unauthorized" };
-    }
 
     const result = questionFormSchema.safeParse(data);
     if (!result.success) {
