@@ -26,12 +26,14 @@ import {
   Star,
   MessageSquare,
   Circle,
-  CheckCircle2,
-  XCircle,
+  Bot,
+  UserRound,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { formatDate } from "~/lib/utils";
 import RecordInterviewDialogWrapper from "./record-interview-dialog-wrapper";
+import GenerateInterviewLinkDialogWrapper from "./generate-interview-link-dialog-wrapper";
+import type { InterviewMode } from "@workspace/db/enums";
 import { deleteInterview } from "~/lib/actions/delete-interview";
 import { toast } from "sonner";
 import { useRouter } from "@tanstack/react-router";
@@ -46,6 +48,7 @@ interface Round {
 interface Interview {
   id: string;
   positionRoundTemplateId: string;
+  mode: InterviewMode;
   status: "pending" | "move_forward" | "rejected" | "scheduled";
   rating: number | null;
   scheduledAt: Date | null;
@@ -83,6 +86,24 @@ interface ApplicationProgressTimelineProps {
     rounds: Round[];
   };
 }
+
+const getModeBadge = (mode: InterviewMode) => {
+  if (mode === "ai_session") {
+    return (
+      <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-0">
+        <Bot className="h-3 w-3 mr-1" />
+        AI Session
+      </Badge>
+    );
+  }
+
+  return (
+    <Badge variant="secondary" className="border-0">
+      <UserRound className="h-3 w-3 mr-1" />
+      Manual
+    </Badge>
+  );
+};
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -213,18 +234,33 @@ export default function ApplicationProgressTimeline({
           </div>
         </div>
         {currentUser && application && (
-          <RecordInterviewDialogWrapper
-            applicationId={application.id}
-            application={application}
-            users={users}
-            currentUserId={currentUser.id}
-            trigger={
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Record Interview
-              </Button>
-            }
-          />
+          <div className="flex items-center gap-2">
+            <GenerateInterviewLinkDialogWrapper
+              applicationId={application.id}
+              rounds={application.rounds.map((round) => ({
+                id: round.id,
+                name: round.name,
+              }))}
+              trigger={
+                <Button size="sm" variant="secondary">
+                  <Bot className="h-4 w-4 mr-2" />
+                  Generate Link
+                </Button>
+              }
+            />
+            <RecordInterviewDialogWrapper
+              applicationId={application.id}
+              application={application}
+              users={users}
+              currentUserId={currentUser.id}
+              trigger={
+                <Button size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Record Interview
+                </Button>
+              }
+            />
+          </div>
         )}
       </div>
 
@@ -266,7 +302,9 @@ export default function ApplicationProgressTimeline({
                       No interviews recorded for this round yet.
                     </p>
                     <p className="text-xs">
-                      Click "Record Interview" to add an interview.
+                      Use &quot;Generate Link&quot; for a candidate self-serve
+                      interview, or &quot;Record Interview&quot; to log one
+                      manually.
                     </p>
                   </div>
                 ) : (
@@ -274,6 +312,7 @@ export default function ApplicationProgressTimeline({
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-muted/30">
+                          <TableHead className="font-medium">Type</TableHead>
                           <TableHead className="font-medium">
                             Interviewer
                           </TableHead>
@@ -296,10 +335,15 @@ export default function ApplicationProgressTimeline({
                             }
                           >
                             <TableCell>
-                              {interview.interviewer
-                                ? interview.interviewer.name ||
-                                  interview.interviewer.email
-                                : "-"}
+                              {getModeBadge(interview.mode ?? "manual")}
+                            </TableCell>
+                            <TableCell>
+                              {interview.mode === "ai_session"
+                                ? "Candidate"
+                                : interview.interviewer
+                                  ? interview.interviewer.name ||
+                                    interview.interviewer.email
+                                  : "-"}
                             </TableCell>
                             <TableCell>
                               {interview.scheduledAt
