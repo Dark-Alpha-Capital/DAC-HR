@@ -1,7 +1,9 @@
 node_modules
 package-lock.json
-yarn.lock
 
+dist/
+yarn.lock
+.wrangler
 .DS_Store
 .cache
 .env

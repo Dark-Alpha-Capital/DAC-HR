@@ -243,7 +243,7 @@ const Header = () => {
           ) : (
             <div className="flex items-center gap-2">
               <Button variant="secondary" asChild>
-                <Link to="/signup">Sign In</Link>
+                <Link to="/login">Sign In</Link>
               </Button>
             </div>
           )}

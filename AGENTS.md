@@ -4,15 +4,15 @@
 
 ```bash
 bun install          # always use bun, never npm/pnpm/yarn
-bun run dev          # turbo dev (Vite on :3000)
-bun run build        # turbo build (vite build)
+bun run dev          # turbo dev (Vite on :3000, runs apps/frontend)
+bun run build        # turbo build
 bun run lint         # turbo lint (ESLint 9 flat config)
 bun run test         # turbo run test (bun test in each package)
-bun run format       # prettier --write "**/*.{ts,tsx,md}" (no config file — uses defaults)
+bun run format       # prettier --write "**/*.{ts,tsx,md}" (no config file)
 ```
 
-**Typecheck:** `tsc --noEmit` from `apps/web/` (no root-level typecheck script)
-**Deploy:** `wrangler deploy` from `apps/web/`
+**Typecheck:** `tsc --noEmit` from `apps/frontend/` (no root-level typecheck script)
+**Deploy:** `bun run deploy` from `apps/frontend/` (runs `vite build && wrangler deploy`)
 
 ## Architecture overview
 
@@ -20,85 +20,110 @@ Turborepo monorepo with `bun@1.1.38`. Deployed on **Cloudflare Workers**.
 
 | Directory                     | Package                        | Role                                                                  |
 | ----------------------------- | ------------------------------ | --------------------------------------------------------------------- |
-| `apps/web/`                   | `web`                          | TanStack Start app (React 19, Vite 8, Tailwind v4, shadcn/ui)         |
-| `apps/worker/`                | `worker`                       | Stub (future Cloudflare Worker for background jobs)                   |
+| `apps/frontend/`              | `hr-automation`                | TanStack Start app (React 19, Vite 8, Tailwind v4, shadcn/ui)         |
+| `apps/agents/`                | `agents`                       | Standalone Bun app (no framework)                                      |
 | `packages/db/`                | `@workspace/db`                | Drizzle ORM + Cloudflare D1 (SQLite) via `drizzle-orm/d1`             |
 | `packages/nextcloud/`         | `@workspace/nextcloud`         | Nextcloud WebDAV client                                               |
-| `packages/file-search/`       | `@workspace/file-search`       | Google Gemini File Search API                                         |
-| `packages/ui/`                | `@workspace/ui`                | shadcn/ui component library                                           |
+| `packages/ai-config/`         | `@workspace/ai-config`         | OpenAI / AI SDK provider and embeddings                               |
 | `packages/eslint-config/`     | `@workspace/eslint-config`     | Shared ESLint configs (base, next-js, react-internal)                 |
 | `packages/typescript-config/` | `@workspace/typescript-config` | Shared tsconfig extends                                               |
 | `packages/mail/`              | —                              | Empty stub (no package.json)                                          |
 
-## TanStack Start routing quirks
+Shadcn/ui components live in `apps/frontend/src/components/ui/` (no separate `packages/ui/`).
 
-- **Routes live directly under `app/`** (e.g. `app/_main/dashboard.tsx`), NOT under `app/routes/`. This is because `vite.config.ts` sets `routesDirectory: "."`.
-- `app/routeTree.gen.ts` is **auto-generated** — never edit it manually.
-- `_main` is a layout route wrapping all authenticated pages. It calls `fetchSession()` in `beforeLoad`.
+## TanStack Start routing
+
+- Routes live under `apps/frontend/src/routes/` (e.g. `src/routes/_main/dashboard.tsx`).
+- `src/routes/routeTree.gen.ts` is **auto-generated** — never edit it manually.
+- `src/routes/__root.tsx` is the root route (wraps every page in `<Outlet />`).
+- `src/routes/_main/route.tsx` is the authenticated layout route. It calls `fetchSession()` in `beforeLoad` and redirects to `/login` if no session.
+- `src/router.tsx` exports `getRouter()` which creates a `createRouter` from `routeTree`.
 - Public routes: `login.tsx`, `signup.tsx`, `unauthorized.tsx`, `interview/$token/index.tsx`.
+- `vite.config.ts` uses `tanstackStart({ srcDirectory: "src" })` — no custom `routesDirectory`.
 
 ## Database (Drizzle + Cloudflare D1)
 
-- Driver: `drizzle-orm/d1` via `env.DB` binding (`cloudflare:workers`)
-- D1 database: `hr-automation-db` (binding `DB` in `apps/web/wrangler.jsonc`)
-- Schema: `packages/db/schema.ts` (27 tables, SQLite dialect)
-- Migrations: `packages/db/drizzle/` — applied with `wrangler d1 migrations apply`
-- Repositories: `packages/db/repositories/` (5 files: audit, candidate, document, interview, interview-session)
-- The DB client uses a **lazy-init Proxy pattern**. Import `db` directly — it reads the D1 binding on first access.
+- Driver: `drizzle-orm/d1` via `cloudflare:workers` environment binding.
+- D1 database: `hr-automation-db` (binding `DB` in `apps/frontend/wrangler.jsonc`).
+- Schema: `packages/db/schema.ts` (SQLite dialect, ~30 tables).
+- Migrations: `packages/db/drizzle/` — applied with `wrangler d1 migrations apply`.
+- Repositories: `packages/db/repositories/` (5 files: audit, candidate, document, interview, interview-session).
 
 ```bash
 cd packages/db
 bun run db:generate      # generate migrations from schema changes
 bun run db:migrate       # apply migrations to local D1
 bun run db:migrate:remote # apply migrations to remote D1
-bun run db:seed          # seed local D1 (bun:sqlite against wrangler local state)
+bun run db:seed          # seed local D1
+bun run db:seed:remote   # seed remote D1
 ```
+
+### DB import — critical: server-only with client stub
+
+`packages/db/db.ts` imports `env` from `cloudflare:workers` directly. This will crash on the client. To protect against this, `vite.config.ts` has a custom `environmentAlias()` plugin that **swaps `@workspace/db/db`** depending on the Vite environment:
+
+- **Server (SSR)**: resolves to `packages/db/db.ts` (real D1 binding)
+- **Client**: resolves to `packages/db/db.stub.ts` (throws on all access)
+
+The same `environmentAlias()` plugin also stubs `cloudflare:workers` → `src/lib/cloudflare-workers-stub.ts` on the client.
+
+When you import `db`, always use `@workspace/db/db` as the module specifier:
+
+```ts
+import { db } from "@workspace/db/db"; // server-only
+```
+
+The alias plumbing depends on exact import specifiers — do not rename or re-export this module without updating both `db.ts`, `db.stub.ts`, and `environmentAlias()` in `vite.config.ts`.
+
+### Drizzle operators
 
 All common Drizzle operators re-exported from `@workspace/db`:
 
 ```ts
 import { eq, and, or, sql, asc, desc, inArray, count, gte, lte } from "@workspace/db";
-import { db } from "@workspace/db/db"; // server-only — D1 binding via cloudflare:workers
 // also exports InferSelectModel, InferInsertModel
 ```
 
 ## Environment variables
 
-- All env vars go in `apps/web/.env` (not the repo root)
-- Template: `apps/web/.env.example`
-- No `DATABASE_URL` — D1 is bound via `wrangler.jsonc`
-- `apps/web/.dev.vars` duplicates secrets for **wrangler dev** (Cloudflare Workers runtime can't read `.env`)
-- `auth.ts` explicitly calls `dotenv/config` to load `.env` at startup (`bun` auto-loads `.env` only for scripts)
+- All env vars go in `apps/frontend/.env` (not the repo root).
+- Template: `apps/frontend/.env.example`.
+- No `DATABASE_URL` — D1 is bound via `wrangler.jsonc`.
+- `apps/frontend/.dev.vars` duplicates secrets for **wrangler dev** (Cloudflare Workers runtime can't read `.env`).
+- **Local dev uses remote D1/Vectorize bindings** (`remote: true` in `wrangler.jsonc`). Run `bunx wrangler login` once before `bun run dev`.
 
 ## Auth (better-auth)
 
-- Config: `apps/web/auth.ts`, Client: `apps/web/auth-client.ts`
-- Only `@darkalphacapital.com` emails can sign in
-- Admin emails hardcoded in `auth.ts` (rahul@, gaurav@, da@)
-- Session helpers in `lib/auth-session.ts`:
-  - `fetchSession()` — used in `beforeLoad` of layout routes
-  - `getSession()` from `lib/middleware/auth-guard.ts` — used inline in API routes
-  - `authGuard` / `adminGuard` middleware exist in `lib/middleware/auth-guard.ts` but are **not currently used**
-  - `requestLogger` middleware exists in `lib/middleware/request-logger.ts` but is **not currently used**
+- Config: `apps/frontend/src/auth.ts`, Client: `apps/frontend/src/auth-client.ts`.
+- Only `@darkalphacapital.com` emails can sign in.
+- Admin emails hardcoded in `src/auth.ts` (`rahul@`, `gaurav@`, `da@`).
+- Session helpers:
+  - `fetchSession()` in `lib/auth-session.ts` — server function used in `beforeLoad` of layout routes.
+  - `getSession()` in `lib/server/session.server.ts` — used inline in API routes and middleware.
+  - `authGuard` / `adminGuard` in `lib/middleware/auth-guard.ts` — route-level middleware for server routes.
+  - `serverFnAuthGuard` / `serverFnAdminGuard` in `lib/middleware/auth-guard.ts` — function middleware for server functions.
+  - `apiAuthGuard` in `lib/middleware/api-auth-guard.ts` — middleware for API route handlers.
 
 ## API route conventions
 
-- Zod validation with `safeParse`, return 400 with `flatten().fieldErrors`
-- Auth check via `getSession()` called inline at the top of each handler
-- Audit logs inserted inline with `.catch()` (fire-and-forget)
-- Structured JSON logging via `console.info(JSON.stringify({...}))` (readable via `wrangler tail`)
+- API routes live under `apps/frontend/src/routes/api/`.
+- Zod validation with `safeParse`, return 400 with `flatten().fieldErrors`.
+- Auth check via `getSession()` called inline at the top of each handler.
+- Audit logs inserted inline with `.catch()` (fire-and-forget).
+- Structured JSON logging via `console.info(JSON.stringify({...}))`.
 
 ## File storage
 
-- Documents stored in **Nextcloud** via WebDAV (`packages/nextcloud/`)
-- Upload/view API routes: `app/api/documents/upload.tsx`, `app/api/documents/view.tsx`
-- Requires `NEXTCLOUD_URL`, `NEXTCLOUD_USER`, `NEXTCLOUD_PASSWORD` in `apps/web/.env`
+- Documents stored in **Nextcloud** via WebDAV (`packages/nextcloud/`).
+- Upload/view API routes: `routes/api/documents/`.
+- Requires `NEXTCLOUD_URL`, `NEXTCLOUD_USER`, `NEXTCLOUD_PASSWORD` in `apps/frontend/.env`.
 
 ## Cloudflare bindings
 
-- D1 binding `DB` → database `hr-automation-db`
-- Vectorize binding `VECTORIZE` → index `hr-documents-index` (reserved for future RAG)
-- `cloudflare()` vite plugin handles the Workers integration
+- D1 binding `DB` → database `hr-automation-db`.
+- Vectorize binding `VECTORIZE` → index `hr-documents-index` (reserved for RAG).
+- Workflow binding `DOCUMENT_INDEXING_WORKFLOW` → `DocumentIndexingWorkflow` (in `src/workflows/document-indexing.ts`).
+- `@cloudflare/vite-plugin` handles Workers integration (configured in `vite.config.ts`).
 
 ## Testing
 
@@ -110,3 +135,5 @@ bun run test                     # all packages via turbo
 ```
 
 Import from `bun:test`: `import { test, expect } from "bun:test";`
+
+Tests are sparse — currently only one test file at `apps/frontend/src/lib/__tests__/format-date.test.ts`.

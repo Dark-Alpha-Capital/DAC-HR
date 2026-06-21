@@ -9,15 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as UnauthorizedRouteImport } from './routes/unauthorized'
-import { Route as SignupRouteImport } from './routes/signup'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as CustomScriptDotjsRouteImport } from './routes/customScript[.]js'
 import { Route as MainRouteRouteImport } from './routes/_main/route'
+import { Route as AuthRouteRouteImport } from './routes/_auth/route'
 import { Route as MainIndexRouteImport } from './routes/_main/index'
 import { Route as ApiInterviewSessionsRouteImport } from './routes/api/interview-sessions'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as MainDashboardRouteImport } from './routes/_main/dashboard'
+import { Route as AuthUnauthorizedRouteImport } from './routes/_auth/unauthorized'
+import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as MainDocsRouteRouteImport } from './routes/_main/docs/route'
 import { Route as MainAdminRouteRouteImport } from './routes/_main/admin/route'
 import { Route as InterviewTokenIndexRouteImport } from './routes/interview/$token/index'
@@ -84,21 +84,6 @@ import { Route as MainCandidatesUidEditRouteImport } from './routes/_main/candid
 import { Route as ApiCandidateIdDocumentsDocumentIdRouteImport } from './routes/api/candidate/$id/documents/$documentId'
 import { Route as MainCandidatesUidDocumentsDocumentIdEditRouteImport } from './routes/_main/candidates/$uid/documents/$documentId/edit'
 
-const UnauthorizedRoute = UnauthorizedRouteImport.update({
-  id: '/unauthorized',
-  path: '/unauthorized',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CustomScriptDotjsRoute = CustomScriptDotjsRouteImport.update({
   id: '/customScript.js',
   path: '/customScript.js',
@@ -106,6 +91,10 @@ const CustomScriptDotjsRoute = CustomScriptDotjsRouteImport.update({
 } as any)
 const MainRouteRoute = MainRouteRouteImport.update({
   id: '/_main',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRouteRoute = AuthRouteRouteImport.update({
+  id: '/_auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MainIndexRoute = MainIndexRouteImport.update({
@@ -127,6 +116,16 @@ const MainDashboardRoute = MainDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => MainRouteRoute,
+} as any)
+const AuthUnauthorizedRoute = AuthUnauthorizedRouteImport.update({
+  id: '/unauthorized',
+  path: '/unauthorized',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+const AuthLoginRoute = AuthLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AuthRouteRoute,
 } as any)
 const MainDocsRouteRoute = MainDocsRouteRouteImport.update({
   id: '/docs',
@@ -468,11 +467,10 @@ const MainCandidatesUidDocumentsDocumentIdEditRoute =
 export interface FileRoutesByFullPath {
   '/': typeof MainIndexRoute
   '/customScript.js': typeof CustomScriptDotjsRoute
-  '/login': typeof LoginRoute
-  '/signup': typeof SignupRoute
-  '/unauthorized': typeof UnauthorizedRoute
   '/admin': typeof MainAdminRouteRouteWithChildren
   '/docs': typeof MainDocsRouteRouteWithChildren
+  '/login': typeof AuthLoginRoute
+  '/unauthorized': typeof AuthUnauthorizedRoute
   '/dashboard': typeof MainDashboardRoute
   '/api/health': typeof ApiHealthRoute
   '/api/interview-sessions': typeof ApiInterviewSessionsRoute
@@ -541,14 +539,13 @@ export interface FileRoutesByFullPath {
   '/candidates/$uid/documents/$documentId/edit': typeof MainCandidatesUidDocumentsDocumentIdEditRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof MainIndexRoute
   '/customScript.js': typeof CustomScriptDotjsRoute
-  '/login': typeof LoginRoute
-  '/signup': typeof SignupRoute
-  '/unauthorized': typeof UnauthorizedRoute
+  '/login': typeof AuthLoginRoute
+  '/unauthorized': typeof AuthUnauthorizedRoute
   '/dashboard': typeof MainDashboardRoute
   '/api/health': typeof ApiHealthRoute
   '/api/interview-sessions': typeof ApiInterviewSessionsRoute
-  '/': typeof MainIndexRoute
   '/admin/audit-logs': typeof MainAdminAuditLogsRoute
   '/candidates/new': typeof MainCandidatesNewRoute
   '/docs/ai-features': typeof MainDocsAiFeaturesRoute
@@ -615,13 +612,13 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/_auth': typeof AuthRouteRouteWithChildren
   '/_main': typeof MainRouteRouteWithChildren
   '/customScript.js': typeof CustomScriptDotjsRoute
-  '/login': typeof LoginRoute
-  '/signup': typeof SignupRoute
-  '/unauthorized': typeof UnauthorizedRoute
   '/_main/admin': typeof MainAdminRouteRouteWithChildren
   '/_main/docs': typeof MainDocsRouteRouteWithChildren
+  '/_auth/login': typeof AuthLoginRoute
+  '/_auth/unauthorized': typeof AuthUnauthorizedRoute
   '/_main/dashboard': typeof MainDashboardRoute
   '/api/health': typeof ApiHealthRoute
   '/api/interview-sessions': typeof ApiInterviewSessionsRoute
@@ -695,11 +692,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/customScript.js'
-    | '/login'
-    | '/signup'
-    | '/unauthorized'
     | '/admin'
     | '/docs'
+    | '/login'
+    | '/unauthorized'
     | '/dashboard'
     | '/api/health'
     | '/api/interview-sessions'
@@ -768,14 +764,13 @@ export interface FileRouteTypes {
     | '/candidates/$uid/documents/$documentId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/customScript.js'
     | '/login'
-    | '/signup'
     | '/unauthorized'
     | '/dashboard'
     | '/api/health'
     | '/api/interview-sessions'
-    | '/'
     | '/admin/audit-logs'
     | '/candidates/new'
     | '/docs/ai-features'
@@ -841,13 +836,13 @@ export interface FileRouteTypes {
     | '/candidates/$uid/documents/$documentId/edit'
   id:
     | '__root__'
+    | '/_auth'
     | '/_main'
     | '/customScript.js'
-    | '/login'
-    | '/signup'
-    | '/unauthorized'
     | '/_main/admin'
     | '/_main/docs'
+    | '/_auth/login'
+    | '/_auth/unauthorized'
     | '/_main/dashboard'
     | '/api/health'
     | '/api/interview-sessions'
@@ -918,11 +913,9 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  AuthRouteRoute: typeof AuthRouteRouteWithChildren
   MainRouteRoute: typeof MainRouteRouteWithChildren
   CustomScriptDotjsRoute: typeof CustomScriptDotjsRoute
-  LoginRoute: typeof LoginRoute
-  SignupRoute: typeof SignupRoute
-  UnauthorizedRoute: typeof UnauthorizedRoute
   ApiHealthRoute: typeof ApiHealthRoute
   ApiInterviewSessionsRoute: typeof ApiInterviewSessionsRoute
   ApiAuditLogsGenerateReportRoute: typeof ApiAuditLogsGenerateReportRoute
@@ -946,27 +939,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/unauthorized': {
-      id: '/unauthorized'
-      path: '/unauthorized'
-      fullPath: '/unauthorized'
-      preLoaderRoute: typeof UnauthorizedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/customScript.js': {
       id: '/customScript.js'
       path: '/customScript.js'
@@ -979,6 +951,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof MainRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_auth': {
+      id: '/_auth'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_main/': {
@@ -1008,6 +987,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard'
       preLoaderRoute: typeof MainDashboardRouteImport
       parentRoute: typeof MainRouteRoute
+    }
+    '/_auth/unauthorized': {
+      id: '/_auth/unauthorized'
+      path: '/unauthorized'
+      fullPath: '/unauthorized'
+      preLoaderRoute: typeof AuthUnauthorizedRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
+    '/_auth/login': {
+      id: '/_auth/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof AuthLoginRouteImport
+      parentRoute: typeof AuthRouteRoute
     }
     '/_main/docs': {
       id: '/_main/docs'
@@ -1467,6 +1460,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthRouteRouteChildren {
+  AuthLoginRoute: typeof AuthLoginRoute
+  AuthUnauthorizedRoute: typeof AuthUnauthorizedRoute
+}
+
+const AuthRouteRouteChildren: AuthRouteRouteChildren = {
+  AuthLoginRoute: AuthLoginRoute,
+  AuthUnauthorizedRoute: AuthUnauthorizedRoute,
+}
+
+const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
+  AuthRouteRouteChildren,
+)
+
 interface MainAdminRouteRouteChildren {
   MainAdminAuditLogsRoute: typeof MainAdminAuditLogsRoute
   MainAdminIndexRoute: typeof MainAdminIndexRoute
@@ -1612,11 +1619,9 @@ const ApiCandidateIdDocumentsRouteWithChildren =
   )
 
 const rootRouteChildren: RootRouteChildren = {
+  AuthRouteRoute: AuthRouteRouteWithChildren,
   MainRouteRoute: MainRouteRouteWithChildren,
   CustomScriptDotjsRoute: CustomScriptDotjsRoute,
-  LoginRoute: LoginRoute,
-  SignupRoute: SignupRoute,
-  UnauthorizedRoute: UnauthorizedRoute,
   ApiHealthRoute: ApiHealthRoute,
   ApiInterviewSessionsRoute: ApiInterviewSessionsRoute,
   ApiAuditLogsGenerateReportRoute: ApiAuditLogsGenerateReportRoute,
