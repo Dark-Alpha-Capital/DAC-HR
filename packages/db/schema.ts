@@ -506,6 +506,8 @@ export const interviewSession = sqliteTable("interview_session", {
   startedAt: integer("started_at", { mode: "timestamp_ms" }),
   completedAt: integer("completed_at", { mode: "timestamp_ms" }),
   tabSwitches: integer("tab_switches").default(0).notNull(),
+  emailSentAt: integer("email_sent_at", { mode: "timestamp_ms" }),
+  emailSentTo: text("email_sent_to"),
   createdAt: createdAtCol(),
   updatedAt: updatedAtCol(),
 });

@@ -36,6 +36,13 @@
       "when": 1786200000000,
       "tag": "0004_add_vectorize_namespace",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1787000000000,
+      "tag": "0005_add_email_sent",
+      "breakpoints": true
     }
   ]
 }

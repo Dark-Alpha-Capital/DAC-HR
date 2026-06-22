@@ -5,7 +5,6 @@ import { Textarea } from "~/components/ui/textarea";
 import { Badge } from "~/components/ui/badge";
 import {
   Card,
-  CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
@@ -15,20 +14,30 @@ import {
   RadioGroupItem,
 } from "~/components/ui/radio-group";
 import { Label } from "~/components/ui/label";
-import type { QuestionOption } from "@workspace/db/question-types";
-
 import {
-  Clock,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
+import type { QuestionOption } from "@workspace/db/question-types";
+import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
   AlertCircle,
   Loader2,
-  ClipboardList,
-  Wifi,
-  Eye,
-  Save,
 } from "lucide-react";
+import InterviewTimer from "~/components/interview-timer";
+import WelcomeScreen from "~/components/interview/welcome-screen";
+import InstructionWizard from "~/components/interview/instruction-wizard";
+import LobbyScreen from "~/components/interview/lobby-screen";
+import PracticeInterview from "~/components/interview/practice-interview";
+import VoiceRecorder from "~/components/interview/voice-recorder";
 
 interface Question {
   id: string;
@@ -39,23 +48,32 @@ interface Question {
   options?: QuestionOption[] | null;
 }
 
-interface InterviewData {
+interface SessionInfo {
   sessionId: string;
   candidateName: string;
   positionName: string;
   roundName: string;
-  questions: Question[];
 }
 
-interface WelcomeData {
-  candidateName: string;
-  positionName: string;
-  roundName: string;
+interface InterviewData extends SessionInfo {
+  startedAt: number | null;
+  questions: Question[];
 }
 
 type AnswerValue =
   | { type: "text"; text: string }
   | { type: "mcq"; selectedOptionId: string };
+
+type PageStatus =
+  | "loading"
+  | "invalid"
+  | "welcome"
+  | "instructions"
+  | "lobby"
+  | "practice"
+  | "confirming"
+  | "in_progress"
+  | "completed";
 
 let tabSwitchCount = 0;
 if (typeof document !== "undefined") {
@@ -72,223 +90,127 @@ export const Route = createFileRoute("/interview/$token/")({
 });
 
 function hasAnswer(answer: AnswerValue | undefined): boolean {
-  if (!answer) {
-    return false;
-  }
-
-  if (answer.type === "text") {
-    return answer.text.trim().length > 0;
-  }
-
+  if (!answer) return false;
+  if (answer.type === "text") return answer.text.trim().length > 0;
   return answer.selectedOptionId.length > 0;
 }
 
-async function loadInterviewSchema(token: string): Promise<InterviewData> {
-  const schemaRes = await fetch(`/api/interview-token/${token}/schema`);
-  if (!schemaRes.ok) {
-    const body = await schemaRes.json();
-    throw new Error(body.error || "Failed to load interview");
-  }
-  return schemaRes.json();
-}
-
-const INSTRUCTIONS = [
-  {
-    icon: ClipboardList,
-    title: "Read each question carefully",
-    description:
-      "Take your time to understand what is being asked before answering.",
-  },
-  {
-    icon: Save,
-    title: "Your progress is saved automatically",
-    description:
-      "Answers are saved as you move between questions. You can go back to review or change responses.",
-  },
-  {
-    icon: Wifi,
-    title: "Use a stable internet connection",
-    description:
-      "Find a quiet place with reliable connectivity so you can focus without interruptions.",
-  },
-  {
-    icon: Eye,
-    title: "Stay on this tab during the interview",
-    description:
-      "Switching tabs or windows may be recorded. Keep this page open until you submit.",
-  },
-] as const;
-
-function WelcomeScreen({
-  data,
-  onStart,
-  starting,
-}: {
-  data: WelcomeData;
-  onStart: () => void;
-  starting: boolean;
-}) {
-  return (
-    <div className="flex min-h-svh flex-col bg-background">
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex max-w-2xl items-center justify-center px-4 py-5">
-          <p className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-            Dark Alpha Capital
-          </p>
-        </div>
-      </header>
-
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-8 sm:py-12">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            Welcome to Your Interview
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            Hi {data.candidateName}, thank you for taking the time to interview
-            with us.
-          </p>
-        </div>
-
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle className="text-base">Interview Details</CardTitle>
-            <CardDescription>
-              Please confirm the information below before you begin.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3 text-sm">
-            <div className="flex items-center justify-between gap-4 rounded-lg border bg-muted/40 px-4 py-3">
-              <span className="text-muted-foreground">Position</span>
-              <span className="font-medium text-right">{data.positionName}</span>
-            </div>
-            <div className="flex items-center justify-between gap-4 rounded-lg border bg-muted/40 px-4 py-3">
-              <span className="text-muted-foreground">Round</span>
-              <span className="font-medium text-right">{data.roundName}</span>
-            </div>
-            <div className="flex items-center justify-between gap-4 rounded-lg border bg-muted/40 px-4 py-3">
-              <span className="text-muted-foreground">Candidate</span>
-              <span className="font-medium text-right">{data.candidateName}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="mt-8">
-          <h2 className="text-lg font-medium">Before You Begin</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Review these instructions to ensure a smooth interview experience.
-          </p>
-          <ul className="mt-4 space-y-3">
-            {INSTRUCTIONS.map((item) => (
-              <li
-                key={item.title}
-                className="flex gap-3 rounded-lg border p-4"
-              >
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                  <item.icon className="size-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{item.title}</p>
-                  <p className="mt-0.5 text-sm text-muted-foreground">
-                    {item.description}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="mt-auto pt-8">
-          <Button
-            className="w-full sm:w-auto"
-            size="lg"
-            onClick={onStart}
-            disabled={starting}
-          >
-            {starting ? (
-              <>
-                <Loader2 className="mr-2 size-4 animate-spin" />
-                Preparing interview...
-              </>
-            ) : (
-              <>
-                Start Interview
-                <ArrowRight className="ml-2 size-4" />
-              </>
-            )}
-          </Button>
-          <p className="mt-3 text-xs text-muted-foreground">
-            By clicking Start Interview, you confirm you are ready to begin and
-            your session will be recorded.
-          </p>
-        </div>
-      </main>
-    </div>
-  );
-}
+const THIRTY_MINUTES_MS = 30 * 60 * 1000;
 
 function InterviewPage() {
   const { token } = Route.useParams();
-  const [status, setStatus] = useState<
-    "loading" | "invalid" | "welcome" | "in_progress" | "completed"
-  >("loading");
+
+  const [status, setStatus] = useState<PageStatus>("loading");
   const [error, setError] = useState("");
-  const [welcomeData, setWelcomeData] = useState<WelcomeData | null>(null);
+
+  // Populated from /validate — available during welcome/instructions/lobby/confirming
+  const [sessionInfo, setSessionInfo] = useState<SessionInfo | null>(null);
+  // Populated from /schema — available only once the real interview starts
   const [data, setData] = useState<InterviewData | null>(null);
+
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
+  // Tracks which questions have a locked voice answer (textarea disabled)
+  const [voiceUsed, setVoiceUsed] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
-  const [starting, setStarting] = useState(false);
   const [completing, setCompleting] = useState(false);
-  const answersRef = useRef(answers);
+  const [startedAt, setStartedAt] = useState<Date | null>(null);
+  const [startingInterview, setStartingInterview] = useState(false);
 
+  // Always reflects latest answers — used by timer expire callback to avoid stale closures
+  const answersRef = useRef(answers);
   useEffect(() => {
     answersRef.current = answers;
   }, [answers]);
 
+  const answersKey = `interview-answers-${token}`;
+  const timerKey = `interview-start-${token}`;
+
+  // Auto-save every answer change to localStorage
+  useEffect(() => {
+    if (status !== "in_progress") return;
+    localStorage.setItem(answersKey, JSON.stringify(answers));
+  }, [answers, status, answersKey]);
+
+  // Warn before closing the tab — only while actively interviewing
+  useEffect(() => {
+    if (status !== "in_progress") return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [status]);
+
+  // On mount: validate the token, then branch based on existing session status
   useEffect(() => {
     let cancelled = false;
 
-    async function init() {
-      try {
-        const validateRes = await fetch(
-          `/api/interview-token/${token}/validate`,
-        );
-        if (!validateRes.ok) {
-          const body = await validateRes.json();
-          if (!cancelled) {
-            setStatus("invalid");
-            setError(body.error || "Invalid interview link");
-          }
-          return;
-        }
-
-        const validation = await validateRes.json();
-
-        if (validation.status === "in_progress") {
-          const interviewData = await loadInterviewSchema(token);
-          if (!cancelled) {
-            setData(interviewData);
-            setStatus("in_progress");
-          }
-          return;
-        }
-
-        if (!cancelled) {
-          setWelcomeData({
-            candidateName: validation.candidateName,
-            positionName: validation.positionName,
-            roundName: validation.roundName,
-          });
-          setStatus("welcome");
-        }
-      } catch (err) {
+    async function loadSchema() {
+      const schemaRes = await fetch(`/api/interview-token/${token}/schema`);
+      if (!schemaRes.ok) {
+        const body = (await schemaRes.json()) as { error?: string };
         if (!cancelled) {
           setStatus("invalid");
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Failed to connect. Please try again.",
-          );
+          setError(body.error ?? "Failed to load interview");
+        }
+        return;
+      }
+      const interviewData = (await schemaRes.json()) as InterviewData;
+      if (!cancelled) {
+        setData(interviewData);
+        const origin = interviewData.startedAt
+          ? new Date(interviewData.startedAt)
+          : new Date();
+        setStartedAt(origin);
+        const savedAnswers = localStorage.getItem(answersKey);
+        if (savedAnswers) {
+          try {
+            const parsed = JSON.parse(savedAnswers) as Record<string, AnswerValue>;
+            if (Object.keys(parsed).length > 0) setAnswers(parsed);
+          } catch {
+            // Corrupt localStorage — ignore
+          }
+        }
+        setStatus("in_progress");
+      }
+    }
+
+    async function init() {
+      try {
+        const validateRes = await fetch(`/api/interview-token/${token}/validate`);
+        if (!validateRes.ok) {
+          const body = (await validateRes.json()) as { error?: string };
+          if (!cancelled) {
+            setStatus("invalid");
+            setError(body.error ?? "Invalid interview link");
+          }
+          return;
+        }
+        const validateData = (await validateRes.json()) as {
+          sessionId: string;
+          status: string;
+          candidateName: string;
+          positionName: string;
+          roundName: string;
+        };
+        if (cancelled) return;
+        setSessionInfo({
+          sessionId: validateData.sessionId,
+          candidateName: validateData.candidateName,
+          positionName: validateData.positionName,
+          roundName: validateData.roundName,
+        });
+        if (validateData.status === "in_progress") {
+          // Resuming after a refresh — skip onboarding, go straight to interview
+          await loadSchema();
+        } else {
+          setStatus("welcome");
+        }
+      } catch {
+        if (!cancelled) {
+          setStatus("invalid");
+          setError("Failed to connect. Please try again.");
         }
       }
     }
@@ -297,32 +219,45 @@ function InterviewPage() {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
+  // Called when the candidate confirms "Start Interview" in the AlertDialog.
+  // /schema marks the session in_progress in the DB and returns startedAt for the timer.
   const handleStartInterview = useCallback(async () => {
-    setStarting(true);
+    setStartingInterview(true);
     try {
-      const interviewData = await loadInterviewSchema(token);
+      const schemaRes = await fetch(`/api/interview-token/${token}/schema`);
+      if (!schemaRes.ok) {
+        const body = (await schemaRes.json()) as { error?: string };
+        // 410 = expired or already completed; anything else is retryable
+        if (schemaRes.status === 410) {
+          setError(body.error ?? "This interview link is no longer available");
+          setStatus("invalid");
+        } else {
+          setStatus("lobby");
+        }
+        return;
+      }
+      const interviewData = (await schemaRes.json()) as InterviewData;
       setData(interviewData);
-      setStatus("in_progress");
-    } catch (err) {
-      setStatus("invalid");
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to start interview. Please try again.",
+      setStartedAt(
+        interviewData.startedAt
+          ? new Date(interviewData.startedAt)
+          : new Date(),
       );
+      setStatus("in_progress");
+    } catch {
+      // Network error — return to lobby so the candidate can try again
+      setStatus("lobby");
     } finally {
-      setStarting(false);
+      setStartingInterview(false);
     }
   }, [token]);
 
   const saveAnswer = useCallback(
     async (question: Question, answer: AnswerValue) => {
-      if (!hasAnswer(answer)) {
-        return;
-      }
-
+      if (!hasAnswer(answer)) return;
       setSaving(true);
       try {
         const body =
@@ -331,18 +266,14 @@ function InterviewPage() {
                 questionId: question.id,
                 selectedOptionId: answer.selectedOptionId,
               }
-            : {
-                questionId: question.id,
-                answerText: answer.text,
-              };
-
+            : { questionId: question.id, answerText: answer.text };
         await fetch(`/api/interview-token/${token}/responses`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
       } catch {
-        // continue regardless
+        // Non-fatal — localStorage already has the answer
       } finally {
         setSaving(false);
       }
@@ -350,38 +281,54 @@ function InterviewPage() {
     [token],
   );
 
+  const handleTimerExpire = useCallback(async () => {
+    if (!data || completing) return;
+    setCompleting(true);
+    try {
+      const currentAnswers = answersRef.current;
+      for (const question of data.questions) {
+        const answer = currentAnswers[question.id];
+        if (answer && hasAnswer(answer)) await saveAnswer(question, answer);
+      }
+      await fetch(`/api/interview-token/${token}/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tabSwitches: tabSwitchCount }),
+      });
+      localStorage.removeItem(answersKey);
+      localStorage.removeItem(timerKey);
+      setStatus("completed");
+    } catch {
+      setStatus("completed");
+    } finally {
+      setCompleting(false);
+    }
+  }, [data, completing, token, saveAnswer, answersKey, timerKey]);
+
   const handleNext = useCallback(async () => {
     if (!data) return;
     const question = data.questions[currentStep];
+    if (!question) return;
     const answer = answers[question.id];
-    if (answer && hasAnswer(answer)) {
-      await saveAnswer(question, answer);
-    }
-    if (currentStep < data.questions.length - 1) {
-      setCurrentStep((s) => s + 1);
-    }
+    if (answer && hasAnswer(answer)) await saveAnswer(question, answer);
+    if (currentStep < data.questions.length - 1) setCurrentStep((s) => s + 1);
   }, [data, currentStep, answers, saveAnswer]);
 
   const handlePrev = useCallback(async () => {
     if (!data) return;
-
     const question = data.questions[currentStep];
+    if (!question) return;
     const answer = answers[question.id];
-    if (answer && hasAnswer(answer)) {
-      await saveAnswer(question, answer);
-    }
-    if (currentStep > 0) {
-      setCurrentStep((s) => s - 1);
-    }
+    if (answer && hasAnswer(answer)) await saveAnswer(question, answer);
+    if (currentStep > 0) setCurrentStep((s) => s - 1);
   }, [data, currentStep, answers, saveAnswer]);
 
   const handleComplete = useCallback(async () => {
     if (!data) return;
     const question = data.questions[currentStep];
+    if (!question) return;
     const answer = answers[question.id];
-    if (answer && hasAnswer(answer)) {
-      await saveAnswer(question, answer);
-    }
+    if (answer && hasAnswer(answer)) await saveAnswer(question, answer);
     setCompleting(true);
     try {
       await fetch(`/api/interview-token/${token}/complete`, {
@@ -389,20 +336,24 @@ function InterviewPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tabSwitches: tabSwitchCount }),
       });
+      localStorage.removeItem(answersKey);
+      localStorage.removeItem(timerKey);
       setStatus("completed");
     } catch {
       // continue
     } finally {
       setCompleting(false);
     }
-  }, [data, currentStep, answers, saveAnswer, token]);
+  }, [data, currentStep, answers, saveAnswer, token, answersKey, timerKey]);
+
+  // ── Screens ────────────────────────────────────────────────────────────────
 
   if (status === "loading") {
     return (
       <div className="flex min-h-svh items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="size-8 animate-spin text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Loading interview...</p>
+          <p className="text-sm text-muted-foreground">Loading interview…</p>
         </div>
       </div>
     );
@@ -443,36 +394,111 @@ function InterviewPage() {
     );
   }
 
-  if (status === "welcome" && welcomeData) {
+  if (status === "welcome" && sessionInfo) {
     return (
       <WelcomeScreen
-        data={welcomeData}
-        onStart={handleStartInterview}
-        starting={starting}
+        candidateName={sessionInfo.candidateName}
+        positionName={sessionInfo.positionName}
+        roundName={sessionInfo.roundName}
+        onContinue={() => setStatus("instructions")}
       />
+    );
+  }
+
+  if (status === "instructions") {
+    return <InstructionWizard onFinish={() => setStatus("lobby")} />;
+  }
+
+  if (status === "lobby" && sessionInfo) {
+    return (
+      <LobbyScreen
+        positionName={sessionInfo.positionName}
+        onPractice={() => setStatus("practice")}
+        onStartInterview={() => setStatus("confirming")}
+        onViewInstructions={() => setStatus("instructions")}
+      />
+    );
+  }
+
+  // "Are you sure?" shown as a modal over the lobby — lobby still visible behind it
+  if (status === "confirming" && sessionInfo) {
+    return (
+      <>
+        <LobbyScreen
+          positionName={sessionInfo.positionName}
+          onPractice={() => setStatus("practice")}
+          onStartInterview={() => setStatus("confirming")}
+          onViewInstructions={() => setStatus("instructions")}
+        />
+        <AlertDialog open>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Start your interview?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Once you begin, your 30-minute timer starts immediately and
+                cannot be paused. Make sure you are in a quiet environment with
+                a stable internet connection.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setStatus("lobby")}>
+                Not yet
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleStartInterview}
+                disabled={startingInterview}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {startingInterview && (
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                )}
+                Start Interview
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </>
+    );
+  }
+
+  if (status === "practice") {
+    return (
+      <PracticeInterview token={token} onFinish={() => setStatus("lobby")} />
     );
   }
 
   if (!data) return null;
 
+  // ── Real interview ──────────────────────────────────────────────────────────
+
   const question = data.questions[currentStep];
+  if (!question) return null;
+
   const isLast = currentStep === data.questions.length - 1;
   const progress = ((currentStep + 1) / data.questions.length) * 100;
   const currentAnswer = answers[question.id];
   const isMcq = question.questionType === "mcq";
+  const isVoiceLocked = !!voiceUsed[question.id];
 
   return (
     <div className="flex min-h-svh flex-col bg-background">
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto flex max-w-3xl items-center gap-4 px-4 py-3">
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 flex-1">
             <h1 className="truncate text-sm font-semibold">{data.roundName}</h1>
             <p className="truncate text-xs text-muted-foreground">
               {data.positionName} — {data.candidateName}
             </p>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
-            <Clock className="size-3.5" />
+          {startedAt && (
+            <InterviewTimer
+              durationMs={THIRTY_MINUTES_MS}
+              startedAt={startedAt}
+              token={token}
+              onExpire={handleTimerExpire}
+            />
+          )}
+          <div className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
             <span>
               {currentStep + 1} / {data.questions.length}
             </span>
@@ -489,7 +515,7 @@ function InterviewPage() {
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-6">
         <div className="mb-6">
           <Badge variant="secondary" className="mb-2">
-            {question.category || "General"}
+            {question.category ?? "General"}
           </Badge>
           <h2 className="text-lg font-medium leading-relaxed">
             {question.questionText}
@@ -501,7 +527,7 @@ function InterviewPage() {
           )}
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 space-y-3">
           {isMcq ? (
             <RadioGroup
               value={
@@ -515,6 +541,7 @@ function InterviewPage() {
                   [question.id]: { type: "mcq", selectedOptionId },
                 }))
               }
+              disabled={completing}
               className="space-y-3"
             >
               {(question.options ?? []).map((option) => (
@@ -530,25 +557,53 @@ function InterviewPage() {
               ))}
             </RadioGroup>
           ) : (
-            <Textarea
-              value={currentAnswer?.type === "text" ? currentAnswer.text : ""}
-              onChange={(e) =>
-                setAnswers((prev) => ({
-                  ...prev,
-                  [question.id]: { type: "text", text: e.target.value },
-                }))
-              }
-              placeholder="Type your answer here..."
-              className="min-h-[200px] resize-y text-base leading-relaxed"
-            />
+            <>
+              <Textarea
+                value={
+                  currentAnswer?.type === "text" ? currentAnswer.text : ""
+                }
+                onChange={(e) =>
+                  setAnswers((prev) => ({
+                    ...prev,
+                    [question.id]: { type: "text", text: e.target.value },
+                  }))
+                }
+                placeholder="Type your answer here…"
+                className="min-h-[200px] resize-y text-base leading-relaxed"
+                disabled={completing || isVoiceLocked}
+              />
+              {/* VoiceRecorder keyed by question id — fully resets on navigation */}
+              <VoiceRecorder
+                key={question.id}
+                token={token}
+                disabled={completing || isVoiceLocked}
+                onTranscript={(text) => {
+                  setAnswers((prev) => ({
+                    ...prev,
+                    [question.id]: { type: "text", text },
+                  }));
+                  setVoiceUsed((prev) => ({ ...prev, [question.id]: true }));
+                }}
+                onTypeInstead={() => {
+                  setAnswers((prev) => ({
+                    ...prev,
+                    [question.id]: { type: "text", text: "" },
+                  }));
+                  setVoiceUsed((prev) => ({
+                    ...prev,
+                    [question.id]: false,
+                  }));
+                }}
+              />
+            </>
           )}
         </div>
 
         <div className="mt-6 flex items-center justify-between gap-3 border-t pt-4">
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={handlePrev}
-            disabled={currentStep === 0 || saving}
+            disabled={currentStep === 0 || saving || completing}
             size="sm"
           >
             <ArrowLeft className="mr-1.5 size-4" />
@@ -570,7 +625,11 @@ function InterviewPage() {
                 Submit Interview
               </Button>
             ) : (
-              <Button onClick={handleNext} disabled={saving} size="sm">
+              <Button
+                onClick={handleNext}
+                disabled={saving || completing}
+                size="sm"
+              >
                 Next
                 <ArrowRight className="ml-1.5 size-4" />
               </Button>
@@ -585,6 +644,7 @@ function InterviewPage() {
               type="button"
               onClick={async () => {
                 const currentQ = data.questions[currentStep];
+                if (!currentQ) return;
                 const currentA = answersRef.current[currentQ.id];
                 if (currentA && hasAnswer(currentA)) {
                   await saveAnswer(currentQ, currentA);

@@ -34,7 +34,12 @@ export const Route = createFileRoute("/api/interview-token/$token/validate")({
             );
           }
 
-          if (new Date(session.expiresAt) < new Date()) {
+          // Only block on expiry if the candidate hasn't started yet.
+          // Once in_progress, the 30-minute timer governs — link expiry is irrelevant.
+          if (
+            session.status !== "in_progress" &&
+            new Date(session.expiresAt) < new Date()
+          ) {
             return Response.json(
               {
                 valid: false,

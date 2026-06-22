@@ -31,7 +31,11 @@ export const Route = createFileRoute("/api/interview-token/$token/schema")({
             );
           }
 
-          if (new Date(session.expiresAt) < new Date()) {
+          // Only block on expiry if candidate hasn't started — same rule as validate.
+          if (
+            session.status !== "in_progress" &&
+            new Date(session.expiresAt) < new Date()
+          ) {
             return Response.json(
               { error: "This interview link has expired" },
               { status: 410 },
@@ -43,9 +47,13 @@ export const Route = createFileRoute("/api/interview-token/$token/schema")({
             session.id,
           );
 
+          // Record the exact moment the candidate starts. Capture it so we can
+          // return it — the client uses it to anchor the 30-minute countdown.
+          let startedAt: Date | null = session.startedAt;
           if (session.status === "pending" || session.status === "invited") {
+            startedAt = new Date();
             await updateSessionStatus(session.id, "in_progress", {
-              startedAt: new Date(),
+              startedAt,
             }).catch((e) => console.error("Failed to update session status:", e));
           }
 
@@ -54,6 +62,7 @@ export const Route = createFileRoute("/api/interview-token/$token/schema")({
             candidateName: `${candidate.firstName} ${candidate.lastName}`,
             positionName: position.name,
             roundName: round.name,
+            startedAt: startedAt?.getTime() ?? null,
             questions: questions.map((q) => ({
               id: q.id,
               questionText: q.questionText,
