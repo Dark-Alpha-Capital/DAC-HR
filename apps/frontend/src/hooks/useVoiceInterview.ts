@@ -21,8 +21,10 @@ interface StartVoiceResponse {
 
 export interface VoiceInterviewState {
   status: "idle" | "connecting" | "active" | "completed" | "error";
+  isEnding: boolean;
   currentQuestionIndex: number;
   questions: VoiceQuestion[];
+  displayQuestion: VoiceQuestion | null;
   transcripts: Array<{ role: "user" | "assistant"; text: string }>;
   liveUserTranscript: string;
   allQuestionsAsked: boolean;
@@ -30,11 +32,26 @@ export interface VoiceInterviewState {
   error?: string;
 }
 
+function mergeQuestion(
+  questions: VoiceQuestion[],
+  question: VoiceQuestion,
+): VoiceQuestion[] {
+  const existingIndex = questions.findIndex((item) => item.id === question.id);
+  if (existingIndex >= 0) {
+    const next = [...questions];
+    next[existingIndex] = { ...next[existingIndex], ...question };
+    return next;
+  }
+  return [...questions, question];
+}
+
 export function useVoiceInterview(token: string) {
   const [state, setState] = useState<VoiceInterviewState>({
     status: "idle",
+    isEnding: false,
     currentQuestionIndex: 0,
     questions: [],
+    displayQuestion: null,
     transcripts: [],
     liveUserTranscript: "",
     allQuestionsAsked: false,
@@ -46,6 +63,19 @@ export function useVoiceInterview(token: string) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  const endInterviewResolveRef = useRef<(() => void) | null>(null);
+
+  const completeSessionViaApi = useCallback(async () => {
+    const response = await fetch(`/api/interview-token/${token}/complete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tabSwitches: 0 }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to complete interview session");
+    }
+  }, [token]);
 
   const sendToDO = useCallback(
     (eventType: CheatingEventType, metadata?: Record<string, unknown>) => {
@@ -87,14 +117,54 @@ export function useVoiceInterview(token: string) {
   }, [token]);
 
   const endInterview = useCallback(async () => {
-    wsRef.current?.send(JSON.stringify({ type: "END_INTERVIEW" }));
-    if (mediaRecorderRef.current?.state === "recording") {
-      mediaRecorderRef.current.stop();
+    setState((current) => ({ ...current, isEnding: true }));
+
+    try {
+      const ws = wsRef.current;
+      let completedViaWs = false;
+
+      if (ws?.readyState === WebSocket.OPEN) {
+        const completedPromise = new Promise<void>((resolve) => {
+          endInterviewResolveRef.current = () => {
+            completedViaWs = true;
+            resolve();
+          };
+          window.setTimeout(resolve, 12000);
+        });
+
+        ws.send(JSON.stringify({ type: "END_INTERVIEW" }));
+        await completedPromise;
+      }
+
+      if (!completedViaWs) {
+        await completeSessionViaApi();
+      }
+
+      if (mediaRecorderRef.current?.state === "recording") {
+        mediaRecorderRef.current.stop();
+      }
+
+      await uploadRecording().catch(() => undefined);
+    } catch (error) {
+      setState((current) => ({
+        ...current,
+        status: "error",
+        isEnding: false,
+        error:
+          error instanceof Error ? error.message : "Failed to end interview",
+      }));
+      return;
+    } finally {
+      endInterviewResolveRef.current = null;
+      cleanup();
     }
-    await uploadRecording().catch(() => undefined);
-    cleanup();
-    setState((current) => ({ ...current, status: "completed" }));
-  }, [cleanup, uploadRecording]);
+
+    setState((current) => ({
+      ...current,
+      status: "completed",
+      isEnding: false,
+    }));
+  }, [cleanup, completeSessionViaApi, uploadRecording]);
 
   const handleWsMessage = useCallback(
     (event: MessageEvent) => {
@@ -113,17 +183,38 @@ export function useVoiceInterview(token: string) {
           ...current,
           status: "active",
           introActive: true,
+          displayQuestion: null,
           currentQuestionIndex: connectedState?.currentQuestionIndex ?? 0,
           questions: connectedState?.questions ?? current.questions,
         }));
       }
 
-      if (type === "QUESTION_CHANGED" && typeof message.index === "number") {
+      if (type === "INTRO_STARTED") {
         setState((current) => ({
           ...current,
-          introActive: false,
-          currentQuestionIndex: message.index as number,
+          introActive: true,
+          displayQuestion: null,
         }));
+      }
+
+      if (type === "QUESTION_CHANGED" && typeof message.index === "number") {
+        const question = message.question as VoiceQuestion | undefined;
+        const index = message.index as number;
+
+        setState((current) => {
+          const resolvedQuestion =
+            question ?? current.questions[index] ?? current.displayQuestion;
+
+          return {
+            ...current,
+            introActive: false,
+            currentQuestionIndex: index,
+            displayQuestion: resolvedQuestion ?? null,
+            questions: question
+              ? mergeQuestion(current.questions, question)
+              : current.questions,
+          };
+        });
       }
 
       if (type === "ALL_QUESTIONS_ASKED") {
@@ -162,6 +253,7 @@ export function useVoiceInterview(token: string) {
       }
 
       if (type === "INTERVIEW_COMPLETED") {
+        endInterviewResolveRef.current?.();
         setState((current) => ({ ...current, status: "completed" }));
       }
 
@@ -179,8 +271,10 @@ export function useVoiceInterview(token: string) {
   const start = useCallback(async () => {
     setState({
       status: "connecting",
+      isEnding: false,
       currentQuestionIndex: 0,
       questions: [],
+      displayQuestion: null,
       transcripts: [],
       liveUserTranscript: "",
       allQuestionsAsked: false,
@@ -286,8 +380,10 @@ export function useVoiceInterview(token: string) {
       cleanup();
       setState({
         status: "error",
+        isEnding: false,
         currentQuestionIndex: 0,
         questions: [],
+        displayQuestion: null,
         transcripts: [],
         liveUserTranscript: "",
         allQuestionsAsked: false,

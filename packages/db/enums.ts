@@ -48,6 +48,7 @@ export type QuestionCategory = (typeof questionCategories)[number];
 
 export const interviewStatuses = [
   "pending",
+  "completed",
   "move_forward",
   "rejected",
   "scheduled",

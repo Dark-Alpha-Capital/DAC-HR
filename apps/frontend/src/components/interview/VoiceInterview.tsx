@@ -28,9 +28,13 @@ export default function VoiceInterview({
   onStart,
   onEnd,
 }: VoiceInterviewProps) {
-  const isActive = state.status === "active" || state.status === "connecting";
+  const isActive =
+    state.status === "active" ||
+    state.status === "connecting" ||
+    state.isEnding;
   const questionCount = state.questions.length;
-  const currentQuestion = state.questions[state.currentQuestionIndex];
+  const currentQuestion =
+    state.displayQuestion ?? state.questions[state.currentQuestionIndex];
   const progress =
     questionCount > 0 && !state.introActive
       ? ((state.currentQuestionIndex + 1) / questionCount) * 100
@@ -186,10 +190,24 @@ export default function VoiceInterview({
                 <Button
                   variant="destructive"
                   onClick={onEnd}
-                  className={state.allQuestionsAsked ? "animate-pulse" : undefined}
+                  disabled={state.isEnding}
+                  className={
+                    state.allQuestionsAsked && !state.isEnding
+                      ? "animate-pulse"
+                      : undefined
+                  }
                 >
-                  <PhoneOff className="h-4 w-4 mr-2" />
-                  End Interview
+                  {state.isEnding ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Ending interview...
+                    </>
+                  ) : (
+                    <>
+                      <PhoneOff className="h-4 w-4 mr-2" />
+                      End Interview
+                    </>
+                  )}
                 </Button>
               ) : null}
             </div>

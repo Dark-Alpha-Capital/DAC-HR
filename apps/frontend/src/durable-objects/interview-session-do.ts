@@ -155,6 +155,8 @@ export class InterviewSessionDO implements DurableObject {
       this.interviewState = {
         ...stored,
         voicePhase: stored.voicePhase ?? "questions",
+        candidateReady: stored.candidateReady ?? false,
+        awaitingAnswerForIndex: stored.awaitingAnswerForIndex ?? null,
       };
       return;
     }
@@ -188,6 +190,8 @@ export class InterviewSessionDO implements DurableObject {
       isFullscreen: false,
       status: "active",
       voicePhase: "intro",
+      candidateReady: false,
+      awaitingAnswerForIndex: null,
       roundName: row.round.name,
       positionName: row.position.name,
       candidateName: `${row.candidate.firstName} ${row.candidate.lastName}`,
@@ -260,6 +264,7 @@ export class InterviewSessionDO implements DurableObject {
           }),
         ),
       );
+      this.broadcast({ type: "INTRO_STARTED" });
     });
 
     sideband.addEventListener("message", (event) => {
@@ -325,6 +330,7 @@ export class InterviewSessionDO implements DurableObject {
       if (transcript.trim()) {
         this.appendConversation("assistant", transcript);
         this.broadcastTranscript("assistant", transcript);
+        this.syncQuestionFromAssistantTranscript(transcript);
       }
       return;
     }
@@ -342,9 +348,20 @@ export class InterviewSessionDO implements DurableObject {
     const phase = this.interviewState.voicePhase ?? "questions";
 
     if (phase === "intro") {
-      this.interviewState.voicePhase = "questions";
+      this.interviewState.voicePhase = this.interviewState.candidateReady
+        ? "questions"
+        : "awaiting_ready";
       await this.persistState();
-      await this.askCurrentQuestion();
+      if (this.interviewState.candidateReady) {
+        await this.askCurrentQuestion();
+      }
+      return;
+    }
+
+    if (phase === "questions") {
+      this.interviewState.awaitingAnswerForIndex =
+        this.interviewState.currentQuestionIndex;
+      await this.persistState();
       return;
     }
 
@@ -358,8 +375,6 @@ export class InterviewSessionDO implements DurableObject {
     if (phase === "awaiting_end") {
       return;
     }
-
-    // During the questions phase, wait for the candidate transcript before advancing.
   }
 
   private getNextAnswerQuestionIndex(): number {
@@ -448,13 +463,26 @@ export class InterviewSessionDO implements DurableObject {
     }
 
     if (phase === "intro") {
+      this.interviewState.candidateReady = true;
       this.broadcastTranscript("user", trimmed);
+      return;
+    }
+
+    if (phase === "awaiting_ready") {
+      this.broadcastTranscript("user", trimmed);
+      this.interviewState.voicePhase = "questions";
+      await this.persistState();
+      await this.askCurrentQuestion();
       return;
     }
 
     const questionIndex = this.getNextAnswerQuestionIndex();
     const question = this.interviewState.questions[questionIndex];
     if (!question) {
+      return;
+    }
+
+    if (this.interviewState.awaitingAnswerForIndex !== questionIndex) {
       return;
     }
 
@@ -491,6 +519,7 @@ export class InterviewSessionDO implements DurableObject {
     }
 
     if (phase === "questions") {
+      this.interviewState.awaitingAnswerForIndex = null;
       await this.advanceAfterAnswer();
     }
   }
@@ -526,20 +555,109 @@ export class InterviewSessionDO implements DurableObject {
     return this.interviewState.questions[this.interviewState.currentQuestionIndex] ?? null;
   }
 
+  private detectQuestionIndexFromTranscript(transcript: string): number | null {
+    if (!this.interviewState) {
+      return null;
+    }
+
+    const normalized = transcript.toLowerCase().replace(/\s+/g, " ");
+    let bestIndex: number | null = null;
+    let bestScore = 0;
+
+    for (let index = 0; index < this.interviewState.questions.length; index++) {
+      const question = this.interviewState.questions[index]!;
+      const questionText = question.questionText.toLowerCase().trim();
+      if (!questionText) {
+        continue;
+      }
+
+      const snippet = questionText.slice(0, Math.min(80, questionText.length));
+      let score = 0;
+
+      if (normalized.includes(snippet)) {
+        score = snippet.length;
+      } else {
+        const words = snippet.split(/\s+/).filter((word) => word.length > 4);
+        const matched = words.filter((word) => normalized.includes(word)).length;
+        if (words.length > 0 && matched / words.length >= 0.5) {
+          score = matched * 10;
+        }
+      }
+
+      if (question.questionType === "mcq" && question.options?.length) {
+        for (const option of question.options) {
+          const optionText = option.text.toLowerCase().trim();
+          if (optionText.length > 8 && normalized.includes(optionText.slice(0, 40))) {
+            score += 20;
+          }
+        }
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = index;
+      }
+    }
+
+    return bestScore >= 20 ? bestIndex : null;
+  }
+
+  private broadcastQuestion(index: number) {
+    if (!this.interviewState) {
+      return;
+    }
+
+    const question = this.interviewState.questions[index];
+    if (!question) {
+      return;
+    }
+
+    this.broadcast({
+      type: "QUESTION_CHANGED",
+      index,
+      questionId: question.id,
+      question,
+    });
+  }
+
+  private async syncQuestionFromAssistantTranscript(transcript: string) {
+    if (!this.interviewState) {
+      return;
+    }
+
+    const phase = this.interviewState.voicePhase ?? "questions";
+    if (phase !== "questions" && phase !== "closing" && phase !== "awaiting_end") {
+      return;
+    }
+
+    const detectedIndex = this.detectQuestionIndexFromTranscript(transcript);
+    const index =
+      detectedIndex ?? this.interviewState.currentQuestionIndex;
+
+    if (detectedIndex !== null && detectedIndex !== this.interviewState.currentQuestionIndex) {
+      this.interviewState.currentQuestionIndex = detectedIndex;
+      await this.persistState();
+    }
+
+    this.broadcastQuestion(index);
+  }
+
   private async askCurrentQuestion() {
     const question = this.getCurrentQuestion();
     if (!question || !this.sideband || !this.interviewState) {
       return;
     }
 
-    this.broadcast({
-      type: "QUESTION_CHANGED",
-      index: this.interviewState.currentQuestionIndex,
-      questionId: question.id,
-    });
-
+    this.broadcastQuestion(this.interviewState.currentQuestionIndex);
+    this.interviewState.awaitingAnswerForIndex = null;
+    await this.persistState();
     this.sideband.send(
-      JSON.stringify(buildAskCurrentQuestionEvent(question.questionText)),
+      JSON.stringify(
+        buildAskCurrentQuestionEvent(
+          question,
+          this.interviewState.currentQuestionIndex,
+        ),
+      ),
     );
   }
 

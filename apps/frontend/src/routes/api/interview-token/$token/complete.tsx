@@ -39,6 +39,10 @@ export const Route = createFileRoute("/api/interview-token/$token/complete")({
 
           const { session } = validation.row;
 
+          if (session.status === "completed") {
+            return Response.json({ session });
+          }
+
           const body = await request.json();
           const parsed = completeSchema.safeParse(body);
 

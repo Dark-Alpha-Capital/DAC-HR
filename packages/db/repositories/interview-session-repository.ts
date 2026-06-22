@@ -115,6 +115,13 @@ export const updateSessionStatus = async (
     .where(eq(interviewSession.id, id))
     .returning();
 
+  if (status === "completed" && row?.interviewId) {
+    await db
+      .update(interview)
+      .set({ status: "completed" })
+      .where(eq(interview.id, row.interviewId));
+  }
+
   return row;
 };
 

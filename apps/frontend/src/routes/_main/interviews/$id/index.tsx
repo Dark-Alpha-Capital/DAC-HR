@@ -75,6 +75,13 @@ const statusConfig = {
     className: "bg-muted text-muted-foreground border-0",
     icon: Circle,
   },
+  completed: {
+    label: "Completed",
+    variant: "secondary" as const,
+    className:
+      "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400 border-0",
+    icon: CheckCircle,
+  },
 };
 
 function formatResponseAnswer(response: InterviewResponse): string {

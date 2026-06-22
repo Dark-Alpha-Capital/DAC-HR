@@ -12,6 +12,7 @@ export interface InterviewQuestion {
 
 export type VoiceInterviewPhase =
   | "intro"
+  | "awaiting_ready"
   | "questions"
   | "closing"
   | "awaiting_end";
@@ -41,6 +42,8 @@ export interface InterviewState {
   positionName?: string;
   candidateName?: string;
   voicePhase?: VoiceInterviewPhase;
+  candidateReady?: boolean;
+  awaitingAnswerForIndex?: number | null;
 }
 
 export type ClientToDoMessage =
@@ -52,7 +55,8 @@ export type ClientToDoMessage =
 
 export type DoToClientMessage =
   | { type: "CONNECTED"; state: Pick<InterviewState, "currentQuestionIndex" | "status" | "questions"> }
-  | { type: "QUESTION_CHANGED"; index: number; questionId: string }
+  | { type: "INTRO_STARTED" }
+  | { type: "QUESTION_CHANGED"; index: number; questionId: string; question?: InterviewQuestion }
   | { type: "ALL_QUESTIONS_ASKED" }
   | { type: "TRANSCRIPT"; role: "user" | "assistant"; text: string }
   | { type: "TRANSCRIPT_DELTA"; role: "user" | "assistant"; delta: string }

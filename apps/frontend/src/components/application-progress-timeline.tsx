@@ -49,7 +49,7 @@ interface Interview {
   id: string;
   positionRoundTemplateId: string;
   mode: InterviewMode;
-  status: "pending" | "move_forward" | "rejected" | "scheduled";
+  status: "pending" | "completed" | "move_forward" | "rejected" | "scheduled";
   rating: number | null;
   scheduledAt: Date | null;
   overallFeedback: string | null;
@@ -123,6 +123,12 @@ const getStatusBadge = (status: string) => {
       return (
         <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-0">
           Scheduled
+        </Badge>
+      );
+    case "completed":
+      return (
+        <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400 border-0">
+          Completed
         </Badge>
       );
     default:
