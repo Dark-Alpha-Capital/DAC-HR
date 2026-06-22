@@ -414,6 +414,36 @@ export const upsertVoiceResponse = async (data: {
   });
 };
 
+export const syncVoiceResponsesForSession = async (data: {
+  sessionId: string;
+  answers: Array<{
+    questionId: string;
+    transcript: string;
+    selectedOptionId?: string | null;
+    realtimeEventId?: string | null;
+  }>;
+}) => {
+  const saved = [];
+
+  for (const answer of data.answers) {
+    const transcript = answer.transcript.trim();
+    if (!transcript) {
+      continue;
+    }
+
+    const row = await upsertVoiceResponse({
+      sessionId: data.sessionId,
+      questionId: answer.questionId,
+      transcript,
+      selectedOptionId: answer.selectedOptionId ?? null,
+      realtimeEventId: answer.realtimeEventId ?? null,
+    });
+    saved.push(row);
+  }
+
+  return saved;
+};
+
 export const insertCheatingEvents = async (
   events: Array<{
     sessionId: string;

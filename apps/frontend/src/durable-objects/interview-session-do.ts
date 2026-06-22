@@ -6,6 +6,7 @@ import type { CheatingEventType, CheatingSummary } from "@workspace/db/enums";
 import {
   getSessionById,
   insertCheatingEvents,
+  syncVoiceResponsesForSession,
   updateSessionStatus,
   updateSessionVoiceMetadata,
   upsertVoiceResponse,
@@ -358,6 +359,77 @@ export class InterviewSessionDO implements DurableObject {
       return;
     }
 
+    // During the questions phase, wait for the candidate transcript before advancing.
+  }
+
+  private getNextAnswerQuestionIndex(): number {
+    if (!this.interviewState) {
+      return -1;
+    }
+
+    return this.interviewState.conversationHistory.filter(
+      (entry) => entry.role === "user",
+    ).length;
+  }
+
+  private buildAnswersFromConversation() {
+    if (!this.interviewState) {
+      return [];
+    }
+
+    const userEntries = this.interviewState.conversationHistory.filter(
+      (entry) => entry.role === "user",
+    );
+
+    return userEntries
+      .map((entry, index) => {
+        const question = this.interviewState!.questions[index];
+        if (!question) {
+          return null;
+        }
+
+        return {
+          questionId: question.id,
+          transcript: entry.content,
+          selectedOptionId: this.matchMcqOption(question, entry.content),
+        };
+      })
+      .filter((answer): answer is NonNullable<typeof answer> => answer !== null);
+  }
+
+  private async flushResponsesToDatabase() {
+    if (!this.interviewState) {
+      return;
+    }
+
+    const answers = this.buildAnswersFromConversation();
+    if (answers.length === 0) {
+      return;
+    }
+
+    try {
+      await syncVoiceResponsesForSession({
+        sessionId: this.interviewState.sessionId,
+        answers,
+      });
+    } catch (error) {
+      console.error(
+        JSON.stringify({
+          level: "error",
+          component: "InterviewSessionDO",
+          action: "flushResponsesToDatabase",
+          sessionId: this.interviewState.sessionId,
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
+    }
+  }
+
+  private async advanceAfterAnswer() {
+    if (!this.interviewState || this.interviewState.voicePhase !== "questions") {
+      return;
+    }
+
     await this.advanceQuestion();
   }
 
@@ -369,29 +441,58 @@ export class InterviewSessionDO implements DurableObject {
       return;
     }
 
-    const question = this.getCurrentQuestion();
+    const phase = this.interviewState.voicePhase ?? "questions";
+    const trimmed = transcript.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    if (phase === "intro") {
+      this.broadcastTranscript("user", trimmed);
+      return;
+    }
+
+    const questionIndex = this.getNextAnswerQuestionIndex();
+    const question = this.interviewState.questions[questionIndex];
     if (!question) {
       return;
     }
 
-    this.appendConversation("user", transcript);
-    this.broadcastTranscript("user", transcript);
+    this.appendConversation("user", trimmed);
+    this.broadcastTranscript("user", trimmed);
 
-    const selectedOptionId = this.matchMcqOption(question, transcript);
+    const selectedOptionId = this.matchMcqOption(question, trimmed);
 
-    await upsertVoiceResponse({
-      sessionId: this.interviewState.sessionId,
-      questionId: question.id,
-      transcript,
-      selectedOptionId,
-      realtimeEventId,
-    });
+    try {
+      await upsertVoiceResponse({
+        sessionId: this.interviewState.sessionId,
+        questionId: question.id,
+        transcript: trimmed,
+        selectedOptionId,
+        realtimeEventId,
+      });
 
-    this.broadcast({
-      type: "ANSWER_SAVED",
-      questionId: question.id,
-      transcript,
-    });
+      this.broadcast({
+        type: "ANSWER_SAVED",
+        questionId: question.id,
+        transcript: trimmed,
+      });
+    } catch (error) {
+      console.error(
+        JSON.stringify({
+          level: "error",
+          component: "InterviewSessionDO",
+          action: "saveUserTranscript",
+          sessionId: this.interviewState.sessionId,
+          questionId: question.id,
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
+    }
+
+    if (phase === "questions") {
+      await this.advanceAfterAnswer();
+    }
   }
 
   private matchMcqOption(
@@ -468,14 +569,6 @@ export class InterviewSessionDO implements DurableObject {
     this.interviewState.currentQuestionIndex += 1;
     await this.persistState();
 
-    this.broadcast({
-      type: "QUESTION_CHANGED",
-      index: this.interviewState.currentQuestionIndex,
-      questionId:
-        this.interviewState.questions[this.interviewState.currentQuestionIndex]!
-          .id,
-    });
-
     await this.askCurrentQuestion();
   }
 
@@ -483,6 +576,8 @@ export class InterviewSessionDO implements DurableObject {
     if (!this.interviewState || this.interviewState.status === "completed") {
       return;
     }
+
+    await this.flushResponsesToDatabase();
 
     this.interviewState.status = "completed";
     const cheatingSummary = this.buildCheatingSummary();
@@ -510,6 +605,8 @@ export class InterviewSessionDO implements DurableObject {
     if (!this.interviewState || this.interviewState.status === "completed") {
       return;
     }
+
+    await this.flushResponsesToDatabase();
 
     const cheatingSummary = this.buildCheatingSummary();
     await updateSessionVoiceMetadata(this.interviewState.sessionId, {
