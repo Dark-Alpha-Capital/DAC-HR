@@ -35,18 +35,29 @@ export default function ApplicationBreadcrumb({
         {applicationId && candidateName && positionName ? (
           <>
             <BreadcrumbItem>
-              <BreadcrumbPage>
-                {candidateName} - {positionName}
-              </BreadcrumbPage>
+              {interviewId ? (
+                <BreadcrumbLink asChild>
+                  <Link
+                    to="/applications/$id"
+                    params={{ id: applicationId }}
+                  >
+                    {candidateName} - {positionName}
+                  </Link>
+                </BreadcrumbLink>
+              ) : (
+                <BreadcrumbPage>
+                  {candidateName} - {positionName}
+                </BreadcrumbPage>
+              )}
             </BreadcrumbItem>
-            {interviewId && interviewRoundName && (
+            {interviewId && interviewRoundName ? (
               <>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
                   <BreadcrumbPage>{interviewRoundName}</BreadcrumbPage>
                 </BreadcrumbItem>
               </>
-            )}
+            ) : null}
           </>
         ) : (
           <BreadcrumbItem>

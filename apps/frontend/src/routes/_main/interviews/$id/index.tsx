@@ -1,14 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { loadInterviewById } from "~/lib/loaders/interviews";
+import {
+  loadInterviewById,
+  type InterviewDetailData,
+  type InterviewResponse,
+} from "~/lib/loaders/interviews";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "~/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import {
   Calendar,
   User,
@@ -34,13 +33,15 @@ import ApplicationBreadcrumb from "~/components/application-breadcrumb";
 import { useState } from "react";
 import { getOptionLabel } from "~/lib/question-options";
 import type { QuestionOption } from "@workspace/db/question-types";
-import type { InferSelectModel } from "@workspace/db";
 
 export const Route = createFileRoute("/_main/interviews/$id/")({
   head: () => ({
     meta: [{ title: "Interview Detail" }],
   }),
-  loader: async ({ params }) => loadInterviewById({ data: params.id }),
+  loader: async ({ params }) => {
+    const result = await loadInterviewById({ data: params.id });
+    return result as InterviewDetailData;
+  },
   component: InterviewDetailPage,
 });
 
@@ -74,7 +75,7 @@ const statusConfig = {
   },
 };
 
-function formatResponseAnswer(response: any): string {
+function formatResponseAnswer(response: InterviewResponse): string {
   if (response.question?.questionType === "mcq") {
     return (
       getOptionLabel(
@@ -109,23 +110,21 @@ function InterviewDetailPage() {
     );
   }
 
-  const mode = (interview as any).mode as string;
-  const isAiSession = mode === "ai_session";
+  const isAiSession = interview.mode === "ai_session";
 
   const config =
     statusConfig[interview.status as keyof typeof statusConfig] ||
     statusConfig.pending;
   const StatusIcon = config.icon;
-  const questions = interview.questions || [];
+  const questions = interview.questions ?? [];
   const candidateName = candidate
     ? `${candidate.firstName} ${candidate.lastName}`
     : undefined;
   const positionName = application?.position?.name;
 
-  const interviewLink =
-    session?.session?.token
-      ? `${typeof window !== "undefined" ? window.location.origin : ""}/interview/${session.session.token}`
-      : "";
+  const interviewLink = session?.session?.token
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/interview/${session.session.token}`
+    : "";
 
   return (
     <div className="container mx-auto py-6 max-w-4xl space-y-6">
@@ -208,7 +207,10 @@ function InterviewDetailPage() {
         </div>
       </header>
 
-      <Tabs defaultValue={isAiSession ? "session" : "questions"} className="w-full">
+      <Tabs
+        defaultValue={isAiSession ? "session" : "questions"}
+        className="w-full"
+      >
         <TabsList>
           {isAiSession ? (
             <>
@@ -219,8 +221,11 @@ function InterviewDetailPage() {
               <TabsTrigger value="responses" className="gap-2">
                 <MessageSquare className="h-4 w-4" />
                 Responses
-                {responses?.length != null && responses.length > 0 ? (
-                  <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                {responses.length > 0 ? (
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 h-5 px-1.5 text-xs"
+                  >
                     {responses.length}
                   </Badge>
                 ) : null}
@@ -232,7 +237,10 @@ function InterviewDetailPage() {
                 <MessageSquare className="h-4 w-4" />
                 Questions
                 {questions.length > 0 ? (
-                  <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 h-5 px-1.5 text-xs"
+                  >
                     {questions.length}
                   </Badge>
                 ) : null}
@@ -264,23 +272,27 @@ function InterviewDetailPage() {
                   <CardContent className="space-y-2 text-sm">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Calendar className="size-3.5" />
-                      Created: {formatDate(session?.session?.createdAt ?? interview.createdAt)}
+                      Created:{" "}
+                      {formatDate(
+                        session?.session?.createdAt ?? interview.createdAt,
+                      )}
                     </div>
-                    {session?.session?.startedAt && (
+                    {session?.session?.startedAt ? (
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Clock className="size-3.5" />
                         Started: {formatDate(session.session.startedAt)}
                       </div>
-                    )}
-                    {session?.session?.completedAt && (
+                    ) : null}
+                    {session?.session?.completedAt ? (
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Clock className="size-3.5" />
                         Completed: {formatDate(session.session.completedAt)}
                       </div>
-                    )}
+                    ) : null}
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Calendar className="size-3.5" />
-                      Expires: {formatDate(session?.session?.expiresAt ?? new Date())}
+                      Expires:{" "}
+                      {formatDate(session?.session?.expiresAt ?? new Date())}
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       Tab switches: {session?.session?.tabSwitches ?? 0}
@@ -297,7 +309,7 @@ function InterviewDetailPage() {
                       <code className="flex-1 truncate rounded bg-muted px-2 py-1 text-xs">
                         {interviewLink || "No link available"}
                       </code>
-                      {interviewLink && (
+                      {interviewLink ? (
                         <Button
                           variant="secondary"
                           size="icon"
@@ -314,18 +326,18 @@ function InterviewDetailPage() {
                             <Copy className="size-3.5" />
                           )}
                         </Button>
-                      )}
+                      ) : null}
                     </div>
                   </CardContent>
                 </Card>
               </div>
 
-              {evaluation && (
+              {evaluation ? (
                 <Card className="mt-4">
                   <CardHeader>
                     <CardTitle>Evaluation</CardTitle>
                   </CardHeader>
-                  {evaluation.summary && (
+                  {evaluation.summary ? (
                     <CardContent>
                       <div className="space-y-2 text-sm">
                         <div className="flex items-center gap-2">
@@ -333,21 +345,24 @@ function InterviewDetailPage() {
                             Score: {evaluation.score}/100
                           </Badge>
                           <Badge variant="secondary">
-                            {evaluation.recommendation?.replace(/_/g, " ") ?? "N/A"}
+                            {evaluation.recommendation?.replace(/_/g, " ") ??
+                              "N/A"}
                           </Badge>
                         </div>
-                        <p className="text-muted-foreground">{evaluation.summary}</p>
+                        <p className="text-muted-foreground">
+                          {evaluation.summary}
+                        </p>
                       </div>
                     </CardContent>
-                  )}
+                  ) : null}
                 </Card>
-              )}
+              ) : null}
             </TabsContent>
 
             <TabsContent value="responses" className="mt-6">
-              {responses && responses.length > 0 ? (
+              {responses.length > 0 ? (
                 <div className="space-y-3">
-                  {responses.map((r: any) => (
+                  {responses.map((r) => (
                     <Card key={r.id}>
                       <CardHeader className="pb-1">
                         <div className="flex items-center gap-2">
