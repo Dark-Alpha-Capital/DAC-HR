@@ -302,7 +302,7 @@ export default function GenerateInterviewLinkDialog({
                 <Label htmlFor="expires">Link expires in</Label>
                 <Select
                   value={expiresInHours}
-                  onValueChange={(v) =>
+                  onValueChange={(v: string) =>
                     setExpiresInHours(v as "24" | "48" | "72")
                   }
                 >
