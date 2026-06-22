@@ -33,5 +33,9 @@
 
   "assets": {
     "directory": "./public"
+  },
+
+  "ai": {
+    "binding": "AI"
   }
 }
