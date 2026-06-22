@@ -615,6 +615,7 @@ function InterviewPage() {
         positionName={welcomeData.positionName}
         roundName={welcomeData.roundName}
         state={voiceInterview.state}
+        videoStreamRef={voiceInterview.videoStreamRef}
         onStart={voiceInterview.start}
         onEnd={voiceInterview.endInterview}
       />

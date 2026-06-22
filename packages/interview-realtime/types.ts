@@ -54,7 +54,13 @@ export type ClientToDoMessage =
   | { type: "PING" };
 
 export type DoToClientMessage =
-  | { type: "CONNECTED"; state: Pick<InterviewState, "currentQuestionIndex" | "status" | "questions"> }
+  | {
+      type: "CONNECTED";
+      state: Pick<
+        InterviewState,
+        "currentQuestionIndex" | "status" | "questions" | "voicePhase"
+      >;
+    }
   | { type: "INTRO_STARTED" }
   | { type: "QUESTION_CHANGED"; index: number; questionId: string; question?: InterviewQuestion }
   | { type: "ALL_QUESTIONS_ASKED" }

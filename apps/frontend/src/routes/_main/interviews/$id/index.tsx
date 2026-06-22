@@ -106,6 +106,7 @@ function InterviewDetailPage() {
   const { interview, application, candidate, session, responses, evaluation } =
     Route.useLoaderData();
   const [copied, setCopied] = useState(false);
+  const [recordingCopied, setRecordingCopied] = useState(false);
 
   if (!interview) {
     return (
@@ -138,6 +139,12 @@ function InterviewDetailPage() {
   const interviewLink = session?.session?.token
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/interview/${session.session.token}`
     : "";
+  const sessionRecordingUrl = session?.session?.sessionAudioUrl ?? null;
+  const sessionRecordingPath =
+    session?.session?.sessionAudioPath ??
+    (session?.session?.id
+      ? `/ATS/interviews/${session.session.id}/recording.webm`
+      : null);
 
   return (
     <div className="container mx-auto py-6 max-w-4xl space-y-6">
@@ -331,18 +338,6 @@ function InterviewDetailPage() {
                         </p>
                       </div>
                     ) : null}
-                    {session?.session?.sessionAudioUrl ? (
-                      <Button asChild variant="outline" size="sm" className="mt-2">
-                        <a
-                          href={session.session.sessionAudioUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          View Recording
-                        </a>
-                      </Button>
-                    ) : null}
                   </CardContent>
                 </Card>
 
@@ -377,6 +372,73 @@ function InterviewDetailPage() {
                   </CardContent>
                 </Card>
               </div>
+
+              <Card className="mt-4">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Mic className="size-4" />
+                    Session Recording (Nextcloud)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {sessionRecordingUrl ? (
+                    <>
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Nextcloud path
+                        </p>
+                        <code className="block min-w-0 break-all rounded-md border bg-muted px-3 py-2 text-xs">
+                          {sessionRecordingPath}
+                        </code>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Download link
+                        </p>
+                        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+                          <code className="block min-w-0 flex-1 rounded-md border bg-muted px-3 py-2 text-xs break-all sm:truncate">
+                            {sessionRecordingUrl}
+                          </code>
+                          <div className="flex shrink-0 gap-2 self-end sm:self-auto">
+                            <Button
+                              variant="secondary"
+                              size="icon"
+                              onClick={() => {
+                                void navigator.clipboard.writeText(
+                                  sessionRecordingUrl,
+                                );
+                                setRecordingCopied(true);
+                                setTimeout(() => setRecordingCopied(false), 2000);
+                              }}
+                            >
+                              {recordingCopied ? (
+                                <Check className="size-3.5 text-green-600" />
+                              ) : (
+                                <Copy className="size-3.5" />
+                              )}
+                            </Button>
+                            <Button asChild variant="outline" size="sm">
+                              <a
+                                href={sessionRecordingUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                <ExternalLink className="h-4 w-4 mr-2" />
+                                Open
+                              </a>
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No recording uploaded yet. Voice sessions save an audio
+                      file to Nextcloud when the candidate ends the interview.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
 
               {evaluation ? (
                 <Card className="mt-4">

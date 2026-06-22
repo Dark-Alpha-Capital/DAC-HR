@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { VoiceInterviewPhase } from "@workspace/interview-realtime/types";
 import type { CheatingEventType } from "@workspace/db/enums";
 import { useCheatingPrevention } from "./useCheatingPrevention";
 
@@ -23,6 +24,7 @@ export interface VoiceInterviewState {
   status: "idle" | "connecting" | "active" | "completed" | "error";
   isEnding: boolean;
   currentQuestionIndex: number;
+  voicePhase: VoiceInterviewPhase;
   questions: VoiceQuestion[];
   displayQuestion: VoiceQuestion | null;
   transcripts: Array<{ role: "user" | "assistant"; text: string }>;
@@ -30,6 +32,20 @@ export interface VoiceInterviewState {
   allQuestionsAsked: boolean;
   introActive: boolean;
   error?: string;
+}
+
+function resolveQuestionForIndex(
+  questions: VoiceQuestion[],
+  index: number,
+  fallback?: VoiceQuestion | null,
+): VoiceQuestion | null {
+  return questions[index] ?? fallback ?? null;
+}
+
+function isQuestionPhase(phase: VoiceInterviewPhase) {
+  return (
+    phase === "questions" || phase === "closing" || phase === "awaiting_end"
+  );
 }
 
 function mergeQuestion(
@@ -50,6 +66,7 @@ export function useVoiceInterview(token: string) {
     status: "idle",
     isEnding: false,
     currentQuestionIndex: 0,
+    voicePhase: "intro",
     questions: [],
     displayQuestion: null,
     transcripts: [],
@@ -175,23 +192,39 @@ export function useVoiceInterview(token: string) {
         const connectedState = message.state as
           | {
               currentQuestionIndex?: number;
+              voicePhase?: VoiceInterviewPhase;
               questions?: VoiceQuestion[];
             }
           | undefined;
 
-        setState((current) => ({
-          ...current,
-          status: "active",
-          introActive: true,
-          displayQuestion: null,
-          currentQuestionIndex: connectedState?.currentQuestionIndex ?? 0,
-          questions: connectedState?.questions ?? current.questions,
-        }));
+        const index = connectedState?.currentQuestionIndex ?? 0;
+        const voicePhase = connectedState?.voicePhase ?? "intro";
+        const questions = connectedState?.questions?.length
+          ? connectedState.questions
+          : undefined;
+
+        setState((current) => {
+          const mergedQuestions = questions ?? current.questions;
+          const displayQuestion = isQuestionPhase(voicePhase)
+            ? resolveQuestionForIndex(mergedQuestions, index)
+            : null;
+
+          return {
+            ...current,
+            status: "active",
+            currentQuestionIndex: index,
+            voicePhase,
+            introActive: voicePhase === "intro" || voicePhase === "awaiting_ready",
+            questions: mergedQuestions,
+            displayQuestion,
+          };
+        });
       }
 
       if (type === "INTRO_STARTED") {
         setState((current) => ({
           ...current,
+          voicePhase: "intro",
           introActive: true,
           displayQuestion: null,
         }));
@@ -202,17 +235,22 @@ export function useVoiceInterview(token: string) {
         const index = message.index as number;
 
         setState((current) => {
-          const resolvedQuestion =
-            question ?? current.questions[index] ?? current.displayQuestion;
+          const mergedQuestions = question
+            ? mergeQuestion(current.questions, question)
+            : current.questions;
+          const resolvedQuestion = resolveQuestionForIndex(
+            mergedQuestions,
+            index,
+            question ?? current.displayQuestion,
+          );
 
           return {
             ...current,
+            voicePhase: current.allQuestionsAsked ? current.voicePhase : "questions",
             introActive: false,
             currentQuestionIndex: index,
-            displayQuestion: resolvedQuestion ?? null,
-            questions: question
-              ? mergeQuestion(current.questions, question)
-              : current.questions,
+            displayQuestion: resolvedQuestion,
+            questions: mergedQuestions,
           };
         });
       }
@@ -220,6 +258,7 @@ export function useVoiceInterview(token: string) {
       if (type === "ALL_QUESTIONS_ASKED") {
         setState((current) => ({
           ...current,
+          voicePhase: "awaiting_end",
           allQuestionsAsked: true,
           introActive: false,
         }));
@@ -273,6 +312,7 @@ export function useVoiceInterview(token: string) {
       status: "connecting",
       isEnding: false,
       currentQuestionIndex: 0,
+      voicePhase: "intro",
       questions: [],
       displayQuestion: null,
       transcripts: [],
@@ -294,11 +334,19 @@ export function useVoiceInterview(token: string) {
       }
 
       const config = (await startRes.json()) as StartVoiceResponse;
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: {
+          facingMode: "user",
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+      });
       streamRef.current = stream;
 
+      const audioStream = new MediaStream(stream.getAudioTracks());
       chunksRef.current = [];
-      const recorder = new MediaRecorder(stream);
+      const recorder = new MediaRecorder(audioStream);
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           chunksRef.current.push(event.data);
@@ -309,6 +357,7 @@ export function useVoiceInterview(token: string) {
 
       const ws = new WebSocket(config.wsUrl);
       wsRef.current = ws;
+      ws.onmessage = handleWsMessage;
 
       ws.onopen = () => {
         ws.send(JSON.stringify({ type: "PING" }));
@@ -320,16 +369,14 @@ export function useVoiceInterview(token: string) {
         );
       };
 
-      ws.onmessage = handleWsMessage;
-
-      setState((current) => ({
+        setState((current) => ({
         ...current,
         questions: config.questions,
       }));
 
       const pc = new RTCPeerConnection();
       pcRef.current = pc;
-      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+      audioStream.getTracks().forEach((track) => pc.addTrack(track, audioStream));
 
       pc.ontrack = (event) => {
         const audio = document.createElement("audio");
@@ -382,6 +429,7 @@ export function useVoiceInterview(token: string) {
         status: "error",
         isEnding: false,
         currentQuestionIndex: 0,
+        voicePhase: "intro",
         questions: [],
         displayQuestion: null,
         transcripts: [],
@@ -404,5 +452,6 @@ export function useVoiceInterview(token: string) {
     start,
     endInterview,
     sendToDO,
+    videoStreamRef: streamRef,
   };
 }

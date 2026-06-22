@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { uploadFile } from "~/lib/storage";
+import { getNextcloudClient, uploadFile as uploadToNextcloud } from "@workspace/nextcloud";
 import {
   assertInterviewTokenValid,
   updateSessionVoiceMetadata,
@@ -53,9 +53,15 @@ export const Route = createFileRoute("/api/interview-token/$token/upload-audio")
 
           const sessionId = validation.row.session.id;
           const folderPath = `/ATS/interviews/${sessionId}`;
-          const url = await uploadFile(file, folderPath);
+          const client = getNextcloudClient();
+          const uploadResult = await uploadToNextcloud({
+            client,
+            file,
+            folderPath,
+            fileName: "recording.webm",
+          });
 
-          if (!url) {
+          if (!uploadResult.success || !uploadResult.downloadUrl) {
             return Response.json(
               { error: "Failed to upload audio recording" },
               { status: 500 },
@@ -63,10 +69,14 @@ export const Route = createFileRoute("/api/interview-token/$token/upload-audio")
           }
 
           await updateSessionVoiceMetadata(sessionId, {
-            sessionAudioUrl: url,
+            sessionAudioUrl: uploadResult.downloadUrl,
+            sessionAudioPath: uploadResult.filePath ?? null,
           });
 
-          return Response.json({ url });
+          return Response.json({
+            url: uploadResult.downloadUrl,
+            path: uploadResult.filePath,
+          });
         } catch (error) {
           console.error("Error uploading interview audio:", error);
           return Response.json(

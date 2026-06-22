@@ -482,6 +482,7 @@ export const updateSessionVoiceMetadata = async (
     realtimeSessionId?: string | null;
     cheatingSummary?: CheatingSummary | null;
     sessionAudioUrl?: string | null;
+    sessionAudioPath?: string | null;
     interruptedAt?: Date | null;
   },
 ) => {
@@ -497,6 +498,9 @@ export const updateSessionVoiceMetadata = async (
   }
   if (data.sessionAudioUrl !== undefined) {
     patch.sessionAudioUrl = data.sessionAudioUrl;
+  }
+  if (data.sessionAudioPath !== undefined) {
+    patch.sessionAudioPath = data.sessionAudioPath;
   }
   if (data.interruptedAt !== undefined) {
     patch.interruptedAt = data.interruptedAt;

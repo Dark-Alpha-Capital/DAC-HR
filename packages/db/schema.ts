@@ -517,6 +517,7 @@ export const interviewSession = sqliteTable("interview_session", {
     CheatingSummary
   >(),
   sessionAudioUrl: text("session_audio_url"),
+  sessionAudioPath: text("session_audio_path"),
   interruptedAt: integer("interrupted_at", { mode: "timestamp_ms" }),
   createdAt: createdAtCol(),
   updatedAt: updatedAtCol(),

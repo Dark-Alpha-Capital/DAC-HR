@@ -81,10 +81,23 @@ export class InterviewSessionDO implements DurableObject {
       type: "CONNECTED",
       state: {
         currentQuestionIndex: this.interviewState!.currentQuestionIndex,
+        voicePhase: this.interviewState!.voicePhase ?? "intro",
         status: this.interviewState!.status,
         questions: this.interviewState!.questions,
       },
     });
+
+    const phase = this.interviewState!.voicePhase ?? "intro";
+    if (
+      phase === "questions" ||
+      phase === "closing" ||
+      phase === "awaiting_end"
+    ) {
+      this.sendQuestionToClient(
+        server,
+        this.interviewState!.currentQuestionIndex,
+      );
+    }
 
     return new Response(null, { status: 101, webSocket: client });
   }
@@ -600,6 +613,24 @@ export class InterviewSessionDO implements DurableObject {
     }
 
     return bestScore >= 20 ? bestIndex : null;
+  }
+
+  private sendQuestionToClient(ws: WebSocket, index: number) {
+    if (!this.interviewState) {
+      return;
+    }
+
+    const question = this.interviewState.questions[index];
+    if (!question) {
+      return;
+    }
+
+    this.sendToClient(ws, {
+      type: "QUESTION_CHANGED",
+      index,
+      questionId: question.id,
+      question,
+    });
   }
 
   private broadcastQuestion(index: number) {
