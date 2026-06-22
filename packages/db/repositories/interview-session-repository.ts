@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@workspace/db/db";
 import {
+  interview,
   interviewSession,
   interviewResponse,
   interviewEvaluation,
@@ -10,6 +11,59 @@ import {
   position,
   roundTemplate,
 } from "../schema";
+
+export const createAiInterviewWithSession = async (data: {
+  applicationId: string;
+  positionRoundTemplateId: string;
+  roundId: string;
+  expiresAt: Date;
+}) => {
+  const interviewId = crypto.randomUUID();
+  const sessionId = crypto.randomUUID();
+  const token = crypto.randomUUID();
+
+  const [newInterview] = await db
+    .insert(interview)
+    .values({
+      id: interviewId,
+      applicationId: data.applicationId,
+      positionRoundTemplateId: data.positionRoundTemplateId,
+      mode: "ai_session",
+      status: "pending",
+    })
+    .returning();
+
+  if (!newInterview) {
+    throw new Error("Failed to create interview");
+  }
+
+  try {
+    const [newSession] = await db
+      .insert(interviewSession)
+      .values({
+        id: sessionId,
+        token,
+        interviewId,
+        applicationId: data.applicationId,
+        roundId: data.roundId,
+        expiresAt: data.expiresAt,
+        status: "pending",
+      })
+      .returning();
+
+    if (!newSession) {
+      throw new Error("Failed to create interview session");
+    }
+
+    return { interview: newInterview, session: newSession };
+  } catch (error) {
+    await db
+      .delete(interview)
+      .where(eq(interview.id, interviewId))
+      .catch(() => undefined);
+    throw error;
+  }
+};
 
 export const createSession = async (data: {
   applicationId: string;
@@ -121,6 +175,43 @@ export const getSessionById = async (id: string) => {
     .innerJoin(position, eq(application.positionId, position.id))
     .innerJoin(roundTemplate, eq(interviewSession.roundId, roundTemplate.id))
     .where(eq(interviewSession.id, id))
+    .limit(1);
+
+  return row ?? null;
+};
+
+export const getSessionByInterviewId = async (interviewId: string) => {
+  const [row] = await db
+    .select({
+      session: interviewSession,
+      application: {
+        id: application.id,
+        status: application.status,
+      },
+      candidate: {
+        id: candidate.id,
+        firstName: candidate.firstName,
+        lastName: candidate.lastName,
+        email: candidate.email,
+      },
+      position: {
+        id: position.id,
+        name: position.name,
+      },
+      round: {
+        id: roundTemplate.id,
+        name: roundTemplate.name,
+      },
+    })
+    .from(interviewSession)
+    .innerJoin(
+      application,
+      eq(interviewSession.applicationId, application.id),
+    )
+    .innerJoin(candidate, eq(application.candidateId, candidate.id))
+    .innerJoin(position, eq(application.positionId, position.id))
+    .innerJoin(roundTemplate, eq(interviewSession.roundId, roundTemplate.id))
+    .where(eq(interviewSession.interviewId, interviewId))
     .limit(1);
 
   return row ?? null;

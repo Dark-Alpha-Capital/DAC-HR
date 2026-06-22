@@ -36,6 +36,20 @@
       "when": 1786200000000,
       "tag": "0004_add_vectorize_namespace",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1786300000000,
+      "tag": "0005_nullable_interview_interviewer",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1786400000000,
+      "tag": "0006_drop_interview_round_unique",
+      "breakpoints": true
     }
   ]
 }

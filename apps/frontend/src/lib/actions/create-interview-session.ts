@@ -1,14 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
-import {
-  interview,
-  interviewSession,
-  application,
-  positionRoundTemplates,
-} from "@workspace/db/schema";
+import { application, positionRoundTemplates } from "@workspace/db/schema";
 import { eq, and } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
+import { createAiInterviewWithSession } from "@workspace/db/repositories/interview-session-repository";
 
 export interface CreateInterviewSessionInput {
   applicationId: string;
@@ -52,40 +48,11 @@ export const createInterviewSession = createServerFn({ method: "POST" })
         return { error: "Round template not found for this position" };
       }
 
-      const token = crypto.randomUUID();
-
-      const result = await db.transaction(async (tx) => {
-        const [newInterview] = await tx
-          .insert(interview)
-          .values({
-            applicationId,
-            positionRoundTemplateId: prt.id,
-            mode: "ai_session",
-            status: "pending",
-          })
-          .returning();
-
-        if (!newInterview) {
-          throw new Error("Failed to create interview");
-        }
-
-        const [newSession] = await tx
-          .insert(interviewSession)
-          .values({
-            token,
-            interviewId: newInterview.id,
-            applicationId,
-            roundId,
-            expiresAt,
-            status: "pending",
-          })
-          .returning();
-
-        if (!newSession) {
-          throw new Error("Failed to create interview session");
-        }
-
-        return { interview: newInterview, session: newSession };
+      const result = await createAiInterviewWithSession({
+        applicationId,
+        positionRoundTemplateId: prt.id,
+        roundId,
+        expiresAt,
       });
 
       if (app.status === "ai_screening") {

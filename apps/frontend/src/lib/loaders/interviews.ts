@@ -6,10 +6,9 @@ import {
   getInterviewById,
 } from "@workspace/db/repositories/interview-repository";
 import {
-  getSessionById,
+  getSessionByInterviewId,
   getResponsesBySessionId,
   getEvaluationBySessionId,
-  getSessionsByApplicationId,
 } from "@workspace/db/repositories/interview-session-repository";
 
 export type InterviewDetailData = {
@@ -60,24 +59,14 @@ export const loadInterviewById = createServerFn({ method: "GET" })
     let evaluation: InterviewDetailData["evaluation"] = null;
 
     if (interview.mode === "ai_session") {
-      const sessions = await getSessionsByApplicationId(
-        interview.applicationId,
-      ).catch(() => []);
-
-      const linkedSession = sessions.find(
-        (s) => s.roundId === interview.roundTemplate.id,
-      );
-
-      if (linkedSession) {
-        session = await getSessionById(linkedSession.id).catch(() => null);
-        if (session) {
-          responses = await getResponsesBySessionId(session.session.id).catch(
-            () => [],
-          );
-          evaluation = await getEvaluationBySessionId(
-            session.session.id,
-          ).catch(() => null);
-        }
+      session = await getSessionByInterviewId(interview.id).catch(() => null);
+      if (session) {
+        responses = await getResponsesBySessionId(session.session.id).catch(
+          () => [],
+        );
+        evaluation = await getEvaluationBySessionId(session.session.id).catch(
+          () => null,
+        );
       }
     }
 

@@ -3,13 +3,9 @@ import { getSession } from "~/lib/get-session";
 import { z } from "zod";
 import { eq, and } from "@workspace/db";
 import { db } from "@workspace/db/db";
-import {
-  interview,
-  interviewSession,
-  application,
-  positionRoundTemplates,
-} from "@workspace/db/schema";
+import { application, positionRoundTemplates } from "@workspace/db/schema";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
+import { createAiInterviewWithSession } from "@workspace/db/repositories/interview-session-repository";
 
 const createSchema = z.object({
   applicationId: z.string().min(1),
@@ -78,45 +74,12 @@ export const Route = createFileRoute("/api/interview-sessions")({
             );
           }
 
-          // Create interview + session in a transaction
-          const token = crypto.randomUUID();
-
-          const result = await db.transaction(async (tx) => {
-            const [newInterview] = await tx
-              .insert(interview)
-              .values({
-                applicationId,
-                positionRoundTemplateId: prt.id,
-                mode: "ai_session",
-                status: "pending",
-              })
-              .returning();
-
-            if (!newInterview) {
-              throw new Error("Failed to create interview");
-            }
-
-            const [newSession] = await tx
-              .insert(interviewSession)
-              .values({
-                token,
-                interviewId: newInterview.id,
-                applicationId,
-                roundId,
-                expiresAt,
-                status: "pending",
-              })
-              .returning();
-
-            return { interview: newInterview, session: newSession };
+          const result = await createAiInterviewWithSession({
+            applicationId,
+            positionRoundTemplateId: prt.id,
+            roundId,
+            expiresAt,
           });
-
-          if (!result) {
-            return Response.json(
-              { error: "Failed to create interview session" },
-              { status: 500 },
-            );
-          }
 
           insertAuditLog({
             userId: authSession.user.id,

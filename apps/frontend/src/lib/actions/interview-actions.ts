@@ -6,7 +6,7 @@ import {
   interviewFeedback,
   application,
 } from "@workspace/db/schema";
-import { and, eq } from "@workspace/db";
+import { and, desc, eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export type InterviewRoundData = {
@@ -49,15 +49,6 @@ export const saveInterviewRound = createServerFn({ method: "POST" })
           scheduledAt: data.scheduledAt,
           status: "pending",
           overallFeedback: data.overallFeedback,
-        })
-        .onConflictDoUpdate({
-          target: [interview.applicationId, interview.positionRoundTemplateId],
-          set: {
-            interviewerId: data.interviewerId,
-            scheduledAt: data.scheduledAt,
-            status: "pending",
-            overallFeedback: data.overallFeedback,
-          },
         })
         .returning();
 
@@ -158,14 +149,6 @@ export const startInterviewRound = createServerFn({ method: "POST" })
         status: "pending",
         scheduledAt: new Date(),
       })
-      .onConflictDoUpdate({
-        target: [interview.applicationId, interview.positionRoundTemplateId],
-        set: {
-          interviewerId: data.interviewerId,
-          status: "pending",
-          scheduledAt: new Date(),
-        },
-      })
       .returning();
 
     // Get candidateId from application
@@ -237,6 +220,7 @@ export const getInterviewForRound = createServerFn({ method: "GET" })
           eq(interview.positionRoundTemplateId, positionRoundTemplateId),
         ),
       )
+      .orderBy(desc(interview.createdAt))
       .limit(1);
 
     if (!interviewData) {

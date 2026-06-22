@@ -265,12 +265,6 @@ export const interview = sqliteTable(
     overallFeedback: text("overall_feedback"),
     createdAt: createdAtCol(),
   },
-  (table) => ({
-    interviewRoundUnique: uniqueIndex("interview_round_unique").on(
-      table.applicationId,
-      table.positionRoundTemplateId,
-    ),
-  }),
 );
 
 export const interviewFeedback = sqliteTable(
