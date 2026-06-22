@@ -12,6 +12,7 @@ import type {
   DocumentCategoryValue,
   HireLevel,
   InterviewEvaluationRecommendation,
+  InterviewMode,
   InterviewSessionStatus,
   InterviewStatus,
   Personality,
@@ -142,10 +143,10 @@ export const candidateDocument = sqliteTable("candidate_document", {
   url: text("url").notNull(),
   tags: text("tags", { mode: "json" }).$type<string[]>(),
   fileSearchDocumentName: text("file_search_document_name"),
+  vectorizeNamespace: text("vectorize_namespace"),
   createdAt: createdAtCol(),
   updatedAt: updatedAtCol(),
 });
-
 export type CandidateDocument = InferSelectModel<typeof candidateDocument>;
 
 export const candidatePosition = sqliteTable(
@@ -217,22 +218,30 @@ export const roundTemplateQuestions = sqliteTable("round_template_questions", {
     .references(() => questionBank.id, { onDelete: "cascade" }),
 });
 
-export const application = sqliteTable("application", {
-  id: uuidPk(),
-  candidateId: text("candidate_id")
-    .notNull()
-    .references(() => candidate.id, { onDelete: "cascade" }),
-  positionId: text("position_id")
-    .notNull()
-    .references(() => position.id, { onDelete: "cascade" }),
-  status: text("status")
-    .$type<ApplicationStatus>()
-    .default("ai_screening")
-    .notNull(),
-  personality: text("personality").$type<Personality>(),
-  createdAt: createdAtCol(),
-  updatedAt: updatedAtCol(),
-});
+export const application = sqliteTable(
+  "application",
+  {
+    id: uuidPk(),
+    candidateId: text("candidate_id")
+      .notNull()
+      .references(() => candidate.id, { onDelete: "cascade" }),
+    positionId: text("position_id")
+      .notNull()
+      .references(() => position.id, { onDelete: "cascade" }),
+    status: text("status")
+      .$type<ApplicationStatus>()
+      .default("ai_screening")
+      .notNull(),
+    personality: text("personality").$type<Personality>(),
+    createdAt: createdAtCol(),
+    updatedAt: updatedAtCol(),
+  },
+  (table) => ({
+    appCandidatePositionUnique: uniqueIndex(
+      "app_candidate_position_unique",
+    ).on(table.candidateId, table.positionId),
+  }),
+);
 
 export const interview = sqliteTable(
   "interview",
@@ -245,8 +254,8 @@ export const interview = sqliteTable(
       .notNull()
       .references(() => positionRoundTemplates.id, { onDelete: "cascade" }),
     interviewerId: text("interviewer_id")
-      .notNull()
       .references(() => user.id, { onDelete: "set null" }),
+    mode: text("mode").$type<InterviewMode>().default("manual").notNull(),
     status: text("status")
       .$type<InterviewStatus>()
       .default("pending")
@@ -254,7 +263,6 @@ export const interview = sqliteTable(
     rating: integer("rating"),
     scheduledAt: integer("scheduled_at", { mode: "timestamp_ms" }),
     overallFeedback: text("overall_feedback"),
-    proceedToNextRound: integer("proceed_to_next_round", { mode: "boolean" }),
     createdAt: createdAtCol(),
   },
   (table) => ({
@@ -269,9 +277,9 @@ export const interviewFeedback = sqliteTable(
   "interview_feedback",
   {
     id: uuidPk(),
-    interviewId: text("interview_id")
-      .notNull()
-      .references(() => interview.id, { onDelete: "cascade" }),
+  interviewId: text("interview_id").references(() => interview.id, {
+    onDelete: "cascade",
+  }),
     questionId: text("question_id")
       .notNull()
       .references(() => questionBank.id, { onDelete: "cascade" }),
@@ -413,11 +421,10 @@ export const candidateAiScreening = sqliteTable("candidate_ai_screening", {
   structuredData: text("structured_data", { mode: "json" }).$type<
     Record<string, unknown>
   >(),
-  model: text("model").default("gemini-2.5-flash"),
+  model: text("model").default("gpt-4o-mini"),
   createdAt: createdAtCol(),
   updatedAt: updatedAtCol(),
 });
-
 export type CandidateAiScreening = InferSelectModel<
   typeof candidateAiScreening
 >;
@@ -438,11 +445,10 @@ export const interviewAiAnalysis = sqliteTable("interview_ai_analysis", {
     Record<string, unknown>
   >(),
   customPrompt: text("custom_prompt"),
-  model: text("model").default("gemini-2.5-flash"),
+  model: text("model").default("gpt-4o-mini"),
   createdAt: createdAtCol(),
   updatedAt: updatedAtCol(),
 });
-
 export type InterviewAiAnalysis = InferSelectModel<typeof interviewAiAnalysis>;
 
 export const recruiterWeeklyCheckin = sqliteTable("recruiter_weekly_checkin", {
@@ -483,6 +489,9 @@ export type RecruiterWeeklyCheckin = InferSelectModel<
 export const interviewSession = sqliteTable("interview_session", {
   id: uuidPk(),
   token: text("token").notNull().unique(),
+  interviewId: text("interview_id")
+    .notNull()
+    .references(() => interview.id, { onDelete: "cascade" }),
   applicationId: text("application_id")
     .notNull()
     .references(() => application.id, { onDelete: "cascade" }),

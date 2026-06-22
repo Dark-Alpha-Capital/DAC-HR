@@ -14,6 +14,7 @@ import {
 export const createSession = async (data: {
   applicationId: string;
   roundId: string;
+  interviewId: string;
   expiresAt: Date;
 }) => {
   const token = crypto.randomUUID();
@@ -22,6 +23,7 @@ export const createSession = async (data: {
     .insert(interviewSession)
     .values({
       token,
+      interviewId: data.interviewId,
       applicationId: data.applicationId,
       roundId: data.roundId,
       expiresAt: data.expiresAt,

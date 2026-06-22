@@ -1,6 +1,6 @@
 import { asc, eq } from "drizzle-orm";
 import { db } from "@workspace/db/db";
-import { application, candidate, candidatePosition, position } from "../schema";
+import { application, candidate, position } from "../schema";
 import { getInterviewsByApplicationId } from "./interview-repository";
 
 export const getCandidateById = async (id: string) => {
@@ -14,15 +14,15 @@ export const getCandidateById = async (id: string) => {
       return null;
     }
 
-    const [positionRelation] = await db
-      .select()
-      .from(candidatePosition)
-      .where(eq(candidatePosition.candidateId, id))
-      .limit(1);
+    const applications = await db
+      .select({ positionId: application.positionId })
+      .from(application)
+      .where(eq(application.candidateId, id));
 
     return {
       ...candidateResult,
-      positionId: positionRelation?.positionId || null,
+      positionId: applications[0]?.positionId ?? null,
+      positionIds: applications.map((a) => a.positionId),
     };
   } catch (error) {
     console.error("Error fetching candidate by id", error);

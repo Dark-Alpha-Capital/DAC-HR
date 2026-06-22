@@ -54,15 +54,17 @@ export const interviewStatuses = [
 ] as const;
 export type InterviewStatus = (typeof interviewStatuses)[number];
 
+export const interviewModes = ["manual", "ai_session"] as const;
+export type InterviewMode = (typeof interviewModes)[number];
+
 export const applicationStatuses = [
   "ai_screening",
-  "first_round_recruiter_call",
-  "second_round_technical_screening",
-  "third_round_final_ceo",
+  "first_round",
+  "offer_agreement",
+  "technical_round",
   "contract_offer",
   "onboarding",
   "rejected",
-  "withdrawn",
 ] as const;
 export type ApplicationStatus = (typeof applicationStatuses)[number];
 
