@@ -89,6 +89,7 @@ export const Route = createFileRoute("/api/interview-token/$token/responses")({
               questionId,
               answerText: null,
               selectedOptionId,
+              inputMethod: "mcq",
             });
 
             return Response.json({ response }, { status: 200 });
@@ -106,6 +107,7 @@ export const Route = createFileRoute("/api/interview-token/$token/responses")({
             questionId,
             answerText: answerText.trim(),
             selectedOptionId: null,
+            inputMethod: "typed",
           });
 
           return Response.json({ response }, { status: 200 });

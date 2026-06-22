@@ -1,16 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getSession } from "~/lib/get-session";
 import { z } from "zod";
+import { deliveryModes } from "@workspace/db/enums";
 import { eq, and } from "@workspace/db";
 import { db } from "@workspace/db/db";
 import { application, positionRoundTemplates } from "@workspace/db/schema";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { createAiInterviewWithSession } from "@workspace/db/repositories/interview-session-repository";
 
+const agentConfigSchema = z.object({
+  provider: z.literal("openai"),
+  voice: z.string().optional(),
+  language: z.string().optional(),
+  instructions: z.string().optional(),
+});
+
 const createSchema = z.object({
   applicationId: z.string().min(1),
   roundId: z.string().min(1),
   expiryHours: z.number().min(1).max(720).default(72),
+  deliveryMode: z.enum(deliveryModes).default("hybrid"),
+  agentConfig: agentConfigSchema.optional(),
 });
 
 export const Route = createFileRoute("/api/interview-sessions")({
@@ -36,7 +46,8 @@ export const Route = createFileRoute("/api/interview-sessions")({
             );
           }
 
-          const { applicationId, roundId, expiryHours } = parsed.data;
+          const { applicationId, roundId, expiryHours, deliveryMode, agentConfig } =
+            parsed.data;
           const expiresAt = new Date(
             Date.now() + expiryHours * 60 * 60 * 1000,
           );
@@ -79,6 +90,8 @@ export const Route = createFileRoute("/api/interview-sessions")({
             positionRoundTemplateId: prt.id,
             roundId,
             expiresAt,
+            deliveryMode,
+            agentConfig,
           });
 
           insertAuditLog({

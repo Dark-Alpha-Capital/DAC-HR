@@ -16,6 +16,10 @@ import {
 } from "~/components/ui/radio-group";
 import { Label } from "~/components/ui/label";
 import type { QuestionOption } from "@workspace/db/question-types";
+import type { DeliveryMode } from "@workspace/db/enums";
+import DeliveryModePicker from "~/components/interview/DeliveryModePicker";
+import VoiceInterview from "~/components/interview/VoiceInterview";
+import { useVoiceInterview } from "~/hooks/useVoiceInterview";
 
 import {
   Clock,
@@ -51,6 +55,13 @@ interface WelcomeData {
   candidateName: string;
   positionName: string;
   roundName: string;
+  deliveryMode: DeliveryMode;
+}
+
+type SessionMode = "form" | "voice";
+
+function getModeStorageKey(token: string) {
+  return `interview-mode:${token}`;
 }
 
 type AnswerValue =
@@ -229,7 +240,13 @@ function WelcomeScreen({
 function InterviewPage() {
   const { token } = Route.useParams();
   const [status, setStatus] = useState<
-    "loading" | "invalid" | "welcome" | "in_progress" | "completed"
+    | "loading"
+    | "invalid"
+    | "welcome"
+    | "mode_picker"
+    | "voice"
+    | "in_progress"
+    | "completed"
   >("loading");
   const [error, setError] = useState("");
   const [welcomeData, setWelcomeData] = useState<WelcomeData | null>(null);
@@ -240,6 +257,13 @@ function InterviewPage() {
   const [starting, setStarting] = useState(false);
   const [completing, setCompleting] = useState(false);
   const answersRef = useRef(answers);
+  const voiceInterview = useVoiceInterview(token);
+
+  useEffect(() => {
+    if (voiceInterview.state.status === "completed") {
+      setStatus("completed");
+    }
+  }, [voiceInterview.state.status]);
 
   useEffect(() => {
     answersRef.current = answers;
@@ -263,8 +287,24 @@ function InterviewPage() {
         }
 
         const validation = await validateRes.json();
+        const storedMode = sessionStorage.getItem(
+          getModeStorageKey(token),
+        ) as SessionMode | null;
 
         if (validation.status === "in_progress") {
+          if (storedMode === "voice") {
+            if (!cancelled) {
+              setWelcomeData({
+                candidateName: validation.candidateName,
+                positionName: validation.positionName,
+                roundName: validation.roundName,
+                deliveryMode: validation.deliveryMode,
+              });
+              setStatus("voice");
+            }
+            return;
+          }
+
           const interviewData = await loadInterviewSchema(token);
           if (!cancelled) {
             setData(interviewData);
@@ -274,12 +314,27 @@ function InterviewPage() {
         }
 
         if (!cancelled) {
-          setWelcomeData({
+          const welcome: WelcomeData = {
             candidateName: validation.candidateName,
             positionName: validation.positionName,
             roundName: validation.roundName,
-          });
-          setStatus("welcome");
+            deliveryMode: validation.deliveryMode,
+          };
+          setWelcomeData(welcome);
+
+          if (storedMode === "voice") {
+            setStatus("voice");
+          } else if (storedMode === "form") {
+            setStatus("welcome");
+          } else if (validation.deliveryMode === "voice") {
+            sessionStorage.setItem(getModeStorageKey(token), "voice");
+            setStatus("voice");
+          } else if (validation.deliveryMode === "form") {
+            sessionStorage.setItem(getModeStorageKey(token), "form");
+            setStatus("welcome");
+          } else {
+            setStatus("mode_picker");
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -397,6 +452,16 @@ function InterviewPage() {
     }
   }, [data, currentStep, answers, saveAnswer, token]);
 
+  const handleSelectForm = useCallback(() => {
+    sessionStorage.setItem(getModeStorageKey(token), "form");
+    setStatus("welcome");
+  }, [token]);
+
+  const handleSelectVoice = useCallback(() => {
+    sessionStorage.setItem(getModeStorageKey(token), "voice");
+    setStatus("voice");
+  }, [token]);
+
   if (status === "loading") {
     return (
       <div className="flex min-h-svh items-center justify-center bg-background">
@@ -439,6 +504,32 @@ function InterviewPage() {
             </CardDescription>
           </CardHeader>
         </Card>
+      </div>
+    );
+  }
+
+  if (status === "mode_picker") {
+    return (
+      <div className="flex min-h-svh items-center justify-center bg-background p-4">
+        <DeliveryModePicker
+          onSelectForm={handleSelectForm}
+          onSelectVoice={handleSelectVoice}
+        />
+      </div>
+    );
+  }
+
+  if (status === "voice" && welcomeData) {
+    return (
+      <div className="flex min-h-svh items-center justify-center bg-background p-4">
+        <VoiceInterview
+          candidateName={welcomeData.candidateName}
+          positionName={welcomeData.positionName}
+          roundName={welcomeData.roundName}
+          state={voiceInterview.state}
+          onStart={voiceInterview.start}
+          onEnd={voiceInterview.endInterview}
+        />
       </div>
     );
   }

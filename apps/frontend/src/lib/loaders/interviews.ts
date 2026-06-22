@@ -15,7 +15,7 @@ export type InterviewDetailData = {
   interview: Awaited<ReturnType<typeof getInterviewById>>;
   application: Awaited<ReturnType<typeof getApplicationWithInterviews>>;
   candidate: Awaited<ReturnType<typeof getCandidateById>>;
-  session: Awaited<ReturnType<typeof getSessionById>> | null;
+  session: Awaited<ReturnType<typeof getSessionByInterviewId>> | null;
   responses: Awaited<ReturnType<typeof getResponsesBySessionId>>;
   evaluation:
     | Awaited<ReturnType<typeof getEvaluationBySessionId>>

@@ -126,3 +126,33 @@ export const interviewEvaluationRecommendations = [
 ] as const;
 export type InterviewEvaluationRecommendation =
   (typeof interviewEvaluationRecommendations)[number];
+
+export const deliveryModes = ["form", "voice", "hybrid"] as const;
+export type DeliveryMode = (typeof deliveryModes)[number];
+
+export const inputMethods = ["typed", "mcq", "voice"] as const;
+export type InputMethod = (typeof inputMethods)[number];
+
+export const cheatingEventTypes = [
+  "TAB_SWITCHED",
+  "WINDOW_BLUR",
+  "FULLSCREEN_EXITED",
+  "COPY_ATTEMPT",
+  "PASTE_ATTEMPT",
+] as const;
+export type CheatingEventType = (typeof cheatingEventTypes)[number];
+
+export interface AgentConfig {
+  provider: "openai";
+  voice?: string;
+  language?: string;
+  instructions?: string;
+}
+
+export interface CheatingSummary {
+  tabSwitches?: number;
+  focusLostSeconds?: number;
+  fullscreenExits?: number;
+  copyAttempts?: number;
+  pasteAttempts?: number;
+}

@@ -23,6 +23,8 @@ import {
   Copy,
   Check,
   Bot,
+  Mic,
+  ExternalLink,
 } from "lucide-react";
 import { formatDate } from "~/lib/utils";
 import InterviewQuestionFeedbackDisplay from "~/components/interview-question-feedback-display";
@@ -76,6 +78,10 @@ const statusConfig = {
 };
 
 function formatResponseAnswer(response: InterviewResponse): string {
+  if (response.transcript?.trim()) {
+    return response.transcript;
+  }
+
   if (response.question?.questionType === "mcq") {
     return (
       getOptionLabel(
@@ -129,6 +135,7 @@ function InterviewDetailPage() {
   return (
     <div className="container mx-auto py-6 max-w-4xl space-y-6">
       <ApplicationBreadcrumb
+        candidateId={candidate?.id}
         candidateName={candidateName}
         positionName={positionName}
         interviewRoundName={interview.roundTemplate.name}
@@ -297,6 +304,38 @@ function InterviewDetailPage() {
                     <div className="flex items-center gap-2 text-muted-foreground">
                       Tab switches: {session?.session?.tabSwitches ?? 0}
                     </div>
+                    <div className="flex items-center gap-2 text-muted-foreground capitalize">
+                      Delivery mode: {session?.session?.deliveryMode ?? "hybrid"}
+                    </div>
+                    {session?.session?.cheatingSummary ? (
+                      <div className="rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground space-y-1">
+                        <p className="font-medium text-foreground">Cheating summary</p>
+                        <p>
+                          Tab switches:{" "}
+                          {session.session.cheatingSummary.tabSwitches ?? 0}
+                        </p>
+                        <p>
+                          Focus lost (sec):{" "}
+                          {session.session.cheatingSummary.focusLostSeconds ?? 0}
+                        </p>
+                        <p>
+                          Fullscreen exits:{" "}
+                          {session.session.cheatingSummary.fullscreenExits ?? 0}
+                        </p>
+                      </div>
+                    ) : null}
+                    {session?.session?.sessionAudioUrl ? (
+                      <Button asChild variant="outline" size="sm" className="mt-2">
+                        <a
+                          href={session.session.sessionAudioUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          View Recording
+                        </a>
+                      </Button>
+                    ) : null}
                   </CardContent>
                 </Card>
 
@@ -365,10 +404,18 @@ function InterviewDetailPage() {
                   {responses.map((r) => (
                     <Card key={r.id}>
                       <CardHeader className="pb-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <Badge variant="secondary" className="text-xs">
                             {r.question?.category || "General"}
                           </Badge>
+                          {r.inputMethod ? (
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {r.inputMethod === "voice" ? (
+                                <Mic className="h-3 w-3 mr-1" />
+                              ) : null}
+                              {r.inputMethod}
+                            </Badge>
+                          ) : null}
                           <CardTitle className="text-sm font-medium">
                             {r.question?.questionText ?? "Question"}
                           </CardTitle>

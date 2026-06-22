@@ -69,7 +69,9 @@
         "@tiptap/extension-underline": "^3.12.1",
         "@tiptap/react": "^3.12.1",
         "@tiptap/starter-kit": "^3.12.1",
+        "@workspace/ai-config": "*",
         "@workspace/db": "*",
+        "@workspace/interview-realtime": "*",
         "@workspace/nextcloud": "*",
         "ai": "^6.0.205",
         "better-auth": "^1.6.18",
@@ -106,6 +108,7 @@
       },
       "devDependencies": {
         "@cloudflare/vite-plugin": "^1.40.2",
+        "@cloudflare/workers-types": "^4.20260616.1",
         "@tailwindcss/typography": "^0.5.19",
         "@tailwindcss/vite": "^4.3.1",
         "@types/node": "^22.5.4",
@@ -163,6 +166,17 @@
         "globals": "^15.15.0",
         "typescript": "^5.9.2",
         "typescript-eslint": "^8.39.0",
+      },
+    },
+    "packages/interview-realtime": {
+      "name": "@workspace/interview-realtime",
+      "dependencies": {
+        "@workspace/db": "*",
+        "zod": "^4.1.12",
+      },
+      "peerDependencies": {
+        "typescript": "^5",
+        "zod": "^4.0.0",
       },
     },
     "packages/mail": {
@@ -298,6 +312,8 @@
     "@cloudflare/workerd-linux-arm64": ["@cloudflare/workerd-linux-arm64@1.20260616.1", "", { "os": "linux", "cpu": "arm64" }, "sha512-XQ7GonEl8ORvbz5fhe8Eyw2t/j09Li0KbXJxaldA318E+syF+PPTc4IRQudgqPWzzdzkH5nF7PuMOGySLSjFFw=="],
 
     "@cloudflare/workerd-windows-64": ["@cloudflare/workerd-windows-64@1.20260616.1", "", { "os": "win32", "cpu": "x64" }, "sha512-RaDVF9bSbPiPTq6vHYrgnv1TcQEcYnOr0WB3hWJ4yg2fBfpi2ygU6cYPuFeDwyFE9aPW5S6FBAkNmpKYueK4DQ=="],
+
+    "@cloudflare/workers-types": ["@cloudflare/workers-types@4.20260621.1", "", {}, "sha512-c4xrf4shZdDOK1ihh1UKzlS/3MDYiGThT/Oqr4Y3qR9NLCSNzHB7rt+Vk/LOp0ZSNjA+7WNJEQsOhpiQtpT2GA=="],
 
     "@cspotcode/source-map-support": ["@cspotcode/source-map-support@0.8.1", "", { "dependencies": { "@jridgewell/trace-mapping": "0.3.9" } }, "sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw=="],
 
@@ -944,6 +960,8 @@
     "@workspace/db": ["@workspace/db@workspace:packages/db"],
 
     "@workspace/eslint-config": ["@workspace/eslint-config@workspace:packages/eslint-config"],
+
+    "@workspace/interview-realtime": ["@workspace/interview-realtime@workspace:packages/interview-realtime"],
 
     "@workspace/nextcloud": ["@workspace/nextcloud@workspace:packages/nextcloud"],
 
@@ -2458,6 +2476,8 @@
     "@typescript-eslint/typescript-estree/tinyglobby": ["tinyglobby@0.2.15", "", { "dependencies": { "fdir": "^6.5.0", "picomatch": "^4.0.3" } }, "sha512-j2Zq4NyQYG5XMST4cbs02Ak8iJUdxRM0XI5QyxXuZOzKOINmWurp3smXu3y5wDcJrptwpSjgXHzIQxR0omXljQ=="],
 
     "@workspace/eslint-config/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
+
+    "@workspace/interview-realtime/zod": ["zod@4.4.3", "", {}, "sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ=="],
 
     "ai/@ai-sdk/provider": ["@ai-sdk/provider@3.0.10", "", { "dependencies": { "json-schema": "^0.4.0" } }, "sha512-Q3BZ27qfpYqnCYGvE3vt+Qi6LGOF9R5Nmzn+9JoM1lCRsD9mYaIhfJLkSunN48nfGXJ6n+XNV0J/XVpqGQl7Dw=="],
 

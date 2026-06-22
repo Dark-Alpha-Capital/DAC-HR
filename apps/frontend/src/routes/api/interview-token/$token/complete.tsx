@@ -1,9 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { getSessionByToken, updateSessionStatus } from "@workspace/db/repositories/interview-session-repository";
+import { env } from "cloudflare:workers";
+import {
+  assertInterviewTokenValid,
+  updateSessionStatus,
+  updateSessionVoiceMetadata,
+} from "@workspace/db/repositories/interview-session-repository";
 
 const completeSchema = z.object({
   tabSwitches: z.number().int().min(0).default(0),
+  cheatingSummary: z
+    .object({
+      tabSwitches: z.number().optional(),
+      focusLostSeconds: z.number().optional(),
+      fullscreenExits: z.number().optional(),
+      copyAttempts: z.number().optional(),
+      pasteAttempts: z.number().optional(),
+    })
+    .optional(),
 });
 
 export const Route = createFileRoute("/api/interview-token/$token/complete")({
@@ -17,23 +31,13 @@ export const Route = createFileRoute("/api/interview-token/$token/complete")({
             return Response.json({ error: "Token is required" }, { status: 400 });
           }
 
-          const row = await getSessionByToken(token);
+          const validation = await assertInterviewTokenValid(token);
 
-          if (!row) {
-            return Response.json(
-              { error: "Interview not found" },
-              { status: 404 },
-            );
+          if (!validation.ok) {
+            return Response.json({ error: validation.error }, { status: validation.status });
           }
 
-          const { session } = row;
-
-          if (session.status === "completed" || session.status === "reviewed") {
-            return Response.json(
-              { error: "This interview has already been completed" },
-              { status: 410 },
-            );
-          }
+          const { session } = validation.row;
 
           const body = await request.json();
           const parsed = completeSchema.safeParse(body);
@@ -45,10 +49,29 @@ export const Route = createFileRoute("/api/interview-token/$token/complete")({
             );
           }
 
+          const cheatingSummary = parsed.data.cheatingSummary ?? {
+            tabSwitches: parsed.data.tabSwitches,
+          };
+
+          await updateSessionVoiceMetadata(session.id, {
+            cheatingSummary,
+          });
+
           const updated = await updateSessionStatus(session.id, "completed", {
             completedAt: new Date(),
             tabSwitches: parsed.data.tabSwitches,
           });
+
+          const workflow = (env as Record<string, unknown>)
+            .INTERVIEW_EVALUATION_WORKFLOW as
+            | { create: (input: { params: { sessionId: string } }) => Promise<unknown> }
+            | undefined;
+
+          workflow
+            ?.create({ params: { sessionId: session.id } })
+            .catch((workflowError: unknown) =>
+              console.error("Failed to start interview evaluation workflow:", workflowError),
+            );
 
           return Response.json({ session: updated });
         } catch (error) {

@@ -68,6 +68,7 @@ function ApplicationDetailPage() {
   return (
     <div className="container mx-auto py-6 max-w-4xl space-y-6">
       <ApplicationBreadcrumb
+        candidateId={candidate?.id}
         candidateName={candidateName}
         positionName={positionName}
         applicationId={application.id}

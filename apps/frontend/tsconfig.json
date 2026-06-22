@@ -17,6 +17,7 @@
       "~/*": ["./src/*"],
       "@/*": ["./src/*"]
     },
-    "noEmit": true
+    "noEmit": true,
+    "types": ["@cloudflare/workers-types"]
   }
 }

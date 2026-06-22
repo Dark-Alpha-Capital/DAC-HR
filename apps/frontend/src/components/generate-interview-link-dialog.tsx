@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { createInterviewSession } from "~/lib/actions/create-interview-session";
+import type { DeliveryMode } from "@workspace/db/enums";
 import { toast } from "sonner";
 import { Bot, Check, Copy, Link2 } from "lucide-react";
 
@@ -40,6 +41,7 @@ export default function GenerateInterviewLinkDialog({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [roundId, setRoundId] = useState(rounds[0]?.id ?? "");
+  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>("hybrid");
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -66,7 +68,7 @@ export default function GenerateInterviewLinkDialog({
 
     try {
       const result = await createInterviewSession({
-        data: { applicationId, roundId },
+        data: { applicationId, roundId, deliveryMode },
       });
 
       if (result.error) {
@@ -161,6 +163,22 @@ export default function GenerateInterviewLinkDialog({
                         {round.name}
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="delivery-mode">Delivery mode</Label>
+                <Select
+                  value={deliveryMode}
+                  onValueChange={(value) => setDeliveryMode(value as DeliveryMode)}
+                >
+                  <SelectTrigger id="delivery-mode">
+                    <SelectValue placeholder="Select delivery mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hybrid">Hybrid (candidate chooses)</SelectItem>
+                    <SelectItem value="form">Form only</SelectItem>
+                    <SelectItem value="voice">Voice only</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
