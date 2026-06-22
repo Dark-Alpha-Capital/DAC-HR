@@ -2,10 +2,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { CheatingEventType } from "@workspace/db/enums";
 import { useCheatingPrevention } from "./useCheatingPrevention";
 
-interface VoiceQuestion {
+export interface VoiceQuestion {
   id: string;
   questionText: string;
   questionType: string;
+  category: string | null;
+  timeLimitSeconds?: number | null;
+  options?: Array<{ id: string; text: string }> | null;
 }
 
 interface StartVoiceResponse {
@@ -19,7 +22,11 @@ interface StartVoiceResponse {
 export interface VoiceInterviewState {
   status: "idle" | "connecting" | "active" | "completed" | "error";
   currentQuestionIndex: number;
+  questions: VoiceQuestion[];
   transcripts: Array<{ role: "user" | "assistant"; text: string }>;
+  liveUserTranscript: string;
+  allQuestionsAsked: boolean;
+  introActive: boolean;
   error?: string;
 }
 
@@ -27,7 +34,11 @@ export function useVoiceInterview(token: string) {
   const [state, setState] = useState<VoiceInterviewState>({
     status: "idle",
     currentQuestionIndex: 0,
+    questions: [],
     transcripts: [],
+    liveUserTranscript: "",
+    allQuestionsAsked: false,
+    introActive: false,
   });
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -85,21 +96,99 @@ export function useVoiceInterview(token: string) {
     setState((current) => ({ ...current, status: "completed" }));
   }, [cleanup, uploadRecording]);
 
+  const handleWsMessage = useCallback(
+    (event: MessageEvent) => {
+      const message = JSON.parse(String(event.data)) as Record<string, unknown>;
+      const type = typeof message.type === "string" ? message.type : "";
+
+      if (type === "CONNECTED") {
+        const connectedState = message.state as
+          | {
+              currentQuestionIndex?: number;
+              questions?: VoiceQuestion[];
+            }
+          | undefined;
+
+        setState((current) => ({
+          ...current,
+          status: "active",
+          introActive: true,
+          currentQuestionIndex: connectedState?.currentQuestionIndex ?? 0,
+          questions: connectedState?.questions ?? current.questions,
+        }));
+      }
+
+      if (type === "QUESTION_CHANGED" && typeof message.index === "number") {
+        setState((current) => ({
+          ...current,
+          introActive: false,
+          currentQuestionIndex: message.index as number,
+        }));
+      }
+
+      if (type === "ALL_QUESTIONS_ASKED") {
+        setState((current) => ({
+          ...current,
+          allQuestionsAsked: true,
+          introActive: false,
+        }));
+      }
+
+      if (
+        type === "TRANSCRIPT_DELTA" &&
+        message.role === "user" &&
+        typeof message.delta === "string"
+      ) {
+        setState((current) => ({
+          ...current,
+          liveUserTranscript: current.liveUserTranscript + message.delta,
+        }));
+      }
+
+      if (
+        type === "TRANSCRIPT" &&
+        (message.role === "user" || message.role === "assistant") &&
+        typeof message.text === "string"
+      ) {
+        setState((current) => ({
+          ...current,
+          liveUserTranscript:
+            message.role === "user" ? "" : current.liveUserTranscript,
+          transcripts: [
+            ...current.transcripts,
+            { role: message.role as "user" | "assistant", text: message.text as string },
+          ],
+        }));
+      }
+
+      if (type === "INTERVIEW_COMPLETED") {
+        setState((current) => ({ ...current, status: "completed" }));
+      }
+
+      if (type === "ERROR" && typeof message.message === "string") {
+        setState((current) => ({
+          ...current,
+          status: "error",
+          error: message.message as string,
+        }));
+      }
+    },
+    [],
+  );
+
   const start = useCallback(async () => {
     setState({
       status: "connecting",
       currentQuestionIndex: 0,
+      questions: [],
       transcripts: [],
+      liveUserTranscript: "",
+      allQuestionsAsked: false,
+      introActive: false,
     });
 
     try {
       await document.documentElement.requestFullscreen().catch(() => undefined);
-      wsRef.current?.send(
-        JSON.stringify({
-          type: "FULLSCREEN_STATE",
-          isFullscreen: Boolean(document.fullscreenElement),
-        }),
-      );
 
       const startRes = await fetch(`/api/interview-token/${token}/start-voice`, {
         method: "POST",
@@ -129,49 +218,20 @@ export function useVoiceInterview(token: string) {
 
       ws.onopen = () => {
         ws.send(JSON.stringify({ type: "PING" }));
+        ws.send(
+          JSON.stringify({
+            type: "FULLSCREEN_STATE",
+            isFullscreen: Boolean(document.fullscreenElement),
+          }),
+        );
       };
 
-      ws.onmessage = (event) => {
-        const message = JSON.parse(String(event.data)) as Record<string, unknown>;
-        const type = typeof message.type === "string" ? message.type : "";
+      ws.onmessage = handleWsMessage;
 
-        if (type === "CONNECTED") {
-          setState((current) => ({ ...current, status: "active" }));
-        }
-
-        if (type === "QUESTION_CHANGED" && typeof message.index === "number") {
-          setState((current) => ({
-            ...current,
-            currentQuestionIndex: message.index as number,
-          }));
-        }
-
-        if (
-          type === "TRANSCRIPT" &&
-          (message.role === "user" || message.role === "assistant") &&
-          typeof message.text === "string"
-        ) {
-          setState((current) => ({
-            ...current,
-            transcripts: [
-              ...current.transcripts,
-              { role: message.role as "user" | "assistant", text: message.text as string },
-            ],
-          }));
-        }
-
-        if (type === "INTERVIEW_COMPLETED") {
-          void endInterview();
-        }
-
-        if (type === "ERROR" && typeof message.message === "string") {
-          setState((current) => ({
-            ...current,
-            status: "error",
-            error: message.message as string,
-          }));
-        }
-      };
+      setState((current) => ({
+        ...current,
+        questions: config.questions,
+      }));
 
       const pc = new RTCPeerConnection();
       pcRef.current = pc;
@@ -186,17 +246,14 @@ export function useVoiceInterview(token: string) {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      const sdpResponse = await fetch(
-        `https://api.openai.com/v1/realtime/calls?model=${encodeURIComponent(config.model)}`,
-        {
-          method: "POST",
-          body: offer.sdp,
-          headers: {
-            Authorization: `Bearer ${config.clientSecret}`,
-            "Content-Type": "application/sdp",
-          },
+      const sdpResponse = await fetch("https://api.openai.com/v1/realtime/calls", {
+        method: "POST",
+        body: offer.sdp,
+        headers: {
+          Authorization: `Bearer ${config.clientSecret}`,
+          "Content-Type": "application/sdp",
         },
-      );
+      });
 
       if (!sdpResponse.ok) {
         throw new Error("Failed to establish realtime audio connection");
@@ -230,11 +287,15 @@ export function useVoiceInterview(token: string) {
       setState({
         status: "error",
         currentQuestionIndex: 0,
+        questions: [],
         transcripts: [],
+        liveUserTranscript: "",
+        allQuestionsAsked: false,
+        introActive: false,
         error: error instanceof Error ? error.message : "Voice interview failed",
       });
     }
-  }, [cleanup, endInterview, token]);
+  }, [cleanup, handleWsMessage, token]);
 
   useEffect(() => {
     return () => {

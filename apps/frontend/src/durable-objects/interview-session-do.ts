@@ -16,8 +16,10 @@ import {
 } from "@workspace/interview-realtime/events";
 import {
   buildAskCurrentQuestionEvent,
+  buildClosingEvent,
   buildRealtimeInstructions,
   buildSessionUpdateEvent,
+  buildWelcomeIntroEvent,
 } from "@workspace/interview-realtime/prompts";
 import type {
   ConversationEntry,
@@ -149,7 +151,10 @@ export class InterviewSessionDO implements DurableObject {
       "interviewState",
     );
     if (stored && stored.sessionId === sessionId) {
-      this.interviewState = stored;
+      this.interviewState = {
+        ...stored,
+        voicePhase: stored.voicePhase ?? "questions",
+      };
       return;
     }
 
@@ -174,12 +179,14 @@ export class InterviewSessionDO implements DurableObject {
         questionText: question.questionText,
         questionType: question.questionType,
         category: question.category,
+        timeLimitSeconds: question.timeLimitSeconds,
         options: question.options,
       })),
       conversationHistory: [],
       cheatingCounters: {},
       isFullscreen: false,
       status: "active",
+      voicePhase: "intro",
       roundName: row.round.name,
       positionName: row.position.name,
       candidateName: `${row.candidate.firstName} ${row.candidate.lastName}`,
@@ -220,7 +227,6 @@ export class InterviewSessionDO implements DurableObject {
       {
         headers: {
           Authorization: `Bearer ${this.env.OPENAI_API_KEY}`,
-          "OpenAI-Beta": "realtime=v1",
         },
       },
     );
@@ -234,8 +240,25 @@ export class InterviewSessionDO implements DurableObject {
         agentConfig: this.interviewState?.agentConfig,
       });
 
-      sideband.send(JSON.stringify(buildSessionUpdateEvent(instructions)));
-      void this.askCurrentQuestion();
+      sideband.send(
+        JSON.stringify(
+          buildSessionUpdateEvent(
+            instructions,
+            this.interviewState?.agentConfig?.voice,
+          ),
+        ),
+      );
+      this.interviewState.voicePhase = "intro";
+      void this.persistState();
+      sideband.send(
+        JSON.stringify(
+          buildWelcomeIntroEvent({
+            candidateName: this.interviewState.candidateName,
+            positionName: this.interviewState.positionName,
+            roundName: this.interviewState.roundName,
+          }),
+        ),
+      );
     });
 
     sideband.addEventListener("message", (event) => {
@@ -275,6 +298,14 @@ export class InterviewSessionDO implements DurableObject {
 
     const type = typeof event.type === "string" ? event.type : "";
 
+    if (type === "conversation.item.input_audio_transcription.delta") {
+      const delta = typeof event.delta === "string" ? event.delta : "";
+      if (delta.trim()) {
+        this.broadcast({ type: "TRANSCRIPT_DELTA", role: "user", delta });
+      }
+      return;
+    }
+
     if (type === "conversation.item.input_audio_transcription.completed") {
       const transcript =
         typeof event.transcript === "string" ? event.transcript : "";
@@ -287,7 +318,7 @@ export class InterviewSessionDO implements DurableObject {
       return;
     }
 
-    if (type === "response.audio_transcript.done") {
+    if (type === "response.output_audio_transcript.done" || type === "response.audio_transcript.done") {
       const transcript =
         typeof event.transcript === "string" ? event.transcript : "";
       if (transcript.trim()) {
@@ -298,8 +329,36 @@ export class InterviewSessionDO implements DurableObject {
     }
 
     if (type === "response.done") {
-      await this.advanceQuestion();
+      await this.handleResponseDone();
     }
+  }
+
+  private async handleResponseDone() {
+    if (!this.interviewState) {
+      return;
+    }
+
+    const phase = this.interviewState.voicePhase ?? "questions";
+
+    if (phase === "intro") {
+      this.interviewState.voicePhase = "questions";
+      await this.persistState();
+      await this.askCurrentQuestion();
+      return;
+    }
+
+    if (phase === "closing") {
+      this.interviewState.voicePhase = "awaiting_end";
+      await this.persistState();
+      this.broadcast({ type: "ALL_QUESTIONS_ASKED" });
+      return;
+    }
+
+    if (phase === "awaiting_end") {
+      return;
+    }
+
+    await this.advanceQuestion();
   }
 
   private async saveUserTranscript(
@@ -368,13 +427,29 @@ export class InterviewSessionDO implements DurableObject {
 
   private async askCurrentQuestion() {
     const question = this.getCurrentQuestion();
-    if (!question || !this.sideband) {
+    if (!question || !this.sideband || !this.interviewState) {
       return;
     }
+
+    this.broadcast({
+      type: "QUESTION_CHANGED",
+      index: this.interviewState.currentQuestionIndex,
+      questionId: question.id,
+    });
 
     this.sideband.send(
       JSON.stringify(buildAskCurrentQuestionEvent(question.questionText)),
     );
+  }
+
+  private async startClosingPhase() {
+    if (!this.interviewState || !this.sideband) {
+      return;
+    }
+
+    this.interviewState.voicePhase = "closing";
+    await this.persistState();
+    this.sideband.send(JSON.stringify(buildClosingEvent()));
   }
 
   private async advanceQuestion() {
@@ -386,7 +461,7 @@ export class InterviewSessionDO implements DurableObject {
       this.interviewState.currentQuestionIndex >=
       this.interviewState.questions.length - 1
     ) {
-      await this.completeInterview();
+      await this.startClosingPhase();
       return;
     }
 

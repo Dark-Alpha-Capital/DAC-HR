@@ -1,6 +1,6 @@
 import { getOpenAIClient } from "./openai-client";
 
-export const REALTIME_MODEL = "gpt-4o-realtime-preview-2024-12-17";
+export const REALTIME_MODEL = "gpt-realtime-2";
 export const DEFAULT_REALTIME_VOICE = "alloy";
 
 export interface CreateRealtimeSessionOptions {
@@ -16,27 +16,65 @@ export interface RealtimeEphemeralSession {
   model: string;
 }
 
+interface ClientSecretsResponse {
+  value?: string;
+  client_secret?: {
+    value: string;
+    expires_at: number;
+  };
+  expires_at?: number;
+}
+
 export async function createRealtimeEphemeralSession(
   options: CreateRealtimeSessionOptions = {},
 ): Promise<RealtimeEphemeralSession> {
   const model = options.model ?? REALTIME_MODEL;
   const voice = options.voice ?? DEFAULT_REALTIME_VOICE;
 
-  const client = getOpenAIClient();
-  const session = await client.beta.realtime.sessions.create({
-    model: model as "gpt-4o-realtime-preview-2024-12-17",
-    voice,
-    instructions: options.instructions,
+  // GA Realtime API: beta /v1/realtime/sessions was retired.
+  getOpenAIClient();
+
+  const response = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      session: {
+        type: "realtime",
+        model,
+        instructions: options.instructions,
+        audio: {
+          output: { voice },
+        },
+      },
+    }),
   });
 
-  if (!session.client_secret?.value) {
-    throw new Error("OpenAI Realtime session did not return a client secret");
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(
+      `OpenAI Realtime client secret request failed (${response.status}): ${errorBody}`,
+    );
   }
 
+  const data = (await response.json()) as ClientSecretsResponse;
+  const clientSecret = data.value ?? data.client_secret?.value;
+
+  if (!clientSecret) {
+    throw new Error("OpenAI Realtime client secret did not return a token");
+  }
+
+  const expiresAt =
+    data.client_secret?.expires_at ??
+    data.expires_at ??
+    Math.floor(Date.now() / 1000) + 60;
+
   return {
-    id: session.id ?? crypto.randomUUID(),
-    clientSecret: session.client_secret.value,
-    expiresAt: session.client_secret.expires_at,
+    id: crypto.randomUUID(),
+    clientSecret,
+    expiresAt,
     model,
   };
 }

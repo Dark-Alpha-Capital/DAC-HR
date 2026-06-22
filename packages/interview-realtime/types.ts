@@ -6,8 +6,15 @@ export interface InterviewQuestion {
   questionText: string;
   questionType: string;
   category: string | null;
+  timeLimitSeconds?: number | null;
   options?: QuestionOption[] | null;
 }
+
+export type VoiceInterviewPhase =
+  | "intro"
+  | "questions"
+  | "closing"
+  | "awaiting_end";
 
 export type InterviewSessionDoStatus = "active" | "paused" | "completed";
 
@@ -33,6 +40,7 @@ export interface InterviewState {
   roundName?: string;
   positionName?: string;
   candidateName?: string;
+  voicePhase?: VoiceInterviewPhase;
 }
 
 export type ClientToDoMessage =
@@ -45,7 +53,9 @@ export type ClientToDoMessage =
 export type DoToClientMessage =
   | { type: "CONNECTED"; state: Pick<InterviewState, "currentQuestionIndex" | "status" | "questions"> }
   | { type: "QUESTION_CHANGED"; index: number; questionId: string }
+  | { type: "ALL_QUESTIONS_ASKED" }
   | { type: "TRANSCRIPT"; role: "user" | "assistant"; text: string }
+  | { type: "TRANSCRIPT_DELTA"; role: "user" | "assistant"; delta: string }
   | { type: "ANSWER_SAVED"; questionId: string; transcript: string }
   | { type: "INTERVIEW_COMPLETED" }
   | { type: "ERROR"; message: string }
