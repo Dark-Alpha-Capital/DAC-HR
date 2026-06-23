@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { env } from "cloudflare:workers";
 import {
   assertInterviewTokenValid,
   updateSessionStatus,
@@ -65,17 +64,6 @@ export const Route = createFileRoute("/api/interview-token/$token/complete")({
             completedAt: new Date(),
             tabSwitches: parsed.data.tabSwitches,
           });
-
-          const workflow = (env as Record<string, unknown>)
-            .INTERVIEW_EVALUATION_WORKFLOW as
-            | { create: (input: { params: { sessionId: string } }) => Promise<unknown> }
-            | undefined;
-
-          workflow
-            ?.create({ params: { sessionId: session.id } })
-            .catch((workflowError: unknown) =>
-              console.error("Failed to start interview evaluation workflow:", workflowError),
-            );
 
           return Response.json({ session: updated });
         } catch (error) {

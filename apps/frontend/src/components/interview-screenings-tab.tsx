@@ -45,6 +45,8 @@ interface StoredAnalysis {
   interviewId: string;
   applicationId: string | null;
   positionId: string | null;
+  screenerId: string | null;
+  screenerName: string | null;
   analysis: string;
   structuredData: InterviewAiAnalysisData | null;
   customPrompt: string | null;
@@ -392,6 +394,14 @@ export default function InterviewScreeningsTab({
             <p className="text-sm">{selectedAnalysis.customPrompt}</p>
           </div>
         )}
+        {selectedAnalysis.screenerName ? (
+          <div className="bg-muted/50 rounded-lg p-3">
+            <p className="text-xs font-medium text-muted-foreground mb-1">
+              Screener
+            </p>
+            <p className="text-sm font-medium">{selectedAnalysis.screenerName}</p>
+          </div>
+        ) : null}
         {selectedAnalysis.structuredData && (
           <AnalysisDisplay analysis={selectedAnalysis.structuredData} />
         )}
@@ -451,11 +461,16 @@ export default function InterviewScreeningsTab({
                 <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
                   <Clock className="h-3.5 w-3.5" />
                   {formatDate(new Date(a.createdAt))}
-                  {a.customPrompt && (
+                  {a.screenerName ? (
+                    <span className="text-xs bg-muted px-2 py-0.5 rounded">
+                      {a.screenerName}
+                    </span>
+                  ) : null}
+                  {a.customPrompt ? (
                     <span className="text-xs bg-muted px-2 py-0.5 rounded">
                       Custom prompt
                     </span>
-                  )}
+                  ) : null}
                 </div>
               </button>
               <div className="flex items-center gap-2">

@@ -1,6 +1,14 @@
 import { createClient, type WebDAVClient } from "webdav";
+import { normalizeFolderPath } from "./paths";
 
 export type { WebDAVClient };
+export {
+  buildNamedEntityFolderPath,
+  formatPersonName,
+  normalizeFolderPath,
+  sanitizeIdSegment,
+  sanitizePathSegment,
+} from "./paths";
 
 export type NextcloudConfig = {
   url: string;
@@ -35,17 +43,6 @@ export type DownloadFileResult = NextcloudOperationResult & {
 };
 
 const normalizeBaseUrl = (url: string) => url.replace(/\/+$/, "");
-
-export const normalizeFolderPath = (folderPath: string) => {
-  const trimmed = folderPath.trim();
-  if (!trimmed) {
-    return "/";
-  }
-
-  const startsWithSlash = trimmed.startsWith("/");
-  const normalized = trimmed.replace(/\/{2,}/g, "/").replace(/\/$/, "");
-  return startsWithSlash ? normalized : `/${normalized}`;
-};
 
 export const sanitizeFilename = (fileName: string) =>
   fileName.replace(/[^a-zA-Z0-9._-]/g, "_").replace(/_{2,}/g, "_");

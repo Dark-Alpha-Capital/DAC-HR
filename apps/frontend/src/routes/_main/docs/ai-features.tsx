@@ -206,13 +206,15 @@ function AiFeaturesDocsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground">
-            After recording interview feedback, you can run AI analysis to get:
+            Run AI analysis on any interview using a screener rubric. The system
+            analyzes full candidate responses — whether from manual recruiter
+            notes or AI session transcripts — and produces:
           </p>
           <ul className="list-disc list-inside space-y-2 text-muted-foreground">
             <li>Summary of interview performance</li>
             <li>Strengths and areas of concern</li>
             <li>Recommendations for next steps</li>
-            <li>Comparison to position requirements</li>
+            <li>Comparison to position requirements and screener criteria</li>
           </ul>
         </CardContent>
       </Card>
@@ -225,29 +227,35 @@ function AiFeaturesDocsPage() {
         <CardContent className="space-y-4">
           <ol className="list-decimal list-inside space-y-3 text-muted-foreground">
             <li>
-              Go to the specific <strong>Interview</strong> page
+              Create a <strong>Screener</strong> under Configuration → Screeners
+              with your evaluation criteria in Markdown
             </li>
             <li>
-              Make sure you have <strong>recorded feedback</strong> for
-              questions
+              Go to the specific <strong>Interview</strong> page
             </li>
             <li>
               Navigate to the <strong>"AI Analysis"</strong> tab
             </li>
             <li>
-              Optionally add a <strong>custom prompt</strong> for specific
-              questions
+              Select the <strong>screener</strong> you want to evaluate against
             </li>
             <li>
-              Click <strong>"Run Analysis"</strong>
+              Optionally add <strong>custom instructions</strong> for this run
             </li>
-            <li>View the AI-generated insights</li>
+            <li>
+              Click <strong>"Run AI Analysis"</strong>
+            </li>
+            <li>
+              View results in the <strong>Screenings</strong> tab
+            </li>
           </ol>
 
           <div className="p-4 bg-muted/50 rounded-lg">
             <p className="text-sm text-muted-foreground">
-              <strong>Tip:</strong> The more detailed your interview feedback,
-              the more accurate and useful the AI analysis will be.
+              <strong>Tip:</strong> For manual interviews, record question
+              feedback first. For AI sessions, complete the interview so
+              responses are available. Detailed screeners produce better
+              analysis.
             </p>
           </div>
         </CardContent>

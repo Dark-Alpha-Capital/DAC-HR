@@ -11,7 +11,6 @@ import {
   FileText,
   User,
   ClipboardCheck,
-  Sparkles,
 } from "lucide-react";
 import DeleteCandidateButton from "~/components/delete-candidate-button";
 import { formatDate } from "~/lib/utils";
@@ -19,8 +18,6 @@ import CandidateTabsClient from "~/components/candidate-tabs-client";
 import { CandidateOverviewTab } from "~/components/candidate-overview-tab";
 import { CandidateApplicationsTab } from "~/components/candidate-applications-tab";
 import { CandidateDocumentsTab } from "~/components/candidate-documents-tab";
-import CandidateAiScreeningsClient from "~/components/candidate-ai-screenings-client";
-import CandidateAiAnalysis from "~/components/candidate-ai-analysis";
 import OnboardingCard from "~/components/onboarding-card";
 import {
   loadCandidateDetail,
@@ -36,11 +33,11 @@ export const Route = createFileRoute("/_main/candidates/$uid/")({
     return result as CandidateDetailData;
   },
   component: CandidateDetailPage,
-  pendingComponent: () => <DetailPageSkeleton tabs tabCount={6} />,
+  pendingComponent: () => <DetailPageSkeleton tabs tabCount={4} />,
 });
 
 function CandidateDetailPage() {
-  const { candidate, session, documents, screenings, onboardingData } =
+  const { candidate, documents, onboardingData } =
     Route.useLoaderData() as CandidateDetailData;
   const { uid } = Route.useParams();
 
@@ -123,22 +120,6 @@ function CandidateDetailPage() {
               </Badge>
             ) : null}
           </TabsTrigger>
-          <TabsTrigger value="ai-screenings">
-            <Sparkles className="h-4 w-4 mr-2" />
-            AI Screenings
-            {screenings.length > 0 ? (
-              <Badge
-                variant="secondary"
-                className="ml-2 h-5 min-w-5 px-1.5 text-xs"
-              >
-                {screenings.length}
-              </Badge>
-            ) : null}
-          </TabsTrigger>
-          <TabsTrigger value="ai-analysis">
-            <Sparkles className="h-4 w-4 mr-2" />
-            Do AI Analysis
-          </TabsTrigger>
           <TabsTrigger value="checklist">
             <ClipboardCheck className="h-4 w-4 mr-2" />
             Checklist
@@ -155,22 +136,6 @@ function CandidateDetailPage() {
 
         <TabsContent value="documents" className="mt-6">
           <CandidateDocumentsTab uid={uid} documents={documents} />
-        </TabsContent>
-
-        <TabsContent value="ai-screenings" className="mt-6">
-          <CandidateAiScreeningsClient
-            screenings={screenings}
-            positionId={candidate.applications[0]?.position.id ?? null}
-          />
-        </TabsContent>
-
-        <TabsContent value="ai-analysis" className="mt-6">
-          <CandidateAiAnalysis
-            candidateId={uid}
-            positionId={candidate.applications[0]?.position.id ?? ""}
-            session={session}
-            documents={documents}
-          />
         </TabsContent>
 
         <TabsContent value="checklist" className="mt-6">

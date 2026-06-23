@@ -9,9 +9,12 @@ import {
   getInterviewById,
   deleteInterviewAiAnalysisForInterview,
 } from "@workspace/db/repositories/interview-repository";
+import { getScreenerById } from "@workspace/db/repositories/screener-repository";
+import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
 import { getAiModel } from "~/lib/ai/models";
 import { generateText, Output } from "ai";
 import { interviewAiAnalysisSchema } from "~/lib/schemas/interview-ai-analysis-schema";
+import { buildInterviewAnalysisPrompt } from "~/lib/interview-analysis-prompt";
 
 export const Route = createFileRoute("/api/interview/$id/ai-analysis")({
   server: {
@@ -42,7 +45,6 @@ export const Route = createFileRoute("/api/interview/$id/ai-analysis")({
           const authSession = await getSession();
           if (!authSession?.user)
             return Response.json({ error: "Unauthorized" }, { status: 401 });
-          const { user } = authSession;
 
           const interviewId = params.id;
           if (!interviewId)
@@ -51,13 +53,28 @@ export const Route = createFileRoute("/api/interview/$id/ai-analysis")({
               { status: 400 },
             );
 
-          let body: { customPrompt?: string } = {};
+          let body: { screenerId?: string; customPrompt?: string } = {};
           try {
             body = await request.json();
           } catch {
             /* ignore */
           }
-          const { customPrompt } = body;
+          const { screenerId, customPrompt } = body;
+
+          if (!screenerId?.trim()) {
+            return Response.json(
+              { error: "Screener is required" },
+              { status: 400 },
+            );
+          }
+
+          const screener = await getScreenerById(screenerId);
+          if (!screener) {
+            return Response.json(
+              { error: "Screener not found" },
+              { status: 404 },
+            );
+          }
 
           const interview = await getInterviewById(interviewId);
           if (!interview)
@@ -73,25 +90,22 @@ export const Route = createFileRoute("/api/interview/$id/ai-analysis")({
               { status: 404 },
             );
 
-          const questionsText = interview.questions
-            .map(
-              (q, i) =>
-                `${i + 1}. ${q.questionText}${q.feedback?.rating ? ` | Rating: ${q.feedback.rating}/5` : ""}${q.feedback?.notes ? ` | Notes: ${q.feedback.notes}` : ""}`,
-            )
-            .join("\n");
+          const candidate = await getCandidateById(application.candidateId);
 
-          const prompt = [
-            `Position: ${application.position.name}${application.position.description ? ` - ${application.position.description}` : ""}`,
-            `Round: ${interview.roundTemplate.name} | Status: ${interview.status}${interview.rating ? ` | Rating: ${interview.rating}/5` : ""}`,
-            interview.overallFeedback
-              ? `Overall: ${interview.overallFeedback}`
-              : null,
-            questionsText,
-            customPrompt?.trim() ? `Additional: ${customPrompt.trim()}` : null,
-            "Analyze: performance, alignment, strengths/concerns, per-question breakdown, recommendation.",
-          ]
-            .filter(Boolean)
-            .join("\n\n");
+          const prompt = await buildInterviewAnalysisPrompt({
+            screener,
+            interview,
+            application: {
+              position: application.position,
+              candidate: candidate
+                ? {
+                    firstName: candidate.firstName,
+                    lastName: candidate.lastName,
+                  }
+                : null,
+            },
+            customPrompt,
+          });
 
           const { output: structuredData } = await generateText({
             model: getAiModel("gpt-4o-mini"),
@@ -103,6 +117,7 @@ export const Route = createFileRoute("/api/interview/$id/ai-analysis")({
             interviewId,
             applicationId: application.id,
             positionId: application.position.id,
+            screenerId: screener.id,
             analysis: structuredData.overallSummary,
             customPrompt: customPrompt || null,
             model: "gpt-4o-mini",
@@ -110,7 +125,11 @@ export const Route = createFileRoute("/api/interview/$id/ai-analysis")({
           });
 
           return Response.json(
-            { analysis: structuredData, analysisId: savedAnalysis?.id || null },
+            {
+              analysis: structuredData,
+              analysisId: savedAnalysis?.id || null,
+              screenerName: screener.name,
+            },
             { status: 200 },
           );
         } catch (error) {
@@ -130,8 +149,13 @@ export const Route = createFileRoute("/api/interview/$id/ai-analysis")({
           const authSession = await getSession();
           if (!authSession?.user)
             return Response.json({ error: "Unauthorized" }, { status: 401 });
-          const body = await request.json().catch(() => ({})) as { analysisId?: string };
-          await deleteInterviewAiAnalysisForInterview(params.id, body.analysisId || "");
+          const body = (await request.json().catch(() => ({}))) as {
+            analysisId?: string;
+          };
+          await deleteInterviewAiAnalysisForInterview(
+            params.id,
+            body.analysisId || "",
+          );
           return Response.json({ success: true }, { status: 200 });
         } catch (error) {
           return Response.json(

@@ -14,6 +14,7 @@ import {
   BookOpen,
   ClipboardList,
   ShieldCheckIcon,
+  ScanSearch,
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import type { AppSession } from "~/lib/auth-session";
@@ -57,6 +58,7 @@ const configurationLinks = [
   { href: "/positions", label: "Positions", icon: Briefcase },
   { href: "/rounds", label: "Rounds", icon: CircleDot },
   { href: "/questions", label: "Questions", icon: HelpCircle },
+  { href: "/screeners", label: "Screeners", icon: ScanSearch },
 ] as const;
 
 const adminLinks = [

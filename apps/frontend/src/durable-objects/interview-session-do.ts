@@ -1473,10 +1473,6 @@ export class InterviewSessionDO implements DurableObject {
     await this.persistState();
     this.closeSideband({ intentional: true });
     this.broadcast({ type: "INTERVIEW_COMPLETED" });
-
-    await this.env.INTERVIEW_EVALUATION_WORKFLOW?.create({
-      params: { sessionId: this.interviewState.sessionId },
-    });
   }
 
   private async markInterrupted() {

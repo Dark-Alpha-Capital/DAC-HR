@@ -22,6 +22,7 @@ import {
   candidateAiScreening,
   interviewAiAnalysis,
   recruiterWeeklyCheckin,
+  screener,
 } from "./schema";
 import {
   eq,
@@ -2880,6 +2881,7 @@ export const saveInterviewAiAnalysis = async (params: {
   interviewId: string;
   applicationId?: string | null;
   positionId?: string | null;
+  screenerId?: string | null;
   analysis: string;
   customPrompt?: string | null;
   model?: string;
@@ -2892,6 +2894,7 @@ export const saveInterviewAiAnalysis = async (params: {
         interviewId: params.interviewId,
         applicationId: params.applicationId || null,
         positionId: params.positionId || null,
+        screenerId: params.screenerId || null,
         analysis: params.analysis,
         customPrompt: params.customPrompt || null,
         model: params.model || "gpt-4o-mini",
@@ -2916,8 +2919,22 @@ export const getInterviewAiAnalysesByInterviewId = async (
 ) => {
   try {
     const results = await db
-      .select()
+      .select({
+        id: interviewAiAnalysis.id,
+        interviewId: interviewAiAnalysis.interviewId,
+        applicationId: interviewAiAnalysis.applicationId,
+        positionId: interviewAiAnalysis.positionId,
+        screenerId: interviewAiAnalysis.screenerId,
+        analysis: interviewAiAnalysis.analysis,
+        structuredData: interviewAiAnalysis.structuredData,
+        customPrompt: interviewAiAnalysis.customPrompt,
+        model: interviewAiAnalysis.model,
+        createdAt: interviewAiAnalysis.createdAt,
+        updatedAt: interviewAiAnalysis.updatedAt,
+        screenerName: screener.name,
+      })
       .from(interviewAiAnalysis)
+      .leftJoin(screener, eq(interviewAiAnalysis.screenerId, screener.id))
       .where(eq(interviewAiAnalysis.interviewId, interviewId))
       .orderBy(desc(interviewAiAnalysis.createdAt));
 

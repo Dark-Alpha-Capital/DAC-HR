@@ -430,6 +430,18 @@ export type CandidateAiScreening = InferSelectModel<
   typeof candidateAiScreening
 >;
 
+export const screener = sqliteTable("screener", {
+  id: uuidPk(),
+  name: text("name").notNull(),
+  content: text("content").notNull(),
+  createdBy: text("created_by").references(() => user.id, {
+    onDelete: "set null",
+  }),
+  createdAt: createdAtCol(),
+  updatedAt: updatedAtCol(),
+});
+export type Screener = InferSelectModel<typeof screener>;
+
 export const interviewAiAnalysis = sqliteTable("interview_ai_analysis", {
   id: uuidPk(),
   interviewId: text("interview_id")
@@ -439,6 +451,9 @@ export const interviewAiAnalysis = sqliteTable("interview_ai_analysis", {
     onDelete: "set null",
   }),
   positionId: text("position_id").references(() => position.id, {
+    onDelete: "set null",
+  }),
+  screenerId: text("screener_id").references(() => screener.id, {
     onDelete: "set null",
   }),
   analysis: text("analysis").notNull(),

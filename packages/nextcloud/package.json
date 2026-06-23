@@ -15,6 +15,7 @@
   },
   "exports": {
     ".": "./index.ts",
-    "./index": "./index.ts"
+    "./index": "./index.ts",
+    "./paths": "./paths.ts"
   }
 }

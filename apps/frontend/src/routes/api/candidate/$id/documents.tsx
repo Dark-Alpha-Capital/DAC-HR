@@ -5,9 +5,12 @@ import { db } from "@workspace/db/db";
 import { eq } from "@workspace/db";
 import { candidateDocument as candidateDocumentSchema } from "@workspace/db/schema";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
+import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
 import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
 import { candidateDocumentFormSchema } from "~/lib/schemas/candidate-document-form-schema";
 import {
+  buildNamedEntityFolderPath,
+  formatPersonName,
   getNextcloudClient,
   uploadFile as uploadToNextcloud,
 } from "@workspace/nextcloud";
@@ -111,10 +114,22 @@ export const Route = createFileRoute("/api/candidate/$id/documents")({
                 { status: 400 },
               );
 
+            const candidateRecord = await getCandidateById(candidateId);
+            const folderPath = buildNamedEntityFolderPath({
+              root: "/ATS/candidates",
+              name: candidateRecord
+                ? formatPersonName(
+                    candidateRecord.firstName,
+                    candidateRecord.lastName,
+                  )
+                : null,
+              id: candidateId,
+            });
+
             const nextcloudUploadResult = await uploadToNextcloud({
               client: getNextcloudClient(),
               file,
-              folderPath: `/ATS/candidates/${candidateId}`,
+              folderPath,
             });
 
             if (

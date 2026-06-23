@@ -1,5 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getNextcloudClient, uploadFile as uploadToNextcloud } from "@workspace/nextcloud";
+import {
+  buildNamedEntityFolderPath,
+  formatPersonName,
+  getNextcloudClient,
+  uploadFile as uploadToNextcloud,
+} from "@workspace/nextcloud";
 import {
   assertInterviewTokenValidForRecordingUpload,
   updateSessionVoiceMetadata,
@@ -59,7 +64,15 @@ export const Route = createFileRoute("/api/interview-token/$token/upload-audio")
           }
 
           const sessionId = validation.row.session.id;
-          const folderPath = `/ATS/interviews/${sessionId}`;
+          const candidateName = formatPersonName(
+            validation.row.candidate.firstName,
+            validation.row.candidate.lastName,
+          );
+          const folderPath = buildNamedEntityFolderPath({
+            root: "/ATS/interviews",
+            name: candidateName,
+            id: sessionId,
+          });
           const client = getNextcloudClient();
           const uploadResult = await uploadToNextcloud({
             client,

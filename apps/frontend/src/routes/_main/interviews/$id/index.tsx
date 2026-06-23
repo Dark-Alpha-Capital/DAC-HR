@@ -1,4 +1,7 @@
-import { DetailPageSkeleton } from "~/components/route-skeletons/detail-page-skeleton";
+import {
+  buildNamedEntityFolderPath,
+  formatPersonName,
+} from "@workspace/nextcloud/paths";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   loadInterviewById,
@@ -106,7 +109,7 @@ function formatResponseAnswer(response: InterviewResponse): string {
 }
 
 function InterviewDetailPage() {
-  const { interview, application, candidate, session, responses, evaluation } =
+  const { interview, application, candidate, session, responses } =
     Route.useLoaderData();
   const [copied, setCopied] = useState(false);
   const [recordingCopied, setRecordingCopied] = useState(false);
@@ -146,7 +149,13 @@ function InterviewDetailPage() {
   const sessionRecordingPath =
     session?.session?.sessionAudioPath ??
     (session?.session?.id
-      ? `/ATS/interviews/${session.session.id}/screen-recording.webm`
+      ? `${buildNamedEntityFolderPath({
+          root: "/ATS/interviews",
+          name: candidate
+            ? formatPersonName(candidate.firstName, candidate.lastName)
+            : null,
+          id: session.session.id,
+        })}/screen-recording.webm`
       : null);
 
   return (
@@ -444,31 +453,6 @@ function InterviewDetailPage() {
                 </CardContent>
               </Card>
 
-              {evaluation ? (
-                <Card className="mt-4">
-                  <CardHeader>
-                    <CardTitle>Evaluation</CardTitle>
-                  </CardHeader>
-                  {evaluation.summary ? (
-                    <CardContent>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary">
-                            Score: {evaluation.score}/100
-                          </Badge>
-                          <Badge variant="secondary">
-                            {evaluation.recommendation?.replace(/_/g, " ") ??
-                              "N/A"}
-                          </Badge>
-                        </div>
-                        <p className="text-muted-foreground">
-                          {evaluation.summary}
-                        </p>
-                      </div>
-                    </CardContent>
-                  ) : null}
-                </Card>
-              ) : null}
             </TabsContent>
 
             <TabsContent value="responses" className="mt-6">

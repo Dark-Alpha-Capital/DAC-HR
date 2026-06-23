@@ -13,6 +13,7 @@ import { Route as CustomScriptDotjsRouteImport } from './routes/customScript[.]j
 import { Route as MainRouteRouteImport } from './routes/_main/route'
 import { Route as AuthRouteRouteImport } from './routes/_auth/route'
 import { Route as MainIndexRouteImport } from './routes/_main/index'
+import { Route as ApiScreenersRouteImport } from './routes/api/screeners'
 import { Route as ApiInterviewSessionsRouteImport } from './routes/api/interview-sessions'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as MainDashboardRouteImport } from './routes/_main/dashboard'
@@ -23,6 +24,7 @@ import { Route as MainAdminRouteRouteImport } from './routes/_main/admin/route'
 import { Route as InterviewTokenIndexRouteImport } from './routes/interview/$token/index'
 import { Route as ApiCandidateIndexRouteImport } from './routes/api/candidate/index'
 import { Route as MainWeeklyCheckinIndexRouteImport } from './routes/_main/weekly-checkin/index'
+import { Route as MainScreenersIndexRouteImport } from './routes/_main/screeners/index'
 import { Route as MainRoundsIndexRouteImport } from './routes/_main/rounds/index'
 import { Route as MainQuestionsIndexRouteImport } from './routes/_main/questions/index'
 import { Route as MainProfileIndexRouteImport } from './routes/_main/profile/index'
@@ -41,6 +43,7 @@ import { Route as ApiCandidateBulkRouteImport } from './routes/api/candidate/bul
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAuditLogsGenerateReportRouteImport } from './routes/api/audit-logs/generate-report'
 import { Route as MainWeeklyCheckinRecordsRouteImport } from './routes/_main/weekly-checkin/records'
+import { Route as MainScreenersNewRouteImport } from './routes/_main/screeners/new'
 import { Route as MainRoundsNewRouteImport } from './routes/_main/rounds/new'
 import { Route as MainQuestionsNewRouteImport } from './routes/_main/questions/new'
 import { Route as MainProfileUserIdRouteImport } from './routes/_main/profile/$userId'
@@ -77,6 +80,7 @@ import { Route as ApiInterviewTokenTokenCompleteRouteImport } from './routes/api
 import { Route as ApiCandidateIdDocumentsRouteImport } from './routes/api/candidate/$id/documents'
 import { Route as ApiCandidateIdAiScreeningRouteImport } from './routes/api/candidate/$id/ai-screening'
 import { Route as ApiCandidateIdAiAnalysisRouteImport } from './routes/api/candidate/$id/ai-analysis'
+import { Route as MainScreenersIdEditRouteImport } from './routes/_main/screeners/$id/edit'
 import { Route as MainRoundsIdEditRouteImport } from './routes/_main/rounds/$id/edit'
 import { Route as MainRoundsIdAddQuestionRouteImport } from './routes/_main/rounds/$id/add-question'
 import { Route as MainQuestionsIdEditRouteImport } from './routes/_main/questions/$id/edit'
@@ -103,6 +107,11 @@ const MainIndexRoute = MainIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => MainRouteRoute,
+} as any)
+const ApiScreenersRoute = ApiScreenersRouteImport.update({
+  id: '/api/screeners',
+  path: '/api/screeners',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiInterviewSessionsRoute = ApiInterviewSessionsRouteImport.update({
   id: '/api/interview-sessions',
@@ -152,6 +161,11 @@ const ApiCandidateIndexRoute = ApiCandidateIndexRouteImport.update({
 const MainWeeklyCheckinIndexRoute = MainWeeklyCheckinIndexRouteImport.update({
   id: '/weekly-checkin/',
   path: '/weekly-checkin/',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainScreenersIndexRoute = MainScreenersIndexRouteImport.update({
+  id: '/screeners/',
+  path: '/screeners/',
   getParentRoute: () => MainRouteRoute,
 } as any)
 const MainRoundsIndexRoute = MainRoundsIndexRouteImport.update({
@@ -246,6 +260,11 @@ const MainWeeklyCheckinRecordsRoute =
     path: '/weekly-checkin/records',
     getParentRoute: () => MainRouteRoute,
   } as any)
+const MainScreenersNewRoute = MainScreenersNewRouteImport.update({
+  id: '/screeners/new',
+  path: '/screeners/new',
+  getParentRoute: () => MainRouteRoute,
+} as any)
 const MainRoundsNewRoute = MainRoundsNewRouteImport.update({
   id: '/rounds/new',
   path: '/rounds/new',
@@ -435,6 +454,11 @@ const ApiCandidateIdAiAnalysisRoute =
     path: '/api/candidate/$id/ai-analysis',
     getParentRoute: () => rootRouteImport,
   } as any)
+const MainScreenersIdEditRoute = MainScreenersIdEditRouteImport.update({
+  id: '/screeners/$id/edit',
+  path: '/screeners/$id/edit',
+  getParentRoute: () => MainRouteRoute,
+} as any)
 const MainRoundsIdEditRoute = MainRoundsIdEditRouteImport.update({
   id: '/rounds/$id/edit',
   path: '/rounds/$id/edit',
@@ -488,6 +512,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof MainDashboardRoute
   '/api/health': typeof ApiHealthRoute
   '/api/interview-sessions': typeof ApiInterviewSessionsRoute
+  '/api/screeners': typeof ApiScreenersRoute
   '/admin/audit-logs': typeof MainAdminAuditLogsRoute
   '/candidates/new': typeof MainCandidatesNewRoute
   '/docs/ai-features': typeof MainDocsAiFeaturesRoute
@@ -506,6 +531,7 @@ export interface FileRoutesByFullPath {
   '/profile/$userId': typeof MainProfileUserIdRoute
   '/questions/new': typeof MainQuestionsNewRoute
   '/rounds/new': typeof MainRoundsNewRoute
+  '/screeners/new': typeof MainScreenersNewRoute
   '/weekly-checkin/records': typeof MainWeeklyCheckinRecordsRoute
   '/api/audit-logs/generate-report': typeof ApiAuditLogsGenerateReportRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -524,6 +550,7 @@ export interface FileRoutesByFullPath {
   '/profile/': typeof MainProfileIndexRoute
   '/questions/': typeof MainQuestionsIndexRoute
   '/rounds/': typeof MainRoundsIndexRoute
+  '/screeners/': typeof MainScreenersIndexRoute
   '/weekly-checkin/': typeof MainWeeklyCheckinIndexRoute
   '/api/candidate/': typeof ApiCandidateIndexRoute
   '/interview/$token/': typeof InterviewTokenIndexRoute
@@ -533,6 +560,7 @@ export interface FileRoutesByFullPath {
   '/questions/$id/edit': typeof MainQuestionsIdEditRoute
   '/rounds/$id/add-question': typeof MainRoundsIdAddQuestionRoute
   '/rounds/$id/edit': typeof MainRoundsIdEditRoute
+  '/screeners/$id/edit': typeof MainScreenersIdEditRoute
   '/api/candidate/$id/ai-analysis': typeof ApiCandidateIdAiAnalysisRoute
   '/api/candidate/$id/ai-screening': typeof ApiCandidateIdAiScreeningRoute
   '/api/candidate/$id/documents': typeof ApiCandidateIdDocumentsRouteWithChildren
@@ -562,6 +590,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof MainDashboardRoute
   '/api/health': typeof ApiHealthRoute
   '/api/interview-sessions': typeof ApiInterviewSessionsRoute
+  '/api/screeners': typeof ApiScreenersRoute
   '/admin/audit-logs': typeof MainAdminAuditLogsRoute
   '/candidates/new': typeof MainCandidatesNewRoute
   '/docs/ai-features': typeof MainDocsAiFeaturesRoute
@@ -580,6 +609,7 @@ export interface FileRoutesByTo {
   '/profile/$userId': typeof MainProfileUserIdRoute
   '/questions/new': typeof MainQuestionsNewRoute
   '/rounds/new': typeof MainRoundsNewRoute
+  '/screeners/new': typeof MainScreenersNewRoute
   '/weekly-checkin/records': typeof MainWeeklyCheckinRecordsRoute
   '/api/audit-logs/generate-report': typeof ApiAuditLogsGenerateReportRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -598,6 +628,7 @@ export interface FileRoutesByTo {
   '/profile': typeof MainProfileIndexRoute
   '/questions': typeof MainQuestionsIndexRoute
   '/rounds': typeof MainRoundsIndexRoute
+  '/screeners': typeof MainScreenersIndexRoute
   '/weekly-checkin': typeof MainWeeklyCheckinIndexRoute
   '/api/candidate': typeof ApiCandidateIndexRoute
   '/interview/$token': typeof InterviewTokenIndexRoute
@@ -607,6 +638,7 @@ export interface FileRoutesByTo {
   '/questions/$id/edit': typeof MainQuestionsIdEditRoute
   '/rounds/$id/add-question': typeof MainRoundsIdAddQuestionRoute
   '/rounds/$id/edit': typeof MainRoundsIdEditRoute
+  '/screeners/$id/edit': typeof MainScreenersIdEditRoute
   '/api/candidate/$id/ai-analysis': typeof ApiCandidateIdAiAnalysisRoute
   '/api/candidate/$id/ai-screening': typeof ApiCandidateIdAiScreeningRoute
   '/api/candidate/$id/documents': typeof ApiCandidateIdDocumentsRouteWithChildren
@@ -640,6 +672,7 @@ export interface FileRoutesById {
   '/_main/dashboard': typeof MainDashboardRoute
   '/api/health': typeof ApiHealthRoute
   '/api/interview-sessions': typeof ApiInterviewSessionsRoute
+  '/api/screeners': typeof ApiScreenersRoute
   '/_main/': typeof MainIndexRoute
   '/_main/admin/audit-logs': typeof MainAdminAuditLogsRoute
   '/_main/candidates/new': typeof MainCandidatesNewRoute
@@ -659,6 +692,7 @@ export interface FileRoutesById {
   '/_main/profile/$userId': typeof MainProfileUserIdRoute
   '/_main/questions/new': typeof MainQuestionsNewRoute
   '/_main/rounds/new': typeof MainRoundsNewRoute
+  '/_main/screeners/new': typeof MainScreenersNewRoute
   '/_main/weekly-checkin/records': typeof MainWeeklyCheckinRecordsRoute
   '/api/audit-logs/generate-report': typeof ApiAuditLogsGenerateReportRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -677,6 +711,7 @@ export interface FileRoutesById {
   '/_main/profile/': typeof MainProfileIndexRoute
   '/_main/questions/': typeof MainQuestionsIndexRoute
   '/_main/rounds/': typeof MainRoundsIndexRoute
+  '/_main/screeners/': typeof MainScreenersIndexRoute
   '/_main/weekly-checkin/': typeof MainWeeklyCheckinIndexRoute
   '/api/candidate/': typeof ApiCandidateIndexRoute
   '/interview/$token/': typeof InterviewTokenIndexRoute
@@ -686,6 +721,7 @@ export interface FileRoutesById {
   '/_main/questions/$id/edit': typeof MainQuestionsIdEditRoute
   '/_main/rounds/$id/add-question': typeof MainRoundsIdAddQuestionRoute
   '/_main/rounds/$id/edit': typeof MainRoundsIdEditRoute
+  '/_main/screeners/$id/edit': typeof MainScreenersIdEditRoute
   '/api/candidate/$id/ai-analysis': typeof ApiCandidateIdAiAnalysisRoute
   '/api/candidate/$id/ai-screening': typeof ApiCandidateIdAiScreeningRoute
   '/api/candidate/$id/documents': typeof ApiCandidateIdDocumentsRouteWithChildren
@@ -719,6 +755,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/api/health'
     | '/api/interview-sessions'
+    | '/api/screeners'
     | '/admin/audit-logs'
     | '/candidates/new'
     | '/docs/ai-features'
@@ -737,6 +774,7 @@ export interface FileRouteTypes {
     | '/profile/$userId'
     | '/questions/new'
     | '/rounds/new'
+    | '/screeners/new'
     | '/weekly-checkin/records'
     | '/api/audit-logs/generate-report'
     | '/api/auth/$'
@@ -755,6 +793,7 @@ export interface FileRouteTypes {
     | '/profile/'
     | '/questions/'
     | '/rounds/'
+    | '/screeners/'
     | '/weekly-checkin/'
     | '/api/candidate/'
     | '/interview/$token/'
@@ -764,6 +803,7 @@ export interface FileRouteTypes {
     | '/questions/$id/edit'
     | '/rounds/$id/add-question'
     | '/rounds/$id/edit'
+    | '/screeners/$id/edit'
     | '/api/candidate/$id/ai-analysis'
     | '/api/candidate/$id/ai-screening'
     | '/api/candidate/$id/documents'
@@ -793,6 +833,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/api/health'
     | '/api/interview-sessions'
+    | '/api/screeners'
     | '/admin/audit-logs'
     | '/candidates/new'
     | '/docs/ai-features'
@@ -811,6 +852,7 @@ export interface FileRouteTypes {
     | '/profile/$userId'
     | '/questions/new'
     | '/rounds/new'
+    | '/screeners/new'
     | '/weekly-checkin/records'
     | '/api/audit-logs/generate-report'
     | '/api/auth/$'
@@ -829,6 +871,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/questions'
     | '/rounds'
+    | '/screeners'
     | '/weekly-checkin'
     | '/api/candidate'
     | '/interview/$token'
@@ -838,6 +881,7 @@ export interface FileRouteTypes {
     | '/questions/$id/edit'
     | '/rounds/$id/add-question'
     | '/rounds/$id/edit'
+    | '/screeners/$id/edit'
     | '/api/candidate/$id/ai-analysis'
     | '/api/candidate/$id/ai-screening'
     | '/api/candidate/$id/documents'
@@ -870,6 +914,7 @@ export interface FileRouteTypes {
     | '/_main/dashboard'
     | '/api/health'
     | '/api/interview-sessions'
+    | '/api/screeners'
     | '/_main/'
     | '/_main/admin/audit-logs'
     | '/_main/candidates/new'
@@ -889,6 +934,7 @@ export interface FileRouteTypes {
     | '/_main/profile/$userId'
     | '/_main/questions/new'
     | '/_main/rounds/new'
+    | '/_main/screeners/new'
     | '/_main/weekly-checkin/records'
     | '/api/audit-logs/generate-report'
     | '/api/auth/$'
@@ -907,6 +953,7 @@ export interface FileRouteTypes {
     | '/_main/profile/'
     | '/_main/questions/'
     | '/_main/rounds/'
+    | '/_main/screeners/'
     | '/_main/weekly-checkin/'
     | '/api/candidate/'
     | '/interview/$token/'
@@ -916,6 +963,7 @@ export interface FileRouteTypes {
     | '/_main/questions/$id/edit'
     | '/_main/rounds/$id/add-question'
     | '/_main/rounds/$id/edit'
+    | '/_main/screeners/$id/edit'
     | '/api/candidate/$id/ai-analysis'
     | '/api/candidate/$id/ai-screening'
     | '/api/candidate/$id/documents'
@@ -944,6 +992,7 @@ export interface RootRouteChildren {
   CustomScriptDotjsRoute: typeof CustomScriptDotjsRoute
   ApiHealthRoute: typeof ApiHealthRoute
   ApiInterviewSessionsRoute: typeof ApiInterviewSessionsRoute
+  ApiScreenersRoute: typeof ApiScreenersRoute
   ApiAuditLogsGenerateReportRoute: typeof ApiAuditLogsGenerateReportRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCandidateBulkRoute: typeof ApiCandidateBulkRoute
@@ -994,6 +1043,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof MainIndexRouteImport
       parentRoute: typeof MainRouteRoute
+    }
+    '/api/screeners': {
+      id: '/api/screeners'
+      path: '/api/screeners'
+      fullPath: '/api/screeners'
+      preLoaderRoute: typeof ApiScreenersRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/interview-sessions': {
       id: '/api/interview-sessions'
@@ -1063,6 +1119,13 @@ declare module '@tanstack/react-router' {
       path: '/weekly-checkin'
       fullPath: '/weekly-checkin/'
       preLoaderRoute: typeof MainWeeklyCheckinIndexRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/screeners/': {
+      id: '/_main/screeners/'
+      path: '/screeners'
+      fullPath: '/screeners/'
+      preLoaderRoute: typeof MainScreenersIndexRouteImport
       parentRoute: typeof MainRouteRoute
     }
     '/_main/rounds/': {
@@ -1189,6 +1252,13 @@ declare module '@tanstack/react-router' {
       path: '/weekly-checkin/records'
       fullPath: '/weekly-checkin/records'
       preLoaderRoute: typeof MainWeeklyCheckinRecordsRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/screeners/new': {
+      id: '/_main/screeners/new'
+      path: '/screeners/new'
+      fullPath: '/screeners/new'
+      preLoaderRoute: typeof MainScreenersNewRouteImport
       parentRoute: typeof MainRouteRoute
     }
     '/_main/rounds/new': {
@@ -1443,6 +1513,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCandidateIdAiAnalysisRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_main/screeners/$id/edit': {
+      id: '/_main/screeners/$id/edit'
+      path: '/screeners/$id/edit'
+      fullPath: '/screeners/$id/edit'
+      preLoaderRoute: typeof MainScreenersIdEditRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
     '/_main/rounds/$id/edit': {
       id: '/_main/rounds/$id/edit'
       path: '/rounds/$id/edit'
@@ -1574,6 +1651,7 @@ interface MainRouteRouteChildren {
   MainProfileUserIdRoute: typeof MainProfileUserIdRoute
   MainQuestionsNewRoute: typeof MainQuestionsNewRoute
   MainRoundsNewRoute: typeof MainRoundsNewRoute
+  MainScreenersNewRoute: typeof MainScreenersNewRoute
   MainWeeklyCheckinRecordsRoute: typeof MainWeeklyCheckinRecordsRoute
   MainApplicationsIndexRoute: typeof MainApplicationsIndexRoute
   MainCandidatesIndexRoute: typeof MainCandidatesIndexRoute
@@ -1584,6 +1662,7 @@ interface MainRouteRouteChildren {
   MainProfileIndexRoute: typeof MainProfileIndexRoute
   MainQuestionsIndexRoute: typeof MainQuestionsIndexRoute
   MainRoundsIndexRoute: typeof MainRoundsIndexRoute
+  MainScreenersIndexRoute: typeof MainScreenersIndexRoute
   MainWeeklyCheckinIndexRoute: typeof MainWeeklyCheckinIndexRoute
   MainCandidatesUidEditRoute: typeof MainCandidatesUidEditRoute
   MainEmployeesIdEditRoute: typeof MainEmployeesIdEditRoute
@@ -1591,6 +1670,7 @@ interface MainRouteRouteChildren {
   MainQuestionsIdEditRoute: typeof MainQuestionsIdEditRoute
   MainRoundsIdAddQuestionRoute: typeof MainRoundsIdAddQuestionRoute
   MainRoundsIdEditRoute: typeof MainRoundsIdEditRoute
+  MainScreenersIdEditRoute: typeof MainScreenersIdEditRoute
   MainApplicationsIdIndexRoute: typeof MainApplicationsIdIndexRoute
   MainCandidatesUidIndexRoute: typeof MainCandidatesUidIndexRoute
   MainEmployeesIdIndexRoute: typeof MainEmployeesIdIndexRoute
@@ -1613,6 +1693,7 @@ const MainRouteRouteChildren: MainRouteRouteChildren = {
   MainProfileUserIdRoute: MainProfileUserIdRoute,
   MainQuestionsNewRoute: MainQuestionsNewRoute,
   MainRoundsNewRoute: MainRoundsNewRoute,
+  MainScreenersNewRoute: MainScreenersNewRoute,
   MainWeeklyCheckinRecordsRoute: MainWeeklyCheckinRecordsRoute,
   MainApplicationsIndexRoute: MainApplicationsIndexRoute,
   MainCandidatesIndexRoute: MainCandidatesIndexRoute,
@@ -1623,6 +1704,7 @@ const MainRouteRouteChildren: MainRouteRouteChildren = {
   MainProfileIndexRoute: MainProfileIndexRoute,
   MainQuestionsIndexRoute: MainQuestionsIndexRoute,
   MainRoundsIndexRoute: MainRoundsIndexRoute,
+  MainScreenersIndexRoute: MainScreenersIndexRoute,
   MainWeeklyCheckinIndexRoute: MainWeeklyCheckinIndexRoute,
   MainCandidatesUidEditRoute: MainCandidatesUidEditRoute,
   MainEmployeesIdEditRoute: MainEmployeesIdEditRoute,
@@ -1630,6 +1712,7 @@ const MainRouteRouteChildren: MainRouteRouteChildren = {
   MainQuestionsIdEditRoute: MainQuestionsIdEditRoute,
   MainRoundsIdAddQuestionRoute: MainRoundsIdAddQuestionRoute,
   MainRoundsIdEditRoute: MainRoundsIdEditRoute,
+  MainScreenersIdEditRoute: MainScreenersIdEditRoute,
   MainApplicationsIdIndexRoute: MainApplicationsIdIndexRoute,
   MainCandidatesUidIndexRoute: MainCandidatesUidIndexRoute,
   MainEmployeesIdIndexRoute: MainEmployeesIdIndexRoute,
@@ -1666,6 +1749,7 @@ const rootRouteChildren: RootRouteChildren = {
   CustomScriptDotjsRoute: CustomScriptDotjsRoute,
   ApiHealthRoute: ApiHealthRoute,
   ApiInterviewSessionsRoute: ApiInterviewSessionsRoute,
+  ApiScreenersRoute: ApiScreenersRoute,
   ApiAuditLogsGenerateReportRoute: ApiAuditLogsGenerateReportRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCandidateBulkRoute: ApiCandidateBulkRoute,
