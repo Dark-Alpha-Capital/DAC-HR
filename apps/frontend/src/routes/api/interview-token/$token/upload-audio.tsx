@@ -5,7 +5,10 @@ import {
   updateSessionVoiceMetadata,
 } from "@workspace/db/repositories/interview-session-repository";
 
-const ALLOWED_AUDIO_TYPES = [
+const ALLOWED_RECORDING_TYPES = [
+  "video/webm",
+  "video/mp4",
+  "video/ogg",
   "audio/webm",
   "audio/ogg",
   "audio/mpeg",
@@ -33,20 +36,20 @@ export const Route = createFileRoute("/api/interview-token/$token/upload-audio")
           const file = formData.get("file");
 
           if (!(file instanceof File)) {
-            return Response.json({ error: "No audio file provided" }, { status: 400 });
+            return Response.json({ error: "No recording file provided" }, { status: 400 });
           }
 
-          if (!ALLOWED_AUDIO_TYPES.includes(file.type)) {
+          if (!ALLOWED_RECORDING_TYPES.includes(file.type)) {
             return Response.json(
-              { error: "Unsupported audio format" },
+              { error: "Unsupported recording format" },
               { status: 400 },
             );
           }
 
-          const maxSize = 100 * 1024 * 1024;
+          const maxSize = 500 * 1024 * 1024;
           if (file.size > maxSize) {
             return Response.json(
-              { error: "Audio file exceeds 100MB limit" },
+              { error: "Recording file exceeds 500MB limit" },
               { status: 400 },
             );
           }
@@ -58,12 +61,12 @@ export const Route = createFileRoute("/api/interview-token/$token/upload-audio")
             client,
             file,
             folderPath,
-            fileName: "recording.webm",
+            fileName: "screen-recording.webm",
           });
 
           if (!uploadResult.success || !uploadResult.downloadUrl) {
             return Response.json(
-              { error: "Failed to upload audio recording" },
+              { error: "Failed to upload session recording" },
               { status: 500 },
             );
           }
@@ -78,9 +81,9 @@ export const Route = createFileRoute("/api/interview-token/$token/upload-audio")
             path: uploadResult.filePath,
           });
         } catch (error) {
-          console.error("Error uploading interview audio:", error);
+          console.error("Error uploading interview recording:", error);
           return Response.json(
-            { error: "Failed to upload audio recording" },
+            { error: "Failed to upload session recording" },
             { status: 500 },
           );
         }

@@ -25,11 +25,14 @@ Turborepo monorepo with `bun@1.1.38`. Deployed on **Cloudflare Workers**.
 | `packages/db/`                | `@workspace/db`                | Drizzle ORM + Cloudflare D1 (SQLite) via `drizzle-orm/d1`             |
 | `packages/nextcloud/`         | `@workspace/nextcloud`         | Nextcloud WebDAV client                                               |
 | `packages/ai-config/`         | `@workspace/ai-config`         | OpenAI / AI SDK provider and embeddings                               |
+| `packages/interview-realtime/`| `@workspace/interview-realtime`| Shared types, events, and prompts for interview sessions               |
 | `packages/eslint-config/`     | `@workspace/eslint-config`     | Shared ESLint configs (base, next-js, react-internal)                 |
 | `packages/typescript-config/` | `@workspace/typescript-config` | Shared tsconfig extends                                               |
 | `packages/mail/`              | —                              | Empty stub (no package.json)                                          |
 
 Shadcn/ui components live in `apps/frontend/src/components/ui/` (no separate `packages/ui/`).
+
+**Path aliases:** `@/*` and `~/*` both resolve to `apps/frontend/src/*` (configured in `tsconfig.json`, picked up by Vite via `tsconfigPaths`).
 
 ## TanStack Start routing
 
@@ -122,7 +125,9 @@ import { eq, and, or, sql, asc, desc, inArray, count, gte, lte } from "@workspac
 
 - D1 binding `DB` → database `hr-automation-db`.
 - Vectorize binding `VECTORIZE` → index `hr-documents-index` (reserved for RAG).
-- Workflow binding `DOCUMENT_INDEXING_WORKFLOW` → `DocumentIndexingWorkflow` (in `src/workflows/document-indexing.ts`).
+- Workflow binding `DOCUMENT_INDEXING_WORKFLOW` → `DocumentIndexingWorkflow` (`src/workflows/document-indexing.ts`).
+- Workflow binding `INTERVIEW_EVALUATION_WORKFLOW` → `InterviewEvaluationWorkflow` (`src/workflows/interview-evaluation.ts`).
+- Durable Object binding `INTERVIEW_SESSION_DO` → `InterviewSessionDO` (`src/durable-objects/interview-session-do.ts`) — ~850 lines, realtime WebSocket interview sessions with anti-cheat.
 - `@cloudflare/vite-plugin` handles Workers integration (configured in `vite.config.ts`).
 
 ## Testing

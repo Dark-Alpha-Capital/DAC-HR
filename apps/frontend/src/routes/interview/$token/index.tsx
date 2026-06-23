@@ -35,6 +35,7 @@ import {
   Mic,
   Maximize2,
   Volume2,
+  Monitor,
 } from "lucide-react";
 
 interface Question {
@@ -139,6 +140,12 @@ const VOICE_INSTRUCTIONS = [
     title: "Use a working microphone",
     description:
       "You will speak your answers aloud. Allow microphone access when prompted and use a quiet environment.",
+  },
+  {
+    icon: Monitor,
+    title: "Share your entire screen",
+    description:
+      "When prompted, choose to share your full screen (with audio if available) and keep sharing until the interview ends.",
   },
   {
     icon: Maximize2,

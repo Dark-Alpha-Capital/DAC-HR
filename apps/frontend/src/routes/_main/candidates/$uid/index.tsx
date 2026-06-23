@@ -1,11 +1,7 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import {
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "~/components/ui/tabs";
+import { TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import {
   Pencil,
   Calendar,
@@ -25,43 +21,25 @@ import { CandidateDocumentsTab } from "~/components/candidate-documents-tab";
 import CandidateAiScreeningsClient from "~/components/candidate-ai-screenings-client";
 import CandidateAiAnalysis from "~/components/candidate-ai-analysis";
 import OnboardingCard from "~/components/onboarding-card";
-import { loadCandidateDetail } from "~/lib/loaders/candidates";
-import { toOptionalString } from "~/lib/parse-search";
+import {
+  loadCandidateDetail,
+  type CandidateDetailData,
+} from "~/lib/loaders/candidates";
 
 export const Route = createFileRoute("/_main/candidates/$uid/")({
   head: () => ({
     meta: [{ title: "Candidate Detail" }],
   }),
-  validateSearch: (search: Record<string, unknown>) => ({
-    tab: toOptionalString(search.tab),
-    application: toOptionalString(search.application),
-  }),
-  loaderDeps: ({ search }) => search,
-  loader: async ({ params, deps }) => {
-    const result = await loadCandidateDetail({
-      data: { uid: params.uid, application: deps.application },
-    });
-    if ((result as { unauthorized?: boolean }).unauthorized) {
-      throw redirect({ to: "/login" });
-    }
-    const { unauthorized: _, ...data } = result as {
-      unauthorized: false;
-    } & Record<string, unknown>;
-    return data;
+  loader: async ({ params }) => {
+    const result = await loadCandidateDetail({ data: { uid: params.uid } });
+    return result as CandidateDetailData;
   },
   component: CandidateDetailPage,
 });
 
 function CandidateDetailPage() {
-  const {
-    candidate,
-    users,
-    session,
-    currentUser,
-    documents,
-    screenings,
-    onboardingData,
-  } = Route.useLoaderData();
+  const { candidate, session, documents, screenings, onboardingData } =
+    Route.useLoaderData() as CandidateDetailData;
   const { uid } = Route.useParams();
 
   if (!candidate) {
@@ -73,7 +51,9 @@ function CandidateDetailPage() {
           removed.
         </p>
         <Button variant="secondary" asChild>
-          <Link to="/candidates" search={{} as any}>Back to candidates</Link>
+          <Link to="/candidates" search={{} as any}>
+            Back to candidates
+          </Link>
         </Button>
       </div>
     );

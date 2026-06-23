@@ -61,6 +61,66 @@ function mergeQuestion(
   return [...questions, question];
 }
 
+function getRecordingMimeType(): string {
+  const candidates = [
+    "video/webm;codecs=vp9,opus",
+    "video/webm;codecs=vp8,opus",
+    "video/webm",
+  ];
+  for (const mimeType of candidates) {
+    if (MediaRecorder.isTypeSupported(mimeType)) {
+      return mimeType;
+    }
+  }
+  return "video/webm";
+}
+
+function buildRecordingStream(
+  screenStream: MediaStream,
+  micStream: MediaStream,
+  audioContext: AudioContext | null,
+): { stream: MediaStream; audioContext: AudioContext | null } {
+  const videoTracks = screenStream.getVideoTracks();
+  const micTracks = micStream.getAudioTracks();
+  const screenAudioTracks = screenStream.getAudioTracks();
+
+  if (screenAudioTracks.length === 0) {
+    return {
+      stream: new MediaStream([...videoTracks, ...micTracks]),
+      audioContext,
+    };
+  }
+
+  const context = audioContext ?? new AudioContext();
+  const destination = context.createMediaStreamDestination();
+
+  for (const track of [...screenAudioTracks, ...micTracks]) {
+    context
+      .createMediaStreamSource(new MediaStream([track]))
+      .connect(destination);
+  }
+
+  return {
+    stream: new MediaStream([
+      ...videoTracks,
+      ...destination.stream.getAudioTracks(),
+    ]),
+    audioContext: context,
+  };
+}
+
+function stopMediaRecorder(recorder: MediaRecorder): Promise<void> {
+  return new Promise((resolve) => {
+    if (recorder.state === "inactive") {
+      resolve();
+      return;
+    }
+
+    recorder.addEventListener("stop", () => resolve(), { once: true });
+    recorder.stop();
+  });
+}
+
 export function useVoiceInterview(token: string) {
   const [state, setState] = useState<VoiceInterviewState>({
     status: "idle",
@@ -80,6 +140,9 @@ export function useVoiceInterview(token: string) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  const screenStreamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const recordingMimeTypeRef = useRef("video/webm");
   const endInterviewResolveRef = useRef<(() => void) | null>(null);
 
   const completeSessionViaApi = useCallback(async () => {
@@ -116,6 +179,10 @@ export function useVoiceInterview(token: string) {
     mediaRecorderRef.current = null;
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
+    screenStreamRef.current?.getTracks().forEach((track) => track.stop());
+    screenStreamRef.current = null;
+    void audioContextRef.current?.close();
+    audioContextRef.current = null;
   }, []);
 
   const uploadRecording = useCallback(async () => {
@@ -123,14 +190,19 @@ export function useVoiceInterview(token: string) {
       return;
     }
 
-    const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+    const mimeType = recordingMimeTypeRef.current.split(";")[0] ?? "video/webm";
+    const blob = new Blob(chunksRef.current, { type: mimeType });
     const formData = new FormData();
-    formData.append("file", blob, "recording.webm");
+    formData.append("file", blob, "screen-recording.webm");
 
-    await fetch(`/api/interview-token/${token}/upload-audio`, {
+    const response = await fetch(`/api/interview-token/${token}/upload-audio`, {
       method: "POST",
       body: formData,
     });
+
+    if (!response.ok) {
+      throw new Error("Failed to upload screen recording");
+    }
   }, [token]);
 
   const endInterview = useCallback(async () => {
@@ -158,7 +230,7 @@ export function useVoiceInterview(token: string) {
       }
 
       if (mediaRecorderRef.current?.state === "recording") {
-        mediaRecorderRef.current.stop();
+        await stopMediaRecorder(mediaRecorderRef.current);
       }
 
       await uploadRecording().catch(() => undefined);
@@ -191,10 +263,10 @@ export function useVoiceInterview(token: string) {
       if (type === "CONNECTED") {
         const connectedState = message.state as
           | {
-              currentQuestionIndex?: number;
-              voicePhase?: VoiceInterviewPhase;
-              questions?: VoiceQuestion[];
-            }
+            currentQuestionIndex?: number;
+            voicePhase?: VoiceInterviewPhase;
+            questions?: VoiceQuestion[];
+          }
           | undefined;
 
         const index = connectedState?.currentQuestionIndex ?? 0;
@@ -334,6 +406,25 @@ export function useVoiceInterview(token: string) {
       }
 
       const config = (await startRes.json()) as StartVoiceResponse;
+
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: {
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          frameRate: { ideal: 30 },
+        },
+        audio: true,
+      });
+      screenStreamRef.current = screenStream;
+
+      const screenTrack = screenStream.getVideoTracks()[0];
+      screenTrack?.addEventListener("ended", () => {
+        sendToDO("WINDOW_BLUR", { reason: "screen_share_stopped" });
+        if (mediaRecorderRef.current?.state === "recording") {
+          void stopMediaRecorder(mediaRecorderRef.current);
+        }
+      });
+
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
         video: {
@@ -344,9 +435,19 @@ export function useVoiceInterview(token: string) {
       });
       streamRef.current = stream;
 
+      const { stream: recordingStream, audioContext } = buildRecordingStream(
+        screenStream,
+        stream,
+        audioContextRef.current,
+      );
+      audioContextRef.current = audioContext;
+
+      const mimeType = getRecordingMimeType();
+      recordingMimeTypeRef.current = mimeType;
+
       const audioStream = new MediaStream(stream.getAudioTracks());
       chunksRef.current = [];
-      const recorder = new MediaRecorder(audioStream);
+      const recorder = new MediaRecorder(recordingStream, { mimeType });
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           chunksRef.current.push(event.data);
@@ -369,7 +470,7 @@ export function useVoiceInterview(token: string) {
         );
       };
 
-        setState((current) => ({
+      setState((current) => ({
         ...current,
         questions: config.questions,
       }));
@@ -439,7 +540,7 @@ export function useVoiceInterview(token: string) {
         error: error instanceof Error ? error.message : "Voice interview failed",
       });
     }
-  }, [cleanup, handleWsMessage, token]);
+  }, [cleanup, handleWsMessage, sendToDO, token]);
 
   useEffect(() => {
     return () => {

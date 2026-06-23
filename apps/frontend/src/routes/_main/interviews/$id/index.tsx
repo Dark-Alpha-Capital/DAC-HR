@@ -24,6 +24,7 @@ import {
   Check,
   Bot,
   Mic,
+  Monitor,
   ExternalLink,
 } from "lucide-react";
 import { formatDate } from "~/lib/utils";
@@ -376,8 +377,8 @@ function InterviewDetailPage() {
               <Card className="mt-4">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <Mic className="size-4" />
-                    Session Recording (Nextcloud)
+                    <Monitor className="size-4" />
+                    Screen Recording (Nextcloud)
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -433,8 +434,9 @@ function InterviewDetailPage() {
                     </>
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      No recording uploaded yet. Voice sessions save an audio
-                      file to Nextcloud when the candidate ends the interview.
+                      No recording uploaded yet. Voice sessions save a full
+                      screen recording with audio to Nextcloud when the
+                      candidate ends the interview.
                     </p>
                   )}
                 </CardContent>
