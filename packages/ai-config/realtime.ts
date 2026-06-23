@@ -46,6 +46,9 @@ export async function createRealtimeEphemeralSession(
         model,
         instructions: options.instructions,
         audio: {
+          input: {
+            transcription: { model: "whisper-1" },
+          },
           output: { voice },
         },
       },

@@ -50,6 +50,7 @@ export interface InterviewState {
 
 export type ClientToDoMessage =
   | { type: "CALL_STARTED"; callId: string; clientSecret: string }
+  | { type: "REALTIME_EVENT"; event: string | Record<string, unknown> }
   | { type: "CHEATING_EVENT"; eventType: string; metadata?: Record<string, unknown> }
   | { type: "FULLSCREEN_STATE"; isFullscreen: boolean }
   | { type: "END_INTERVIEW" }

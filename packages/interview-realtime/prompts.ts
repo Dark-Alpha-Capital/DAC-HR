@@ -70,9 +70,16 @@ export function buildSessionUpdateEvent(instructions: string, voice?: string) {
       audio: {
         input: {
           transcription: { model: "whisper-1" },
-          turn_detection: { type: "server_vad", create_response: false },
+          turn_detection: {
+            type: "server_vad",
+            threshold: 0.5,
+            prefix_padding_ms: 300,
+            silence_duration_ms: 700,
+            create_response: false,
+            interrupt_response: false,
+          },
         },
-        ...(voice ? { output: { voice } } : {}),
+        output: { voice: voice || "alloy" },
       },
     },
   };
@@ -90,7 +97,6 @@ export function buildWelcomeIntroEvent(options: {
   return {
     type: "response.create",
     response: {
-      modalities: ["audio"],
       instructions: [
         `You are the AI interviewer. Start speaking immediately.`,
         `Greet ${name} warmly and welcome them to their Dark Alpha Capital interview for the ${position} position${round}.`,
@@ -111,7 +117,6 @@ export function buildAskCurrentQuestionEvent(
   return {
     type: "response.create",
     response: {
-      modalities: ["audio"],
       instructions: `Ask this interview question now. Read it clearly and completely: ${prompt}`,
     },
   };
@@ -121,7 +126,6 @@ export function buildClosingEvent() {
   return {
     type: "response.create",
     response: {
-      modalities: ["audio"],
       instructions: [
         "All interview questions have been completed.",
         "Thank the candidate sincerely for their time and answers.",

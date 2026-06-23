@@ -5,6 +5,10 @@ const cheatingEventTypeSchema = z.enum(cheatingEventTypes);
 
 export const clientToDoMessageSchema = z.discriminatedUnion("type", [
   z.object({
+    type: z.literal("REALTIME_EVENT"),
+    event: z.union([z.string(), z.record(z.string(), z.unknown())]),
+  }),
+  z.object({
     type: z.literal("CALL_STARTED"),
     callId: z.string().min(1),
     clientSecret: z.string().min(1),

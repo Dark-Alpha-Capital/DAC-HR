@@ -666,6 +666,20 @@ export function useVoiceInterview(token: string) {
         void audio.play().catch(() => undefined);
       };
 
+      const oaiEvents = pc.createDataChannel("oai-events");
+      oaiEvents.addEventListener("message", (event) => {
+        const ws = wsRef.current;
+        if (ws?.readyState !== WebSocket.OPEN) {
+          return;
+        }
+        ws.send(
+          JSON.stringify({
+            type: "REALTIME_EVENT",
+            event: event.data,
+          }),
+        );
+      });
+
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 

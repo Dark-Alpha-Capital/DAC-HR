@@ -28,6 +28,7 @@ import {
   Circle,
   Bot,
   UserRound,
+  Loader2,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { formatDate } from "~/lib/utils";
@@ -154,7 +155,9 @@ export default function ApplicationProgressTimeline({
   const [interviewToDelete, setInterviewToDelete] = useState<string | null>(
     null,
   );
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [deletingInterviewId, setDeletingInterviewId] = useState<string | null>(
+    null,
+  );
 
   // Group interviews by round
   const interviewsByRound = useMemo(() => {
@@ -200,9 +203,12 @@ export default function ApplicationProgressTimeline({
   const handleDeleteConfirm = async () => {
     if (!interviewToDelete) return;
 
-    setIsDeleting(true);
+    const interviewId = interviewToDelete;
+    setDeletingInterviewId(interviewId);
+    setDeleteDialogOpen(false);
+
     try {
-      const result = await deleteInterview({ data: interviewToDelete });
+      const result = await deleteInterview({ data: interviewId });
       if (result.error) {
         toast.error(result.error);
       } else {
@@ -212,8 +218,7 @@ export default function ApplicationProgressTimeline({
     } catch (error) {
       toast.error("Failed to delete interview");
     } finally {
-      setIsDeleting(false);
-      setDeleteDialogOpen(false);
+      setDeletingInterviewId(null);
       setInterviewToDelete(null);
     }
   };
@@ -389,11 +394,16 @@ export default function ApplicationProgressTimeline({
                                   variant="secondary"
                                   size="sm"
                                   className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  disabled={deletingInterviewId !== null}
                                   onClick={() =>
                                     handleDeleteClick(interview.id)
                                   }
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  {deletingInterviewId === interview.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                  )}
                                 </Button>
                               </div>
                             </TableCell>
@@ -420,13 +430,22 @@ export default function ApplicationProgressTimeline({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deletingInterviewId !== null}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
-              disabled={isDeleting}
+              disabled={deletingInterviewId !== null}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? "Deleting..." : "Delete"}
+              {deletingInterviewId !== null ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

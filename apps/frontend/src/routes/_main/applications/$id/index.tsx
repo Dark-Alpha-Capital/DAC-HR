@@ -11,12 +11,9 @@ import {
   TabsContent,
 } from "~/components/ui/tabs";
 import {
-  ArrowLeft,
   Briefcase,
   Calendar,
   MessageSquare,
-  Sparkles,
-  FileText,
   Star,
 } from "lucide-react";
 import { formatDate } from "~/lib/utils";
@@ -126,10 +123,6 @@ function ApplicationDetailPage() {
               </Badge>
             ) : null}
           </TabsTrigger>
-          <TabsTrigger value="ai-analysis" className="gap-2">
-            <Sparkles className="h-4 w-4" />
-            AI Analysis
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
@@ -209,13 +202,6 @@ function ApplicationDetailPage() {
             users={users}
             application={application as any}
           />
-        </TabsContent>
-
-        <TabsContent value="ai-analysis" className="mt-6">
-          <div className="py-12 text-center text-muted-foreground">
-            <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-50" />
-            <p className="text-sm">AI analysis will be available here.</p>
-          </div>
         </TabsContent>
       </Tabs>
     </div>
