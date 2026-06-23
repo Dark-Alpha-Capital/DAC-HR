@@ -2,7 +2,9 @@ import {
   sqliteTable,
   text,
   integer,
+  real,
   uniqueIndex,
+  index,
 } from "drizzle-orm/sqlite-core";
 import { type InferSelectModel } from "drizzle-orm";
 import type {
@@ -11,6 +13,11 @@ import type {
   Department,
   DocumentCategoryValue,
   HireLevel,
+  AgentConfig,
+  CheatingSummary,
+  DeliveryMode,
+  InputMethod,
+  CheatingEventType,
   InterviewEvaluationRecommendation,
   InterviewMode,
   InterviewSessionStatus,
@@ -271,9 +278,9 @@ export const interviewFeedback = sqliteTable(
   "interview_feedback",
   {
     id: uuidPk(),
-  interviewId: text("interview_id").references(() => interview.id, {
-    onDelete: "cascade",
-  }),
+    interviewId: text("interview_id").references(() => interview.id, {
+      onDelete: "cascade",
+    }),
     questionId: text("question_id")
       .notNull()
       .references(() => questionBank.id, { onDelete: "cascade" }),
@@ -500,6 +507,18 @@ export const interviewSession = sqliteTable("interview_session", {
   startedAt: integer("started_at", { mode: "timestamp_ms" }),
   completedAt: integer("completed_at", { mode: "timestamp_ms" }),
   tabSwitches: integer("tab_switches").default(0).notNull(),
+  deliveryMode: text("delivery_mode")
+    .$type<DeliveryMode>()
+    .default("hybrid")
+    .notNull(),
+  agentConfig: text("agent_config", { mode: "json" }).$type<AgentConfig>(),
+  realtimeSessionId: text("realtime_session_id"),
+  cheatingSummary: text("cheating_summary", { mode: "json" }).$type<
+    CheatingSummary
+  >(),
+  sessionAudioUrl: text("session_audio_url"),
+  sessionAudioPath: text("session_audio_path"),
+  interruptedAt: integer("interrupted_at", { mode: "timestamp_ms" }),
   createdAt: createdAtCol(),
   updatedAt: updatedAtCol(),
 });
@@ -518,6 +537,11 @@ export const interviewResponse = sqliteTable(
       .references(() => questionBank.id, { onDelete: "cascade" }),
     answerText: text("answer_text"),
     selectedOptionId: text("selected_option_id"),
+    inputMethod: text("input_method").$type<InputMethod>(),
+    audioUrl: text("audio_url"),
+    transcript: text("transcript"),
+    transcriptConfidence: real("transcript_confidence"),
+    realtimeEventId: text("realtime_event_id"),
     createdAt: createdAtCol(),
     updatedAt: updatedAtCol(),
   },
@@ -530,6 +554,28 @@ export const interviewResponse = sqliteTable(
 );
 
 export type InterviewResponse = InferSelectModel<typeof interviewResponse>;
+
+export const cheatingEvent = sqliteTable(
+  "cheating_event",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    sessionId: text("session_id")
+      .notNull()
+      .references(() => interviewSession.id, { onDelete: "cascade" }),
+    eventType: text("event_type").$type<CheatingEventType>().notNull(),
+    timestamp: integer("timestamp", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    metadata: text("metadata", { mode: "json" }).$type<Record<string, unknown>>(),
+  },
+  (table) => ({
+    cheatingEventSessionTimestampIdx: index(
+      "cheating_event_session_timestamp_idx",
+    ).on(table.sessionId, table.timestamp),
+  }),
+);
+
+export type CheatingEvent = InferSelectModel<typeof cheatingEvent>;
 
 export const interviewEvaluation = sqliteTable("interview_evaluation", {
   id: uuidPk(),

@@ -210,6 +210,12 @@
       "sourceType": "github",
       "computedHash": "3462ec83f862abb2d532953df33a4dbf87f4616849da5d4b5cc7c13601aaf997"
     },
+    "voice-ai-development": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/voice-ai-development/SKILL.md",
+      "computedHash": "b712d275068667c006327540cc2ab960f905630c2395ddbb90dfd4a0fc5dd572"
+    },
     "wrangler": {
       "source": "cloudflare/skills",
       "sourceType": "github",

@@ -1,3 +1,4 @@
+import { DetailPageSkeleton } from "~/components/route-skeletons/detail-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { loadApplicationDetail } from "~/lib/loaders/candidates";
 import { getSession } from "~/lib/get-session";
@@ -10,12 +11,9 @@ import {
   TabsContent,
 } from "~/components/ui/tabs";
 import {
-  ArrowLeft,
   Briefcase,
   Calendar,
   MessageSquare,
-  Sparkles,
-  FileText,
   Star,
 } from "lucide-react";
 import { formatDate } from "~/lib/utils";
@@ -37,6 +35,7 @@ export const Route = createFileRoute("/_main/applications/$id/")({
     return { ...data, currentUser: session?.user ?? null };
   },
   component: ApplicationDetailPage,
+  pendingComponent: () => <DetailPageSkeleton container tabs showBreadcrumb showActions />,
 });
 
 function ApplicationDetailPage() {
@@ -68,6 +67,7 @@ function ApplicationDetailPage() {
   return (
     <div className="container mx-auto py-6 max-w-4xl space-y-6">
       <ApplicationBreadcrumb
+        candidateId={candidate?.id}
         candidateName={candidateName}
         positionName={positionName}
         applicationId={application.id}
@@ -122,10 +122,6 @@ function ApplicationDetailPage() {
                 {interviews.length}
               </Badge>
             ) : null}
-          </TabsTrigger>
-          <TabsTrigger value="ai-analysis" className="gap-2">
-            <Sparkles className="h-4 w-4" />
-            AI Analysis
           </TabsTrigger>
         </TabsList>
 
@@ -206,13 +202,6 @@ function ApplicationDetailPage() {
             users={users}
             application={application as any}
           />
-        </TabsContent>
-
-        <TabsContent value="ai-analysis" className="mt-6">
-          <div className="py-12 text-center text-muted-foreground">
-            <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-50" />
-            <p className="text-sm">AI analysis will be available here.</p>
-          </div>
         </TabsContent>
       </Tabs>
     </div>

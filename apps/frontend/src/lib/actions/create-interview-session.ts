@@ -6,17 +6,21 @@ import { eq, and } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { createAiInterviewWithSession } from "@workspace/db/repositories/interview-session-repository";
 
+import type { AgentConfig, DeliveryMode } from "@workspace/db/enums";
+
 export interface CreateInterviewSessionInput {
   applicationId: string;
   roundId: string;
   expiryHours?: number;
+  deliveryMode?: DeliveryMode;
+  agentConfig?: AgentConfig;
 }
 
 export const createInterviewSession = createServerFn({ method: "POST" })
   .middleware([serverFnAuthGuard])
   .validator((data: CreateInterviewSessionInput) => data)
   .handler(async ({ data, context: { session } }) => {
-    const { applicationId, roundId, expiryHours = 72 } = data;
+    const { applicationId, roundId, expiryHours = 72, deliveryMode, agentConfig } = data;
     const expiresAt = new Date(Date.now() + expiryHours * 60 * 60 * 1000);
 
     try {
@@ -53,6 +57,8 @@ export const createInterviewSession = createServerFn({ method: "POST" })
         positionRoundTemplateId: prt.id,
         roundId,
         expiresAt,
+        deliveryMode,
+        agentConfig,
       });
 
       if (app.status === "ai_screening") {

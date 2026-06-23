@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSessionByToken } from "@workspace/db/repositories/interview-session-repository";
+import { assertInterviewTokenValid } from "@workspace/db/repositories/interview-session-repository";
 
 export const Route = createFileRoute("/api/interview-token/$token/validate")({
   server: {
@@ -12,43 +12,23 @@ export const Route = createFileRoute("/api/interview-token/$token/validate")({
             return Response.json({ valid: false, error: "Token is required" }, { status: 400 });
           }
 
-          const row = await getSessionByToken(token);
+          const validation = await assertInterviewTokenValid(token);
 
-          if (!row) {
+          if (!validation.ok) {
             return Response.json(
-              { valid: false, error: "Interview not found" },
-              { status: 404 },
+              { valid: false, error: validation.error },
+              { status: validation.status },
             );
           }
 
-          const { session, candidate, position, round } = row;
-
-          if (session.status === "completed" || session.status === "reviewed") {
-            return Response.json(
-              {
-                valid: false,
-                error: "This interview has already been completed",
-                status: session.status,
-              },
-              { status: 410 },
-            );
-          }
-
-          if (new Date(session.expiresAt) < new Date()) {
-            return Response.json(
-              {
-                valid: false,
-                error: "This interview link has expired",
-                status: "expired",
-              },
-              { status: 410 },
-            );
-          }
+          const { session, candidate, position, round } = validation.row;
 
           return Response.json({
             valid: true,
             sessionId: session.id,
             status: session.status,
+            deliveryMode: session.deliveryMode,
+            agentConfig: session.agentConfig,
             candidateName: `${candidate.firstName} ${candidate.lastName}`,
             positionName: position.name,
             roundName: round.name,

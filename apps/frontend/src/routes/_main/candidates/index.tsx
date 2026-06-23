@@ -1,3 +1,4 @@
+import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
 import CandidateFilters from "~/components/candidate-filters";
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/_main/candidates/")({
   loaderDeps: ({ search }) => search,
   loader: async ({ deps }) => loadCandidatesIndex({ data: deps }),
   component: CandidatesPage,
+  pendingComponent: () => <ListPageSkeleton layout="cards" />,
 });
 
 function CandidatesPage() {

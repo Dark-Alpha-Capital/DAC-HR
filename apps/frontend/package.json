@@ -53,6 +53,8 @@
     "@tiptap/react": "^3.12.1",
     "@tiptap/starter-kit": "^3.12.1",
     "@workspace/db": "*",
+    "@workspace/ai-config": "*",
+    "@workspace/interview-realtime": "*",
     "@workspace/nextcloud": "*",
     "ai": "^6.0.205",
     "better-auth": "^1.6.18",
@@ -99,6 +101,7 @@
     "typescript": "^5.9.2",
     "vite": "^8.0.16",
     "vite-tsconfig-paths": "^6.1.1",
-    "wrangler": "^4.100.0"
+    "wrangler": "^4.100.0",
+    "@cloudflare/workers-types": "^4.20260616.1"
   }
 }

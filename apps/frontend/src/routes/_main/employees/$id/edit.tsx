@@ -1,3 +1,4 @@
+import { FormPageSkeleton } from "~/components/route-skeletons/form-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense } from "react";
 import EmployeeEditForm from "~/components/forms/employee-edit-form";
@@ -13,6 +14,7 @@ export const Route = createFileRoute("/_main/employees/$id/edit")({
   loader: async ({ params }) =>
     loadEmployeeEdit({ data: { id: params.id } }),
   component: EditEmployeePage,
+  pendingComponent: () => <FormPageSkeleton />,
 });
 
 function EditEmployeePage() {

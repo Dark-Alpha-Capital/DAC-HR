@@ -1,3 +1,4 @@
+import { FormPageSkeleton } from "~/components/route-skeletons/form-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense } from "react";
 import BackButton from "~/components/back-button";
@@ -23,6 +24,7 @@ export const Route = createFileRoute(
       data: { uid: params.uid, documentId: params.documentId },
     }),
   component: EditCandidateDocumentPage,
+  pendingComponent: () => <FormPageSkeleton fieldCount={4} />,
 });
 
 function EditCandidateDocumentPage() {

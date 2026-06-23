@@ -2,7 +2,10 @@ import { Badge } from "~/components/ui/badge";
 import { Briefcase, Calendar, ChevronRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { formatDate } from "~/lib/utils";
-import { getApplicationStatusLabel, applicationStatusBadgeVariants } from "@workspace/db/application-status";
+import {
+  getApplicationStatusLabel,
+  applicationStatusBadgeVariants,
+} from "@workspace/db/application-status";
 import { getCachedCandidate } from "~/lib/cache/candidate";
 
 type Candidate = NonNullable<Awaited<ReturnType<typeof getCachedCandidate>>>;

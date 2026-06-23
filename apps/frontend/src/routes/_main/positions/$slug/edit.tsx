@@ -1,3 +1,4 @@
+import { FormPageSkeleton } from "~/components/route-skeletons/form-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { loadPositionEdit } from "~/lib/loaders/positions";
@@ -11,6 +12,7 @@ export const Route = createFileRoute("/_main/positions/$slug/edit")({
   }),
   loader: async ({ params }) => loadPositionEdit({ data: params.slug }),
   component: EditPositionPage,
+  pendingComponent: () => <FormPageSkeleton fieldCount={8} />,
 });
 
 function EditPositionPage() {

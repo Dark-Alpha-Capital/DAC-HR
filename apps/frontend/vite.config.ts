@@ -18,6 +18,7 @@ const repoPackages = [
   "@workspace/db",
   "@workspace/ai-config",
   "@workspace/nextcloud",
+  "@workspace/interview-realtime",
 ];
 
 function isDbModule(source: string, importer?: string): boolean {

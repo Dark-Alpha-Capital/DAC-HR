@@ -9,6 +9,7 @@ import {
 } from "~/components/ui/breadcrumb";
 
 interface ApplicationBreadcrumbProps {
+  candidateId?: string;
   candidateName?: string;
   positionName?: string;
   interviewRoundName?: string;
@@ -17,6 +18,7 @@ interface ApplicationBreadcrumbProps {
 }
 
 export default function ApplicationBreadcrumb({
+  candidateId,
   candidateName,
   positionName,
   interviewRoundName,
@@ -34,6 +36,22 @@ export default function ApplicationBreadcrumb({
         <BreadcrumbSeparator />
         {applicationId && candidateName && positionName ? (
           <>
+            {candidateId ? (
+              <>
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link
+                      to="/candidates/$uid"
+                      params={{ uid: candidateId }}
+                      search={{} as any}
+                    >
+                      {candidateName}
+                    </Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+              </>
+            ) : null}
             <BreadcrumbItem>
               {interviewId ? (
                 <BreadcrumbLink asChild>
@@ -41,13 +59,11 @@ export default function ApplicationBreadcrumb({
                     to="/applications/$id"
                     params={{ id: applicationId }}
                   >
-                    {candidateName} - {positionName}
+                    {positionName}
                   </Link>
                 </BreadcrumbLink>
               ) : (
-                <BreadcrumbPage>
-                  {candidateName} - {positionName}
-                </BreadcrumbPage>
+                <BreadcrumbPage>{positionName}</BreadcrumbPage>
               )}
             </BreadcrumbItem>
             {interviewId && interviewRoundName ? (

@@ -1,3 +1,4 @@
+import { FormPageSkeleton } from "~/components/route-skeletons/form-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense } from "react";
 import RoundUploadForm from "~/components/forms/round-upload-form";
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/_main/rounds/new")({
   loaderDeps: ({ search }) => search,
   loader: async ({ deps }) => loadRoundsNew({ data: deps }),
   component: NewRoundPage,
+  pendingComponent: () => <FormPageSkeleton />,
 });
 
 function NewRoundPage() {

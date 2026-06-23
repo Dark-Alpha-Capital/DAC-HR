@@ -16,6 +16,10 @@ import {
 } from "~/components/ui/radio-group";
 import { Label } from "~/components/ui/label";
 import type { QuestionOption } from "@workspace/db/question-types";
+import type { DeliveryMode } from "@workspace/db/enums";
+import DeliveryModePicker from "~/components/interview/DeliveryModePicker";
+import VoiceInterview from "~/components/interview/VoiceInterview";
+import { useVoiceInterview } from "~/hooks/useVoiceInterview";
 
 import {
   Clock,
@@ -28,6 +32,10 @@ import {
   Wifi,
   Eye,
   Save,
+  Mic,
+  Maximize2,
+  Volume2,
+  Monitor,
 } from "lucide-react";
 
 interface Question {
@@ -51,6 +59,13 @@ interface WelcomeData {
   candidateName: string;
   positionName: string;
   roundName: string;
+  deliveryMode: DeliveryMode;
+}
+
+type SessionMode = "form" | "voice";
+
+function getModeStorageKey(token: string) {
+  return `interview-mode:${token}`;
 }
 
 type AnswerValue =
@@ -119,107 +134,186 @@ const INSTRUCTIONS = [
   },
 ] as const;
 
+const VOICE_INSTRUCTIONS = [
+  {
+    icon: Mic,
+    title: "Use a working microphone",
+    description:
+      "You will speak your answers aloud. Allow microphone access when prompted and use a quiet environment.",
+  },
+  {
+    icon: Monitor,
+    title: "Share this interview tab",
+    description:
+      "When prompted, confirm sharing this tab (it should be pre-selected). Keep sharing until the interview ends.",
+  },
+  {
+    icon: Maximize2,
+    title: "Stay in fullscreen during the interview",
+    description:
+      "The interview runs in fullscreen mode. Exiting fullscreen may be recorded as a integrity signal.",
+  },
+  {
+    icon: Volume2,
+    title: "Listen to the AI interviewer",
+    description:
+      "Questions are asked one at a time by voice. Wait for the prompt, then answer clearly in your own words.",
+  },
+  {
+    icon: Wifi,
+    title: "Use a stable internet connection",
+    description:
+      "Voice interviews need reliable connectivity for real-time audio. Avoid switching networks mid-session.",
+  },
+  {
+    icon: Eye,
+    title: "Stay on this tab until you finish",
+    description:
+      "Do not switch tabs or windows during the interview. Tab changes and focus loss may be recorded.",
+  },
+] as const;
+
 function WelcomeScreen({
   data,
+  mode,
   onStart,
   starting,
 }: {
   data: WelcomeData;
+  mode: SessionMode;
   onStart: () => void;
   starting: boolean;
 }) {
+  const isVoice = mode === "voice";
+  const instructions = isVoice ? VOICE_INSTRUCTIONS : INSTRUCTIONS;
+
   return (
-    <div className="flex min-h-svh flex-col bg-background">
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex max-w-2xl items-center justify-center px-4 py-5">
-          <p className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+    <div className="flex h-svh flex-col overflow-hidden bg-background">
+      <header className="shrink-0 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="mx-auto flex max-w-6xl items-center justify-center px-4 py-3">
+          <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase sm:text-sm">
             Dark Alpha Capital
           </p>
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-8 sm:py-12">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            Welcome to Your Interview
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            Hi {data.candidateName}, thank you for taking the time to interview
-            with us.
-          </p>
+      <main className="mx-auto grid w-full max-w-6xl flex-1 min-h-0 grid-cols-1 gap-6 overflow-y-auto px-4 py-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:gap-8 lg:overflow-hidden lg:py-6 xl:grid-cols-[minmax(0,24rem)_1fr]">
+        <div className="flex flex-col justify-center gap-5 lg:gap-6">
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+              {isVoice
+                ? "Welcome to Your Voice Interview"
+                : "Welcome to Your Interview"}
+            </h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              Hi {data.candidateName}, thank you for taking the time to
+              interview with us.
+            </p>
+            {isVoice ? (
+              <Badge variant="secondary" className="mt-2">
+                <Mic className="mr-1 size-3" />
+                Voice interview
+              </Badge>
+            ) : null}
+          </div>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Interview Details</CardTitle>
+              <CardDescription className="text-xs">
+                Confirm the information below before you begin.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-2 text-sm">
+              <div className="rounded-lg border bg-muted/40 px-3 py-2.5">
+                <p className="text-xs text-muted-foreground">Position</p>
+                <p className="mt-0.5 font-medium leading-snug">
+                  {data.positionName}
+                </p>
+              </div>
+              <div className="rounded-lg border bg-muted/40 px-3 py-2.5">
+                <p className="text-xs text-muted-foreground">Round</p>
+                <p className="mt-0.5 font-medium leading-snug">
+                  {data.roundName}
+                </p>
+              </div>
+              <div className="rounded-lg border bg-muted/40 px-3 py-2.5">
+                <p className="text-xs text-muted-foreground">Candidate</p>
+                <p className="mt-0.5 font-medium leading-snug">
+                  {data.candidateName}
+                </p>
+              </div>
+              <div className="rounded-lg border bg-muted/40 px-3 py-2.5">
+                <p className="text-xs text-muted-foreground">Format</p>
+                <p className="mt-0.5 font-medium leading-snug">
+                  {isVoice ? "AI voice interview" : "Written responses"}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div>
+            <Button
+              className="w-full sm:w-auto"
+              size="lg"
+              onClick={onStart}
+              disabled={starting}
+            >
+              {starting ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  {isVoice ? "Connecting..." : "Preparing interview..."}
+                </>
+              ) : isVoice ? (
+                <>
+                  <Mic className="mr-2 size-4" />
+                  Start Voice Interview
+                  <ArrowRight className="ml-2 size-4" />
+                </>
+              ) : (
+                <>
+                  Start Interview
+                  <ArrowRight className="ml-2 size-4" />
+                </>
+              )}
+            </Button>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {isVoice
+                ? "By clicking Start Voice Interview, you allow microphone access, this tab to be recorded, and fullscreen mode."
+                : "By clicking Start Interview, you confirm you are ready to begin and your session will be recorded."}
+            </p>
+          </div>
         </div>
 
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle className="text-base">Interview Details</CardTitle>
-            <CardDescription>
-              Please confirm the information below before you begin.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3 text-sm">
-            <div className="flex items-center justify-between gap-4 rounded-lg border bg-muted/40 px-4 py-3">
-              <span className="text-muted-foreground">Position</span>
-              <span className="font-medium text-right">{data.positionName}</span>
-            </div>
-            <div className="flex items-center justify-between gap-4 rounded-lg border bg-muted/40 px-4 py-3">
-              <span className="text-muted-foreground">Round</span>
-              <span className="font-medium text-right">{data.roundName}</span>
-            </div>
-            <div className="flex items-center justify-between gap-4 rounded-lg border bg-muted/40 px-4 py-3">
-              <span className="text-muted-foreground">Candidate</span>
-              <span className="font-medium text-right">{data.candidateName}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="mt-8">
-          <h2 className="text-lg font-medium">Before You Begin</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Review these instructions to ensure a smooth interview experience.
-          </p>
-          <ul className="mt-4 space-y-3">
-            {INSTRUCTIONS.map((item) => (
+        <div className="flex min-h-0 flex-col lg:justify-center">
+          <div className="shrink-0">
+            <h2 className="text-base font-medium sm:text-lg">Before You Begin</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
+              {isVoice
+                ? "Review these voice interview instructions to ensure a smooth experience."
+                : "Review these instructions to ensure a smooth interview experience."}
+            </p>
+          </div>
+          <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:mt-4 lg:gap-3">
+            {instructions.map((item) => (
               <li
                 key={item.title}
-                className="flex gap-3 rounded-lg border p-4"
+                className="flex gap-2.5 rounded-lg border p-3"
               >
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                  <item.icon className="size-4 text-primary" />
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                  <item.icon className="size-3.5 text-primary" />
                 </div>
-                <div>
-                  <p className="text-sm font-medium">{item.title}</p>
-                  <p className="mt-0.5 text-sm text-muted-foreground">
+                <div className="min-w-0">
+                  <p className="text-xs font-medium leading-snug sm:text-sm">
+                    {item.title}
+                  </p>
+                  <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
                     {item.description}
                   </p>
                 </div>
               </li>
             ))}
           </ul>
-        </div>
-
-        <div className="mt-auto pt-8">
-          <Button
-            className="w-full sm:w-auto"
-            size="lg"
-            onClick={onStart}
-            disabled={starting}
-          >
-            {starting ? (
-              <>
-                <Loader2 className="mr-2 size-4 animate-spin" />
-                Preparing interview...
-              </>
-            ) : (
-              <>
-                Start Interview
-                <ArrowRight className="ml-2 size-4" />
-              </>
-            )}
-          </Button>
-          <p className="mt-3 text-xs text-muted-foreground">
-            By clicking Start Interview, you confirm you are ready to begin and
-            your session will be recorded.
-          </p>
         </div>
       </main>
     </div>
@@ -229,7 +323,13 @@ function WelcomeScreen({
 function InterviewPage() {
   const { token } = Route.useParams();
   const [status, setStatus] = useState<
-    "loading" | "invalid" | "welcome" | "in_progress" | "completed"
+    | "loading"
+    | "invalid"
+    | "welcome"
+    | "mode_picker"
+    | "voice"
+    | "in_progress"
+    | "completed"
   >("loading");
   const [error, setError] = useState("");
   const [welcomeData, setWelcomeData] = useState<WelcomeData | null>(null);
@@ -239,7 +339,15 @@ function InterviewPage() {
   const [saving, setSaving] = useState(false);
   const [starting, setStarting] = useState(false);
   const [completing, setCompleting] = useState(false);
+  const [sessionMode, setSessionMode] = useState<SessionMode | null>(null);
   const answersRef = useRef(answers);
+  const voiceInterview = useVoiceInterview(token);
+
+  useEffect(() => {
+    if (voiceInterview.state.status === "completed") {
+      setStatus("completed");
+    }
+  }, [voiceInterview.state.status]);
 
   useEffect(() => {
     answersRef.current = answers;
@@ -263,8 +371,32 @@ function InterviewPage() {
         }
 
         const validation = await validateRes.json();
+        const storedMode = sessionStorage.getItem(
+          getModeStorageKey(token),
+        ) as SessionMode | null;
 
         if (validation.status === "in_progress") {
+          if (storedMode === "voice") {
+            if (!cancelled) {
+              setWelcomeData({
+                candidateName: validation.candidateName,
+                positionName: validation.positionName,
+                roundName: validation.roundName,
+                deliveryMode: validation.deliveryMode,
+              });
+              setSessionMode("voice");
+              if (
+                voiceInterview.state.status === "active" ||
+                voiceInterview.state.status === "connecting"
+              ) {
+                setStatus("voice");
+              } else {
+                setStatus("welcome");
+              }
+            }
+            return;
+          }
+
           const interviewData = await loadInterviewSchema(token);
           if (!cancelled) {
             setData(interviewData);
@@ -274,12 +406,31 @@ function InterviewPage() {
         }
 
         if (!cancelled) {
-          setWelcomeData({
+          const welcome: WelcomeData = {
             candidateName: validation.candidateName,
             positionName: validation.positionName,
             roundName: validation.roundName,
-          });
-          setStatus("welcome");
+            deliveryMode: validation.deliveryMode,
+          };
+          setWelcomeData(welcome);
+
+          if (storedMode === "voice") {
+            setSessionMode("voice");
+            setStatus("welcome");
+          } else if (storedMode === "form") {
+            setSessionMode("form");
+            setStatus("welcome");
+          } else if (validation.deliveryMode === "voice") {
+            sessionStorage.setItem(getModeStorageKey(token), "voice");
+            setSessionMode("voice");
+            setStatus("welcome");
+          } else if (validation.deliveryMode === "form") {
+            sessionStorage.setItem(getModeStorageKey(token), "form");
+            setSessionMode("form");
+            setStatus("welcome");
+          } else {
+            setStatus("mode_picker");
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -397,6 +548,30 @@ function InterviewPage() {
     }
   }, [data, currentStep, answers, saveAnswer, token]);
 
+  const handleSelectForm = useCallback(() => {
+    sessionStorage.setItem(getModeStorageKey(token), "form");
+    setSessionMode("form");
+    setStatus("welcome");
+  }, [token]);
+
+  const handleSelectVoice = useCallback(() => {
+    sessionStorage.setItem(getModeStorageKey(token), "voice");
+    setSessionMode("voice");
+    setStatus("welcome");
+  }, [token]);
+
+  const handleStartVoiceInterview = useCallback(async () => {
+    setStarting(true);
+    sessionStorage.setItem(getModeStorageKey(token), "voice");
+    setSessionMode("voice");
+    setStatus("voice");
+    try {
+      await voiceInterview.start();
+    } finally {
+      setStarting(false);
+    }
+  }, [token, voiceInterview]);
+
   if (status === "loading") {
     return (
       <div className="flex min-h-svh items-center justify-center bg-background">
@@ -443,11 +618,41 @@ function InterviewPage() {
     );
   }
 
-  if (status === "welcome" && welcomeData) {
+  if (status === "mode_picker") {
+    return (
+      <div className="flex min-h-svh items-center justify-center bg-background p-4">
+        <DeliveryModePicker
+          onSelectForm={handleSelectForm}
+          onSelectVoice={handleSelectVoice}
+        />
+      </div>
+    );
+  }
+
+  if (status === "voice" && welcomeData) {
+    return (
+      <VoiceInterview
+        candidateName={welcomeData.candidateName}
+        positionName={welcomeData.positionName}
+        roundName={welcomeData.roundName}
+        state={voiceInterview.state}
+        videoStreamRef={voiceInterview.videoStreamRef}
+        onStart={voiceInterview.start}
+        onEnd={voiceInterview.endInterview}
+      />
+    );
+  }
+
+  if (status === "welcome" && welcomeData && sessionMode) {
     return (
       <WelcomeScreen
         data={welcomeData}
-        onStart={handleStartInterview}
+        mode={sessionMode}
+        onStart={
+          sessionMode === "voice"
+            ? handleStartVoiceInterview
+            : handleStartInterview
+        }
         starting={starting}
       />
     );

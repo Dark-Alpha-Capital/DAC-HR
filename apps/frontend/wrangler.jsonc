@@ -41,6 +41,27 @@
       "name": "document-indexing",
       "binding": "DOCUMENT_INDEXING_WORKFLOW",
       "class_name": "DocumentIndexingWorkflow"
+    },
+    {
+      "name": "interview-evaluation",
+      "binding": "INTERVIEW_EVALUATION_WORKFLOW",
+      "class_name": "InterviewEvaluationWorkflow"
+    }
+  ],
+
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "INTERVIEW_SESSION_DO",
+        "class_name": "InterviewSessionDO"
+      }
+    ]
+  },
+
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["InterviewSessionDO"]
     }
   ],
 

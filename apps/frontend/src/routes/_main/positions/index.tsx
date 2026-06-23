@@ -1,3 +1,4 @@
+import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
 import { loadPositionsIndex } from "~/lib/loaders/positions";
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/_main/positions/")({
   loaderDeps: ({ search }) => search,
   loader: async ({ deps }) => loadPositionsIndex({ data: deps }),
   component: PositionsPage,
+  pendingComponent: () => <ListPageSkeleton />,
 });
 
 function PositionsPage() {

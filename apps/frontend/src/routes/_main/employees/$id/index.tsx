@@ -1,3 +1,4 @@
+import { DetailPageSkeleton } from "~/components/route-skeletons/detail-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { loadEmployeeDetail } from "~/lib/loaders/employees";
 import { Button } from "~/components/ui/button";
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/_main/employees/$id/")({
   loader: async ({ params }) =>
     loadEmployeeDetail({ data: { id: params.id } }),
   component: EmployeeDetailPage,
+  pendingComponent: () => <DetailPageSkeleton container tabs showBreadcrumb />,
 });
 
 function EmployeeDetailPage() {

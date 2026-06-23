@@ -1,6 +1,15 @@
 export { openai, getOpenAIClient } from "./openai-client";
 export { getOpenAIProvider } from "./ai-sdk-provider";
 export {
+  createRealtimeEphemeralSession,
+  getRealtimeSidebandUrl,
+  getRealtimeSidebandHttpUrl,
+  REALTIME_MODEL,
+  DEFAULT_REALTIME_VOICE,
+  type CreateRealtimeSessionOptions,
+  type RealtimeEphemeralSession,
+} from "./realtime";
+export {
   generateEmbedding,
   generateEmbeddings,
   chunkText,

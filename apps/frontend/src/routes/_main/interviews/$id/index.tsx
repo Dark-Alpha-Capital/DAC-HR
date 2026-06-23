@@ -1,3 +1,4 @@
+import { DetailPageSkeleton } from "~/components/route-skeletons/detail-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   loadInterviewById,
@@ -23,6 +24,9 @@ import {
   Copy,
   Check,
   Bot,
+  Mic,
+  Monitor,
+  ExternalLink,
 } from "lucide-react";
 import { formatDate } from "~/lib/utils";
 import InterviewQuestionFeedbackDisplay from "~/components/interview-question-feedback-display";
@@ -43,6 +47,7 @@ export const Route = createFileRoute("/_main/interviews/$id/")({
     return result as InterviewDetailData;
   },
   component: InterviewDetailPage,
+  pendingComponent: () => <DetailPageSkeleton container tabs showBreadcrumb showActions />,
 });
 
 const statusConfig = {
@@ -73,9 +78,20 @@ const statusConfig = {
     className: "bg-muted text-muted-foreground border-0",
     icon: Circle,
   },
+  completed: {
+    label: "Completed",
+    variant: "secondary" as const,
+    className:
+      "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400 border-0",
+    icon: CheckCircle,
+  },
 };
 
 function formatResponseAnswer(response: InterviewResponse): string {
+  if (response.transcript?.trim()) {
+    return response.transcript;
+  }
+
   if (response.question?.questionType === "mcq") {
     return (
       getOptionLabel(
@@ -93,6 +109,7 @@ function InterviewDetailPage() {
   const { interview, application, candidate, session, responses, evaluation } =
     Route.useLoaderData();
   const [copied, setCopied] = useState(false);
+  const [recordingCopied, setRecordingCopied] = useState(false);
 
   if (!interview) {
     return (
@@ -110,7 +127,7 @@ function InterviewDetailPage() {
     );
   }
 
-  const isAiSession = interview.mode === "ai_session";
+  const isAiSessionResolved = interview.mode === "ai_session";
 
   const config =
     statusConfig[interview.status as keyof typeof statusConfig] ||
@@ -125,10 +142,17 @@ function InterviewDetailPage() {
   const interviewLink = session?.session?.token
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/interview/${session.session.token}`
     : "";
+  const sessionRecordingUrl = session?.session?.sessionAudioUrl ?? null;
+  const sessionRecordingPath =
+    session?.session?.sessionAudioPath ??
+    (session?.session?.id
+      ? `/ATS/interviews/${session.session.id}/screen-recording.webm`
+      : null);
 
   return (
     <div className="container mx-auto py-6 max-w-4xl space-y-6">
       <ApplicationBreadcrumb
+        candidateId={candidate?.id}
         candidateName={candidateName}
         positionName={positionName}
         interviewRoundName={interview.roundTemplate.name}
@@ -144,7 +168,7 @@ function InterviewDetailPage() {
                 <h1 className="text-3xl font-bold tracking-tight">
                   {interview.roundTemplate.name}
                 </h1>
-                {isAiSession ? (
+                {isAiSessionResolved ? (
                   <Badge
                     variant="secondary"
                     className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-0"
@@ -208,11 +232,11 @@ function InterviewDetailPage() {
       </header>
 
       <Tabs
-        defaultValue={isAiSession ? "session" : "questions"}
+        defaultValue={isAiSessionResolved ? "session" : "questions"}
         className="w-full"
       >
         <TabsList>
-          {isAiSession ? (
+          {isAiSessionResolved ? (
             <>
               <TabsTrigger value="session" className="gap-2">
                 <Bot className="h-4 w-4" />
@@ -261,7 +285,7 @@ function InterviewDetailPage() {
           </TabsTrigger>
         </TabsList>
 
-        {isAiSession ? (
+        {isAiSessionResolved ? (
           <>
             <TabsContent value="session" className="mt-6">
               <div className="grid gap-4 md:grid-cols-2">
@@ -297,6 +321,26 @@ function InterviewDetailPage() {
                     <div className="flex items-center gap-2 text-muted-foreground">
                       Tab switches: {session?.session?.tabSwitches ?? 0}
                     </div>
+                    <div className="flex items-center gap-2 text-muted-foreground capitalize">
+                      Delivery mode: {session?.session?.deliveryMode ?? "hybrid"}
+                    </div>
+                    {session?.session?.cheatingSummary ? (
+                      <div className="rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground space-y-1">
+                        <p className="font-medium text-foreground">Cheating summary</p>
+                        <p>
+                          Tab switches:{" "}
+                          {session.session.cheatingSummary.tabSwitches ?? 0}
+                        </p>
+                        <p>
+                          Focus lost (sec):{" "}
+                          {session.session.cheatingSummary.focusLostSeconds ?? 0}
+                        </p>
+                        <p>
+                          Fullscreen exits:{" "}
+                          {session.session.cheatingSummary.fullscreenExits ?? 0}
+                        </p>
+                      </div>
+                    ) : null}
                   </CardContent>
                 </Card>
 
@@ -332,6 +376,74 @@ function InterviewDetailPage() {
                 </Card>
               </div>
 
+              <Card className="mt-4">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Monitor className="size-4" />
+                    Screen Recording (Nextcloud)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {sessionRecordingUrl ? (
+                    <>
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Nextcloud path
+                        </p>
+                        <code className="block min-w-0 break-all rounded-md border bg-muted px-3 py-2 text-xs">
+                          {sessionRecordingPath}
+                        </code>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Download link
+                        </p>
+                        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+                          <code className="block min-w-0 flex-1 rounded-md border bg-muted px-3 py-2 text-xs break-all sm:truncate">
+                            {sessionRecordingUrl}
+                          </code>
+                          <div className="flex shrink-0 gap-2 self-end sm:self-auto">
+                            <Button
+                              variant="secondary"
+                              size="icon"
+                              onClick={() => {
+                                void navigator.clipboard.writeText(
+                                  sessionRecordingUrl,
+                                );
+                                setRecordingCopied(true);
+                                setTimeout(() => setRecordingCopied(false), 2000);
+                              }}
+                            >
+                              {recordingCopied ? (
+                                <Check className="size-3.5 text-green-600" />
+                              ) : (
+                                <Copy className="size-3.5" />
+                              )}
+                            </Button>
+                            <Button asChild variant="outline" size="sm">
+                              <a
+                                href={sessionRecordingUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                <ExternalLink className="h-4 w-4 mr-2" />
+                                Open
+                              </a>
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No recording uploaded yet. Voice sessions save a full
+                      screen recording with audio to Nextcloud when the
+                      candidate ends the interview.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
               {evaluation ? (
                 <Card className="mt-4">
                   <CardHeader>
@@ -365,10 +477,18 @@ function InterviewDetailPage() {
                   {responses.map((r) => (
                     <Card key={r.id}>
                       <CardHeader className="pb-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <Badge variant="secondary" className="text-xs">
                             {r.question?.category || "General"}
                           </Badge>
+                          {r.inputMethod ? (
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {r.inputMethod === "voice" ? (
+                                <Mic className="h-3 w-3 mr-1" />
+                              ) : null}
+                              {r.inputMethod}
+                            </Badge>
+                          ) : null}
                           <CardTitle className="text-sm font-medium">
                             {r.question?.questionText ?? "Question"}
                           </CardTitle>

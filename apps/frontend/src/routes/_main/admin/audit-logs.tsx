@@ -1,3 +1,4 @@
+import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute } from "@tanstack/react-router";
 import { AuditLogsClient } from "~/components/admin/audit-logs-client";
 import { loadAuditLogs, type AuditLogsPageData } from "~/lib/loaders/admin";
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/_main/admin/audit-logs")({
     return loadAuditLogs({ data: deps });
   },
   component: AuditLogsPage,
+  pendingComponent: () => <ListPageSkeleton rowCount={8} showActions={false} />,
 });
 
 function AuditLogsPage() {

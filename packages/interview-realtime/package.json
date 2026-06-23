@@ -1,0 +1,24 @@
+{
+  "name": "@workspace/interview-realtime",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "bun test --pass-with-no-tests"
+  },
+  "dependencies": {
+    "@workspace/db": "*",
+    "zod": "^4.1.12"
+  },
+  "peerDependencies": {
+    "typescript": "^5",
+    "zod": "^4.0.0"
+  },
+  "exports": {
+    ".": "./index.ts",
+    "./types": "./types.ts",
+    "./events": "./events.ts",
+    "./prompts": "./prompts.ts"
+  }
+}

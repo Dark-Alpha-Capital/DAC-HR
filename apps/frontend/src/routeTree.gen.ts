@@ -69,6 +69,8 @@ import { Route as MainCandidatesUidIndexRouteImport } from './routes/_main/candi
 import { Route as MainApplicationsIdIndexRouteImport } from './routes/_main/applications/$id/index'
 import { Route as ApiInterviewIdAiAnalysisRouteImport } from './routes/api/interview/$id/ai-analysis'
 import { Route as ApiInterviewTokenTokenValidateRouteImport } from './routes/api/interview-token/$token/validate'
+import { Route as ApiInterviewTokenTokenUploadAudioRouteImport } from './routes/api/interview-token/$token/upload-audio'
+import { Route as ApiInterviewTokenTokenStartVoiceRouteImport } from './routes/api/interview-token/$token/start-voice'
 import { Route as ApiInterviewTokenTokenSchemaRouteImport } from './routes/api/interview-token/$token/schema'
 import { Route as ApiInterviewTokenTokenResponsesRouteImport } from './routes/api/interview-token/$token/responses'
 import { Route as ApiInterviewTokenTokenCompleteRouteImport } from './routes/api/interview-token/$token/complete'
@@ -386,6 +388,18 @@ const ApiInterviewTokenTokenValidateRoute =
     path: '/api/interview-token/$token/validate',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiInterviewTokenTokenUploadAudioRoute =
+  ApiInterviewTokenTokenUploadAudioRouteImport.update({
+    id: '/api/interview-token/$token/upload-audio',
+    path: '/api/interview-token/$token/upload-audio',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiInterviewTokenTokenStartVoiceRoute =
+  ApiInterviewTokenTokenStartVoiceRouteImport.update({
+    id: '/api/interview-token/$token/start-voice',
+    path: '/api/interview-token/$token/start-voice',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiInterviewTokenTokenSchemaRoute =
   ApiInterviewTokenTokenSchemaRouteImport.update({
     id: '/api/interview-token/$token/schema',
@@ -525,6 +539,8 @@ export interface FileRoutesByFullPath {
   '/api/interview-token/$token/complete': typeof ApiInterviewTokenTokenCompleteRoute
   '/api/interview-token/$token/responses': typeof ApiInterviewTokenTokenResponsesRoute
   '/api/interview-token/$token/schema': typeof ApiInterviewTokenTokenSchemaRoute
+  '/api/interview-token/$token/start-voice': typeof ApiInterviewTokenTokenStartVoiceRoute
+  '/api/interview-token/$token/upload-audio': typeof ApiInterviewTokenTokenUploadAudioRoute
   '/api/interview-token/$token/validate': typeof ApiInterviewTokenTokenValidateRoute
   '/api/interview/$id/ai-analysis': typeof ApiInterviewIdAiAnalysisRoute
   '/applications/$id/': typeof MainApplicationsIdIndexRoute
@@ -597,6 +613,8 @@ export interface FileRoutesByTo {
   '/api/interview-token/$token/complete': typeof ApiInterviewTokenTokenCompleteRoute
   '/api/interview-token/$token/responses': typeof ApiInterviewTokenTokenResponsesRoute
   '/api/interview-token/$token/schema': typeof ApiInterviewTokenTokenSchemaRoute
+  '/api/interview-token/$token/start-voice': typeof ApiInterviewTokenTokenStartVoiceRoute
+  '/api/interview-token/$token/upload-audio': typeof ApiInterviewTokenTokenUploadAudioRoute
   '/api/interview-token/$token/validate': typeof ApiInterviewTokenTokenValidateRoute
   '/api/interview/$id/ai-analysis': typeof ApiInterviewIdAiAnalysisRoute
   '/applications/$id': typeof MainApplicationsIdIndexRoute
@@ -674,6 +692,8 @@ export interface FileRoutesById {
   '/api/interview-token/$token/complete': typeof ApiInterviewTokenTokenCompleteRoute
   '/api/interview-token/$token/responses': typeof ApiInterviewTokenTokenResponsesRoute
   '/api/interview-token/$token/schema': typeof ApiInterviewTokenTokenSchemaRoute
+  '/api/interview-token/$token/start-voice': typeof ApiInterviewTokenTokenStartVoiceRoute
+  '/api/interview-token/$token/upload-audio': typeof ApiInterviewTokenTokenUploadAudioRoute
   '/api/interview-token/$token/validate': typeof ApiInterviewTokenTokenValidateRoute
   '/api/interview/$id/ai-analysis': typeof ApiInterviewIdAiAnalysisRoute
   '/_main/applications/$id/': typeof MainApplicationsIdIndexRoute
@@ -750,6 +770,8 @@ export interface FileRouteTypes {
     | '/api/interview-token/$token/complete'
     | '/api/interview-token/$token/responses'
     | '/api/interview-token/$token/schema'
+    | '/api/interview-token/$token/start-voice'
+    | '/api/interview-token/$token/upload-audio'
     | '/api/interview-token/$token/validate'
     | '/api/interview/$id/ai-analysis'
     | '/applications/$id/'
@@ -822,6 +844,8 @@ export interface FileRouteTypes {
     | '/api/interview-token/$token/complete'
     | '/api/interview-token/$token/responses'
     | '/api/interview-token/$token/schema'
+    | '/api/interview-token/$token/start-voice'
+    | '/api/interview-token/$token/upload-audio'
     | '/api/interview-token/$token/validate'
     | '/api/interview/$id/ai-analysis'
     | '/applications/$id'
@@ -898,6 +922,8 @@ export interface FileRouteTypes {
     | '/api/interview-token/$token/complete'
     | '/api/interview-token/$token/responses'
     | '/api/interview-token/$token/schema'
+    | '/api/interview-token/$token/start-voice'
+    | '/api/interview-token/$token/upload-audio'
     | '/api/interview-token/$token/validate'
     | '/api/interview/$id/ai-analysis'
     | '/_main/applications/$id/'
@@ -932,6 +958,8 @@ export interface RootRouteChildren {
   ApiInterviewTokenTokenCompleteRoute: typeof ApiInterviewTokenTokenCompleteRoute
   ApiInterviewTokenTokenResponsesRoute: typeof ApiInterviewTokenTokenResponsesRoute
   ApiInterviewTokenTokenSchemaRoute: typeof ApiInterviewTokenTokenSchemaRoute
+  ApiInterviewTokenTokenStartVoiceRoute: typeof ApiInterviewTokenTokenStartVoiceRoute
+  ApiInterviewTokenTokenUploadAudioRoute: typeof ApiInterviewTokenTokenUploadAudioRoute
   ApiInterviewTokenTokenValidateRoute: typeof ApiInterviewTokenTokenValidateRoute
   ApiInterviewIdAiAnalysisRoute: typeof ApiInterviewIdAiAnalysisRoute
   ApiCandidateIdIndexRoute: typeof ApiCandidateIdIndexRoute
@@ -1359,6 +1387,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiInterviewTokenTokenValidateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/interview-token/$token/upload-audio': {
+      id: '/api/interview-token/$token/upload-audio'
+      path: '/api/interview-token/$token/upload-audio'
+      fullPath: '/api/interview-token/$token/upload-audio'
+      preLoaderRoute: typeof ApiInterviewTokenTokenUploadAudioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/interview-token/$token/start-voice': {
+      id: '/api/interview-token/$token/start-voice'
+      path: '/api/interview-token/$token/start-voice'
+      fullPath: '/api/interview-token/$token/start-voice'
+      preLoaderRoute: typeof ApiInterviewTokenTokenStartVoiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/interview-token/$token/schema': {
       id: '/api/interview-token/$token/schema'
       path: '/api/interview-token/$token/schema'
@@ -1638,6 +1680,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiInterviewTokenTokenCompleteRoute: ApiInterviewTokenTokenCompleteRoute,
   ApiInterviewTokenTokenResponsesRoute: ApiInterviewTokenTokenResponsesRoute,
   ApiInterviewTokenTokenSchemaRoute: ApiInterviewTokenTokenSchemaRoute,
+  ApiInterviewTokenTokenStartVoiceRoute: ApiInterviewTokenTokenStartVoiceRoute,
+  ApiInterviewTokenTokenUploadAudioRoute:
+    ApiInterviewTokenTokenUploadAudioRoute,
   ApiInterviewTokenTokenValidateRoute: ApiInterviewTokenTokenValidateRoute,
   ApiInterviewIdAiAnalysisRoute: ApiInterviewIdAiAnalysisRoute,
   ApiCandidateIdIndexRoute: ApiCandidateIdIndexRoute,

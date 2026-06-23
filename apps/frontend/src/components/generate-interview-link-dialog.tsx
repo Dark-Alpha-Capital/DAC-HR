@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { createInterviewSession } from "~/lib/actions/create-interview-session";
+import type { DeliveryMode } from "@workspace/db/enums";
 import { toast } from "sonner";
 import { Bot, Check, Copy, Link2 } from "lucide-react";
 
@@ -40,6 +41,7 @@ export default function GenerateInterviewLinkDialog({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [roundId, setRoundId] = useState(rounds[0]?.id ?? "");
+  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>("hybrid");
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -66,7 +68,7 @@ export default function GenerateInterviewLinkDialog({
 
     try {
       const result = await createInterviewSession({
-        data: { applicationId, roundId },
+        data: { applicationId, roundId, deliveryMode },
       });
 
       if (result.error) {
@@ -103,7 +105,7 @@ export default function GenerateInterviewLinkDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="overflow-hidden sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Bot className="h-5 w-5" />
@@ -116,17 +118,18 @@ export default function GenerateInterviewLinkDialog({
         </DialogHeader>
 
         {generatedLink ? (
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
+          <div className="min-w-0 space-y-4 py-2">
+            <div className="min-w-0 space-y-2">
               <Label>Shareable link</Label>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 truncate rounded-md border bg-muted px-3 py-2 text-sm">
+              <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+                <code className="block min-w-0 flex-1 rounded-md border bg-muted px-3 py-2 text-sm break-all sm:truncate">
                   {generatedLink}
                 </code>
                 <Button
                   type="button"
                   variant="secondary"
                   size="icon"
+                  className="shrink-0 self-end sm:self-auto"
                   onClick={handleCopy}
                 >
                   {copied ? (
@@ -161,6 +164,22 @@ export default function GenerateInterviewLinkDialog({
                         {round.name}
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="delivery-mode">Delivery mode</Label>
+                <Select
+                  value={deliveryMode}
+                  onValueChange={(value) => setDeliveryMode(value as DeliveryMode)}
+                >
+                  <SelectTrigger id="delivery-mode">
+                    <SelectValue placeholder="Select delivery mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hybrid">Hybrid (candidate chooses)</SelectItem>
+                    <SelectItem value="form">Form only</SelectItem>
+                    <SelectItem value="voice">Voice only</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

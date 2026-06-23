@@ -19,6 +19,36 @@ import {
   getCachedDocuments,
   getCachedPositions,
 } from "~/lib/cache/candidate";
+import type { Session } from "better-auth";
+
+type CachedCandidate = Awaited<ReturnType<typeof getCachedCandidate>>;
+type CandidateDocuments = Awaited<ReturnType<typeof getDocumentsByCandidateId>>;
+type CandidateScreenings = Awaited<ReturnType<typeof getCandidateAiScreenings>>;
+
+export type CandidateDetailData = {
+  candidate: CachedCandidate;
+  users: Awaited<ReturnType<typeof getUsers>>;
+  session: Session;
+  currentUser: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    image?: string | null;
+  };
+  documents: CandidateDocuments;
+  screenings: CandidateScreenings;
+  onboardingData: {
+    contractSigned: boolean;
+    registrationEmailSent: boolean;
+    packetSent: boolean;
+    companyEmailActivate: boolean;
+  } | null;
+  applicationDetails: Awaited<
+    ReturnType<typeof getApplicationWithInterviews>
+  >[];
+  initialApplicationId?: string;
+};
 
 type CandidatesIndexInput = {
   name?: string;

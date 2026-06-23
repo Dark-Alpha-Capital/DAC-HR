@@ -1,3 +1,4 @@
+import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { loadWeeklyCheckinRecords } from "~/lib/loaders/weekly-checkin";
 import { Button } from "~/components/ui/button";
@@ -58,6 +59,7 @@ export const Route = createFileRoute("/_main/weekly-checkin/records")({
     return result as unknown as WeeklyCheckinRecordsData;
   },
   component: WeeklyCheckinRecordsPage,
+  pendingComponent: () => <ListPageSkeleton rowCount={8} showActions={false} />,
 });
 
 function formatDate(date: Date) {
