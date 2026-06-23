@@ -1,3 +1,4 @@
+import { DetailPageSkeleton } from "~/components/route-skeletons/detail-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { loadPositionBySlug } from "~/lib/loaders/positions";
 import { Button } from "~/components/ui/button";
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/_main/positions/$slug/")({
   }),
   loader: async ({ params }) => loadPositionBySlug({ data: params.slug }),
   component: PositionDetailPage,
+  pendingComponent: () => <DetailPageSkeleton tabs tabCount={5} />,
 });
 
 function PositionDetailPage() {

@@ -47,10 +47,10 @@ export function buildRealtimeInstructions(options: {
       : "",
     "",
     "Rules:",
+    "- At the start of the interview, introduce yourself, welcome the candidate, and ask if they are ready before any questions.",
     "- Ask one question at a time, in order. Wait for the candidate to finish before the next.",
     "- For MCQ questions, read all options clearly (A, B, C, D).",
     "- Keep acknowledgments brief. Never say you are waiting for questions or instructions.",
-    "- When you are not actively asking a question or closing, stay silent.",
     "- After the final question, thank the candidate and tell them to click the End Interview button on screen to finish.",
     "- Do not reveal correct answers or coach the candidate.",
     "- Keep a professional, concise tone.",
@@ -90,7 +90,9 @@ export function buildWelcomeIntroEvent(options: {
   return {
     type: "response.create",
     response: {
+      modalities: ["audio"],
       instructions: [
+        `You are the AI interviewer. Start speaking immediately.`,
         `Greet ${name} warmly and welcome them to their Dark Alpha Capital interview for the ${position} position${round}.`,
         "Briefly explain that you will ask interview questions one at a time and they should answer out loud when prompted.",
         "Ask if they are ready to begin. Keep it concise and professional (under 30 seconds).",
@@ -109,6 +111,7 @@ export function buildAskCurrentQuestionEvent(
   return {
     type: "response.create",
     response: {
+      modalities: ["audio"],
       instructions: `Ask this interview question now. Read it clearly and completely: ${prompt}`,
     },
   };
@@ -118,6 +121,7 @@ export function buildClosingEvent() {
   return {
     type: "response.create",
     response: {
+      modalities: ["audio"],
       instructions: [
         "All interview questions have been completed.",
         "Thank the candidate sincerely for their time and answers.",

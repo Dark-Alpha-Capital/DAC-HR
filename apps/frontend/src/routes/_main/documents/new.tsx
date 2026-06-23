@@ -1,3 +1,4 @@
+import { FormPageSkeleton } from "~/components/route-skeletons/form-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { Button } from "~/components/ui/button";
@@ -18,6 +19,7 @@ export const Route = createFileRoute("/_main/documents/new")({
     return { categories: categoriesResult.data };
   },
   component: NewDocumentPage,
+  pendingComponent: () => <FormPageSkeleton fieldCount={5} />,
 });
 
 function NewDocumentPage() {

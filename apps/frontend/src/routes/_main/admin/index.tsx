@@ -1,3 +1,4 @@
+import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { AdminUsersClient } from "~/components/admin/admin-users-client";
 import { fetchNonAdminUsers } from "~/lib/admin/fetch-non-admin-users";
@@ -48,6 +49,7 @@ export const Route = createFileRoute("/_main/admin/")({
     };
   },
   component: AdminPage,
+  pendingComponent: () => <ListPageSkeleton showActions={false} />,
 });
 
 function AdminPage() {

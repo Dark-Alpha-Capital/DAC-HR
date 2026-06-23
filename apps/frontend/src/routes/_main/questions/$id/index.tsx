@@ -1,3 +1,4 @@
+import { DetailPageSkeleton } from "~/components/route-skeletons/detail-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { loadQuestionById } from "~/lib/loaders/questions";
 import { Button } from "~/components/ui/button";
@@ -22,6 +23,7 @@ export const Route = createFileRoute("/_main/questions/$id/")({
   }),
   loader: async ({ params }) => loadQuestionById({ data: params.id }),
   component: QuestionDetailPage,
+  pendingComponent: () => <DetailPageSkeleton contentBlocks={2} showActions />,
 });
 
 function QuestionDetailPage() {

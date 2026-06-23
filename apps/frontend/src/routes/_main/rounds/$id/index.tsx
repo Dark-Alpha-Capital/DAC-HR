@@ -1,3 +1,4 @@
+import { DetailPageSkeleton } from "~/components/route-skeletons/detail-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { loadRoundById } from "~/lib/loaders/rounds";
 import { Button } from "~/components/ui/button";
@@ -30,6 +31,7 @@ export const Route = createFileRoute("/_main/rounds/$id/")({
   }),
   loader: async ({ params }) => loadRoundById({ data: params.id }),
   component: RoundDetailPage,
+  pendingComponent: () => <DetailPageSkeleton container contentBlocks={3} showActions />,
 });
 
 function RoundDetailPage() {

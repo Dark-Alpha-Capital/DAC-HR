@@ -586,6 +586,51 @@ export const assertInterviewTokenValid = async (token: string) => {
   return { ok: true as const, row };
 };
 
+/** Allows recording upload while session is active, or after completion if no recording exists yet. */
+export const assertInterviewTokenValidForRecordingUpload = async (
+  token: string,
+) => {
+  const row = await getSessionByToken(token);
+
+  if (!row) {
+    return { ok: false as const, status: 404, error: "Interview not found" };
+  }
+
+  const { session } = row;
+
+  if (session.status === "reviewed") {
+    return {
+      ok: false as const,
+      status: 410,
+      error: "This interview has already been reviewed",
+      session,
+    };
+  }
+
+  if (new Date(session.expiresAt) < new Date()) {
+    return {
+      ok: false as const,
+      status: 410,
+      error: "This interview link has expired",
+      session,
+    };
+  }
+
+  if (session.status === "completed") {
+    if (session.sessionAudioUrl) {
+      return {
+        ok: false as const,
+        status: 409,
+        error: "Recording already uploaded",
+        session,
+      };
+    }
+    return { ok: true as const, row };
+  }
+
+  return { ok: true as const, row };
+};
+
 export const getEvaluationBySessionId = async (sessionId: string) => {
   const [row] = await db
     .select()

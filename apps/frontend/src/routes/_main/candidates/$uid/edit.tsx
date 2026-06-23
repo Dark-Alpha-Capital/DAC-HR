@@ -1,3 +1,4 @@
+import { FormPageSkeleton } from "~/components/route-skeletons/form-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { loadCandidateEdit } from "~/lib/loaders/candidates";
@@ -12,6 +13,7 @@ export const Route = createFileRoute("/_main/candidates/$uid/edit")({
   }),
   loader: async ({ params }) => loadCandidateEdit({ data: params.uid }),
   component: EditCandidatePage,
+  pendingComponent: () => <FormPageSkeleton />,
 });
 
 function EditCandidatePage() {

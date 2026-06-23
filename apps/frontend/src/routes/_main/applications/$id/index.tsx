@@ -1,3 +1,4 @@
+import { DetailPageSkeleton } from "~/components/route-skeletons/detail-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { loadApplicationDetail } from "~/lib/loaders/candidates";
 import { getSession } from "~/lib/get-session";
@@ -37,6 +38,7 @@ export const Route = createFileRoute("/_main/applications/$id/")({
     return { ...data, currentUser: session?.user ?? null };
   },
   component: ApplicationDetailPage,
+  pendingComponent: () => <DetailPageSkeleton container tabs showBreadcrumb showActions />,
 });
 
 function ApplicationDetailPage() {

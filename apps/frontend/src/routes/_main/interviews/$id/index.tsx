@@ -1,3 +1,4 @@
+import { DetailPageSkeleton } from "~/components/route-skeletons/detail-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   loadInterviewById,
@@ -46,6 +47,7 @@ export const Route = createFileRoute("/_main/interviews/$id/")({
     return result as InterviewDetailData;
   },
   component: InterviewDetailPage,
+  pendingComponent: () => <DetailPageSkeleton container tabs showBreadcrumb showActions />,
 });
 
 const statusConfig = {
@@ -125,7 +127,7 @@ function InterviewDetailPage() {
     );
   }
 
-  const isAiSession = interview.mode === "ai_session";
+  const isAiSessionResolved = interview.mode === "ai_session";
 
   const config =
     statusConfig[interview.status as keyof typeof statusConfig] ||
@@ -144,7 +146,7 @@ function InterviewDetailPage() {
   const sessionRecordingPath =
     session?.session?.sessionAudioPath ??
     (session?.session?.id
-      ? `/ATS/interviews/${session.session.id}/recording.webm`
+      ? `/ATS/interviews/${session.session.id}/screen-recording.webm`
       : null);
 
   return (
@@ -166,7 +168,7 @@ function InterviewDetailPage() {
                 <h1 className="text-3xl font-bold tracking-tight">
                   {interview.roundTemplate.name}
                 </h1>
-                {isAiSession ? (
+                {isAiSessionResolved ? (
                   <Badge
                     variant="secondary"
                     className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-0"
@@ -230,11 +232,11 @@ function InterviewDetailPage() {
       </header>
 
       <Tabs
-        defaultValue={isAiSession ? "session" : "questions"}
+        defaultValue={isAiSessionResolved ? "session" : "questions"}
         className="w-full"
       >
         <TabsList>
-          {isAiSession ? (
+          {isAiSessionResolved ? (
             <>
               <TabsTrigger value="session" className="gap-2">
                 <Bot className="h-4 w-4" />
@@ -283,7 +285,7 @@ function InterviewDetailPage() {
           </TabsTrigger>
         </TabsList>
 
-        {isAiSession ? (
+        {isAiSessionResolved ? (
           <>
             <TabsContent value="session" className="mt-6">
               <div className="grid gap-4 md:grid-cols-2">

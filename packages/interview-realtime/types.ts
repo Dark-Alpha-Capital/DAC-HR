@@ -44,10 +44,12 @@ export interface InterviewState {
   voicePhase?: VoiceInterviewPhase;
   candidateReady?: boolean;
   awaitingAnswerForIndex?: number | null;
+  /** questionId → answer transcript (excludes intro / chit-chat) */
+  questionAnswers?: Record<string, string>;
 }
 
 export type ClientToDoMessage =
-  | { type: "CALL_STARTED"; callId: string }
+  | { type: "CALL_STARTED"; callId: string; clientSecret: string }
   | { type: "CHEATING_EVENT"; eventType: string; metadata?: Record<string, unknown> }
   | { type: "FULLSCREEN_STATE"; isFullscreen: boolean }
   | { type: "END_INTERVIEW" }
@@ -58,7 +60,11 @@ export type DoToClientMessage =
       type: "CONNECTED";
       state: Pick<
         InterviewState,
-        "currentQuestionIndex" | "status" | "questions" | "voicePhase"
+        | "currentQuestionIndex"
+        | "status"
+        | "questions"
+        | "voicePhase"
+        | "conversationHistory"
       >;
     }
   | { type: "INTRO_STARTED" }

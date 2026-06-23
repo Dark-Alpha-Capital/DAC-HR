@@ -1,3 +1,4 @@
+import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
 import { loadRoundsIndex } from "~/lib/loaders/rounds";
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/_main/rounds/")({
   loaderDeps: ({ search }) => search,
   loader: async ({ deps }) => loadRoundsIndex({ data: deps }),
   component: RoundsPage,
+  pendingComponent: () => <ListPageSkeleton />,
 });
 
 function RoundsPage() {

@@ -1,3 +1,4 @@
+import { FormPageSkeleton } from "~/components/route-skeletons/form-page-skeleton";
 import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
 import QuestionUploadForm from "~/components/forms/question-upload-form";
 import { Button } from "~/components/ui/button";
@@ -18,6 +19,7 @@ export const Route = createFileRoute("/_main/rounds/$id/add-question")({
       data: { roundId: params.id, position: deps.position },
     }),
   component: AddQuestionPage,
+  pendingComponent: () => <FormPageSkeleton fieldCount={4} />,
 });
 
 function AddQuestionPage() {

@@ -1,3 +1,4 @@
+import { FormPageSkeleton } from "~/components/route-skeletons/form-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { loadQuestionById } from "~/lib/loaders/questions";
@@ -12,6 +13,7 @@ export const Route = createFileRoute("/_main/questions/$id/edit")({
   }),
   loader: async ({ params }) => loadQuestionById({ data: params.id }),
   component: EditQuestionPage,
+  pendingComponent: () => <FormPageSkeleton fieldCount={7} />,
 });
 
 function EditQuestionPage() {

@@ -1,3 +1,4 @@
+import { DetailPageSkeleton } from "~/components/route-skeletons/detail-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -35,6 +36,7 @@ export const Route = createFileRoute("/_main/candidates/$uid/")({
     return result as CandidateDetailData;
   },
   component: CandidateDetailPage,
+  pendingComponent: () => <DetailPageSkeleton tabs tabCount={6} />,
 });
 
 function CandidateDetailPage() {

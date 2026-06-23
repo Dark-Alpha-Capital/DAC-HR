@@ -1,3 +1,4 @@
+import { FormPageSkeleton } from "~/components/route-skeletons/form-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { loadRoundEdit } from "~/lib/loaders/rounds";
@@ -11,6 +12,7 @@ export const Route = createFileRoute("/_main/rounds/$id/edit")({
   }),
   loader: async ({ params }) => loadRoundEdit({ data: params.id }),
   component: EditRoundPage,
+  pendingComponent: () => <FormPageSkeleton />,
 });
 
 function EditRoundPage() {

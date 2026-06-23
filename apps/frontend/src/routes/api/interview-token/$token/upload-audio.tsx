@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getNextcloudClient, uploadFile as uploadToNextcloud } from "@workspace/nextcloud";
 import {
-  assertInterviewTokenValid,
+  assertInterviewTokenValidForRecordingUpload,
   updateSessionVoiceMetadata,
 } from "@workspace/db/repositories/interview-session-repository";
 
@@ -27,7 +27,7 @@ export const Route = createFileRoute("/api/interview-token/$token/upload-audio")
             return Response.json({ error: "Token is required" }, { status: 400 });
           }
 
-          const validation = await assertInterviewTokenValid(token);
+          const validation = await assertInterviewTokenValidForRecordingUpload(token);
           if (!validation.ok) {
             return Response.json({ error: validation.error }, { status: validation.status });
           }
@@ -39,7 +39,11 @@ export const Route = createFileRoute("/api/interview-token/$token/upload-audio")
             return Response.json({ error: "No recording file provided" }, { status: 400 });
           }
 
-          if (!ALLOWED_RECORDING_TYPES.includes(file.type)) {
+          const contentType =
+            file.type ||
+            (file.name.endsWith(".webm") ? "video/webm" : "application/octet-stream");
+
+          if (!ALLOWED_RECORDING_TYPES.includes(contentType)) {
             return Response.json(
               { error: "Unsupported recording format" },
               { status: 400 },

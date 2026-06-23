@@ -98,7 +98,35 @@ export default function VoiceInterview({
       return;
     }
     container.scrollTop = container.scrollHeight;
-  }, [state.transcripts, state.liveUserTranscript]);
+  }, [state.transcripts, state.liveUserTranscript, state.liveAssistantTranscript]);
+
+  useEffect(() => {
+    if (state.status !== "active" && state.status !== "connecting") {
+      return;
+    }
+
+    console.info(
+      "[voice-transcript] sidebar_state",
+      JSON.stringify({
+        transcriptCount: state.transcripts.length,
+        liveUserLength: state.liveUserTranscript.length,
+        liveAssistantLength: state.liveAssistantTranscript.length,
+        voicePhase: state.voicePhase,
+        lastTranscript: state.transcripts.at(-1)
+          ? {
+              role: state.transcripts.at(-1)?.role,
+              preview: state.transcripts.at(-1)?.text.slice(0, 80),
+            }
+          : null,
+      }),
+    );
+  }, [
+    state.status,
+    state.transcripts,
+    state.liveUserTranscript,
+    state.liveAssistantTranscript,
+    state.voicePhase,
+  ]);
 
   if (state.status === "idle" || state.status === "error") {
     return (
@@ -230,7 +258,9 @@ export default function VoiceInterview({
             ref={transcriptRef}
             className="flex-1 space-y-4 overflow-y-auto px-4 py-4"
           >
-            {state.transcripts.length === 0 && !state.liveUserTranscript ? (
+            {state.transcripts.length === 0 &&
+            !state.liveUserTranscript &&
+            !state.liveAssistantTranscript ? (
               <p className="text-center text-sm text-[#9aa0a6]">
                 Conversation will appear here as you speak.
               </p>
@@ -244,6 +274,15 @@ export default function VoiceInterview({
                 candidateName={candidateName}
               />
             ))}
+
+            {state.liveAssistantTranscript ? (
+              <TranscriptBubble
+                role="assistant"
+                text={state.liveAssistantTranscript}
+                candidateName={candidateName}
+                isLive
+              />
+            ) : null}
 
             {state.liveUserTranscript ? (
               <TranscriptBubble

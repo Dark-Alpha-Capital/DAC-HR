@@ -82,3 +82,7 @@ export async function createRealtimeEphemeralSession(
 export function getRealtimeSidebandUrl(callId: string): string {
   return `wss://api.openai.com/v1/realtime?call_id=${encodeURIComponent(callId)}`;
 }
+
+export function getRealtimeSidebandHttpUrl(callId: string): string {
+  return `https://api.openai.com/v1/realtime?call_id=${encodeURIComponent(callId)}`;
+}

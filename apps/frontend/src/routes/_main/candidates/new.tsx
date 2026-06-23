@@ -1,3 +1,4 @@
+import { FormPageSkeleton } from "~/components/route-skeletons/form-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { Button } from "~/components/ui/button";
@@ -11,6 +12,7 @@ export const Route = createFileRoute("/_main/candidates/new")({
   }),
   loader: async () => loadCandidatesNew(),
   component: NewCandidatePage,
+  pendingComponent: () => <FormPageSkeleton />,
 });
 
 function NewCandidatePage() {

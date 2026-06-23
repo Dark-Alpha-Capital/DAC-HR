@@ -1,3 +1,4 @@
+import { FormPageSkeleton } from "~/components/route-skeletons/form-page-skeleton";
 import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
 import QuestionUploadForm from "~/components/forms/question-upload-form";
 import { Button } from "~/components/ui/button";
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/_main/questions/new")({
   loaderDeps: ({ search }) => search,
   loader: async ({ deps }) => loadQuestionsNew({ data: deps }),
   component: NewQuestionPage,
+  pendingComponent: () => <FormPageSkeleton fieldCount={7} />,
 });
 
 function NewQuestionPage() {

@@ -7,6 +7,7 @@ export const clientToDoMessageSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("CALL_STARTED"),
     callId: z.string().min(1),
+    clientSecret: z.string().min(1),
   }),
   z.object({
     type: z.literal("CHEATING_EVENT"),

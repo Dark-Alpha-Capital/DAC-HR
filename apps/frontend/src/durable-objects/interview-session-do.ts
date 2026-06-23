@@ -1,6 +1,6 @@
 /// <reference types="@cloudflare/workers-types" />
 
-import { getRealtimeSidebandUrl } from "@workspace/ai-config";
+import { getRealtimeSidebandHttpUrl } from "@workspace/ai-config";
 import { getQuestionsForInterviewSession } from "@workspace/db/queries";
 import type { CheatingEventType, CheatingSummary } from "@workspace/db/enums";
 import {
@@ -42,18 +42,48 @@ declare const WebSocketPair: {
 };
 
 const CHEATING_RATE_LIMIT_MS = 1000;
+const VOICE_TRANSCRIPT_LOG_TOPIC = "voice-transcript";
+
+function previewText(text: string, maxLength = 120): string {
+  const trimmed = text.trim();
+  if (trimmed.length <= maxLength) {
+    return trimmed;
+  }
+  return `${trimmed.slice(0, maxLength)}…`;
+}
 
 export class InterviewSessionDO implements DurableObject {
   private durableState: DurableObjectState;
   private env: InterviewSessionEnv;
   private interviewState: InterviewState | null = null;
   private sideband: WebSocket | null = null;
+  private pendingWelcomeIntro = false;
+  private welcomeIntroCompleted = false;
+  private welcomeIntroFallbackTimer: ReturnType<typeof setTimeout> | null =
+    null;
   private lastCheatingEventAt = new Map<string, number>();
   private focusLostStartedAt: number | null = null;
 
   constructor(state: DurableObjectState, env: InterviewSessionEnv) {
     this.durableState = state;
     this.env = env;
+  }
+
+  private logTranscript(
+    action: string,
+    data: Record<string, unknown> = {},
+  ): void {
+    console.info(
+      JSON.stringify({
+        level: "info",
+        topic: VOICE_TRANSCRIPT_LOG_TOPIC,
+        component: "InterviewSessionDO",
+        action,
+        sessionId: this.interviewState?.sessionId,
+        voicePhase: this.interviewState?.voicePhase,
+        ...data,
+      }),
+    );
   }
 
   async fetch(request: Request): Promise<Response> {
@@ -72,6 +102,11 @@ export class InterviewSessionDO implements DurableObject {
 
     await this.ensureState(sessionId, token);
 
+    this.logTranscript("client_websocket_connected", {
+      conversationHistoryLength: this.interviewState!.conversationHistory.length,
+      currentQuestionIndex: this.interviewState!.currentQuestionIndex,
+    });
+
     const pair = new WebSocketPair();
     const client = pair[0];
     const server = pair[1];
@@ -84,6 +119,7 @@ export class InterviewSessionDO implements DurableObject {
         voicePhase: this.interviewState!.voicePhase ?? "intro",
         status: this.interviewState!.status,
         questions: this.interviewState!.questions,
+        conversationHistory: this.interviewState!.conversationHistory,
       },
     });
 
@@ -113,7 +149,13 @@ export class InterviewSessionDO implements DurableObject {
         this.sendToClient(ws, { type: "PONG" });
         break;
       case "CALL_STARTED":
-        await this.connectSideband(parsed.callId);
+        this.logTranscript("call_started_received", {
+          callId: parsed.callId,
+          clientSecretPrefix: parsed.clientSecret.slice(0, 8),
+        });
+        this.resetVoiceSessionForNewCall();
+        await this.persistState();
+        await this.connectSideband(parsed.callId, parsed.clientSecret);
         break;
       case "CHEATING_EVENT":
         await this.recordCheatingEvent(parsed.eventType, parsed.metadata);
@@ -170,6 +212,7 @@ export class InterviewSessionDO implements DurableObject {
         voicePhase: stored.voicePhase ?? "questions",
         candidateReady: stored.candidateReady ?? false,
         awaitingAnswerForIndex: stored.awaitingAnswerForIndex ?? null,
+        questionAnswers: stored.questionAnswers ?? {},
       };
       return;
     }
@@ -205,6 +248,7 @@ export class InterviewSessionDO implements DurableObject {
       voicePhase: "intro",
       candidateReady: false,
       awaitingAnswerForIndex: null,
+      questionAnswers: {},
       roundName: row.round.name,
       positionName: row.position.name,
       candidateName: `${row.candidate.firstName} ${row.candidate.lastName}`,
@@ -219,6 +263,37 @@ export class InterviewSessionDO implements DurableObject {
     await this.persistState();
   }
 
+  private resetVoiceSessionForNewCall() {
+    if (!this.interviewState) {
+      return;
+    }
+
+    this.interviewState.voicePhase = "intro";
+    this.interviewState.candidateReady = false;
+    this.interviewState.awaitingAnswerForIndex = null;
+    this.interviewState.currentQuestionIndex = 0;
+    this.interviewState.conversationHistory = [];
+    this.interviewState.questionAnswers = {};
+    this.welcomeIntroCompleted = false;
+    this.pendingWelcomeIntro = false;
+
+    this.logTranscript("voice_session_reset", {
+      questionCount: this.interviewState.questions.length,
+    });
+  }
+
+  private getActiveQuestionIndex(): number {
+    if (!this.interviewState) {
+      return -1;
+    }
+
+    if (this.interviewState.awaitingAnswerForIndex !== null) {
+      return this.interviewState.awaitingAnswerForIndex;
+    }
+
+    return this.interviewState.currentQuestionIndex;
+  }
+
   private async persistState() {
     if (!this.interviewState) {
       return;
@@ -226,10 +301,20 @@ export class InterviewSessionDO implements DurableObject {
     await this.durableState.storage.put("interviewState", this.interviewState);
   }
 
-  private async connectSideband(callId: string) {
-    if (!this.interviewState || !this.env.OPENAI_API_KEY) {
+  private async connectSideband(callId: string, clientSecret: string) {
+    if (!this.interviewState || !clientSecret) {
+      this.logTranscript("sideband_connect_skipped", {
+        callId,
+        hasInterviewState: Boolean(this.interviewState),
+        hasClientSecret: Boolean(clientSecret),
+      });
       return;
     }
+
+    this.logTranscript("sideband_connect_start", {
+      callId,
+      auth: "ephemeral_client_secret",
+    });
 
     this.interviewState.callId = callId;
     this.interviewState.realtimeSessionId = callId;
@@ -239,60 +324,92 @@ export class InterviewSessionDO implements DurableObject {
 
     this.closeSideband();
 
-    const sideband = new WebSocket(
-      getRealtimeSidebandUrl(callId),
-      // @ts-expect-error Cloudflare Workers supports header options on WebSocket
-      {
+    let response: Response;
+    try {
+      response = await fetch(getRealtimeSidebandHttpUrl(callId), {
         headers: {
-          Authorization: `Bearer ${this.env.OPENAI_API_KEY}`,
+          Authorization: `Bearer ${clientSecret}`,
+          Upgrade: "websocket",
         },
-      },
-    );
-
-    sideband.addEventListener("open", () => {
-      const instructions = buildRealtimeInstructions({
-        roundName: this.interviewState?.roundName,
-        positionName: this.interviewState?.positionName,
-        candidateName: this.interviewState?.candidateName,
-        questions: this.interviewState?.questions ?? [],
-        agentConfig: this.interviewState?.agentConfig,
       });
+    } catch (error) {
+      this.logTranscript("sideband_connect_fetch_error", {
+        callId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return;
+    }
 
-      sideband.send(
-        JSON.stringify(
-          buildSessionUpdateEvent(
-            instructions,
-            this.interviewState?.agentConfig?.voice,
-          ),
-        ),
-      );
-      this.interviewState.voicePhase = "intro";
-      void this.persistState();
-      sideband.send(
-        JSON.stringify(
-          buildWelcomeIntroEvent({
-            candidateName: this.interviewState.candidateName,
-            positionName: this.interviewState.positionName,
-            roundName: this.interviewState.roundName,
-          }),
-        ),
-      );
-      this.broadcast({ type: "INTRO_STARTED" });
-    });
+    const sideband = response.webSocket;
+    if (!sideband) {
+      const errorBody = await response.text().catch(() => "");
+      this.logTranscript("sideband_connect_rejected", {
+        callId,
+        status: response.status,
+        statusText: response.statusText,
+        bodyPreview: errorBody.slice(0, 300),
+      });
+      return;
+    }
+
+    sideband.accept();
+    this.logTranscript("sideband_open", { callId, via: "fetch_upgrade" });
 
     sideband.addEventListener("message", (event) => {
       void this.handleSidebandMessage(String(event.data));
     });
 
-    sideband.addEventListener("close", () => {
+    sideband.addEventListener("close", (event) => {
+      this.logTranscript("sideband_close", {
+        callId,
+        code: "code" in event ? event.code : undefined,
+        reason: "reason" in event ? event.reason : undefined,
+      });
       this.sideband = null;
     });
 
+    sideband.addEventListener("error", () => {
+      this.logTranscript("sideband_error", { callId });
+    });
+
     this.sideband = sideband;
+
+    if (this.interviewState) {
+      const instructions = buildRealtimeInstructions({
+        roundName: this.interviewState.roundName,
+        positionName: this.interviewState.positionName,
+        candidateName: this.interviewState.candidateName,
+        questions: this.interviewState.questions,
+        agentConfig: this.interviewState.agentConfig,
+      });
+
+      this.interviewState.voicePhase = "intro";
+      this.pendingWelcomeIntro = true;
+
+      sideband.send(
+        JSON.stringify(
+          buildSessionUpdateEvent(
+            instructions,
+            this.interviewState.agentConfig?.voice,
+          ),
+        ),
+      );
+
+      this.welcomeIntroFallbackTimer = setTimeout(() => {
+        void this.sendWelcomeIntro();
+      }, 2000);
+    }
+
     await this.persistState();
   }
 
   private closeSideband() {
+    if (this.welcomeIntroFallbackTimer) {
+      clearTimeout(this.welcomeIntroFallbackTimer);
+      this.welcomeIntroFallbackTimer = null;
+    }
+    this.pendingWelcomeIntro = false;
+
     if (this.sideband) {
       try {
         this.sideband.close();
@@ -301,6 +418,31 @@ export class InterviewSessionDO implements DurableObject {
       }
       this.sideband = null;
     }
+  }
+
+  private async sendWelcomeIntro() {
+    if (!this.interviewState || !this.sideband || !this.pendingWelcomeIntro) {
+      return;
+    }
+
+    this.pendingWelcomeIntro = false;
+    if (this.welcomeIntroFallbackTimer) {
+      clearTimeout(this.welcomeIntroFallbackTimer);
+      this.welcomeIntroFallbackTimer = null;
+    }
+
+    this.sideband.send(
+      JSON.stringify(
+        buildWelcomeIntroEvent({
+          candidateName: this.interviewState.candidateName,
+          positionName: this.interviewState.positionName,
+          roundName: this.interviewState.roundName,
+        }),
+      ),
+    );
+    this.logTranscript("response_create_sent", { reason: "welcome_intro" });
+    this.broadcast({ type: "INTRO_STARTED" });
+    await this.persistState();
   }
 
   private async handleSidebandMessage(raw: string) {
@@ -317,10 +459,30 @@ export class InterviewSessionDO implements DurableObject {
 
     const type = typeof event.type === "string" ? event.type : "";
 
+    const isTranscriptEvent =
+      type.includes("transcript") || type.includes("transcription");
+    if (isTranscriptEvent || type === "response.done" || type === "session.updated") {
+      this.logTranscript("sideband_event", {
+        eventType: type,
+        eventKeys: Object.keys(event),
+        deltaPreview:
+          typeof event.delta === "string" ? previewText(event.delta, 80) : undefined,
+        transcriptPreview:
+          typeof event.transcript === "string"
+            ? previewText(event.transcript, 120)
+            : undefined,
+      });
+    }
+
+    if (type === "session.updated") {
+      await this.sendWelcomeIntro();
+      return;
+    }
+
     if (type === "conversation.item.input_audio_transcription.delta") {
       const delta = typeof event.delta === "string" ? event.delta : "";
       if (delta.trim()) {
-        this.broadcast({ type: "TRANSCRIPT_DELTA", role: "user", delta });
+        this.broadcastTranscriptDelta("user", delta);
       }
       return;
     }
@@ -337,7 +499,21 @@ export class InterviewSessionDO implements DurableObject {
       return;
     }
 
-    if (type === "response.output_audio_transcript.done" || type === "response.audio_transcript.done") {
+    if (
+      type === "response.output_audio_transcript.delta" ||
+      type === "response.audio_transcript.delta"
+    ) {
+      const delta = typeof event.delta === "string" ? event.delta : "";
+      if (delta.trim()) {
+        this.broadcastTranscriptDelta("assistant", delta);
+      }
+      return;
+    }
+
+    if (
+      type === "response.output_audio_transcript.done" ||
+      type === "response.audio_transcript.done"
+    ) {
       const transcript =
         typeof event.transcript === "string" ? event.transcript : "";
       if (transcript.trim()) {
@@ -349,7 +525,26 @@ export class InterviewSessionDO implements DurableObject {
     }
 
     if (type === "response.done") {
+      this.logTranscript("sideband_response_done", {
+        voicePhase: this.interviewState.voicePhase,
+        awaitingAnswerForIndex: this.interviewState.awaitingAnswerForIndex,
+        currentQuestionIndex: this.interviewState.currentQuestionIndex,
+      });
       await this.handleResponseDone();
+      return;
+    }
+
+    if (type) {
+      const looksTranscriptRelated =
+        type.includes("transcript") ||
+        type.includes("transcription") ||
+        type.startsWith("conversation.item");
+      if (looksTranscriptRelated) {
+        this.logTranscript("sideband_event_unhandled", {
+          eventType: type,
+          eventKeys: Object.keys(event),
+        });
+      }
     }
   }
 
@@ -361,6 +556,7 @@ export class InterviewSessionDO implements DurableObject {
     const phase = this.interviewState.voicePhase ?? "questions";
 
     if (phase === "intro") {
+      this.welcomeIntroCompleted = true;
       this.interviewState.voicePhase = this.interviewState.candidateReady
         ? "questions"
         : "awaiting_ready";
@@ -368,6 +564,10 @@ export class InterviewSessionDO implements DurableObject {
       if (this.interviewState.candidateReady) {
         await this.askCurrentQuestion();
       }
+      return;
+    }
+
+    if (phase === "awaiting_ready") {
       return;
     }
 
@@ -390,36 +590,24 @@ export class InterviewSessionDO implements DurableObject {
     }
   }
 
-  private getNextAnswerQuestionIndex(): number {
-    if (!this.interviewState) {
-      return -1;
-    }
-
-    return this.interviewState.conversationHistory.filter(
-      (entry) => entry.role === "user",
-    ).length;
-  }
-
   private buildAnswersFromConversation() {
     if (!this.interviewState) {
       return [];
     }
 
-    const userEntries = this.interviewState.conversationHistory.filter(
-      (entry) => entry.role === "user",
-    );
+    const answers = this.interviewState.questionAnswers ?? {};
 
-    return userEntries
-      .map((entry, index) => {
-        const question = this.interviewState!.questions[index];
-        if (!question) {
+    return this.interviewState.questions
+      .map((question) => {
+        const transcript = answers[question.id];
+        if (!transcript) {
           return null;
         }
 
         return {
           questionId: question.id,
-          transcript: entry.content,
-          selectedOptionId: this.matchMcqOption(question, entry.content),
+          transcript,
+          selectedOptionId: this.matchMcqOption(question, transcript),
         };
       })
       .filter((answer): answer is NonNullable<typeof answer> => answer !== null);
@@ -475,32 +663,57 @@ export class InterviewSessionDO implements DurableObject {
       return;
     }
 
+    this.broadcastTranscript("user", trimmed);
+    this.logTranscript("user_transcript_broadcast", {
+      phase,
+      textPreview: previewText(trimmed),
+      textLength: trimmed.length,
+    });
+
     if (phase === "intro") {
       this.interviewState.candidateReady = true;
-      this.broadcastTranscript("user", trimmed);
+      this.appendConversation("user", trimmed);
+      await this.persistState();
       return;
     }
 
     if (phase === "awaiting_ready") {
-      this.broadcastTranscript("user", trimmed);
+      this.interviewState.candidateReady = true;
+      this.appendConversation("user", trimmed);
       this.interviewState.voicePhase = "questions";
       await this.persistState();
       await this.askCurrentQuestion();
       return;
     }
 
-    const questionIndex = this.getNextAnswerQuestionIndex();
+    const questionIndex = this.getActiveQuestionIndex();
     const question = this.interviewState.questions[questionIndex];
     if (!question) {
+      this.logTranscript("user_transcript_no_question", {
+        phase,
+        questionIndex,
+        currentQuestionIndex: this.interviewState.currentQuestionIndex,
+        awaitingAnswerForIndex: this.interviewState.awaitingAnswerForIndex,
+        questionCount: this.interviewState.questions.length,
+      });
       return;
     }
 
     if (this.interviewState.awaitingAnswerForIndex !== questionIndex) {
+      this.logTranscript("user_transcript_display_only", {
+        phase,
+        questionIndex,
+        awaitingAnswerForIndex: this.interviewState.awaitingAnswerForIndex,
+        textPreview: previewText(trimmed),
+      });
       return;
     }
 
     this.appendConversation("user", trimmed);
-    this.broadcastTranscript("user", trimmed);
+    if (!this.interviewState.questionAnswers) {
+      this.interviewState.questionAnswers = {};
+    }
+    this.interviewState.questionAnswers[question.id] = trimmed;
 
     const selectedOptionId = this.matchMcqOption(question, trimmed);
 
@@ -675,21 +888,45 @@ export class InterviewSessionDO implements DurableObject {
 
   private async askCurrentQuestion() {
     const question = this.getCurrentQuestion();
-    if (!question || !this.sideband || !this.interviewState) {
+    if (!question || !this.interviewState) {
+      this.logTranscript("ask_current_question_skipped", {
+        hasQuestion: Boolean(question),
+        hasInterviewState: Boolean(this.interviewState),
+        hasSideband: Boolean(this.sideband),
+      });
+      return;
+    }
+
+    if (!this.sideband) {
+      this.logTranscript("ask_current_question_no_sideband", {
+        questionIndex: this.interviewState.currentQuestionIndex,
+      });
+      return;
+    }
+
+    if (!this.welcomeIntroCompleted) {
+      this.logTranscript("ask_current_question_blocked_welcome_pending", {
+        questionIndex: this.interviewState.currentQuestionIndex,
+      });
       return;
     }
 
     this.broadcastQuestion(this.interviewState.currentQuestionIndex);
-    this.interviewState.awaitingAnswerForIndex = null;
-    await this.persistState();
-    this.sideband.send(
-      JSON.stringify(
-        buildAskCurrentQuestionEvent(
-          question,
-          this.interviewState.currentQuestionIndex,
-        ),
-      ),
+
+    const payload = buildAskCurrentQuestionEvent(
+      question,
+      this.interviewState.currentQuestionIndex,
     );
+    this.logTranscript("response_create_sent", {
+      reason: "ask_current_question",
+      questionIndex: this.interviewState.currentQuestionIndex,
+      questionId: question.id,
+    });
+    this.sideband.send(JSON.stringify(payload));
+
+    this.interviewState.awaitingAnswerForIndex =
+      this.interviewState.currentQuestionIndex;
+    await this.persistState();
   }
 
   private async startClosingPhase() {
@@ -832,13 +1069,41 @@ export class InterviewSessionDO implements DurableObject {
   }
 
   private broadcast(message: Record<string, unknown>) {
-    for (const ws of this.durableState.getWebSockets()) {
+    const clients = this.durableState.getWebSockets();
+    const messageType =
+      typeof message.type === "string" ? message.type : "unknown";
+
+    if (
+      messageType === "TRANSCRIPT" ||
+      messageType === "TRANSCRIPT_DELTA" ||
+      messageType === "CONNECTED"
+    ) {
+      this.logTranscript("broadcast_to_clients", {
+        messageType,
+        clientCount: clients.length,
+        role: message.role,
+        textPreview:
+          typeof message.text === "string"
+            ? previewText(message.text, 80)
+            : undefined,
+        deltaPreview:
+          typeof message.delta === "string"
+            ? previewText(message.delta, 40)
+            : undefined,
+      });
+    }
+
+    for (const ws of clients) {
       this.sendToClient(ws, message);
     }
   }
 
   private broadcastTranscript(role: "user" | "assistant", text: string) {
     this.broadcast({ type: "TRANSCRIPT", role, text });
+  }
+
+  private broadcastTranscriptDelta(role: "user" | "assistant", delta: string) {
+    this.broadcast({ type: "TRANSCRIPT_DELTA", role, delta });
   }
 
   private sendToClient(ws: WebSocket, message: Record<string, unknown>) {

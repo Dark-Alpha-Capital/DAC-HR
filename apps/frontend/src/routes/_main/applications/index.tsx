@@ -1,3 +1,4 @@
+import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute } from "@tanstack/react-router";
 import { Briefcase } from "lucide-react";
 import { loadApplicationsIndex } from "~/lib/loaders/candidates";
@@ -27,6 +28,9 @@ export const Route = createFileRoute("/_main/applications/")({
   loaderDeps: ({ search }) => search,
   loader: async ({ deps }) => loadApplicationsIndex({ data: deps }),
   component: ApplicationsPage,
+  pendingComponent: () => (
+    <ListPageSkeleton filterCount={5} layout="cards" showActions={false} />
+  ),
 });
 
 function ApplicationsPage() {
