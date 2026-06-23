@@ -10,12 +10,11 @@
     "head_sampling_rate": 1
   },
 
+  // Non-secret config only. Secrets (OPENAI_API_KEY, NEXTCLOUD_*, BETTER_AUTH_SECRET,
+  // GOOGLE_CLIENT_*, etc.) are set in the Cloudflare dashboard or via `wrangler secret put`.
+  // Do NOT add secrets here — deploying empty vars would overwrite dashboard values.
   "vars": {
-    "BETTER_AUTH_URL": "https://recruiting.darkalphacapital.com",
-    "OPENAI_API_KEY": "",
-    "NEXTCLOUD_URL": "",
-    "NEXTCLOUD_USER": "",
-    "NEXTCLOUD_PASSWORD": ""
+    "BETTER_AUTH_URL": "https://recruiting.darkalphacapital.com"
   },
 
   "d1_databases": [

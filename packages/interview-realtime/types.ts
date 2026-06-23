@@ -46,6 +46,10 @@ export interface InterviewState {
   awaitingAnswerForIndex?: number | null;
   /** questionId → answer transcript (excludes intro / chit-chat) */
   questionAnswers?: Record<string, string>;
+  /** questionId → utterances collected while waiting for a sufficient answer */
+  questionPartialAnswers?: Record<string, string[]>;
+  /** questionId → follow-up count for the current question */
+  questionFollowUpCounts?: Record<string, number>;
 }
 
 export type ClientToDoMessage =

@@ -56,8 +56,9 @@ export const createNextcloudClient = (
     );
   }
 
+  const encodedUser = encodeURIComponent(config.user);
   return createClient(
-    `${normalizeBaseUrl(config.url)}/remote.php/dav/files/${config.user}`,
+    `${normalizeBaseUrl(config.url)}/remote.php/dav/files/${encodedUser}`,
     {
       username: config.user,
       password: config.password,

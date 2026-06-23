@@ -1,10 +1,10 @@
 import {
   deleteFile as deleteNextcloudFile,
   getDownloadUrl,
-  getNextcloudClient,
   resolveFilePath,
   uploadFile as uploadToNextcloud,
 } from "@workspace/nextcloud";
+import { getServerNextcloudClient } from "~/lib/nextcloud-server";
 
 /**
  * Uploads a file to Nextcloud storage
@@ -17,7 +17,7 @@ export const uploadFile = async (
   folderPath?: string,
 ): Promise<string | null> => {
   try {
-    const client = getNextcloudClient();
+    const client = getServerNextcloudClient();
     const result = await uploadToNextcloud({
       client,
       file,
@@ -46,7 +46,7 @@ export const getSignedUrl = async (
 ): Promise<string | null> => {
   try {
     void expiresInMinutes;
-    const client = getNextcloudClient();
+    const client = getServerNextcloudClient();
     const filePath = resolveFilePath(fileUrl);
     return getDownloadUrl(client, filePath);
   } catch (error) {
@@ -62,7 +62,7 @@ export const getSignedUrl = async (
  */
 export const deleteFile = async (fileUrl: string): Promise<boolean> => {
   try {
-    const client = getNextcloudClient();
+    const client = getServerNextcloudClient();
     const result = await deleteNextcloudFile({
       client,
       filePathOrUrl: fileUrl,

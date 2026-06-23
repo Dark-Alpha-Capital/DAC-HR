@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { env } from "cloudflare:workers";
 import { getSession } from "~/lib/get-session";
 import { db } from "@workspace/db/db";
 import { eq } from "@workspace/db";
@@ -11,9 +10,9 @@ import { candidateDocumentFormSchema } from "~/lib/schemas/candidate-document-fo
 import {
   buildNamedEntityFolderPath,
   formatPersonName,
-  getNextcloudClient,
   uploadFile as uploadToNextcloud,
 } from "@workspace/nextcloud";
+import { getServerNextcloudClient } from "~/lib/nextcloud-server";
 
 const VIDEO_TYPES = [
   "video/mp4",
@@ -127,7 +126,7 @@ export const Route = createFileRoute("/api/candidate/$id/documents")({
             });
 
             const nextcloudUploadResult = await uploadToNextcloud({
-              client: getNextcloudClient(),
+              client: getServerNextcloudClient(),
               file,
               folderPath,
             });

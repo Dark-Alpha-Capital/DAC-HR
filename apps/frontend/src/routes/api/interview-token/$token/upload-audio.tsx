@@ -2,9 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   buildNamedEntityFolderPath,
   formatPersonName,
-  getNextcloudClient,
   uploadFile as uploadToNextcloud,
 } from "@workspace/nextcloud";
+import { getServerNextcloudClient } from "~/lib/nextcloud-server";
 import {
   assertInterviewTokenValidForRecordingUpload,
   updateSessionVoiceMetadata,
@@ -38,15 +38,20 @@ export const Route = createFileRoute("/api/interview-token/$token/upload-audio")
           }
 
           const formData = await request.formData();
-          const file = formData.get("file");
+          const fileEntry = formData.get("file");
 
-          if (!(file instanceof File)) {
+          if (!(fileEntry instanceof Blob) || fileEntry.size === 0) {
             return Response.json({ error: "No recording file provided" }, { status: 400 });
           }
 
+          const fileName =
+            fileEntry instanceof File && fileEntry.name
+              ? fileEntry.name
+              : "screen-recording.webm";
+
           const contentType =
-            file.type ||
-            (file.name.endsWith(".webm") ? "video/webm" : "application/octet-stream");
+            fileEntry.type ||
+            (fileName.endsWith(".webm") ? "video/webm" : "application/octet-stream");
 
           if (!ALLOWED_RECORDING_TYPES.includes(contentType)) {
             return Response.json(
@@ -56,7 +61,7 @@ export const Route = createFileRoute("/api/interview-token/$token/upload-audio")
           }
 
           const maxSize = 500 * 1024 * 1024;
-          if (file.size > maxSize) {
+          if (fileEntry.size > maxSize) {
             return Response.json(
               { error: "Recording file exceeds 500MB limit" },
               { status: 400 },
@@ -73,15 +78,20 @@ export const Route = createFileRoute("/api/interview-token/$token/upload-audio")
             name: candidateName,
             id: sessionId,
           });
-          const client = getNextcloudClient();
+          const client = getServerNextcloudClient();
           const uploadResult = await uploadToNextcloud({
             client,
-            file,
+            file: fileEntry,
             folderPath,
             fileName: "screen-recording.webm",
           });
 
           if (!uploadResult.success || !uploadResult.downloadUrl) {
+            console.error("Nextcloud upload failed for interview recording:", {
+              code: uploadResult.code,
+              error: uploadResult.error,
+              sessionId,
+            });
             return Response.json(
               { error: "Failed to upload session recording" },
               { status: 500 },

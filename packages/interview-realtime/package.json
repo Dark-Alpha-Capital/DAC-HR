@@ -19,6 +19,7 @@
     ".": "./index.ts",
     "./types": "./types.ts",
     "./events": "./events.ts",
-    "./prompts": "./prompts.ts"
+    "./prompts": "./prompts.ts",
+    "./answer-evaluation": "./answer-evaluation.ts"
   }
 }

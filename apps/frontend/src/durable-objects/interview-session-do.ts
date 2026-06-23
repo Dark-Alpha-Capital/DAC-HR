@@ -15,9 +15,12 @@ import {
   parseClientMessage,
   serializeDoMessage,
 } from "@workspace/interview-realtime/events";
+import { evaluateCandidateAnswer } from "@workspace/interview-realtime";
 import {
   buildAskCurrentQuestionEvent,
+  buildAcknowledgeAnswerEvent,
   buildClosingEvent,
+  buildFollowUpAnswerEvent,
   buildRealtimeInstructions,
   buildSessionUpdateEvent,
   buildWelcomeIntroEvent,
@@ -81,6 +84,8 @@ export class InterviewSessionDO implements DurableObject {
     null;
   private lastCheatingEventAt = new Map<string, number>();
   private focusLostStartedAt: number | null = null;
+  private pendingAdvanceAfterAck = false;
+  private evaluatingAnswer = false;
 
   constructor(state: DurableObjectState, env: InterviewSessionEnv) {
     this.durableState = state;
@@ -242,6 +247,8 @@ export class InterviewSessionDO implements DurableObject {
         candidateReady: stored.candidateReady ?? false,
         awaitingAnswerForIndex: stored.awaitingAnswerForIndex ?? null,
         questionAnswers: stored.questionAnswers ?? {},
+        questionPartialAnswers: stored.questionPartialAnswers ?? {},
+        questionFollowUpCounts: stored.questionFollowUpCounts ?? {},
       };
       return;
     }
@@ -278,6 +285,8 @@ export class InterviewSessionDO implements DurableObject {
       candidateReady: false,
       awaitingAnswerForIndex: null,
       questionAnswers: {},
+      questionPartialAnswers: {},
+      questionFollowUpCounts: {},
       roundName: row.round.name,
       positionName: row.position.name,
       candidateName: `${row.candidate.firstName} ${row.candidate.lastName}`,
@@ -303,6 +312,10 @@ export class InterviewSessionDO implements DurableObject {
     this.interviewState.currentQuestionIndex = 0;
     this.interviewState.conversationHistory = [];
     this.interviewState.questionAnswers = {};
+    this.interviewState.questionPartialAnswers = {};
+    this.interviewState.questionFollowUpCounts = {};
+    this.pendingAdvanceAfterAck = false;
+    this.evaluatingAnswer = false;
     this.welcomeIntroCompleted = false;
     this.pendingWelcomeIntro = false;
 
@@ -316,7 +329,7 @@ export class InterviewSessionDO implements DurableObject {
       return -1;
     }
 
-    if (this.interviewState.awaitingAnswerForIndex !== null) {
+    if (this.interviewState.awaitingAnswerForIndex != null) {
       return this.interviewState.awaitingAnswerForIndex;
     }
 
@@ -1014,6 +1027,11 @@ export class InterviewSessionDO implements DurableObject {
         responseStatus &&
         responseStatus !== "completed"
       ) {
+        if (this.pendingAdvanceAfterAck) {
+          this.pendingAdvanceAfterAck = false;
+          await this.advanceQuestion();
+          return;
+        }
         await this.askCurrentQuestion();
         return;
       }
@@ -1066,6 +1084,12 @@ export class InterviewSessionDO implements DurableObject {
     }
 
     if (phase === "questions") {
+      if (this.pendingAdvanceAfterAck) {
+        this.pendingAdvanceAfterAck = false;
+        await this.advanceQuestion();
+        return;
+      }
+
       this.interviewState.awaitingAnswerForIndex =
         this.interviewState.currentQuestionIndex;
       await this.persistState();
@@ -1135,12 +1159,148 @@ export class InterviewSessionDO implements DurableObject {
     }
   }
 
-  private async advanceAfterAnswer() {
-    if (!this.interviewState || this.interviewState.voicePhase !== "questions") {
+  private clearQuestionAttemptState(questionId: string) {
+    if (!this.interviewState) {
       return;
     }
 
-    await this.advanceQuestion();
+    if (this.interviewState.questionPartialAnswers) {
+      delete this.interviewState.questionPartialAnswers[questionId];
+    }
+    if (this.interviewState.questionFollowUpCounts) {
+      delete this.interviewState.questionFollowUpCounts[questionId];
+    }
+  }
+
+  private async persistQuestionAnswer(
+    question: InterviewQuestion,
+    combinedAnswer: string,
+    realtimeEventId?: string,
+  ) {
+    if (!this.interviewState) {
+      return;
+    }
+
+    if (!this.interviewState.questionAnswers) {
+      this.interviewState.questionAnswers = {};
+    }
+    this.interviewState.questionAnswers[question.id] = combinedAnswer;
+
+    const selectedOptionId = this.matchMcqOption(question, combinedAnswer);
+
+    try {
+      await upsertVoiceResponse({
+        sessionId: this.interviewState.sessionId,
+        questionId: question.id,
+        transcript: combinedAnswer,
+        selectedOptionId,
+        realtimeEventId,
+      });
+
+      this.broadcast({
+        type: "ANSWER_SAVED",
+        questionId: question.id,
+        transcript: combinedAnswer,
+      });
+    } catch (error) {
+      console.error(
+        JSON.stringify({
+          level: "error",
+          component: "InterviewSessionDO",
+          action: "persistQuestionAnswer",
+          sessionId: this.interviewState.sessionId,
+          questionId: question.id,
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
+    }
+  }
+
+  private async handleQuestionAnswer(
+    questionIndex: number,
+    question: InterviewQuestion,
+    trimmed: string,
+    realtimeEventId?: string,
+  ) {
+    if (!this.interviewState || this.evaluatingAnswer) {
+      return;
+    }
+
+    this.evaluatingAnswer = true;
+
+    try {
+      this.appendConversation("user", trimmed);
+
+      if (!this.interviewState.questionPartialAnswers) {
+        this.interviewState.questionPartialAnswers = {};
+      }
+      if (!this.interviewState.questionFollowUpCounts) {
+        this.interviewState.questionFollowUpCounts = {};
+      }
+
+      const priorUtterances =
+        this.interviewState.questionPartialAnswers[question.id] ?? [];
+      priorUtterances.push(trimmed);
+      this.interviewState.questionPartialAnswers[question.id] = priorUtterances;
+
+      const followUpCount =
+        this.interviewState.questionFollowUpCounts[question.id] ?? 0;
+
+      const evaluation = await evaluateCandidateAnswer({
+        apiKey: this.env.OPENAI_API_KEY,
+        question,
+        latestUtterance: trimmed,
+        priorUtterances: priorUtterances.slice(0, -1),
+        followUpCount,
+      });
+
+      this.logTranscript("answer_evaluated", {
+        questionId: question.id,
+        questionIndex,
+        sufficient: evaluation.sufficient,
+        relevance: evaluation.relevance,
+        followUpCount,
+        answerPreview: previewText(evaluation.combinedAnswer),
+      });
+
+      if (evaluation.sufficient) {
+        await this.persistQuestionAnswer(
+          question,
+          evaluation.combinedAnswer,
+          realtimeEventId,
+        );
+        this.clearQuestionAttemptState(question.id);
+        this.interviewState.awaitingAnswerForIndex = null;
+        this.pendingAdvanceAfterAck = true;
+        this.dispatchResponseCreate(
+          buildAcknowledgeAnswerEvent(question),
+          "acknowledge_answer",
+          { questionId: question.id, questionIndex },
+        );
+      } else {
+        this.interviewState.questionFollowUpCounts[question.id] =
+          followUpCount + 1;
+        this.interviewState.awaitingAnswerForIndex = null;
+        this.dispatchResponseCreate(
+          buildFollowUpAnswerEvent({
+            question,
+            candidateUtterance: trimmed,
+            followUpInstruction: evaluation.followUpInstruction,
+          }),
+          "follow_up_answer",
+          {
+            questionId: question.id,
+            questionIndex,
+            followUpCount: followUpCount + 1,
+            relevance: evaluation.relevance,
+          },
+        );
+      }
+
+      await this.persistState();
+    } finally {
+      this.evaluatingAnswer = false;
+    }
   }
 
   private async saveUserTranscript(
@@ -1203,44 +1363,13 @@ export class InterviewSessionDO implements DurableObject {
       return;
     }
 
-    this.appendConversation("user", trimmed);
-    if (!this.interviewState.questionAnswers) {
-      this.interviewState.questionAnswers = {};
-    }
-    this.interviewState.questionAnswers[question.id] = trimmed;
-
-    const selectedOptionId = this.matchMcqOption(question, trimmed);
-
-    try {
-      await upsertVoiceResponse({
-        sessionId: this.interviewState.sessionId,
-        questionId: question.id,
-        transcript: trimmed,
-        selectedOptionId,
-        realtimeEventId,
-      });
-
-      this.broadcast({
-        type: "ANSWER_SAVED",
-        questionId: question.id,
-        transcript: trimmed,
-      });
-    } catch (error) {
-      console.error(
-        JSON.stringify({
-          level: "error",
-          component: "InterviewSessionDO",
-          action: "saveUserTranscript",
-          sessionId: this.interviewState.sessionId,
-          questionId: question.id,
-          error: error instanceof Error ? error.message : String(error),
-        }),
-      );
-    }
-
     if (phase === "questions") {
-      this.interviewState.awaitingAnswerForIndex = null;
-      await this.advanceAfterAnswer();
+      await this.handleQuestionAnswer(
+        questionIndex,
+        question,
+        trimmed,
+        realtimeEventId,
+      );
     }
   }
 
@@ -1415,10 +1544,6 @@ export class InterviewSessionDO implements DurableObject {
       questionIndex: this.interviewState.currentQuestionIndex,
       questionId: question.id,
     });
-
-    this.interviewState.awaitingAnswerForIndex =
-      this.interviewState.currentQuestionIndex;
-    await this.persistState();
   }
 
   private async startClosingPhase() {
