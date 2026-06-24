@@ -19,27 +19,34 @@ import { CandidateOverviewTab } from "~/components/candidate-overview-tab";
 import { CandidateApplicationsTab } from "~/components/candidate-applications-tab";
 import { CandidateDocumentsTab } from "~/components/candidate-documents-tab";
 import OnboardingCard from "~/components/onboarding-card";
-import {
-  loadCandidateDetail,
-  type CandidateDetailData,
-} from "~/lib/loaders/candidates";
+import { candidateDetailQueryOptions } from "~/lib/query/options/candidates";
+import { useCandidateDetail } from "~/hooks/queries/use-candidate-detail";
 
 export const Route = createFileRoute("/_main/candidates/$uid/")({
   head: () => ({
     meta: [{ title: "Candidate Detail" }],
   }),
-  loader: async ({ params }) => {
-    const result = await loadCandidateDetail({ data: { uid: params.uid } });
-    return result as CandidateDetailData;
+  loader: async ({ context: { queryClient }, params }) => {
+    await queryClient.ensureQueryData(
+      candidateDetailQueryOptions(params.uid),
+    );
   },
   component: CandidateDetailPage,
-  pendingComponent: () => <DetailPageSkeleton tabs tabCount={4} />,
 });
 
 function CandidateDetailPage() {
-  const { candidate, documents, onboardingData } =
-    Route.useLoaderData() as CandidateDetailData;
   const { uid } = Route.useParams();
+  const { data, isLoading } = useCandidateDetail(uid);
+
+  if (isLoading && !data) {
+    return <DetailPageSkeleton tabs tabCount={4} />;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  const { candidate, documents, onboardingData } = data;
 
   if (!candidate) {
     return (

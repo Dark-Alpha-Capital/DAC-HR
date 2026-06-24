@@ -42,6 +42,7 @@ const FilterEmployeeEmail = () => {
     >
       <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       <Input
+        key={`email-${searchParams.get("email") ?? ""}`}
         type="email"
         placeholder="Search by email..."
         defaultValue={searchParams.get("email") || ""}

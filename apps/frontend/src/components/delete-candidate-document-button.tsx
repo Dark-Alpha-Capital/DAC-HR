@@ -2,7 +2,7 @@ import React, { useTransition } from "react";
 import { Button } from "~/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useRouter } from "@tanstack/react-router";
+import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 import { useAppSession } from "~/hooks/use-app-session";
 import {
   AlertDialog,
@@ -23,7 +23,7 @@ const DeleteCandidateDocumentButton = ({
   documentId: string;
   candidateId: string;
 }) => {
-  const router = useRouter();
+  const invalidate = useQueryInvalidation();
   const [isPending, startTransition] = useTransition();
   const session = useAppSession();
 
@@ -61,7 +61,8 @@ const DeleteCandidateDocumentButton = ({
           toast.success("Document deleted successfully", {
             position: "bottom-right",
           });
-          router.invalidate();
+          void invalidate.candidateDetail(candidateId);
+          void invalidate.documentLists();
         }
       } catch (error) {
         toast.error(

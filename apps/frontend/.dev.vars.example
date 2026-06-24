@@ -1,0 +1,11 @@
+# Copy to apps/frontend/.dev.vars for local Wrangler dev (Workers runtime).
+# BETTER_AUTH_URL defaults to http://localhost:3000 via wrangler.jsonc top-level vars.
+# Override here only if you use a different local port.
+
+BETTER_AUTH_SECRET=your-secret-here
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+OPENAI_API_KEY=
+NEXTCLOUD_URL=
+NEXTCLOUD_USER=
+NEXTCLOUD_PASSWORD=

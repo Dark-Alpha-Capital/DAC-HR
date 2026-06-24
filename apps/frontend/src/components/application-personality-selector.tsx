@@ -7,7 +7,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { updateApplication } from "~/lib/actions/update-application";
-import { useRouter } from "@tanstack/react-router";
+import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 import { toast } from "sonner";
 
 type Personality =
@@ -57,7 +57,7 @@ export default function ApplicationPersonalitySelector({
   applicationId,
   currentPersonality,
 }: ApplicationPersonalitySelectorProps) {
-  const router = useRouter();
+  const invalidate = useQueryInvalidation();
   const [isPending, startTransition] = useTransition();
   const [value, setValue] = useState<string>(currentPersonality || NONE_VALUE);
 
@@ -80,7 +80,7 @@ export default function ApplicationPersonalitySelector({
         setValue(currentPersonality || NONE_VALUE);
       } else {
         toast.success("Personality updated successfully");
-        router.invalidate();
+        void invalidate.applicationDetail(applicationId);
       }
     });
   };

@@ -40,9 +40,26 @@ const isAllowedEmail = (email: string | null | undefined): boolean => {
 const UNAUTHORIZED_MESSAGE =
   "Only Dark Alpha Capital (@darkalphacapital.com) email addresses can access this site.";
 
+const AUTH_ALLOWED_HOSTS = [
+  "localhost",
+  "localhost:3000",
+  "127.0.0.1",
+  "127.0.0.1:3000",
+  "recruiting.darkalphacapital.com",
+] as const;
+
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  baseURL: {
+    allowedHosts: [...AUTH_ALLOWED_HOSTS],
+    fallback: "https://recruiting.darkalphacapital.com",
+    protocol: "auto",
+  },
+  trustedOrigins: [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://recruiting.darkalphacapital.com",
+  ],
   onAPIError: {
     errorURL: "/unauthorized",
   },

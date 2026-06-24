@@ -4,6 +4,7 @@ import { Loader2, Trash2 } from "lucide-react";
 import { deleteEmployee } from "~/lib/actions/delete-employee";
 import { toast } from "sonner";
 import { useRouter } from "@tanstack/react-router";
+import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +19,7 @@ import {
 
 const DeleteEmployeeButton = ({ employeeId }: { employeeId: string }) => {
   const router = useRouter();
+  const invalidate = useQueryInvalidation();
   const [isPending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
 
@@ -31,7 +33,8 @@ const DeleteEmployeeButton = ({ employeeId }: { employeeId: string }) => {
       if (response?.success) {
         toast.success("Employee deleted successfully");
         setOpen(false);
-        router.invalidate();
+        void invalidate.employeeDetail(employeeId);
+        router.navigate({ to: "/employees", search: {} as any });
       }
     });
   };

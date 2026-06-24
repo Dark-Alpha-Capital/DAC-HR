@@ -98,6 +98,7 @@ function FilterSearch() {
     >
       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       <Input
+        key={`search-${searchParams.get("search") ?? ""}`}
         type="text"
         placeholder="Search actions, types, IDs..."
         defaultValue={searchParams.get("search") || ""}
@@ -358,6 +359,7 @@ function FilterDateRange() {
       <div className="relative">
         <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
         <Input
+          key={`startDate-${searchParams.get("startDate") ?? ""}`}
           type="date"
           defaultValue={searchParams.get("startDate") || ""}
           onChange={(e) => handleStartDateChange(e.target.value)}
@@ -370,6 +372,7 @@ function FilterDateRange() {
       <div className="relative">
         <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
         <Input
+          key={`endDate-${searchParams.get("endDate") ?? ""}`}
           type="date"
           defaultValue={searchParams.get("endDate") || ""}
           onChange={(e) => handleEndDateChange(e.target.value)}

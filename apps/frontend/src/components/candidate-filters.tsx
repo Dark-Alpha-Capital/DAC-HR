@@ -12,11 +12,15 @@ interface CandidateFiltersProps {
     id: string;
     name: string;
   }[];
+  isFetching?: boolean;
 }
 
-const CandidateFilters = ({ positions }: CandidateFiltersProps) => {
+const CandidateFilters = ({ positions, isFetching }: CandidateFiltersProps) => {
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div
+      className="flex flex-wrap items-center gap-2 transition-opacity"
+      style={{ opacity: isFetching ? 0.7 : 1 }}
+    >
       <FilterCandidateName />
       <FilterCandidateEmail />
       <FilterCandidatePosition positions={positions} />

@@ -4,6 +4,7 @@ import { normalizeFolderPath } from "./paths";
 export type { WebDAVClient };
 export {
   buildNamedEntityFolderPath,
+  buildImportFolderPath,
   formatPersonName,
   normalizeFolderPath,
   sanitizeIdSegment,

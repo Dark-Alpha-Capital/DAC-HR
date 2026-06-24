@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
-import { candidate, application } from "@workspace/db/schema";
+import { candidate, application, candidatePosition } from "@workspace/db/schema";
 import {
   CandidateFormSchema,
   candidateFormSchema,
@@ -62,9 +62,15 @@ export const updateCandidate = createServerFn({ method: "POST" })
       .from(application)
       .where(eq(application.candidateId, candidateId));
 
-    const existingPositionIds = new Set(
-      existingApplications.map((a) => a.positionId),
-    );
+    const existingPositions = await db
+      .select({ positionId: candidatePosition.positionId })
+      .from(candidatePosition)
+      .where(eq(candidatePosition.candidateId, candidateId));
+
+    const existingPositionIds = new Set([
+      ...existingApplications.map((a) => a.positionId),
+      ...existingPositions.map((p) => p.positionId),
+    ]);
 
     // Create applications for new positions (skip already applied positions)
     let applicationsCreated = 0;
@@ -74,6 +80,10 @@ export const updateCandidate = createServerFn({ method: "POST" })
           candidateId,
           positionId,
           status: "ai_screening",
+        });
+        await db.insert(candidatePosition).values({
+          candidateId,
+          positionId,
         });
         applicationsCreated++;
       }

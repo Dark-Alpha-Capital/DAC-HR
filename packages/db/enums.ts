@@ -157,3 +157,31 @@ export interface CheatingSummary {
   copyAttempts?: number;
   pasteAttempts?: number;
 }
+
+export const candidateImportTypes = ["csv", "zip", "pdf"] as const;
+export type CandidateImportType = (typeof candidateImportTypes)[number];
+
+export const candidateImportStatuses = [
+  "pending",
+  "processing",
+  "completed",
+  "failed",
+  "cancelled",
+] as const;
+export type CandidateImportStatus = (typeof candidateImportStatuses)[number];
+
+export const candidateImportDuplicatePolicies = [
+  "skip",
+  "update_resume",
+] as const;
+export type CandidateImportDuplicatePolicy =
+  (typeof candidateImportDuplicatePolicies)[number];
+
+export const candidateImportRowStatuses = [
+  "pending",
+  "success",
+  "skipped",
+  "failed",
+] as const;
+export type CandidateImportRowStatus =
+  (typeof candidateImportRowStatuses)[number];

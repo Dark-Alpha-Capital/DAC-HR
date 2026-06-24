@@ -3,7 +3,7 @@ import { Button } from "~/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
 import { deleteQuestion } from "~/lib/actions/delete-question";
 import { toast } from "sonner";
-import { useRouter } from "@tanstack/react-router";
+import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,7 +23,7 @@ import {
 
 const DeleteQuestionButton = ({ questionId }: { questionId: string }) => {
   const [isPending, startTransition] = useTransition();
-  const router = useRouter();
+  const invalidate = useQueryInvalidation();
 
   return (
     <Tooltip>
@@ -65,7 +65,7 @@ const DeleteQuestionButton = ({ questionId }: { questionId: string }) => {
                   }
                   if (response?.success) {
                     toast.success("Question deleted successfully");
-                    router.invalidate();
+                    void invalidate.questionLists();
                   }
                 });
               }}

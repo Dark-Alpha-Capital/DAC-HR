@@ -3,7 +3,7 @@ import { Button } from "~/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
 import { deleteDocument } from "~/lib/actions/delete-document";
 import { toast } from "sonner";
-import { useRouter } from "@tanstack/react-router";
+import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +22,7 @@ import {
 } from "~/components/ui/tooltip";
 
 const DeleteDocumentButton = ({ documentId }: { documentId: string }) => {
-  const router = useRouter();
+  const invalidate = useQueryInvalidation();
   const [isPending, startTransition] = useTransition();
 
   const handleDelete = () => {
@@ -35,7 +35,7 @@ const DeleteDocumentButton = ({ documentId }: { documentId: string }) => {
 
       if (response?.success) {
         toast.success("Document deleted successfully");
-        router.invalidate();
+        void invalidate.documentLists();
       }
     });
   };

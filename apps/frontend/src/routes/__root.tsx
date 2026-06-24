@@ -1,13 +1,14 @@
 /// <reference types="vite/client" />
 import {
-  createRootRoute,
+  createRootRouteWithContext,
   HeadContent,
   Outlet,
   Scripts,
 } from "@tanstack/react-router";
 import appCss from "~/styles/app.css?url";
+import type { RouterContext } from "~/router";
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<RouterContext>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },

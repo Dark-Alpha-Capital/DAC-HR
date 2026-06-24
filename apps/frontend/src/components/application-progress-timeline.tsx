@@ -37,7 +37,7 @@ import GenerateInterviewLinkDialogWrapper from "./generate-interview-link-dialog
 import type { InterviewMode } from "@workspace/db/enums";
 import { deleteInterview } from "~/lib/actions/delete-interview";
 import { toast } from "sonner";
-import { useRouter } from "@tanstack/react-router";
+import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 
 interface Round {
   id: string;
@@ -150,7 +150,7 @@ export default function ApplicationProgressTimeline({
   users = [],
   application,
 }: ApplicationProgressTimelineProps) {
-  const router = useRouter();
+  const invalidate = useQueryInvalidation();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [interviewToDelete, setInterviewToDelete] = useState<string | null>(
     null,
@@ -213,7 +213,9 @@ export default function ApplicationProgressTimeline({
         toast.error(result.error);
       } else {
         toast.success("Interview deleted successfully");
-        router.invalidate();
+        if (applicationId) {
+          void invalidate.applicationDetail(applicationId);
+        }
       }
     } catch (error) {
       toast.error("Failed to delete interview");

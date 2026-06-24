@@ -1,21 +1,19 @@
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
-import { loadEmployeesIndex } from "~/lib/loaders/employees";
 import EmployeeFilters from "~/components/employee-filters";
 import EmployeeContainer from "~/components/employee-container";
 import PaginationControls from "~/components/pagination-controls";
+import { employeesIndexQueryOptions } from "~/lib/query/options/employees";
+import { useEmployeesIndex } from "~/hooks/queries/use-employees-index";
 import {
   toOptionalString,
   toPageNumber,
   toStringArray,
 } from "~/lib/parse-search";
 
-export const Route = createFileRoute("/_main/employees/")({
-  head: () => ({
-    meta: [{ title: "Employees" }],
-  }),
-  validateSearch: (search: Record<string, unknown>) => ({
+function parseEmployeesSearch(search: Record<string, unknown>) {
+  return {
     position: toStringArray(search.position as string | string[] | undefined),
     department: toStringArray(
       search.department as string | string[] | undefined,
@@ -26,15 +24,34 @@ export const Route = createFileRoute("/_main/employees/")({
       search.page !== undefined
         ? toPageNumber(search.page)
         : (undefined as number | undefined),
+  };
+}
+
+export const Route = createFileRoute("/_main/employees/")({
+  head: () => ({
+    meta: [{ title: "Employees" }],
   }),
-  loaderDeps: ({ search }) => search,
-  loader: async ({ deps }) => loadEmployeesIndex({ data: deps }),
+  validateSearch: parseEmployeesSearch,
+  loader: async ({ context: { queryClient }, location }) => {
+    const search = parseEmployeesSearch(
+      location.search as Record<string, unknown>,
+    );
+    await queryClient.ensureQueryData(employeesIndexQueryOptions(search));
+  },
   component: EmployeesPage,
-  pendingComponent: () => <ListPageSkeleton />,
 });
 
 function EmployeesPage() {
-  console.log("is this real or am i tripping");
+  const search = Route.useSearch();
+  const { data, isLoading, isFetching } = useEmployeesIndex(search);
+
+  if (isLoading && !data) {
+    return <ListPageSkeleton />;
+  }
+
+  if (!data) {
+    return null;
+  }
 
   const {
     positions,
@@ -44,7 +61,7 @@ function EmployeesPage() {
     hasNextPage,
     hasPreviousPage,
     hasFilters,
-  } = Route.useLoaderData();
+  } = data;
 
   return (
     <div className="space-y-6">
@@ -57,7 +74,12 @@ function EmployeesPage() {
         </Button>
       </div>
 
-      <EmployeeFilters positions={positions} />
+      <div
+        className="transition-opacity"
+        style={{ opacity: isFetching ? 0.7 : 1 }}
+      >
+        <EmployeeFilters positions={positions} />
+      </div>
 
       {employees.length === 0 ? (
         <div className="rounded-xl border bg-card p-10 text-center">

@@ -1,20 +1,18 @@
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
-import { loadQuestionsIndex } from "~/lib/loaders/questions";
 import QuestionContainer from "~/components/question-container";
 import FilterQuestionSearch from "~/components/filter-question-search";
 import FilterQuestionPosition from "~/components/filter-question-position";
 import FilterQuestionRound from "~/components/filter-question-round";
 import ClearQuestionFiltersButton from "~/components/clear-question-filters-button";
 import PaginationControls from "~/components/pagination-controls";
+import { questionsIndexQueryOptions } from "~/lib/query/options/questions";
+import { useQuestionsIndex } from "~/hooks/queries/use-questions-index";
 import { toPageNumber, toStringArray } from "~/lib/parse-search";
 
-export const Route = createFileRoute("/_main/questions/")({
-  head: () => ({
-    meta: [{ title: "Questions" }],
-  }),
-  validateSearch: (search: Record<string, unknown>) => ({
+function parseQuestionsSearch(search: Record<string, unknown>) {
+  return {
     search: typeof search.search === "string" ? search.search : "",
     position: toStringArray(search.position as string | string[] | undefined) ?? [],
     round: toStringArray(search.round as string | string[] | undefined) ?? [],
@@ -22,14 +20,35 @@ export const Route = createFileRoute("/_main/questions/")({
       search.page !== undefined
         ? toPageNumber(search.page)
         : (undefined as number | undefined),
+  };
+}
+
+export const Route = createFileRoute("/_main/questions/")({
+  head: () => ({
+    meta: [{ title: "Questions" }],
   }),
-  loaderDeps: ({ search }) => search,
-  loader: async ({ deps }) => loadQuestionsIndex({ data: deps }),
+  validateSearch: parseQuestionsSearch,
+  loader: async ({ context: { queryClient }, location }) => {
+    const search = parseQuestionsSearch(
+      location.search as Record<string, unknown>,
+    );
+    await queryClient.ensureQueryData(questionsIndexQueryOptions(search));
+  },
   component: QuestionsPage,
-  pendingComponent: () => <ListPageSkeleton />,
 });
 
 function QuestionsPage() {
+  const search = Route.useSearch();
+  const { data, isLoading, isFetching } = useQuestionsIndex(search);
+
+  if (isLoading && !data) {
+    return <ListPageSkeleton />;
+  }
+
+  if (!data) {
+    return null;
+  }
+
   const {
     positions,
     rounds,
@@ -39,7 +58,7 @@ function QuestionsPage() {
     hasNextPage,
     hasPreviousPage,
     hasFilters,
-  } = Route.useLoaderData();
+  } = data;
 
   return (
     <div className="space-y-6">
@@ -50,7 +69,10 @@ function QuestionsPage() {
         </Button>
       </div>
 
-      <div className="flex items-center gap-4 flex-wrap">
+      <div
+        className="flex items-center gap-4 flex-wrap transition-opacity"
+        style={{ opacity: isFetching ? 0.7 : 1 }}
+      >
         <FilterQuestionSearch />
         <FilterQuestionPosition positions={positions} />
         <FilterQuestionRound rounds={rounds} />
