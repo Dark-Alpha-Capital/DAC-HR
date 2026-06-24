@@ -62,3 +62,10 @@ export const loadPositionEdit = createServerFn({ method: "GET" })
     const position = await getPositionBySlug(slug);
     return { position };
   });
+
+export const loadPositionOptions = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
+  .handler(async () => {
+    const { positions } = await getPositions(undefined, undefined, 1, 200);
+    return positions.map((p) => ({ id: p.id, name: p.name }));
+  });

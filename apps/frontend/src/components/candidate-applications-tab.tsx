@@ -7,6 +7,7 @@ import {
   applicationStatusBadgeVariants,
 } from "@workspace/db/application-status";
 import { getCachedCandidate } from "~/lib/cache/candidate";
+import { CreateApplicationDialog } from "~/components/dialogs/create-application-dialog";
 
 type Candidate = NonNullable<Awaited<ReturnType<typeof getCachedCandidate>>>;
 
@@ -15,19 +16,32 @@ export function CandidateApplicationsTab({
 }: {
   candidate: Candidate;
 }) {
+  const existingPositionIds = candidate.applications.map(
+    (app) => app.position.id,
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Briefcase className="h-4 w-4" />
           <h2 className="text-lg font-semibold">Applications</h2>
+          <CreateApplicationDialog
+            candidateId={candidate.id}
+            existingPositionIds={existingPositionIds}
+          />
         </div>
         <Badge variant="secondary">{candidate.applications.length}</Badge>
       </div>
       {candidate.applications.length === 0 ? (
         <div className="py-12 text-center text-muted-foreground">
           <Briefcase className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">No applications found for this candidate.</p>
+          <p className="text-sm mb-4">No applications found for this candidate.</p>
+          <CreateApplicationDialog
+            candidateId={candidate.id}
+            existingPositionIds={existingPositionIds}
+            variant="empty-state"
+          />
         </div>
       ) : (
         <div className="space-y-2">
