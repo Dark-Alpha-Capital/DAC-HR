@@ -1,10 +1,9 @@
-import { useState } from "react";
 import ViewToggle from "./view-toggle";
 import CandidateContainer from "./candidate-container";
 import CandidateKanbanBoard from "./candidate-kanban-board";
 import CandidatesPaginationControls from "~/components/candidates-pagination-controls";
-
-type ViewMode = "table" | "kanban";
+import type { CandidateViewMode } from "~/lib/parse-search";
+import type { KanbanFilters } from "~/lib/kanban/types";
 
 type Candidate = {
   id: string;
@@ -22,76 +21,64 @@ type Candidate = {
   applicationStatus: string | null;
 };
 
-type Application = {
-  id: string;
-  status: string;
-  createdAt: Date;
-  updatedAt: Date;
-  candidate: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-  position: {
-    id: string;
-    name: string;
-    slug: string;
-    description: string | null;
-  };
-  interviews: Array<{
-    id: string;
-    status: string;
-  }>;
-};
-
 interface CandidatesViewWrapperProps {
+  viewMode: CandidateViewMode;
+  onViewModeChange: (mode: CandidateViewMode) => void;
   candidates: Candidate[];
-  applications: Application[];
+  kanbanFilters: KanbanFilters;
   currentPage: number;
+  limit: number;
+  totalCount: number;
   totalPages: number;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
 }
 
 export default function CandidatesViewWrapper({
+  viewMode,
+  onViewModeChange,
   candidates,
-  applications,
+  kanbanFilters,
   currentPage,
+  limit,
+  totalCount,
   totalPages,
   hasNextPage,
   hasPreviousPage,
 }: CandidatesViewWrapperProps) {
-  const [viewMode, setViewMode] = useState<ViewMode>("kanban");
+  const isTableView = viewMode === "table";
 
   return (
     <div className="space-y-6 w-full min-w-0">
       <div className="flex items-center justify-end">
-        <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
+        <ViewToggle viewMode={viewMode} onViewModeChange={onViewModeChange} />
       </div>
 
       <div className="min-w-0 w-full overflow-hidden">
-        {viewMode === "table" ? (
+        {isTableView ? (
           <div className="overflow-x-auto">
             <CandidateContainer
               candidates={candidates}
               currentPage={currentPage}
-              limit={50}
+              limit={limit}
             />
           </div>
         ) : (
-          <CandidateKanbanBoard applications={applications} />
+          <CandidateKanbanBoard filters={kanbanFilters} />
         )}
       </div>
 
-      {totalPages > 1 && (
+      {isTableView ? (
         <CandidatesPaginationControls
           currentPage={currentPage}
           totalPages={totalPages}
           hasNextPage={hasNextPage}
           hasPreviousPage={hasPreviousPage}
+          totalCount={totalCount}
+          pageItemCount={candidates.length}
+          limit={limit}
         />
-      )}
+      ) : null}
     </div>
   );
 }

@@ -37,6 +37,7 @@ import { Route as MainCandidatesIndexRouteImport } from './routes/_main/candidat
 import { Route as MainApplicationsIndexRouteImport } from './routes/_main/applications/index'
 import { Route as MainAdminIndexRouteImport } from './routes/_main/admin/index'
 import { Route as ApiLoginGoogleRouteImport } from './routes/api/login/google'
+import { Route as ApiKanbanCardsRouteImport } from './routes/api/kanban/cards'
 import { Route as ApiDocumentsViewRouteImport } from './routes/api/documents/view'
 import { Route as ApiDocumentsUploadRouteImport } from './routes/api/documents/upload'
 import { Route as ApiCandidateBulkRouteImport } from './routes/api/candidate/bulk'
@@ -228,6 +229,11 @@ const MainAdminIndexRoute = MainAdminIndexRouteImport.update({
 const ApiLoginGoogleRoute = ApiLoginGoogleRouteImport.update({
   id: '/api/login/google',
   path: '/api/login/google',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiKanbanCardsRoute = ApiKanbanCardsRouteImport.update({
+  id: '/api/kanban/cards',
+  path: '/api/kanban/cards',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiDocumentsViewRoute = ApiDocumentsViewRouteImport.update({
@@ -550,6 +556,7 @@ export interface FileRoutesByFullPath {
   '/api/candidate/bulk': typeof ApiCandidateBulkRoute
   '/api/documents/upload': typeof ApiDocumentsUploadRoute
   '/api/documents/view': typeof ApiDocumentsViewRoute
+  '/api/kanban/cards': typeof ApiKanbanCardsRoute
   '/api/login/google': typeof ApiLoginGoogleRoute
   '/admin/': typeof MainAdminIndexRoute
   '/applications/': typeof MainApplicationsIndexRoute
@@ -630,6 +637,7 @@ export interface FileRoutesByTo {
   '/api/candidate/bulk': typeof ApiCandidateBulkRoute
   '/api/documents/upload': typeof ApiDocumentsUploadRoute
   '/api/documents/view': typeof ApiDocumentsViewRoute
+  '/api/kanban/cards': typeof ApiKanbanCardsRoute
   '/api/login/google': typeof ApiLoginGoogleRoute
   '/admin': typeof MainAdminIndexRoute
   '/applications': typeof MainApplicationsIndexRoute
@@ -715,6 +723,7 @@ export interface FileRoutesById {
   '/api/candidate/bulk': typeof ApiCandidateBulkRoute
   '/api/documents/upload': typeof ApiDocumentsUploadRoute
   '/api/documents/view': typeof ApiDocumentsViewRoute
+  '/api/kanban/cards': typeof ApiKanbanCardsRoute
   '/api/login/google': typeof ApiLoginGoogleRoute
   '/_main/admin/': typeof MainAdminIndexRoute
   '/_main/applications/': typeof MainApplicationsIndexRoute
@@ -799,6 +808,7 @@ export interface FileRouteTypes {
     | '/api/candidate/bulk'
     | '/api/documents/upload'
     | '/api/documents/view'
+    | '/api/kanban/cards'
     | '/api/login/google'
     | '/admin/'
     | '/applications/'
@@ -879,6 +889,7 @@ export interface FileRouteTypes {
     | '/api/candidate/bulk'
     | '/api/documents/upload'
     | '/api/documents/view'
+    | '/api/kanban/cards'
     | '/api/login/google'
     | '/admin'
     | '/applications'
@@ -963,6 +974,7 @@ export interface FileRouteTypes {
     | '/api/candidate/bulk'
     | '/api/documents/upload'
     | '/api/documents/view'
+    | '/api/kanban/cards'
     | '/api/login/google'
     | '/_main/admin/'
     | '/_main/applications/'
@@ -1022,6 +1034,7 @@ export interface RootRouteChildren {
   ApiCandidateBulkRoute: typeof ApiCandidateBulkRoute
   ApiDocumentsUploadRoute: typeof ApiDocumentsUploadRoute
   ApiDocumentsViewRoute: typeof ApiDocumentsViewRoute
+  ApiKanbanCardsRoute: typeof ApiKanbanCardsRoute
   ApiLoginGoogleRoute: typeof ApiLoginGoogleRoute
   ApiCandidateIndexRoute: typeof ApiCandidateIndexRoute
   InterviewTokenIndexRoute: typeof InterviewTokenIndexRoute
@@ -1236,6 +1249,13 @@ declare module '@tanstack/react-router' {
       path: '/api/login/google'
       fullPath: '/api/login/google'
       preLoaderRoute: typeof ApiLoginGoogleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/kanban/cards': {
+      id: '/api/kanban/cards'
+      path: '/api/kanban/cards'
+      fullPath: '/api/kanban/cards'
+      preLoaderRoute: typeof ApiKanbanCardsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/documents/view': {
@@ -1795,6 +1815,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCandidateBulkRoute: ApiCandidateBulkRoute,
   ApiDocumentsUploadRoute: ApiDocumentsUploadRoute,
   ApiDocumentsViewRoute: ApiDocumentsViewRoute,
+  ApiKanbanCardsRoute: ApiKanbanCardsRoute,
   ApiLoginGoogleRoute: ApiLoginGoogleRoute,
   ApiCandidateIndexRoute: ApiCandidateIndexRoute,
   InterviewTokenIndexRoute: InterviewTokenIndexRoute,

@@ -8,6 +8,8 @@ import { candidatesIndexQueryOptions } from "~/lib/query/options/candidates";
 import { useCandidatesIndex } from "~/hooks/queries/use-candidates-index";
 import {
   toCandidateSort,
+  toCandidateView,
+  type CandidateViewMode,
   toOptionalString,
   toPageNumber,
   toStringArray,
@@ -21,6 +23,7 @@ function parseCandidatesSearch(search: Record<string, unknown>) {
     status: toStringArray(search.status as string | string[] | undefined),
     source: toStringArray(search.source as string | string[] | undefined),
     sort: toCandidateSort(search.sort),
+    view: toCandidateView(search.view),
     page:
       search.page !== undefined
         ? toPageNumber(search.page)
@@ -44,7 +47,17 @@ export const Route = createFileRoute("/_main/candidates/")({
 
 function CandidatesPage() {
   const search = Route.useSearch();
+  const navigate = Route.useNavigate();
   const { data, isLoading, isFetching } = useCandidatesIndex(search);
+
+  const setViewMode = (view: CandidateViewMode) => {
+    void navigate({
+      search: (current) => ({
+        ...current,
+        view,
+      }),
+    });
+  };
 
   if (isLoading && !data) {
     return <ListPageSkeleton layout="cards" />;
@@ -57,13 +70,25 @@ function CandidatesPage() {
   const {
     positions,
     candidates,
-    applications,
     currentPage,
+    limit,
+    totalCount,
     totalPages,
     hasNextPage,
     hasPreviousPage,
     hasFilters,
   } = data;
+
+  const viewMode = search.view ?? "kanban";
+
+  const kanbanFilters = {
+    name: search.name,
+    email: search.email,
+    position: search.position,
+    status: search.status,
+    source: search.source,
+    sort: search.sort,
+  };
 
   return (
     <div className="space-y-6 w-full min-w-0">
@@ -71,7 +96,10 @@ function CandidatesPage() {
         <h1 className="text-2xl font-semibold tracking-tight">Candidates</h1>
         <div className="flex items-center gap-2">
           <BulkUploadCandidatesDialog
-            positions={positions.map((p) => ({ id: p.id, name: p.name }))}
+            positions={positions.map((p: { id: string; name: string }) => ({
+              id: p.id,
+              name: p.name,
+            }))}
           />
           <Button asChild>
             <Link to="/candidates/new" search="{}">
@@ -83,7 +111,7 @@ function CandidatesPage() {
 
       <CandidateFilters positions={positions} isFetching={isFetching} />
 
-      {candidates.length === 0 && applications.length === 0 ? (
+      {totalCount === 0 ? (
         <div className="rounded-xl border bg-card p-10 text-center">
           <p className="text-muted-foreground">
             {hasFilters
@@ -98,9 +126,13 @@ function CandidatesPage() {
         </div>
       ) : (
         <CandidatesViewWrapper
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
           candidates={candidates}
-          applications={applications}
+          kanbanFilters={kanbanFilters}
           currentPage={currentPage}
+          limit={limit}
+          totalCount={totalCount}
           totalPages={totalPages}
           hasNextPage={hasNextPage}
           hasPreviousPage={hasPreviousPage}

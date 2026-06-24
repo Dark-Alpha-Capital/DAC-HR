@@ -108,7 +108,17 @@ const CandidateContainer = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {candidates.map((candidate, index) => {
+          {candidates.length === 0 ? (
+            <TableRow>
+              <TableCell
+                colSpan={9}
+                className="py-10 text-center text-sm text-muted-foreground"
+              >
+                No candidates on this page.
+              </TableCell>
+            </TableRow>
+          ) : (
+            candidates.map((candidate, index) => {
             const fullName = `${candidate.firstName} ${candidate.lastName}`;
             const isSelected = selectedIds.has(candidate.id);
             return (
@@ -180,7 +190,8 @@ const CandidateContainer = ({
                 </TableCell>
               </TableRow>
             );
-          })}
+          })
+          )}
         </TableBody>
       </Table>
     </div>

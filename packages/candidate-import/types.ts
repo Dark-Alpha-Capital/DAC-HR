@@ -21,6 +21,8 @@ export type ResumeChunk = {
   startPage: number;
   endPage: number;
   headerName: string;
+  /** Set when chunk is assigned from Handshake roster email matching. */
+  rosterEmail?: string;
 };
 
 export type ImportProfileInput = {

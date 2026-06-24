@@ -15,6 +15,7 @@ export type CandidatesIndexDeps = {
   source?: string[];
   sort?: CandidateSortOption;
   page?: number;
+  view?: "table" | "kanban";
 };
 
 export function candidatesIndexQueryOptions(deps: CandidatesIndexDeps) {

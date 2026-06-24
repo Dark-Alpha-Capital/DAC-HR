@@ -1,5 +1,7 @@
 import { useUrlSearchParams } from "~/lib/hooks/use-url-search-params";
 
+import { resetListPageParam } from "~/lib/parse-search";
+
 import React, { useOptimistic, useTransition } from "react";
 import {
   DropdownMenu,
@@ -36,6 +38,7 @@ const FilterCandidatePosition = ({
         : selectedPositions.filter((pos) => pos !== value);
 
       newSelected.forEach((pos) => params.append("position", pos));
+      resetListPageParam(params);
       setSelectedPositions(newSelected);
 
       setSearchParams(params);

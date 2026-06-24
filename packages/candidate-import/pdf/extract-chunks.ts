@@ -18,9 +18,53 @@ export async function extractPerPageText(
   return [];
 }
 
-function looksLikeNameHeader(line: string): boolean {
+const RESUME_SECTION_HEADERS = new Set([
+  "professional summary",
+  "technical projects",
+  "achievements",
+  "education",
+  "experience",
+  "skills",
+  "summary",
+  "objective",
+  "objective statement",
+  "core competencies",
+  "technical skills",
+  "work experience",
+  "certification",
+  "certifications",
+  "microsoft excel",
+  "google sheets",
+  "microsoft word",
+  "phone",
+  "email",
+  "address",
+]);
+
+export function isBlockedResumeHeader(line: string): boolean {
+  const normalized = line.trim().toLowerCase();
+  if (RESUME_SECTION_HEADERS.has(normalized)) {
+    return true;
+  }
+
+  // Skill-list lines: "Microsoft Excel", "Google Docs", etc.
+  if (
+    /^(microsoft|google|adobe|aws|azure)\s+/i.test(line) &&
+    !/\s[A-Z][a-z]+/.test(line.slice(10))
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+export function looksLikeNameHeader(line: string): boolean {
   const trimmed = line.trim();
   if (trimmed.length < 3 || trimmed.length > 80) {
+    return false;
+  }
+
+  if (isBlockedResumeHeader(trimmed)) {
     return false;
   }
 
@@ -37,12 +81,13 @@ function looksLikeNameHeader(line: string): boolean {
     letters.replace(/[^A-Z]/g, "").length / letters.length;
   const titleCase =
     /^[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+$/.test(trimmed) ||
-    /^[A-Z][a-z]+(?:\s+\([A-Za-z]+\)\s+[A-Z][a-z]+)+$/.test(trimmed);
+    /^[A-Z][a-z]+(?:\s+\([A-Za-z]+\)\s+[A-Z][a-z]+)+$/.test(trimmed) ||
+    /^[A-Z]{2,}\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*$/.test(trimmed);
 
   return uppercaseRatio > 0.6 || titleCase;
 }
 
-function getFirstMeaningfulLine(pageText: string): string {
+export function getFirstMeaningfulLine(pageText: string): string {
   const lines = pageText
     .split(/\r?\n/)
     .map((line) => line.trim())

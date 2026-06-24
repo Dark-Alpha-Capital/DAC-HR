@@ -41,6 +41,16 @@ export function toPageNumber(value: unknown, fallback = 1): number {
   return page;
 }
 
+export type CandidateViewMode = "table" | "kanban";
+
+export function toCandidateView(value: unknown): CandidateViewMode {
+  return value === "table" ? "table" : "kanban";
+}
+
+export function resetListPageParam(params: URLSearchParams) {
+  params.delete("page");
+}
+
 export function searchFromLocationHref(href: string) {
   const query = href.includes("?") ? href.split("?")[1]?.split("#")[0] ?? "" : "";
   return new URLSearchParams(query);

@@ -1,6 +1,7 @@
 import Fuse from "fuse.js";
 import type { HandshakeRosterEntry, MatchedResume, ResumeChunk } from "../types";
 import { normalizeName } from "../dedup/normalize-name";
+import { namesMatch } from "../dedup/name-matching";
 
 export function matchRosterToChunks(
   roster: HandshakeRosterEntry[],
@@ -24,7 +25,18 @@ export function matchRosterToChunks(
       }
 
       const chunk = chunks[c]!;
-      if (normalizeName(chunk.headerName) === normalizedRosterName) {
+
+      if (chunk.rosterEmail === entry.email) {
+        matched.push({ roster: entry, chunk });
+        usedChunkIndexes.add(c);
+        usedRosterIndexes.add(r);
+        break;
+      }
+
+      if (
+        normalizeName(chunk.headerName) === normalizedRosterName ||
+        namesMatch(chunk.headerName, entry.name)
+      ) {
         matched.push({ roster: entry, chunk });
         usedChunkIndexes.add(c);
         usedRosterIndexes.add(r);

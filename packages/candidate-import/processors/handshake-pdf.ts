@@ -6,11 +6,13 @@ import { splitFullName } from "../dedup/normalize-name";
 import { extractHandshakeRoster } from "../parsers/extract-handshake-roster";
 import {
   extractPerPageText,
-  extractResumeChunksFromPages,
   joinPagesText,
 } from "../pdf/extract-chunks";
+import {
+  extractHandshakeResumeChunks,
+  matchHandshakeExport,
+} from "../pdf/handshake-chunks";
 import { writeChunkPdf } from "../pdf/write-chunk-pdf";
-import { matchRosterToChunks } from "../match/match-roster-to-chunk";
 import type { ImportServices, ProcessImportResult } from "../types";
 
 export async function processHandshakePdfImport(args: {
@@ -60,7 +62,7 @@ export async function processHandshakePdfImport(args: {
     rosterNames: roster.map((e) => e.name),
   });
 
-  const chunks = extractResumeChunksFromPages(pages, 2);
+  const chunks = extractHandshakeResumeChunks(pages, roster, 2);
 
   importLog("log", "Resume chunks detected", {
     step: "pdf.chunks_detected",
@@ -69,13 +71,15 @@ export async function processHandshakePdfImport(args: {
     chunkCount: chunks.length,
     chunks: chunks.map((c) => ({
       headerName: c.headerName,
+      rosterEmail: c.rosterEmail ?? null,
       pages: `${c.startPage}-${c.endPage}`,
     })),
   });
 
-  const { matched, unmatchedRoster, unmatchedChunks } = matchRosterToChunks(
+  const { matched, unmatchedRoster, unmatchedChunks } = matchHandshakeExport(
+    pages,
     roster,
-    chunks,
+    2,
   );
 
   importLog("log", "Roster matched to resume chunks", {

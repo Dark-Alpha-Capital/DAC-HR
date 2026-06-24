@@ -31,6 +31,10 @@ export { processCsvImport } from "./processors/process-csv";
 export { processZipImport } from "./processors/zip";
 export { processHandshakePdfImport } from "./processors/handshake-pdf";
 export {
+  extractHandshakeResumeChunks,
+  matchHandshakeExport,
+} from "./pdf/handshake-chunks";
+export {
   extractPerPageText,
   extractResumeChunksFromPages,
   joinPagesText,

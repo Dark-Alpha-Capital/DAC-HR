@@ -55,4 +55,9 @@ export const queryKeys = {
     all: ["imports"] as const,
     status: (id: string) => ["imports", "status", id] as const,
   },
+  kanban: {
+    all: ["kanban"] as const,
+    column: (status: string, filters: Record<string, unknown>) =>
+      ["kanban", status, normalizeListDeps(filters)] as const,
+  },
 };
