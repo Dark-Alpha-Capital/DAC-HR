@@ -18,11 +18,13 @@ interface StartVoiceResponse {
   wsUrl: string;
   model: string;
   questions: VoiceQuestion[];
+  isPractice?: boolean;
 }
 
 export interface VoiceInterviewState {
   status: "idle" | "connecting" | "active" | "completed" | "error";
   isEnding: boolean;
+  isPractice: boolean;
   currentQuestionIndex: number;
   voicePhase: VoiceInterviewPhase;
   questions: VoiceQuestion[];
@@ -163,6 +165,7 @@ export function useVoiceInterview(token: string) {
   const [state, setState] = useState<VoiceInterviewState>({
     status: "idle",
     isEnding: false,
+    isPractice: false,
     currentQuestionIndex: 0,
     voicePhase: "intro",
     questions: [],
@@ -183,6 +186,8 @@ export function useVoiceInterview(token: string) {
   const audioContextRef = useRef<AudioContext | null>(null);
   const recordingMimeTypeRef = useRef("video/webm");
   const endInterviewResolveRef = useRef<(() => void) | null>(null);
+  const practiceEndResolveRef = useRef<(() => void) | null>(null);
+  const isPracticeRef = useRef(false);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const liveTranscriptBuffersRef = useRef({ user: "", assistant: "" });
 
@@ -297,23 +302,33 @@ export function useVoiceInterview(token: string) {
 
   const endInterview = useCallback(async () => {
     setState((current) => ({ ...current, isEnding: true }));
+    const isPractice = isPracticeRef.current;
 
     try {
-      if (mediaRecorderRef.current?.state === "recording") {
+      if (!isPractice && mediaRecorderRef.current?.state === "recording") {
         await stopMediaRecorder(mediaRecorderRef.current);
       }
 
-      await uploadRecording();
+      if (!isPractice) {
+        await uploadRecording();
+      }
 
       const ws = wsRef.current;
       let completedViaWs = false;
 
       if (ws?.readyState === WebSocket.OPEN) {
         const completedPromise = new Promise<void>((resolve) => {
-          endInterviewResolveRef.current = () => {
-            completedViaWs = true;
-            resolve();
-          };
+          if (isPractice) {
+            practiceEndResolveRef.current = () => {
+              completedViaWs = true;
+              resolve();
+            };
+          } else {
+            endInterviewResolveRef.current = () => {
+              completedViaWs = true;
+              resolve();
+            };
+          }
           window.setTimeout(resolve, 12000);
         });
 
@@ -321,7 +336,7 @@ export function useVoiceInterview(token: string) {
         await completedPromise;
       }
 
-      if (!completedViaWs) {
+      if (!isPractice && !completedViaWs) {
         await completeSessionViaApi();
       }
     } catch (error) {
@@ -335,14 +350,17 @@ export function useVoiceInterview(token: string) {
       return;
     } finally {
       endInterviewResolveRef.current = null;
+      practiceEndResolveRef.current = null;
       cleanup();
     }
 
     setState((current) => ({
       ...current,
-      status: "completed",
+      status: isPractice ? "idle" : "completed",
       isEnding: false,
+      isPractice: false,
     }));
+    isPracticeRef.current = false;
   }, [cleanup, completeSessionViaApi, uploadRecording]);
 
   const handleWsMessage = useCallback(
@@ -517,6 +535,16 @@ export function useVoiceInterview(token: string) {
         setState((current) => ({ ...current, status: "completed" }));
       }
 
+      if (type === "PRACTICE_ENDED") {
+        practiceEndResolveRef.current?.();
+        setState((current) => ({
+          ...current,
+          status: "idle",
+          isPractice: false,
+        }));
+        isPracticeRef.current = false;
+      }
+
       if (type === "ERROR" && typeof message.message === "string") {
         setState((current) => ({
           ...current,
@@ -528,11 +556,14 @@ export function useVoiceInterview(token: string) {
     [],
   );
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (options?: { practice?: boolean }) => {
+    const isPractice = options?.practice === true;
+    isPracticeRef.current = isPractice;
     liveTranscriptBuffersRef.current = { user: "", assistant: "" };
     setState({
       status: "connecting",
       isEnding: false,
+      isPractice,
       currentQuestionIndex: 0,
       voicePhase: "intro",
       questions: [],
@@ -549,6 +580,8 @@ export function useVoiceInterview(token: string) {
 
       const startRes = await fetch(`/api/interview-token/${token}/start-voice`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ practice: isPractice }),
       });
 
       if (!startRes.ok) {
@@ -746,6 +779,7 @@ export function useVoiceInterview(token: string) {
       setState({
         status: "error",
         isEnding: false,
+        isPractice: false,
         currentQuestionIndex: 0,
         voicePhase: "intro",
         questions: [],

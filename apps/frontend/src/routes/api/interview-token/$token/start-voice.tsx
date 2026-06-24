@@ -5,6 +5,7 @@ import {
   assertInterviewTokenValid,
   updateSessionStatus,
 } from "@workspace/db/repositories/interview-session-repository";
+import { PRACTICE_QUESTIONS } from "@workspace/interview-realtime";
 import { buildRealtimeInstructions } from "@workspace/interview-realtime/prompts";
 
 export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
@@ -21,6 +22,11 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
                 { status: 400 },
               );
             }
+
+            const body = (await request.json().catch(() => null)) as
+              | { practice?: boolean }
+              | null;
+            const isPractice = body?.practice === true;
 
             const validation = await assertInterviewTokenValid(token);
             if (!validation.ok) {
@@ -42,22 +48,34 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
               );
             }
 
-            const seed = session.id;
-            const questions = await getQuestionsForInterviewSession(
-              session.roundId,
-              seed,
-            );
+            const candidateName = `${candidate.firstName} ${candidate.lastName}`;
+            const questions = isPractice
+              ? PRACTICE_QUESTIONS
+              : await getQuestionsForInterviewSession(
+                  session.roundId,
+                  session.id,
+                );
 
-            if (session.status === "pending" || session.status === "invited") {
+            if (
+              !isPractice &&
+              (session.status === "pending" || session.status === "invited")
+            ) {
               await updateSessionStatus(session.id, "in_progress", {
                 startedAt: new Date(),
               });
             }
 
+            const practiceInstructions = [
+              session.agentConfig?.instructions?.trim(),
+              "This is a PRACTICE session with sample questions. Answers are not recorded or evaluated for hiring. Keep the tone supportive and explain this is practice if asked.",
+            ]
+              .filter(Boolean)
+              .join(" ");
+
             const instructions = buildRealtimeInstructions({
-              roundName: round.name,
+              roundName: isPractice ? "Practice Session" : round.name,
               positionName: position.name,
-              candidateName: `${candidate.firstName} ${candidate.lastName}`,
+              candidateName,
               questions: questions.map((question) => ({
                 id: question.id,
                 questionText: question.questionText,
@@ -65,7 +83,13 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
                 category: question.category,
                 options: question.options,
               })),
-              agentConfig: session.agentConfig ?? undefined,
+              agentConfig: isPractice
+                ? {
+                    provider: "openai" as const,
+                    ...session.agentConfig,
+                    instructions: practiceInstructions,
+                  }
+                : (session.agentConfig ?? undefined),
             });
 
             const ephemeral = await createRealtimeEphemeralSession({
@@ -74,7 +98,7 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
             });
 
             const origin = new URL(request.url).origin;
-            const wsUrl = `${origin.replace(/^http/, "ws")}/api/interview-realtime/ws?token=${encodeURIComponent(token)}`;
+            const wsUrl = `${origin.replace(/^http/, "ws")}/api/interview-realtime/ws?token=${encodeURIComponent(token)}${isPractice ? "&practice=1" : ""}`;
 
             return Response.json({
               clientSecret: ephemeral.clientSecret,
@@ -82,6 +106,7 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
               realtimeSessionId: ephemeral.id,
               model: ephemeral.model,
               wsUrl,
+              isPractice,
               agentConfig: session.agentConfig,
               questions: questions.map((question) => ({
                 id: question.id,

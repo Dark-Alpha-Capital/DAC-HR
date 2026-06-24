@@ -52,6 +52,8 @@ export function buildRealtimeInstructions(options: {
     "- Treat this as a natural conversation, not a script. Listen to what the candidate actually says.",
     "- Do NOT move to the next question until the candidate has given a relevant, substantive answer to the current question.",
     "- If the candidate is off-topic, unrelated, evasive, or gives a non-answer: politely redirect them and ask again for a specific answer to the current question.",
+    "- If you hear background noise, gibberish, or filler sounds instead of speech: ask the candidate to find a quieter environment and repeat the current question. Do NOT advance.",
+    "- If the answer is unclear or too vague: rephrase the same question in different words and ask again. Do NOT advance until you get a substantive answer.",
     "- If the answer is partially relevant but too vague or incomplete: ask one brief follow-up on the same question before moving on.",
     "- For MCQ questions, read all options clearly (A, B, C, D) and require them to pick one option before advancing.",
     "- Keep acknowledgments brief. Never say you are waiting for questions or instructions.",
@@ -174,14 +176,40 @@ export function buildAcknowledgeAnswerEvent(question: InterviewQuestion) {
   };
 }
 
-export function buildClosingEvent() {
+export function buildIntroFollowUpEvent(options: {
+  candidateUtterance: string;
+  followUpInstruction: string;
+}) {
   return {
     type: "response.create",
     response: {
       instructions: [
-        "All interview questions have been completed.",
-        "Thank the candidate sincerely for their time and answers.",
-        'Clearly say: "Please click the End Interview button on your screen to complete your session."',
+        "You are welcoming the candidate before the interview begins.",
+        `The candidate just said: "${options.candidateUtterance.trim()}".`,
+        options.followUpInstruction,
+        "Do not ask any interview questions yet.",
+        "Keep it brief and professional.",
+      ].join(" "),
+    },
+  };
+}
+
+export function buildClosingEvent(options?: { isPractice?: boolean }) {
+  const buttonLabel = options?.isPractice
+    ? "Exit Practice button"
+    : "End Interview button";
+
+  return {
+    type: "response.create",
+    response: {
+      instructions: [
+        options?.isPractice
+          ? "This was a practice session with sample questions."
+          : "All interview questions have been completed.",
+        options?.isPractice
+          ? "Thank the candidate for trying the practice session and let them know they can start the real interview when ready."
+          : "Thank the candidate sincerely for their time and answers.",
+        `Clearly say: "Please click the ${buttonLabel} on your screen to complete your session."`,
         "Do not ask any more questions.",
       ].join(" "),
     },

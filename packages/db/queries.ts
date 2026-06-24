@@ -37,6 +37,84 @@ import {
   lte,
 } from "drizzle-orm";
 import type { ApplicationStatus } from "./application-status";
+import {
+  parseCandidateSortOption,
+  type CandidateSortOption,
+} from "./candidate-list-filters";
+
+type CandidateListItem = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string | null;
+  location: string | null;
+  source: string | null;
+  sourceUrl: string | null;
+  note: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  position: { id: string; name: string } | null;
+};
+
+function sortCandidateListItems(
+  items: CandidateListItem[],
+  sort: CandidateSortOption,
+): CandidateListItem[] {
+  const sorted = [...items];
+
+  switch (sort) {
+    case "oldest":
+      return sorted.sort(
+        (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+      );
+    case "name_asc":
+      return sorted.sort(
+        (a, b) =>
+          a.lastName.localeCompare(b.lastName) ||
+          a.firstName.localeCompare(b.firstName),
+      );
+    case "name_desc":
+      return sorted.sort(
+        (a, b) =>
+          b.lastName.localeCompare(a.lastName) ||
+          b.firstName.localeCompare(a.firstName),
+      );
+    case "updated":
+      return sorted.sort(
+        (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime(),
+      );
+    case "newest":
+    default:
+      return sorted.sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+      );
+  }
+}
+
+async function getCandidateIdsMatchingApplicationFilters(
+  statuses?: string[],
+  positionIds?: string[],
+): Promise<string[] | null> {
+  if (!statuses?.length) {
+    return null;
+  }
+
+  const appConditions = [
+    inArray(application.status, statuses as ApplicationStatus[]),
+  ];
+
+  if (positionIds && positionIds.length > 0) {
+    appConditions.push(inArray(application.positionId, positionIds));
+  }
+
+  const matchingApps = await db
+    .select({ candidateId: application.candidateId })
+    .from(application)
+    .where(and(...appConditions));
+
+  return [...new Set(matchingApps.map((app) => app.candidateId))];
+}
 
 /**
  *
@@ -240,6 +318,7 @@ export const getApplicationsFiltered = async (
   statuses?: string[],
   page: number = 1,
   limit: number = 50,
+  sort: CandidateSortOption = "newest",
 ): Promise<{
   applications: Array<{
     id: string;
@@ -334,18 +413,48 @@ export const getApplicationsFiltered = async (
       query = query.where(and(...conditions)) as typeof query;
     }
 
-    // Order by createdAt descending (newest first)
-    query = query.orderBy(desc(application.createdAt)) as typeof query;
-
-    // Get all results for filtering
     const allResults = await query;
-
-    // Get total count before pagination
     const total = allResults.length;
 
-    // Apply pagination
+    const sortedResults = (() => {
+      const sorted = [...allResults];
+      switch (parseCandidateSortOption(sort)) {
+        case "oldest":
+          return sorted.sort(
+            (a, b) =>
+              a.application.createdAt.getTime() -
+              b.application.createdAt.getTime(),
+          );
+        case "name_asc":
+          return sorted.sort((a, b) => {
+            const nameA = `${a.candidate.lastName} ${a.candidate.firstName}`;
+            const nameB = `${b.candidate.lastName} ${b.candidate.firstName}`;
+            return nameA.localeCompare(nameB);
+          });
+        case "name_desc":
+          return sorted.sort((a, b) => {
+            const nameA = `${a.candidate.lastName} ${a.candidate.firstName}`;
+            const nameB = `${b.candidate.lastName} ${b.candidate.firstName}`;
+            return nameB.localeCompare(nameA);
+          });
+        case "updated":
+          return sorted.sort(
+            (a, b) =>
+              b.application.updatedAt.getTime() -
+              a.application.updatedAt.getTime(),
+          );
+        case "newest":
+        default:
+          return sorted.sort(
+            (a, b) =>
+              b.application.createdAt.getTime() -
+              a.application.createdAt.getTime(),
+          );
+      }
+    })();
+
     const offset = (page - 1) * limit;
-    const paginatedResults = allResults.slice(offset, offset + limit);
+    const paginatedResults = sortedResults.slice(offset, offset + limit);
 
     // Fetch interviews for paginated applications
     const applicationsWithInterviews = await Promise.all(
@@ -427,6 +536,9 @@ export const getCandidatesWithPositionsFiltered = async (
   positionIds?: string[],
   page: number = 1,
   limit: number = 50,
+  statuses?: string[],
+  sources?: string[],
+  sort: CandidateSortOption = "newest",
 ): Promise<{
   candidates: Array<{
     id: string;
@@ -498,6 +610,23 @@ export const getCandidatesWithPositionsFiltered = async (
       conditions.push(inArray(position.id, positionIds));
     }
 
+    // Source filter
+    if (sources && sources.length > 0) {
+      conditions.push(inArray(candidate.source, sources));
+    }
+
+    // Stage/status filter via applications
+    const statusCandidateIds = await getCandidateIdsMatchingApplicationFilters(
+      statuses,
+      positionIds,
+    );
+    if (statusCandidateIds) {
+      if (statusCandidateIds.length === 0) {
+        return { candidates: [], total: 0 };
+      }
+      conditions.push(inArray(candidate.id, statusCandidateIds));
+    }
+
     // Apply conditions if any
     if (conditions.length > 0) {
       query = query.where(and(...conditions)) as typeof query;
@@ -539,9 +668,10 @@ export const getCandidatesWithPositionsFiltered = async (
       }
     }
 
-    // Convert to array and sort by createdAt descending (already sorted from query)
-    const allCandidates = Array.from(candidateMap.values()).sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+    // Convert to array and apply sort
+    const allCandidates = sortCandidateListItems(
+      Array.from(candidateMap.values()),
+      parseCandidateSortOption(sort),
     );
 
     // Get total count

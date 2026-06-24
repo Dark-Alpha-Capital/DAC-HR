@@ -36,6 +36,8 @@ import {
   Maximize2,
   Volume2,
   Monitor,
+  GraduationCap,
+  BookOpen,
 } from "lucide-react";
 
 interface Question {
@@ -172,6 +174,237 @@ const VOICE_INSTRUCTIONS = [
       "Do not switch tabs or windows during the interview. Tab changes and focus loss may be recorded.",
   },
 ] as const;
+
+type VoiceWelcomeStep = "welcome" | "instructions" | "landing";
+
+function VoiceWelcomeHeader() {
+  return (
+    <header className="shrink-0 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="mx-auto flex max-w-6xl items-center justify-center px-4 py-3">
+        <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase sm:text-sm">
+          Dark Alpha Capital
+        </p>
+      </div>
+    </header>
+  );
+}
+
+function VoiceWelcomeSlide({
+  data,
+  step,
+  onContinue,
+  onBack,
+}: {
+  data: WelcomeData;
+  step: "welcome" | "instructions";
+  onContinue: () => void;
+  onBack?: () => void;
+}) {
+  if (step === "welcome") {
+    return (
+      <div className="flex h-svh flex-col overflow-hidden bg-background">
+        <VoiceWelcomeHeader />
+        <main className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center gap-6 px-4 py-8">
+          <div className="text-center">
+            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+              Welcome to Your Voice Interview
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Hi {data.candidateName}, thank you for taking the time to
+              interview with us.
+            </p>
+            <Badge variant="secondary" className="mt-3">
+              <Mic className="mr-1 size-3" />
+              Voice interview
+            </Badge>
+          </div>
+
+          <Card className="w-full">
+            <CardHeader className="pb-3 text-center">
+              <CardTitle className="text-sm">Interview Details</CardTitle>
+              <CardDescription className="text-xs">
+                Confirm the information below before you begin.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-2 text-sm">
+              <div className="rounded-lg border bg-muted/40 px-3 py-2.5">
+                <p className="text-xs text-muted-foreground">Position</p>
+                <p className="mt-0.5 font-medium leading-snug">
+                  {data.positionName}
+                </p>
+              </div>
+              <div className="rounded-lg border bg-muted/40 px-3 py-2.5">
+                <p className="text-xs text-muted-foreground">Round</p>
+                <p className="mt-0.5 font-medium leading-snug">
+                  {data.roundName}
+                </p>
+              </div>
+              <div className="rounded-lg border bg-muted/40 px-3 py-2.5">
+                <p className="text-xs text-muted-foreground">Candidate</p>
+                <p className="mt-0.5 font-medium leading-snug">
+                  {data.candidateName}
+                </p>
+              </div>
+              <div className="rounded-lg border bg-muted/40 px-3 py-2.5">
+                <p className="text-xs text-muted-foreground">Format</p>
+                <p className="mt-0.5 font-medium leading-snug">
+                  AI voice interview
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Button className="w-full sm:w-auto" size="lg" onClick={onContinue}>
+            Continue
+            <ArrowRight className="ml-2 size-4" />
+          </Button>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-svh flex-col overflow-hidden bg-background">
+      <VoiceWelcomeHeader />
+      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center gap-5 overflow-y-auto px-4 py-6">
+        <div className="text-center">
+          <h2 className="text-lg font-medium sm:text-xl">Before You Begin</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Review these voice interview instructions to ensure a smooth
+            experience.
+          </p>
+        </div>
+        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {VOICE_INSTRUCTIONS.map((item) => (
+            <li
+              key={item.title}
+              className="flex gap-2.5 rounded-lg border p-3"
+            >
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                <item.icon className="size-3.5 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-medium leading-snug sm:text-sm">
+                  {item.title}
+                </p>
+                <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
+                  {item.description}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
+          {onBack ? (
+            <Button variant="outline" onClick={onBack}>
+              <ArrowLeft className="mr-2 size-4" />
+              Back
+            </Button>
+          ) : null}
+          <Button size="lg" onClick={onContinue}>
+            Continue
+            <ArrowRight className="ml-2 size-4" />
+          </Button>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function VoiceLandingScreen({
+  data,
+  onStartInterview,
+  onStartPractice,
+  onViewInstructions,
+  starting,
+  practiceStarting,
+}: {
+  data: WelcomeData;
+  onStartInterview: () => void;
+  onStartPractice: () => void;
+  onViewInstructions: () => void;
+  starting: boolean;
+  practiceStarting: boolean;
+}) {
+  return (
+    <div className="flex h-svh flex-col overflow-hidden bg-background">
+      <VoiceWelcomeHeader />
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-6 px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+            You&apos;re All Set
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {data.candidateName}, choose how you&apos;d like to proceed with
+            your {data.positionName} interview.
+          </p>
+        </div>
+
+        <div className="flex w-full flex-col gap-3">
+          <Button
+            className="h-auto w-full justify-start px-4 py-4"
+            size="lg"
+            onClick={onStartInterview}
+            disabled={starting || practiceStarting}
+          >
+            <Mic className="mr-3 size-5 shrink-0" />
+            <span className="text-left">
+              <span className="block font-medium">Start Voice Interview</span>
+              <span className="block text-xs font-normal opacity-80">
+                Begin your recorded interview session
+              </span>
+            </span>
+            {starting ? (
+              <Loader2 className="ml-auto size-4 animate-spin" />
+            ) : (
+              <ArrowRight className="ml-auto size-4" />
+            )}
+          </Button>
+
+          <Button
+            variant="outline"
+            className="h-auto w-full justify-start px-4 py-4"
+            size="lg"
+            onClick={onViewInstructions}
+            disabled={starting || practiceStarting}
+          >
+            <BookOpen className="mr-3 size-5 shrink-0" />
+            <span className="text-left">
+              <span className="block font-medium">View Instructions Again</span>
+              <span className="block text-xs font-normal opacity-80">
+                Review setup and environment tips
+              </span>
+            </span>
+          </Button>
+
+          <Button
+            variant="secondary"
+            className="h-auto w-full justify-start px-4 py-4"
+            size="lg"
+            onClick={onStartPractice}
+            disabled={starting || practiceStarting}
+          >
+            <GraduationCap className="mr-3 size-5 shrink-0" />
+            <span className="text-left">
+              <span className="block font-medium">Practice Interview Session</span>
+              <span className="block text-xs font-normal opacity-80">
+                Try sample questions — not recorded for evaluation
+              </span>
+            </span>
+            {practiceStarting ? (
+              <Loader2 className="ml-auto size-4 animate-spin" />
+            ) : null}
+          </Button>
+        </div>
+
+        <p className="text-center text-xs text-muted-foreground">
+          Starting the voice interview allows microphone access, tab recording,
+          and fullscreen mode.
+        </p>
+      </main>
+    </div>
+  );
+}
 
 function WelcomeScreen({
   data,
@@ -338,16 +571,41 @@ function InterviewPage() {
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [saving, setSaving] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [practiceStarting, setPracticeStarting] = useState(false);
+  const [voiceWelcomeStep, setVoiceWelcomeStep] =
+    useState<VoiceWelcomeStep>("welcome");
   const [completing, setCompleting] = useState(false);
   const [sessionMode, setSessionMode] = useState<SessionMode | null>(null);
   const answersRef = useRef(answers);
+  const wasPracticeSessionRef = useRef(false);
   const voiceInterview = useVoiceInterview(token);
 
   useEffect(() => {
-    if (voiceInterview.state.status === "completed") {
+    if (voiceInterview.state.isPractice) {
+      wasPracticeSessionRef.current = true;
+    }
+  }, [voiceInterview.state.isPractice]);
+
+  useEffect(() => {
+    if (
+      voiceInterview.state.status === "completed" &&
+      !voiceInterview.state.isPractice
+    ) {
       setStatus("completed");
     }
-  }, [voiceInterview.state.status]);
+  }, [voiceInterview.state.status, voiceInterview.state.isPractice]);
+
+  useEffect(() => {
+    if (
+      voiceInterview.state.status === "idle" &&
+      status === "voice" &&
+      wasPracticeSessionRef.current
+    ) {
+      wasPracticeSessionRef.current = false;
+      setVoiceWelcomeStep("landing");
+      setStatus("welcome");
+    }
+  }, [voiceInterview.state.status, status]);
 
   useEffect(() => {
     answersRef.current = answers;
@@ -566,9 +824,21 @@ function InterviewPage() {
     setSessionMode("voice");
     setStatus("voice");
     try {
-      await voiceInterview.start();
+      await voiceInterview.start({ practice: false });
     } finally {
       setStarting(false);
+    }
+  }, [token, voiceInterview]);
+
+  const handleStartPracticeInterview = useCallback(async () => {
+    setPracticeStarting(true);
+    sessionStorage.setItem(getModeStorageKey(token), "voice");
+    setSessionMode("voice");
+    setStatus("voice");
+    try {
+      await voiceInterview.start({ practice: true });
+    } finally {
+      setPracticeStarting(false);
     }
   }, [token, voiceInterview]);
 
@@ -629,7 +899,11 @@ function InterviewPage() {
     );
   }
 
-  if (status === "voice" && welcomeData) {
+  if (
+    status === "voice" &&
+    welcomeData &&
+    voiceInterview.state.status !== "idle"
+  ) {
     return (
       <VoiceInterview
         candidateName={welcomeData.candidateName}
@@ -637,8 +911,42 @@ function InterviewPage() {
         roundName={welcomeData.roundName}
         state={voiceInterview.state}
         videoStreamRef={voiceInterview.videoStreamRef}
-        onStart={voiceInterview.start}
+        onStart={() => voiceInterview.start({ practice: voiceInterview.state.isPractice })}
         onEnd={voiceInterview.endInterview}
+      />
+    );
+  }
+
+  if (status === "welcome" && welcomeData && sessionMode === "voice") {
+    if (voiceWelcomeStep === "welcome") {
+      return (
+        <VoiceWelcomeSlide
+          data={welcomeData}
+          step="welcome"
+          onContinue={() => setVoiceWelcomeStep("instructions")}
+        />
+      );
+    }
+
+    if (voiceWelcomeStep === "instructions") {
+      return (
+        <VoiceWelcomeSlide
+          data={welcomeData}
+          step="instructions"
+          onContinue={() => setVoiceWelcomeStep("landing")}
+          onBack={() => setVoiceWelcomeStep("welcome")}
+        />
+      );
+    }
+
+    return (
+      <VoiceLandingScreen
+        data={welcomeData}
+        onStartInterview={handleStartVoiceInterview}
+        onStartPractice={handleStartPracticeInterview}
+        onViewInstructions={() => setVoiceWelcomeStep("instructions")}
+        starting={starting}
+        practiceStarting={practiceStarting}
       />
     );
   }

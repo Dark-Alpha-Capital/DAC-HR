@@ -18,6 +18,8 @@
     "./question-types": "./question-types.ts",
     "./enums": "./enums.ts",
     "./application-status": "./application-status.ts",
+    "./candidate-list-filters": "./candidate-list-filters.ts",
+    "./document-list-filters": "./document-list-filters.ts",
     "./sqlite-helpers": "./sqlite-helpers.ts",
     "./index": "./index.ts"
   },

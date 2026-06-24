@@ -11,42 +11,27 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { Button } from "~/components/ui/button";
 import { Filter } from "lucide-react";
-import {
-  applicationStatuses,
-  applicationStatusLabels,
-} from "@workspace/db/application-status";
+import { candidateSourceOptions } from "@workspace/db/candidate-list-filters";
 
-const statuses = applicationStatuses.map((value) => ({
-  value,
-  label: applicationStatusLabels[value],
-}));
-
-const FilterApplicationStatus = ({
-  label = "Status",
-  filterLabel = "Filter by Status",
-}: {
-  label?: string;
-  filterLabel?: string;
-}) => {
+const FilterCandidateSource = () => {
   const { searchParams, setSearchParams } = useUrlSearchParams();
   const [isPending, startTransition] = useTransition();
-  const [selectedStatuses, setSelectedStatuses] = useOptimistic(
-    searchParams.getAll("status"),
+  const [selectedSources, setSelectedSources] = useOptimistic(
+    searchParams.getAll("source"),
   );
 
   const handleCheckedChange = (value: string, checked: boolean) => {
     startTransition(() => {
       const params = new URLSearchParams(searchParams);
-      params.delete("status");
+      params.delete("source");
 
       const newSelected = checked
-        ? [...selectedStatuses, value]
-        : selectedStatuses.filter((status) => status !== value);
+        ? [...selectedSources, value]
+        : selectedSources.filter((source) => source !== value);
 
-      newSelected.forEach((status) => params.append("status", status));
-      setSelectedStatuses(newSelected);
+      newSelected.forEach((source) => params.append("source", source));
+      setSelectedSources(newSelected);
       params.delete("page");
-
       setSearchParams(params);
     });
   };
@@ -60,26 +45,26 @@ const FilterApplicationStatus = ({
         <DropdownMenuTrigger asChild>
           <Button variant="secondary" size="sm">
             <Filter className="mr-2 h-4 w-4" />
-            {label}
-            {selectedStatuses.length > 0 && (
+            Source
+            {selectedSources.length > 0 && (
               <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-                {selectedStatuses.length}
+                {selectedSources.length}
               </span>
             )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56">
-          <DropdownMenuLabel>{filterLabel}</DropdownMenuLabel>
+          <DropdownMenuLabel>Filter by Source</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {statuses.map((status) => (
+          {candidateSourceOptions.map((source) => (
             <DropdownMenuCheckboxItem
-              key={status.value}
-              checked={selectedStatuses.includes(status.value)}
+              key={source}
+              checked={selectedSources.includes(source)}
               onCheckedChange={(checked) =>
-                handleCheckedChange(status.value, checked as boolean)
+                handleCheckedChange(source, checked as boolean)
               }
             >
-              {status.label}
+              {source}
             </DropdownMenuCheckboxItem>
           ))}
         </DropdownMenuContent>
@@ -88,4 +73,4 @@ const FilterApplicationStatus = ({
   );
 };
 
-export default FilterApplicationStatus;
+export default FilterCandidateSource;

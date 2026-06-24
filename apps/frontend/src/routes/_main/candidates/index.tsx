@@ -6,6 +6,7 @@ import BulkUploadCandidatesDialog from "~/components/bulk-upload-candidates-dial
 import CandidatesViewWrapper from "~/components/candidates-view-wrapper";
 import { loadCandidatesIndex } from "~/lib/loaders/candidates";
 import {
+  toCandidateSort,
   toOptionalString,
   toPageNumber,
   toStringArray,
@@ -19,6 +20,9 @@ export const Route = createFileRoute("/_main/candidates/")({
     name: toOptionalString(search.name),
     email: toOptionalString(search.email),
     position: toStringArray(search.position as string | string[] | undefined),
+    status: toStringArray(search.status as string | string[] | undefined),
+    source: toStringArray(search.source as string | string[] | undefined),
+    sort: toCandidateSort(search.sort),
     page:
       search.page !== undefined
         ? toPageNumber(search.page)

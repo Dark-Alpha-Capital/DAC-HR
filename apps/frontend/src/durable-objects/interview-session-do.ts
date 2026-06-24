@@ -15,12 +15,13 @@ import {
   parseClientMessage,
   serializeDoMessage,
 } from "@workspace/interview-realtime/events";
-import { evaluateCandidateAnswer } from "@workspace/interview-realtime";
+import { evaluateCandidateAnswer, evaluateIntroUtterance, PRACTICE_QUESTIONS } from "@workspace/interview-realtime";
 import {
   buildAskCurrentQuestionEvent,
   buildAcknowledgeAnswerEvent,
   buildClosingEvent,
   buildFollowUpAnswerEvent,
+  buildIntroFollowUpEvent,
   buildRealtimeInstructions,
   buildSessionUpdateEvent,
   buildWelcomeIntroEvent,
@@ -125,6 +126,11 @@ export class InterviewSessionDO implements DurableObject {
 
     await this.ensureState(sessionId, token);
 
+    const isPractice = url.searchParams.get("practice") === "1";
+    if (isPractice) {
+      this.applyPracticeMode();
+    }
+
     this.logTranscript("client_websocket_connected", {
       conversationHistoryLength: this.interviewState!.conversationHistory.length,
       currentQuestionIndex: this.interviewState!.currentQuestionIndex,
@@ -202,7 +208,11 @@ export class InterviewSessionDO implements DurableObject {
         await this.persistState();
         break;
       case "END_INTERVIEW":
-        await this.completeInterview();
+        if (this.interviewState.isPracticeMode) {
+          await this.endPracticeSession();
+        } else {
+          await this.completeInterview();
+        }
         break;
       default: {
         const _exhaustive: never = parsed;
@@ -218,7 +228,10 @@ export class InterviewSessionDO implements DurableObject {
     _wasClean: boolean,
   ) {
     void ws;
-    if (this.interviewState?.status !== "completed") {
+    if (
+      this.interviewState?.status !== "completed" &&
+      !this.interviewState?.isPracticeMode
+    ) {
       await this.markInterrupted();
     }
     this.closeSideband({ intentional: true });
@@ -301,6 +314,25 @@ export class InterviewSessionDO implements DurableObject {
     await this.persistState();
   }
 
+  private applyPracticeMode() {
+    if (!this.interviewState) {
+      return;
+    }
+
+    this.interviewState.isPracticeMode = true;
+    this.interviewState.questions = PRACTICE_QUESTIONS;
+    this.interviewState.voicePhase = "intro";
+    this.interviewState.candidateReady = false;
+    this.interviewState.awaitingAnswerForIndex = null;
+    this.interviewState.currentQuestionIndex = 0;
+    this.interviewState.conversationHistory = [];
+    this.interviewState.questionAnswers = {};
+    this.interviewState.questionPartialAnswers = {};
+    this.interviewState.questionFollowUpCounts = {};
+    this.welcomeIntroCompleted = false;
+    this.pendingWelcomeIntro = false;
+  }
+
   private resetVoiceSessionForNewCall() {
     if (!this.interviewState) {
       return;
@@ -314,6 +346,9 @@ export class InterviewSessionDO implements DurableObject {
     this.interviewState.questionAnswers = {};
     this.interviewState.questionPartialAnswers = {};
     this.interviewState.questionFollowUpCounts = {};
+    if (this.interviewState.isPracticeMode) {
+      this.interviewState.questions = PRACTICE_QUESTIONS;
+    }
     this.pendingAdvanceAfterAck = false;
     this.evaluatingAnswer = false;
     this.welcomeIntroCompleted = false;
@@ -1132,7 +1167,7 @@ export class InterviewSessionDO implements DurableObject {
   }
 
   private async flushResponsesToDatabase() {
-    if (!this.interviewState) {
+    if (!this.interviewState || this.interviewState.isPracticeMode) {
       return;
     }
 
@@ -1185,6 +1220,15 @@ export class InterviewSessionDO implements DurableObject {
       this.interviewState.questionAnswers = {};
     }
     this.interviewState.questionAnswers[question.id] = combinedAnswer;
+
+    if (this.interviewState.isPracticeMode) {
+      this.broadcast({
+        type: "ANSWER_SAVED",
+        questionId: question.id,
+        transcript: combinedAnswer,
+      });
+      return;
+    }
 
     const selectedOptionId = this.matchMcqOption(question, combinedAnswer);
 
@@ -1324,19 +1368,8 @@ export class InterviewSessionDO implements DurableObject {
       textLength: trimmed.length,
     });
 
-    if (phase === "intro") {
-      this.interviewState.candidateReady = true;
-      this.appendConversation("user", trimmed);
-      await this.persistState();
-      return;
-    }
-
-    if (phase === "awaiting_ready") {
-      this.interviewState.candidateReady = true;
-      this.appendConversation("user", trimmed);
-      this.interviewState.voicePhase = "questions";
-      await this.persistState();
-      await this.askCurrentQuestion();
+    if (phase === "intro" || phase === "awaiting_ready") {
+      await this.handleIntroUtterance(trimmed, phase);
       return;
     }
 
@@ -1371,6 +1404,54 @@ export class InterviewSessionDO implements DurableObject {
         realtimeEventId,
       );
     }
+  }
+
+  private async handleIntroUtterance(
+    trimmed: string,
+    phase: "intro" | "awaiting_ready",
+  ) {
+    if (!this.interviewState) {
+      return;
+    }
+
+    const evaluation = await evaluateIntroUtterance({
+      apiKey: this.env.OPENAI_API_KEY,
+      utterance: trimmed,
+    });
+
+    this.logTranscript("intro_utterance_evaluated", {
+      phase,
+      ready: evaluation.ready,
+      relevance: evaluation.relevance,
+      textPreview: previewText(trimmed),
+    });
+
+    this.appendConversation("user", trimmed);
+
+    if (evaluation.ready) {
+      this.interviewState.candidateReady = true;
+      await this.persistState();
+
+      if (phase === "awaiting_ready" || this.welcomeIntroCompleted) {
+        this.interviewState.voicePhase = "questions";
+        await this.persistState();
+        await this.askCurrentQuestion();
+      }
+      return;
+    }
+
+    if (evaluation.followUpInstruction) {
+      this.dispatchResponseCreate(
+        buildIntroFollowUpEvent({
+          candidateUtterance: trimmed,
+          followUpInstruction: evaluation.followUpInstruction,
+        }),
+        "intro_follow_up",
+        { phase, relevance: evaluation.relevance },
+      );
+    }
+
+    await this.persistState();
   }
 
   private matchMcqOption(
@@ -1553,7 +1634,12 @@ export class InterviewSessionDO implements DurableObject {
 
     this.interviewState.voicePhase = "closing";
     await this.persistState();
-    this.dispatchResponseCreate(buildClosingEvent(), "closing");
+    this.dispatchResponseCreate(
+      buildClosingEvent({
+        isPractice: this.interviewState.isPracticeMode,
+      }),
+      "closing",
+    );
   }
 
   private async advanceQuestion() {
@@ -1573,6 +1659,17 @@ export class InterviewSessionDO implements DurableObject {
     await this.persistState();
 
     await this.askCurrentQuestion();
+  }
+
+  private async endPracticeSession() {
+    if (!this.interviewState) {
+      return;
+    }
+
+    this.interviewState.isPracticeMode = false;
+    this.closeSideband({ intentional: true });
+    this.broadcast({ type: "PRACTICE_ENDED" });
+    await this.persistState();
   }
 
   private async completeInterview() {

@@ -8,6 +8,10 @@ import {
   getRoundsByPositionId,
   getUsers,
 } from "@workspace/db/queries";
+import {
+  parseCandidateSortOption,
+  type CandidateSortOption,
+} from "@workspace/db/candidate-list-filters";
 import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
 import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
 import { getApplicationWithInterviews } from "@workspace/db/repositories/interview-repository";
@@ -54,6 +58,9 @@ type CandidatesIndexInput = {
   name?: string;
   email?: string;
   position?: string[];
+  status?: string[];
+  source?: string[];
+  sort?: CandidateSortOption;
   page?: number;
 };
 
@@ -63,6 +70,7 @@ export const loadCandidatesIndex = createServerFn({ method: "GET" })
   .handler(async ({ data: deps }) => {
     const limit = 50;
     const currentPage = deps.page ?? 1;
+    const sort = parseCandidateSortOption(deps.sort);
 
     const [{ positions }, candidatesResult, applicationsResult] =
       await Promise.all([
@@ -73,14 +81,18 @@ export const loadCandidatesIndex = createServerFn({ method: "GET" })
           deps.position,
           currentPage,
           limit,
+          deps.status,
+          deps.source,
+          sort,
         ),
         getCachedApplicationsFiltered(
           deps.name,
           deps.email,
           deps.position,
-          undefined,
+          deps.status,
           currentPage,
           limit,
+          sort,
         ),
       ]);
 
@@ -98,7 +110,14 @@ export const loadCandidatesIndex = createServerFn({ method: "GET" })
       totalPages,
       hasNextPage: currentPage < totalPages,
       hasPreviousPage: currentPage > 1,
-      hasFilters: Boolean(deps.name || deps.email || deps.position?.length),
+      hasFilters: Boolean(
+        deps.name ||
+          deps.email ||
+          deps.position?.length ||
+          deps.status?.length ||
+          deps.source?.length ||
+          (deps.sort && deps.sort !== "newest"),
+      ),
     };
   });
 

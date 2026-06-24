@@ -15,6 +15,20 @@ export function toOptionalString(value: unknown): string | undefined {
   return undefined;
 }
 
+import {
+  isCandidateSortOption,
+  type CandidateSortOption,
+} from "@workspace/db/candidate-list-filters";
+
+export function toCandidateSort(
+  value: unknown,
+): CandidateSortOption | undefined {
+  if (typeof value === "string" && isCandidateSortOption(value)) {
+    return value;
+  }
+  return undefined;
+}
+
 export function toPageNumber(value: unknown, fallback = 1): number {
   const page =
     typeof value === "string"

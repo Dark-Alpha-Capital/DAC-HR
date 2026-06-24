@@ -50,6 +50,8 @@ export interface InterviewState {
   questionPartialAnswers?: Record<string, string[]>;
   /** questionId → follow-up count for the current question */
   questionFollowUpCounts?: Record<string, number>;
+  /** Practice session — answers are not persisted */
+  isPracticeMode?: boolean;
 }
 
 export type ClientToDoMessage =
@@ -79,5 +81,6 @@ export type DoToClientMessage =
   | { type: "TRANSCRIPT_DELTA"; role: "user" | "assistant"; delta: string }
   | { type: "ANSWER_SAVED"; questionId: string; transcript: string }
   | { type: "INTERVIEW_COMPLETED" }
+  | { type: "PRACTICE_ENDED" }
   | { type: "ERROR"; message: string }
   | { type: "PONG" };

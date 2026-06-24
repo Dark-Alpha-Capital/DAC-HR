@@ -5,6 +5,7 @@ import { loadDocumentsIndex } from "~/lib/loaders/documents";
 import DocumentContainer from "~/components/document-container";
 import FilterDocumentCategory from "~/components/filter-document-category";
 import FilterDocumentName from "~/components/filter-document-name";
+import FilterDocumentScope from "~/components/filter-document-scope";
 import FilterDocumentTags from "~/components/filter-document-tags";
 import ClearDocumentFiltersButton from "~/components/clear-document-filters-button";
 import {
@@ -26,9 +27,11 @@ export const Route = createFileRoute("/_main/documents/")({
     meta: [{ title: "Documents" }],
   }),
   validateSearch: (search: Record<string, unknown>) => ({
+    scope: toOptionalString(search.scope),
     category: toStringArray(search.category as string | string[] | undefined),
     name: toOptionalString(search.name),
     tags: toOptionalString(search.tags),
+    candidateId: toOptionalString(search.candidateId),
     page:
       search.page !== undefined
         ? toPageNumber(search.page)
@@ -42,6 +45,7 @@ export const Route = createFileRoute("/_main/documents/")({
 
 function DocumentsPage() {
   const {
+    scope,
     categories,
     documents,
     currentPage,
@@ -51,10 +55,19 @@ function DocumentsPage() {
     hasFilters,
   } = Route.useLoaderData();
 
+  const showCandidateColumn = scope === "candidates" || scope === "all";
+  const showFirmCategoryFilter = scope === "firm" || scope === "all";
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Documents</h1>
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Documents</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Firm templates and reference docs, plus candidate files — all in one
+            place.
+          </p>
+        </div>
         <Button asChild>
           <Link to="/documents/new" search="{}">
             New Document
@@ -71,7 +84,10 @@ function DocumentsPage() {
         <TabsContent value="documents" className="space-y-6">
           <div className="flex flex-wrap items-center gap-2">
             <FilterDocumentName />
-            <FilterDocumentCategory categories={categories} />
+            <FilterDocumentScope />
+            {showFirmCategoryFilter ? (
+              <FilterDocumentCategory categories={categories} />
+            ) : null}
             <FilterDocumentTags />
             <ClearDocumentFiltersButton />
           </div>
@@ -81,17 +97,24 @@ function DocumentsPage() {
               <p className="text-muted-foreground">
                 {hasFilters
                   ? "No documents found matching the selected filters."
-                  : "No documents found. Create your first document to get started."}
+                  : scope === "candidates"
+                    ? "No candidate documents found."
+                    : "No documents found. Create your first document to get started."}
               </p>
-              <Button asChild className="mt-4">
-                <Link to="/documents/new" search="{}">
-                  Add your first document
-                </Link>
-              </Button>
+              {scope === "firm" ? (
+                <Button asChild className="mt-4">
+                  <Link to="/documents/new" search="{}">
+                    Add your first document
+                  </Link>
+                </Button>
+              ) : null}
             </div>
           ) : (
             <div className="space-y-6">
-              <DocumentContainer documents={documents} />
+              <DocumentContainer
+                documents={documents}
+                showCandidateColumn={showCandidateColumn}
+              />
               {totalPages > 1 ? (
                 <PaginationControls
                   currentPage={currentPage}

@@ -10,7 +10,10 @@ const ClearCandidateFiltersButton = () => {
   const hasFilters =
     searchParams.has("name") ||
     searchParams.has("email") ||
-    searchParams.has("position");
+    searchParams.has("position") ||
+    searchParams.has("status") ||
+    searchParams.has("source") ||
+    searchParams.has("sort");
 
   if (!hasFilters) {
     return null;
@@ -26,6 +29,10 @@ const ClearCandidateFiltersButton = () => {
         params.delete("name");
         params.delete("email");
         params.delete("position");
+        params.delete("status");
+        params.delete("source");
+        params.delete("sort");
+        params.delete("page");
         setSearchParams(params);
       }}
     >

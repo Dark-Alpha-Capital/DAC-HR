@@ -18,12 +18,20 @@ export async function getCachedPositions() {
   return getPositions();
 }
 
+import {
+  parseCandidateSortOption,
+  type CandidateSortOption,
+} from "@workspace/db/candidate-list-filters";
+
 export async function getCachedCandidatesWithPositionsFiltered(
   nameSearch: string | undefined,
   emailSearch: string | undefined,
   positionIds: string[] | undefined,
   page: number,
   limit: number,
+  statuses: string[] | undefined,
+  sources: string[] | undefined,
+  sort: CandidateSortOption,
 ) {
   return getCandidatesWithPositionsFiltered(
     nameSearch,
@@ -31,6 +39,9 @@ export async function getCachedCandidatesWithPositionsFiltered(
     positionIds,
     page,
     limit,
+    statuses,
+    sources,
+    sort,
   );
 }
 
@@ -41,6 +52,7 @@ export async function getCachedApplicationsFiltered(
   statuses: string[] | undefined,
   page: number,
   limit: number,
+  sort: CandidateSortOption,
 ) {
   return getApplicationsFiltered(
     nameSearch,
@@ -49,5 +61,6 @@ export async function getCachedApplicationsFiltered(
     statuses,
     page,
     limit,
+    sort,
   );
 }

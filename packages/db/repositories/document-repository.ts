@@ -1,7 +1,12 @@
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, or, sql } from "drizzle-orm";
 import { db } from "@workspace/db/db";
+import type {
+  DocumentScope,
+  UnifiedDocumentListItem,
+} from "../document-list-filters";
 import { ilike, jsonArrayTagSearch } from "../sqlite-helpers";
 import {
+  candidate,
   candidateDocument,
   documentCategories,
   documentCategoryRelations,
@@ -19,6 +24,7 @@ export async function getDocuments(
     id: string;
     name: string;
     url: string;
+    description: string | null;
     tags: string[];
     createdAt: Date;
     updatedAt: Date;
@@ -90,6 +96,161 @@ export async function getDocuments(
     console.error("Error fetching documents", error);
     return { documents: [], total: 0 };
   }
+}
+
+export async function getCandidateDocumentsList(
+  nameSearch?: string,
+  tagsSearch?: string,
+  candidateId?: string,
+  page: number = 1,
+  limit: number = 50,
+): Promise<{
+  documents: UnifiedDocumentListItem[];
+  total: number;
+}> {
+  try {
+    let query = db
+      .select({
+        document: candidateDocument,
+        candidateFirstName: candidate.firstName,
+        candidateLastName: candidate.lastName,
+      })
+      .from(candidateDocument)
+      .innerJoin(candidate, eq(candidateDocument.candidateId, candidate.id));
+
+    const conditions = [];
+
+    if (candidateId) {
+      conditions.push(eq(candidateDocument.candidateId, candidateId));
+    }
+
+    if (nameSearch && nameSearch.trim()) {
+      const searchTerm = `%${nameSearch.trim()}%`;
+      conditions.push(
+        or(
+          ilike(candidateDocument.name, searchTerm),
+          ilike(candidate.firstName, searchTerm),
+          ilike(candidate.lastName, searchTerm),
+        ),
+      );
+    }
+
+    if (tagsSearch && tagsSearch.trim()) {
+      conditions.push(
+        jsonArrayTagSearch(
+          candidateDocument.tags,
+          tagsSearch.trim().toLowerCase(),
+        ),
+      );
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as typeof query;
+    }
+
+    const allResults = await query.orderBy(desc(candidateDocument.createdAt));
+    const total = allResults.length;
+    const offset = (page - 1) * limit;
+    const paginatedResults = allResults.slice(offset, offset + limit);
+
+    const documentsList: UnifiedDocumentListItem[] = paginatedResults.map(
+      (result) => ({
+        id: result.document.id,
+        name: result.document.name,
+        url: result.document.url,
+        description: result.document.description,
+        tags: result.document.tags || [],
+        createdAt: result.document.createdAt,
+        updatedAt: result.document.updatedAt,
+        scope: "candidate",
+        candidateId: result.document.candidateId,
+        candidateName: `${result.candidateFirstName} ${result.candidateLastName}`,
+        candidateCategory: result.document.category,
+      }),
+    );
+
+    return { documents: documentsList, total };
+  } catch (error) {
+    console.error("Error fetching candidate documents list", error);
+    return { documents: [], total: 0 };
+  }
+}
+
+function mapFirmDocumentsToUnified(
+  firmDocs: Awaited<ReturnType<typeof getDocuments>>["documents"],
+): UnifiedDocumentListItem[] {
+  return firmDocs.map((doc) => ({
+    id: doc.id,
+    name: doc.name,
+    url: doc.url,
+    description: doc.description,
+    tags: doc.tags,
+    createdAt: doc.createdAt,
+    updatedAt: doc.updatedAt,
+    scope: "firm",
+    categories: doc.categories,
+  }));
+}
+
+export async function getUnifiedDocuments(
+  scope: DocumentScope,
+  categoryFilters?: string[],
+  nameSearch?: string,
+  tagsSearch?: string,
+  candidateId?: string,
+  page: number = 1,
+  limit: number = 50,
+): Promise<{
+  documents: UnifiedDocumentListItem[];
+  total: number;
+}> {
+  if (scope === "firm") {
+    const result = await getDocuments(
+      categoryFilters,
+      nameSearch,
+      tagsSearch,
+      page,
+      limit,
+    );
+    return {
+      documents: mapFirmDocumentsToUnified(result.documents),
+      total: result.total,
+    };
+  }
+
+  if (scope === "candidates") {
+    return getCandidateDocumentsList(
+      nameSearch,
+      tagsSearch,
+      candidateId,
+      page,
+      limit,
+    );
+  }
+
+  const [firmResult, candidateResult] = await Promise.all([
+    getDocuments(categoryFilters, nameSearch, tagsSearch, 1, Number.MAX_SAFE_INTEGER),
+    getCandidateDocumentsList(
+      nameSearch,
+      tagsSearch,
+      candidateId,
+      1,
+      Number.MAX_SAFE_INTEGER,
+    ),
+  ]);
+
+  const merged = [
+    ...mapFirmDocumentsToUnified(firmResult.documents),
+    ...candidateResult.documents,
+  ].toSorted(
+    (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+  );
+
+  const total = merged.length;
+  const offset = (page - 1) * limit;
+  const documents = merged.slice(offset, offset + limit);
+
+  return { documents, total };
 }
 
 export async function getDocumentsByCandidateId(candidateId: string) {

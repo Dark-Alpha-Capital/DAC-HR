@@ -8,9 +8,11 @@ const ClearDocumentFiltersButton = () => {
   const { searchParams, setSearchParams } = useUrlSearchParams();
 
   const hasFilters =
+    searchParams.has("scope") ||
     searchParams.has("category") ||
     searchParams.has("name") ||
-    searchParams.has("tags");
+    searchParams.has("tags") ||
+    searchParams.has("candidateId");
 
   if (!hasFilters) {
     return null;
@@ -22,9 +24,12 @@ const ClearDocumentFiltersButton = () => {
       size="icon"
       onClick={() => {
         const params = new URLSearchParams(searchParams);
+        params.delete("scope");
         params.delete("category");
         params.delete("name");
         params.delete("tags");
+        params.delete("candidateId");
+        params.delete("page");
         setSearchParams(params);
       }}
     >

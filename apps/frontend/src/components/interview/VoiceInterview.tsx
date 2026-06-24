@@ -64,7 +64,6 @@ export default function VoiceInterview({
   const isMcq =
     activeQuestion?.questionType === "mcq" &&
     Boolean(activeQuestion.options?.length);
-  const sessionTitle = `${roundName} — ${positionName}`;
 
   useEffect(() => {
     const video = videoRef.current;
@@ -132,7 +131,9 @@ export default function VoiceInterview({
     return (
       <div className="flex min-h-svh flex-col items-center justify-center bg-[#202124] px-4 text-white">
         <Mic className="mb-4 size-10 text-[#8ab4f8]" />
-        <h1 className="text-xl font-medium">{roundName}</h1>
+        <h1 className="text-xl font-medium">
+          {state.isPractice ? "Practice Session" : roundName}
+        </h1>
         <p className="mt-1 text-sm text-[#9aa0a6]">
           {positionName} — {candidateName}
         </p>
@@ -141,16 +142,22 @@ export default function VoiceInterview({
             {state.error}
           </p>
         ) : null}
-        <Button
-          onClick={onStart}
-          className="mt-6 bg-[#1a73e8] hover:bg-[#1765cc]"
-        >
-          <Mic className="mr-2 size-4" />
-          Retry Voice Interview
-        </Button>
+        {state.status === "error" ? (
+          <Button
+            onClick={onStart}
+            className="mt-6 bg-[#1a73e8] hover:bg-[#1765cc]"
+          >
+            <Mic className="mr-2 size-4" />
+            {state.isPractice ? "Retry Practice" : "Retry Voice Interview"}
+          </Button>
+        ) : null}
       </div>
     );
   }
+
+  const sessionTitle = state.isPractice
+    ? `Practice — ${positionName}`
+    : `${roundName} — ${positionName}`;
 
   return (
     <div className="flex h-svh flex-col bg-[#202124] text-white">
@@ -197,9 +204,16 @@ export default function VoiceInterview({
         {/* Sidebar */}
         <aside className="flex h-[45vh] min-h-0 w-full flex-col border-t border-white/10 bg-[#292929] lg:h-auto lg:w-[380px] lg:border-t-0 lg:border-l">
           <div className="border-b border-white/10 px-4 py-3">
-            <h2 className="text-sm font-medium text-[#e8eaed]">
-              Live Transcript
-            </h2>
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-sm font-medium text-[#e8eaed]">
+                Live Transcript
+              </h2>
+              {state.isPractice ? (
+                <Badge className="bg-[#1a73e8]/30 text-[#8ab4f8] hover:bg-[#1a73e8]/30">
+                  Practice
+                </Badge>
+              ) : null}
+            </div>
           </div>
 
           {/* Current question — driven by DO currentQuestionIndex */}
@@ -247,8 +261,17 @@ export default function VoiceInterview({
 
             {state.allQuestionsAsked ? (
               <p className="mt-3 rounded-lg bg-[#1a73e8]/20 px-3 py-2 text-xs text-[#8ab4f8]">
-                All questions complete. Click <strong>End Interview</strong>{" "}
-                below to finish.
+                {state.isPractice ? (
+                  <>
+                    Practice complete. Click <strong>Exit Practice</strong> below
+                    to return.
+                  </>
+                ) : (
+                  <>
+                    All questions complete. Click <strong>End Interview</strong>{" "}
+                    below to finish.
+                  </>
+                )}
               </p>
             ) : null}
           </div>
@@ -328,7 +351,7 @@ export default function VoiceInterview({
               ) : (
                 <>
                   <PhoneOff className="mr-2 size-4" />
-                  End Interview
+                  {state.isPractice ? "Exit Practice" : "End Interview"}
                 </>
               )}
             </Button>

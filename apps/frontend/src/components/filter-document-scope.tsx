@@ -12,41 +12,28 @@ import {
 import { Button } from "~/components/ui/button";
 import { Filter } from "lucide-react";
 import {
-  applicationStatuses,
-  applicationStatusLabels,
-} from "@workspace/db/application-status";
+  documentScopeLabels,
+  documentScopeOptions,
+  parseDocumentScope,
+} from "@workspace/db/document-list-filters";
 
-const statuses = applicationStatuses.map((value) => ({
-  value,
-  label: applicationStatusLabels[value],
-}));
-
-const FilterApplicationStatus = ({
-  label = "Status",
-  filterLabel = "Filter by Status",
-}: {
-  label?: string;
-  filterLabel?: string;
-}) => {
+const FilterDocumentScope = () => {
   const { searchParams, setSearchParams } = useUrlSearchParams();
   const [isPending, startTransition] = useTransition();
-  const [selectedStatuses, setSelectedStatuses] = useOptimistic(
-    searchParams.getAll("status"),
-  );
+  const currentScope = parseDocumentScope(searchParams.get("scope") ?? undefined);
+  const [selectedScope, setSelectedScope] = useOptimistic(currentScope);
 
-  const handleCheckedChange = (value: string, checked: boolean) => {
+  const handleScopeChange = (value: string) => {
     startTransition(() => {
       const params = new URLSearchParams(searchParams);
-      params.delete("status");
-
-      const newSelected = checked
-        ? [...selectedStatuses, value]
-        : selectedStatuses.filter((status) => status !== value);
-
-      newSelected.forEach((status) => params.append("status", status));
-      setSelectedStatuses(newSelected);
+      if (value === "firm") {
+        params.delete("scope");
+        params.delete("candidateId");
+      } else {
+        params.set("scope", value);
+      }
       params.delete("page");
-
+      setSelectedScope(parseDocumentScope(value));
       setSearchParams(params);
     });
   };
@@ -60,26 +47,28 @@ const FilterApplicationStatus = ({
         <DropdownMenuTrigger asChild>
           <Button variant="secondary" size="sm">
             <Filter className="mr-2 h-4 w-4" />
-            {label}
-            {selectedStatuses.length > 0 && (
+            Type
+            {selectedScope !== "firm" && (
               <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-                {selectedStatuses.length}
+                {documentScopeLabels[selectedScope]}
               </span>
             )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56">
-          <DropdownMenuLabel>{filterLabel}</DropdownMenuLabel>
+          <DropdownMenuLabel>Filter by Type</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {statuses.map((status) => (
+          {documentScopeOptions.map((scope) => (
             <DropdownMenuCheckboxItem
-              key={status.value}
-              checked={selectedStatuses.includes(status.value)}
-              onCheckedChange={(checked) =>
-                handleCheckedChange(status.value, checked as boolean)
-              }
+              key={scope}
+              checked={selectedScope === scope}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  handleScopeChange(scope);
+                }
+              }}
             >
-              {status.label}
+              {documentScopeLabels[scope]}
             </DropdownMenuCheckboxItem>
           ))}
         </DropdownMenuContent>
@@ -88,4 +77,4 @@ const FilterApplicationStatus = ({
   );
 };
 
-export default FilterApplicationStatus;
+export default FilterDocumentScope;
