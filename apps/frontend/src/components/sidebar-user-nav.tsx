@@ -24,7 +24,7 @@ export function SidebarUserNav({ session }: { session: AppSession | null }) {
   const handleLogout = async () => {
     await authClient.signOut();
     await router.invalidate();
-    router.navigate({ to: "/" });
+    router.navigate({ to: "/login" });
   };
 
   return (

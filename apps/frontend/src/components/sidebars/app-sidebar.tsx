@@ -9,7 +9,6 @@ import {
   Shield,
   Building2,
   ScrollText,
-  Home,
   ClipboardCheck,
   BookOpen,
   ClipboardList,
@@ -37,7 +36,6 @@ import { SidebarUserNav } from "../sidebar-user-nav";
 
 // Recruiting links (available to all users)
 const recruitingLinks = [
-  { href: "/", label: "Home", icon: Home },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/candidates", label: "Candidates", icon: Users },
   { href: "/documents", label: "Documents", icon: Folders },
@@ -80,7 +78,7 @@ export function AppSidebar({ session }: { session: AppSession }) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="DAC HR">
-              <Link to="/" className="gap-2">
+              <Link to="/dashboard" className="gap-2">
                 <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-foreground">
                   <ShieldCheckIcon className="size-4" />
                 </span>

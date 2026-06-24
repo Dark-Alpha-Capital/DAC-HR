@@ -24,7 +24,7 @@ export const adminGuard = createMiddleware().server(async ({ next }) => {
   }
 
   if (session.user.role !== "admin") {
-    throw redirect({ to: "/" });
+    throw redirect({ to: "/dashboard" });
   }
 
   return next({

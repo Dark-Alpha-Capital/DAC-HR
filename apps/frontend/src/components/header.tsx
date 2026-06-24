@@ -62,7 +62,7 @@ const Header = () => {
     await authClient.signOut({
       fetchOptions: {
         onSuccess: () => {
-          router.navigate({ to: "/" });
+          router.navigate({ to: "/login" });
         },
       },
     });
@@ -87,7 +87,7 @@ const Header = () => {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link
-          to="/"
+          to="/dashboard"
           className="text-lg sm:text-xl font-bold hover:opacity-80 transition-opacity"
         >
           dac-hr

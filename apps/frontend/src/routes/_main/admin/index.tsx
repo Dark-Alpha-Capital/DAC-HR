@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_main/admin/")({
       throw redirect({ to: "/login" });
     }
     if (session.user.role !== "admin") {
-      throw redirect({ to: "/" });
+      throw redirect({ to: "/dashboard" });
     }
 
     const currentPage = deps.page ?? 1;

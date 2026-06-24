@@ -8,7 +8,7 @@ export function DocsBreadcrumb() {
 
   const getBreadcrumbs = () => {
     const breadcrumbs: { title: string; href: string }[] = [
-      { title: "Home", href: "/" },
+      { title: "Dashboard", href: "/dashboard" },
       { title: "Docs", href: "/docs" },
     ];
 
