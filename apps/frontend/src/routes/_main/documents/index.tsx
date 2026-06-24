@@ -1,7 +1,6 @@
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
-import { loadDocumentsIndex } from "~/lib/loaders/documents";
 import DocumentContainer from "~/components/document-container";
 import FilterDocumentCategory from "~/components/filter-document-category";
 import FilterDocumentName from "~/components/filter-document-name";
@@ -16,17 +15,16 @@ import {
 } from "~/components/ui/tabs";
 import DocumentCategoriesManager from "~/components/document-categories-manager";
 import PaginationControls from "~/components/pagination-controls";
+import { documentsIndexQueryOptions } from "~/lib/query/options/documents";
+import { useDocumentsIndex } from "~/hooks/queries/use-documents-index";
 import {
   toOptionalString,
   toPageNumber,
   toStringArray,
 } from "~/lib/parse-search";
 
-export const Route = createFileRoute("/_main/documents/")({
-  head: () => ({
-    meta: [{ title: "Documents" }],
-  }),
-  validateSearch: (search: Record<string, unknown>) => ({
+function parseDocumentsSearch(search: Record<string, unknown>) {
+  return {
     scope: toOptionalString(search.scope),
     category: toStringArray(search.category as string | string[] | undefined),
     name: toOptionalString(search.name),
@@ -36,14 +34,35 @@ export const Route = createFileRoute("/_main/documents/")({
       search.page !== undefined
         ? toPageNumber(search.page)
         : (undefined as number | undefined),
+  };
+}
+
+export const Route = createFileRoute("/_main/documents/")({
+  head: () => ({
+    meta: [{ title: "Documents" }],
   }),
-  loaderDeps: ({ search }) => search,
-  loader: async ({ deps }) => loadDocumentsIndex({ data: deps }),
+  validateSearch: parseDocumentsSearch,
+  loader: async ({ context: { queryClient }, location }) => {
+    const search = parseDocumentsSearch(
+      location.search as Record<string, unknown>,
+    );
+    await queryClient.ensureQueryData(documentsIndexQueryOptions(search));
+  },
   component: DocumentsPage,
-  pendingComponent: () => <ListPageSkeleton />,
 });
 
 function DocumentsPage() {
+  const search = Route.useSearch();
+  const { data, isLoading, isFetching } = useDocumentsIndex(search);
+
+  if (isLoading && !data) {
+    return <ListPageSkeleton />;
+  }
+
+  if (!data) {
+    return null;
+  }
+
   const {
     scope,
     categories,
@@ -53,7 +72,7 @@ function DocumentsPage() {
     hasNextPage,
     hasPreviousPage,
     hasFilters,
-  } = Route.useLoaderData();
+  } = data;
 
   const showCandidateColumn = scope === "candidates" || scope === "all";
   const showFirmCategoryFilter = scope === "firm" || scope === "all";
@@ -82,7 +101,10 @@ function DocumentsPage() {
         </TabsList>
 
         <TabsContent value="documents" className="space-y-6">
-          <div className="flex flex-wrap items-center gap-2">
+          <div
+            className="flex flex-wrap items-center gap-2 transition-opacity"
+            style={{ opacity: isFetching ? 0.7 : 1 }}
+          >
             <FilterDocumentName />
             <FilterDocumentScope />
             {showFirmCategoryFilter ? (

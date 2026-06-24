@@ -1,6 +1,7 @@
 import { DetailPageSkeleton } from "~/components/route-skeletons/detail-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { loadEmployeeDetail } from "~/lib/loaders/employees";
+import { employeeDetailQueryOptions } from "~/lib/query/options/employees";
+import { useEmployeeDetail } from "~/hooks/queries/use-employee-detail";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { Badge } from "~/components/ui/badge";
@@ -22,14 +23,25 @@ export const Route = createFileRoute("/_main/employees/$id/")({
   head: () => ({
     meta: [{ title: "Employee Detail" }],
   }),
-  loader: async ({ params }) =>
-    loadEmployeeDetail({ data: { id: params.id } }),
+  loader: async ({ context: { queryClient }, params }) => {
+    await queryClient.ensureQueryData(employeeDetailQueryOptions(params.id));
+  },
   component: EmployeeDetailPage,
-  pendingComponent: () => <DetailPageSkeleton container tabs showBreadcrumb />,
 });
 
 function EmployeeDetailPage() {
-  const { employee } = Route.useLoaderData();
+  const { id } = Route.useParams();
+  const { data, isLoading } = useEmployeeDetail(id);
+
+  if (isLoading && !data) {
+    return <DetailPageSkeleton container tabs showBreadcrumb />;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  const { employee } = data;
 
   if (!employee) {
     return (

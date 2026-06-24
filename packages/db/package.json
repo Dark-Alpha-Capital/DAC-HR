@@ -20,6 +20,8 @@
     "./application-status": "./application-status.ts",
     "./candidate-list-filters": "./candidate-list-filters.ts",
     "./document-list-filters": "./document-list-filters.ts",
+    "./kanban-cursor": "./kanban-cursor.ts",
+    "./kanban-queries": "./kanban-queries.ts",
     "./sqlite-helpers": "./sqlite-helpers.ts",
     "./index": "./index.ts"
   },

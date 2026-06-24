@@ -110,3 +110,29 @@ export function getApplicationStatusLabel(status: string): string {
   }
   return status.replace(/_/g, " ");
 }
+
+/** Raw application.status values that belong on a kanban column (includes legacy). */
+export function getApplicationStatusesForKanbanColumn(
+  columnStatus: ApplicationStatus,
+): string[] {
+  const legacyMatches = Object.entries(legacyApplicationStatusMap)
+    .filter(([, normalized]) => normalized === columnStatus)
+    .map(([legacy]) => legacy);
+
+  return [columnStatus, ...legacyMatches];
+}
+
+/** Whether a global status filter includes this kanban column. */
+export function kanbanColumnMatchesStatusFilter(
+  columnStatus: ApplicationStatus,
+  filterStatuses: string[] | undefined,
+): boolean {
+  if (!filterStatuses?.length) {
+    return true;
+  }
+
+  return filterStatuses.some((status) => {
+    const normalized = normalizeApplicationStatus(status);
+    return normalized === columnStatus;
+  });
+}

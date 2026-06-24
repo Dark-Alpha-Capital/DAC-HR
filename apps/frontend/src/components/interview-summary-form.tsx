@@ -1,5 +1,5 @@
 import { useState, useTransition } from "react";
-import { useRouter } from "@tanstack/react-router";
+import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import {
@@ -42,7 +42,7 @@ export default function InterviewSummaryForm({
   interview,
   applicationId,
 }: InterviewSummaryFormProps) {
-  const router = useRouter();
+  const invalidate = useQueryInvalidation();
   const [status, setStatus] = useState<InterviewStatus>(interview.status);
   const [rating, setRating] = useState<string>(
     interview.rating?.toString() ?? "none",
@@ -78,7 +78,7 @@ export default function InterviewSummaryForm({
       }
 
       toast.success("Interview updated");
-      router.invalidate();
+      void invalidate.applicationDetail(applicationId);
     });
   };
 

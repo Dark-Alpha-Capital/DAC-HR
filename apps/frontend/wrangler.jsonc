@@ -13,8 +13,17 @@
   // Non-secret config only. Secrets (OPENAI_API_KEY, NEXTCLOUD_*, BETTER_AUTH_SECRET,
   // GOOGLE_CLIENT_*, etc.) are set in the Cloudflare dashboard or via `wrangler secret put`.
   // Do NOT add secrets here — deploying empty vars would overwrite dashboard values.
+  // Local dev uses the top-level vars (localhost). Production deploy uses --env production.
   "vars": {
-    "BETTER_AUTH_URL": "https://recruiting.darkalphacapital.com"
+    "BETTER_AUTH_URL": "http://localhost:3000"
+  },
+
+  "env": {
+    "production": {
+      "vars": {
+        "BETTER_AUTH_URL": "https://recruiting.darkalphacapital.com"
+      }
+    }
   },
 
   "d1_databases": [
@@ -45,6 +54,11 @@
       "name": "interview-evaluation",
       "binding": "INTERVIEW_EVALUATION_WORKFLOW",
       "class_name": "InterviewEvaluationWorkflow"
+    },
+    {
+      "name": "candidate-import",
+      "binding": "CANDIDATE_IMPORT_WORKFLOW",
+      "class_name": "CandidateImportWorkflow"
     }
   ],
 

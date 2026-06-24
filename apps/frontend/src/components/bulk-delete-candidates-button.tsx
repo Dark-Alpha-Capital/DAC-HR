@@ -2,7 +2,6 @@ import React, { useTransition } from "react";
 import { Button } from "~/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useRouter } from "@tanstack/react-router";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,7 +13,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
-import { resetCacheForCandidates } from "~/lib/actions/reset-cache";
+import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 import { useAppSession } from "~/hooks/use-app-session";
 
 interface BulkDeleteCandidatesButtonProps {
@@ -26,7 +25,7 @@ const BulkDeleteCandidatesButton = ({
   selectedIds,
   onDeleteComplete,
 }: BulkDeleteCandidatesButtonProps) => {
-  const router = useRouter();
+  const invalidate = useQueryInvalidation();
   const [isPending, startTransition] = useTransition();
   const [open, setOpen] = React.useState(false);
   const session = useAppSession();
@@ -66,13 +65,12 @@ const BulkDeleteCandidatesButton = ({
         const failedCount = result.failed || 0;
 
         if (failedCount === 0) {
-          await resetCacheForCandidates();
+          await invalidate.candidateLists();
           toast.success(`Successfully deleted ${successCount} candidate(s)`, {
             position: "bottom-right",
           });
           setOpen(false);
           onDeleteComplete?.();
-          router.invalidate();
         } else {
           const errorMessage =
             result.errors && result.errors.length > 0
@@ -87,7 +85,7 @@ const BulkDeleteCandidatesButton = ({
           );
           setOpen(false);
           onDeleteComplete?.();
-          router.invalidate();
+          await invalidate.candidateLists();
         }
       } catch (error) {
         toast.error(

@@ -1,4 +1,5 @@
-import { useTransition, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -27,6 +28,7 @@ import {
   isApplicationStatus,
   type ApplicationStatus,
 } from "@workspace/db/application-status";
+import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 
 interface InlineApplicationStatusEditorProps {
   application: {
@@ -41,7 +43,7 @@ export default function InlineApplicationStatusEditor({
   candidateId,
 }: InlineApplicationStatusEditorProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const invalidate = useQueryInvalidation();
   const [showHiredDialog, setShowHiredDialog] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<ApplicationStatus | null>(
     null,
@@ -50,22 +52,8 @@ export default function InlineApplicationStatusEditor({
     ? application.status
     : "ai_screening";
 
-  const handleStatusChange = (newStatus: ApplicationStatus) => {
-    if (newStatus === currentStatus) return;
-
-    // If changing to "onboarding" and candidateId is available, show dialog
-    if (newStatus === "onboarding" && candidateId) {
-      setPendingStatus(newStatus);
-      setShowHiredDialog(true);
-      return;
-    }
-
-    // For other statuses, update directly
-    updateStatus(newStatus);
-  };
-
-  const updateStatus = (newStatus: ApplicationStatus) => {
-    startTransition(async () => {
+  const statusMutation = useMutation({
+    mutationFn: async (newStatus: ApplicationStatus) => {
       const result = await updateApplication({
         data: {
           applicationId: application.id,
@@ -74,36 +62,60 @@ export default function InlineApplicationStatusEditor({
       });
 
       if (result.error) {
-        toast.error(
+        throw new Error(
           typeof result.error === "string"
             ? result.error
             : "Failed to update application status",
         );
-        return;
       }
 
+      return newStatus;
+    },
+    onSuccess: async () => {
       toast.success("Application status updated");
-      router.invalidate();
-    });
+      await invalidate.applicationDetail(application.id);
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to update application status",
+      );
+    },
+  });
+
+  const handleStatusChange = (newStatus: ApplicationStatus) => {
+    if (newStatus === currentStatus) return;
+
+    if (newStatus === "onboarding" && candidateId) {
+      setPendingStatus(newStatus);
+      setShowHiredDialog(true);
+      return;
+    }
+
+    statusMutation.mutate(newStatus);
   };
 
   const handleAddToEmployeeDirectory = () => {
     setShowHiredDialog(false);
-    // Update status first, then redirect
-    updateStatus("onboarding");
-    // Redirect to employee form with candidate data
-    router.navigate({
-      to: `/employees/new?candidateId=${candidateId}&applicationId=${application.id}`,
+    statusMutation.mutate("onboarding", {
+      onSuccess: () => {
+        router.navigate({
+          to: `/employees/new?candidateId=${candidateId}&applicationId=${application.id}`,
+        });
+      },
     });
   };
 
   const handleMarkAsOnboardingOnly = () => {
     setShowHiredDialog(false);
     if (pendingStatus) {
-      updateStatus(pendingStatus);
+      statusMutation.mutate(pendingStatus);
       setPendingStatus(null);
     }
   };
+
+  const isPending = statusMutation.isPending;
 
   return (
     <>

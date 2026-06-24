@@ -1,31 +1,48 @@
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
-import { loadRoundsIndex } from "~/lib/loaders/rounds";
 import RoundContainer from "~/components/round-container";
 import FilterPositionType from "~/components/filter-position-type";
 import ClearParamsButton from "~/components/clear-params-button";
 import PaginationControls from "~/components/pagination-controls";
+import { roundsIndexQueryOptions } from "~/lib/query/options/rounds";
+import { useRoundsIndex } from "~/hooks/queries/use-rounds-index";
 import { toPageNumber, toStringArray } from "~/lib/parse-search";
 
-export const Route = createFileRoute("/_main/rounds/")({
-  head: () => ({
-    meta: [{ title: "Rounds" }],
-  }),
-  validateSearch: (search: Record<string, unknown>) => ({
+function parseRoundsSearch(search: Record<string, unknown>) {
+  return {
     type: toStringArray(search.type as string | string[] | undefined),
     page:
       search.page !== undefined
         ? toPageNumber(search.page)
         : (undefined as number | undefined),
+  };
+}
+
+export const Route = createFileRoute("/_main/rounds/")({
+  head: () => ({
+    meta: [{ title: "Rounds" }],
   }),
-  loaderDeps: ({ search }) => search,
-  loader: async ({ deps }) => loadRoundsIndex({ data: deps }),
+  validateSearch: parseRoundsSearch,
+  loader: async ({ context: { queryClient }, location }) => {
+    const search = parseRoundsSearch(location.search as Record<string, unknown>);
+    await queryClient.ensureQueryData(roundsIndexQueryOptions(search));
+  },
   component: RoundsPage,
-  pendingComponent: () => <ListPageSkeleton />,
 });
 
 function RoundsPage() {
+  const search = Route.useSearch();
+  const { data, isLoading, isFetching } = useRoundsIndex(search);
+
+  if (isLoading && !data) {
+    return <ListPageSkeleton />;
+  }
+
+  if (!data) {
+    return null;
+  }
+
   const {
     positions,
     rounds,
@@ -34,7 +51,7 @@ function RoundsPage() {
     hasNextPage,
     hasPreviousPage,
     hasFilters,
-  } = Route.useLoaderData();
+  } = data;
 
   return (
     <div className="space-y-6">
@@ -45,7 +62,10 @@ function RoundsPage() {
         </Button>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div
+        className="flex items-center gap-2 transition-opacity"
+        style={{ opacity: isFetching ? 0.7 : 1 }}
+      >
         <FilterPositionType positionTypes={positions} />
         <ClearParamsButton />
       </div>

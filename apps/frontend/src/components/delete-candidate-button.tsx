@@ -3,7 +3,7 @@ import { Button } from "~/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "@tanstack/react-router";
-import { deleteCandidate } from "~/lib/actions/delete-candidate";
+import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,11 +15,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
-import { resetCacheForCandidates } from "~/lib/actions/reset-cache";
 import { useAppSession } from "~/hooks/use-app-session";
 
 const DeleteCandidateButton = ({ candidateId }: { candidateId: string }) => {
   const router = useRouter();
+  const invalidate = useQueryInvalidation();
   const [isPending, startTransition] = useTransition();
   const session = useAppSession();
 
@@ -43,11 +43,11 @@ const DeleteCandidateButton = ({ candidateId }: { candidateId: string }) => {
           throw new Error(result.error || "Failed to delete candidate");
         }
 
-        await resetCacheForCandidates();
+        await invalidate.candidateDetail(candidateId);
         toast.success("Candidate deleted successfully", {
           position: "bottom-right",
         });
-        router.invalidate();
+        router.navigate({ to: "/candidates", search: {} as any });
       } catch (error) {
         toast.error(
           error instanceof Error ? error.message : "Failed to delete candidate",

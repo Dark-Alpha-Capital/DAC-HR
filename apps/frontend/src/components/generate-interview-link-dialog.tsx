@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useRouter } from "@tanstack/react-router";
+import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -38,7 +38,7 @@ export default function GenerateInterviewLinkDialog({
   open,
   onOpenChange,
 }: GenerateInterviewLinkDialogProps) {
-  const router = useRouter();
+  const invalidate = useQueryInvalidation();
   const [loading, setLoading] = useState(false);
   const [roundId, setRoundId] = useState(rounds[0]?.id ?? "");
   const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>("hybrid");
@@ -81,7 +81,7 @@ export default function GenerateInterviewLinkDialog({
         const link = `${window.location.origin}/interview/${result.data.token}`;
         setGeneratedLink(link);
         toast.success("Interview link generated");
-        router.invalidate();
+        void invalidate.applicationDetail(applicationId);
       }
     } catch {
       toast.error("An error occurred while generating the interview link");

@@ -78,18 +78,26 @@ export function ApplicationStatusBadge({
 interface KanbanStatusHeaderProps {
   status: ApplicationStatus;
   count: number;
+  totalCount?: number;
 }
 
-export function KanbanStatusHeader({ status, count }: KanbanStatusHeaderProps) {
+export function KanbanStatusHeader({
+  status,
+  count,
+  totalCount,
+}: KanbanStatusHeaderProps) {
+  const countLabel =
+    typeof totalCount === "number" ? `${count} / ${totalCount}` : String(count);
+
   return (
     <div
       className={cn(
         statusKanbanHeaderClasses[status],
-        "rounded-lg px-4 py-2.5 text-white font-semibold text-sm flex items-center justify-between",
+        "rounded-lg px-4 py-2.5 text-white font-semibold text-sm flex items-center justify-between shrink-0",
       )}
     >
       <span>{applicationStatusLabels[status]}</span>
-      <span className="text-white/90 font-medium">({count})</span>
+      <span className="text-white/90 font-medium">({countLabel})</span>
     </div>
   );
 }

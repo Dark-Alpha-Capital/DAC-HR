@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "@tanstack/react-router";
+import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 import { Plus } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import {
@@ -25,11 +25,12 @@ export function CandidateAddDocumentDialog({
   variant = "header",
 }: CandidateAddDocumentDialogProps) {
   const [open, setOpen] = useState(false);
-  const router = useRouter();
+  const invalidate = useQueryInvalidation();
 
   const handleSuccess = () => {
     setOpen(false);
-    void router.invalidate();
+    void invalidate.candidateDetail(candidateId);
+    void invalidate.documentLists();
   };
 
   return (

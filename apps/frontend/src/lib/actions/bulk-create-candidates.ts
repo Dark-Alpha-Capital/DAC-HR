@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { inArray } from "@workspace/db";
 import { db } from "@workspace/db/db";
-import { candidate, application } from "@workspace/db/schema";
+import { candidate, application, candidatePosition } from "@workspace/db/schema";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { candidateFormSchema } from "../schemas/candidate-form-schema";
 import type { CandidateFormSchema } from "../schemas/candidate-form-schema";
@@ -160,6 +160,10 @@ export const bulkCreateCandidates = createServerFn({ method: "POST" })
             candidateId: newCandidate.id,
             positionId,
             status: "ai_screening",
+          });
+          await tx.insert(candidatePosition).values({
+            candidateId: newCandidate.id,
+            positionId,
           });
         }
 

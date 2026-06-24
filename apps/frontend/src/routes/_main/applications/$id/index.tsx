@@ -1,7 +1,7 @@
 import { DetailPageSkeleton } from "~/components/route-skeletons/detail-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { loadApplicationDetail } from "~/lib/loaders/candidates";
-import { getSession } from "~/lib/get-session";
+import { applicationDetailQueryOptions } from "~/lib/query/options/applications";
+import { useApplicationDetail } from "~/hooks/queries/use-application-detail";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -21,26 +21,35 @@ import InlineApplicationStatusEditor from "~/components/inline-application-statu
 import ApplicationPersonalitySelector from "~/components/application-personality-selector";
 import ApplicationProgressTimeline from "~/components/application-progress-timeline";
 import ApplicationBreadcrumb from "~/components/application-breadcrumb";
-import type { InferSelectModel } from "@workspace/db";
 
 export const Route = createFileRoute("/_main/applications/$id/")({
   head: () => ({
     meta: [{ title: "Application Detail" }],
   }),
-  loader: async ({ params }) => {
-    const [data, session] = await Promise.all([
-      loadApplicationDetail({ data: params.id }),
-      getSession(),
-    ]);
-    return { ...data, currentUser: session?.user ?? null };
+  loader: async ({ context: { queryClient }, params }) => {
+    await queryClient.ensureQueryData(
+      applicationDetailQueryOptions(params.id),
+    );
   },
   component: ApplicationDetailPage,
-  pendingComponent: () => <DetailPageSkeleton container tabs showBreadcrumb showActions />,
 });
 
 function ApplicationDetailPage() {
-  const { application, candidate, sessions, aiScreenings, documents, users, currentUser } =
-    Route.useLoaderData();
+  const { id } = Route.useParams();
+  const { data, isLoading } = useApplicationDetail(id);
+
+  if (isLoading && !data) {
+    return (
+      <DetailPageSkeleton container tabs showBreadcrumb showActions />
+    );
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  const { application, candidate, sessions, aiScreenings, users, currentUser } =
+    data;
 
   if (!application) {
     return (

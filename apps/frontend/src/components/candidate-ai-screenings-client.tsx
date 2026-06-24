@@ -43,7 +43,7 @@ import {
 import { formatDate } from "~/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
-import { useRouter } from "@tanstack/react-router";
+import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 import type { CandidateAiScreening } from "@workspace/db/schema";
 import { deleteAiScreening } from "~/lib/actions/delete-ai-screening";
 import {
@@ -157,7 +157,7 @@ export default function CandidateAiScreeningsClient({
   screenings,
   positionId,
 }: CandidateAiScreeningsClientProps) {
-  const router = useRouter();
+  const invalidate = useQueryInvalidation();
   const [isPending, startTransition] = useTransition();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -231,7 +231,7 @@ export default function CandidateAiScreeningsClient({
           setSelectedScreening(null);
         }
 
-        router.invalidate();
+        void invalidate.candidateDetail(candidateId);
       }
     });
   };
@@ -289,7 +289,7 @@ export default function CandidateAiScreeningsClient({
           });
         }
 
-        router.invalidate();
+        void invalidate.candidateDetail(candidateId);
       }
     });
   };

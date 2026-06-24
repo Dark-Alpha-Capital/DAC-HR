@@ -8,7 +8,8 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { Button } from "~/components/ui/button";
-import { Link, useRouter } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
+import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
 import { deleteEmployee } from "~/lib/actions/delete-employee";
 import { toast } from "sonner";
@@ -35,7 +36,7 @@ interface EmployeeContainerProps {
 }
 
 const DeleteEmployeeIconButton = ({ employeeId }: { employeeId: string }) => {
-  const router = useRouter();
+  const invalidate = useQueryInvalidation();
   const [isPending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
 
@@ -49,7 +50,7 @@ const DeleteEmployeeIconButton = ({ employeeId }: { employeeId: string }) => {
       if (response?.success) {
         toast.success("Employee deleted successfully");
         setOpen(false);
-        router.invalidate();
+        void invalidate.employeeLists();
       }
     });
   };

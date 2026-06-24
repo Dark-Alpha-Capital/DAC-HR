@@ -1,7 +1,6 @@
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute } from "@tanstack/react-router";
 import { Briefcase } from "lucide-react";
-import { loadApplicationsIndex } from "~/lib/loaders/candidates";
 import ApplicationContainer from "~/components/application-container";
 import FilterCandidatePosition from "~/components/filter-candidate-position";
 import FilterApplicationStatus from "~/components/filter-application-status";
@@ -9,13 +8,12 @@ import FilterCandidateName from "~/components/filter-candidate-name";
 import FilterCandidateEmail from "~/components/filter-candidate-email";
 import ClearApplicationFiltersButton from "~/components/clear-application-filters-button";
 import ApplicationsPaginationControls from "~/components/applications-pagination-controls";
+import { applicationsIndexQueryOptions } from "~/lib/query/options/applications";
+import { useApplicationsIndex } from "~/hooks/queries/use-applications-index";
 import { toOptionalString, toPageNumber, toStringArray } from "~/lib/parse-search";
 
-export const Route = createFileRoute("/_main/applications/")({
-  head: () => ({
-    meta: [{ title: "Applications" }],
-  }),
-  validateSearch: (search: Record<string, unknown>) => ({
+function parseApplicationsSearch(search: Record<string, unknown>) {
+  return {
     name: toOptionalString(search.name),
     email: toOptionalString(search.email),
     position: toStringArray(search.position as string | string[] | undefined),
@@ -24,16 +22,37 @@ export const Route = createFileRoute("/_main/applications/")({
       search.page !== undefined
         ? toPageNumber(search.page)
         : (undefined as number | undefined),
+  };
+}
+
+export const Route = createFileRoute("/_main/applications/")({
+  head: () => ({
+    meta: [{ title: "Applications" }],
   }),
-  loaderDeps: ({ search }) => search,
-  loader: async ({ deps }) => loadApplicationsIndex({ data: deps }),
+  validateSearch: parseApplicationsSearch,
+  loader: async ({ context: { queryClient }, location }) => {
+    const search = parseApplicationsSearch(
+      location.search as Record<string, unknown>,
+    );
+    await queryClient.ensureQueryData(applicationsIndexQueryOptions(search));
+  },
   component: ApplicationsPage,
-  pendingComponent: () => (
-    <ListPageSkeleton filterCount={5} layout="cards" showActions={false} />
-  ),
 });
 
 function ApplicationsPage() {
+  const search = Route.useSearch();
+  const { data, isLoading, isFetching } = useApplicationsIndex(search);
+
+  if (isLoading && !data) {
+    return (
+      <ListPageSkeleton filterCount={5} layout="cards" showActions={false} />
+    );
+  }
+
+  if (!data) {
+    return null;
+  }
+
   const {
     positions,
     applications,
@@ -42,13 +61,16 @@ function ApplicationsPage() {
     hasNextPage,
     hasPreviousPage,
     hasFilters,
-  } = Route.useLoaderData();
+  } = data;
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">Applications</h1>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div
+        className="flex flex-wrap items-center gap-2 transition-opacity"
+        style={{ opacity: isFetching ? 0.7 : 1 }}
+      >
         <FilterCandidateName />
         <FilterCandidateEmail />
         <FilterCandidatePosition positions={positions} />

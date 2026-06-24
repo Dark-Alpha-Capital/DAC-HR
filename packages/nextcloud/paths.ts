@@ -54,6 +54,12 @@ export const buildNamedEntityFolderPath = ({
   return `${normalizedRoot}/${safeId}`;
 };
 
+export const buildImportFolderPath = (importId: string) => {
+  const normalizedRoot = normalizeFolderPath("/ATS/imports");
+  const safeId = sanitizeIdSegment(importId);
+  return `${normalizedRoot}/${safeId}`;
+};
+
 export const formatPersonName = (
   firstName?: string | null,
   lastName?: string | null,

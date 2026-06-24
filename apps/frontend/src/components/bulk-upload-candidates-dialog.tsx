@@ -1,5 +1,13 @@
-import * as React from "react";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import {
+  Upload,
+  FileSpreadsheet,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  X,
+} from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -11,594 +19,404 @@ import {
   DialogTrigger,
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
 } from "~/components/ui/alert";
-import {
-  Upload,
-  FileSpreadsheet,
-  AlertCircle,
-  CheckCircle2,
-  Loader2,
-  X,
-} from "lucide-react";
-import { toast } from "sonner";
-import * as XLSX from "xlsx";
-import type { WorkSheet } from "xlsx";
-import {
-  bulkCreateCandidates,
-  type BulkCandidateRow,
-  type BulkCandidateValidationError,
-} from "~/lib/actions/bulk-create-candidates";
-import { useRouter } from "@tanstack/react-router";
+import { Progress } from "~/components/ui/progress";
+import { useImportStatus } from "~/hooks/queries/use-import-status";
+import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 
-interface ParsedCandidate extends BulkCandidateRow {
-  _rowNumber: number;
-  _errors?: BulkCandidateValidationError[];
-}
+type PositionOption = {
+  id: string;
+  name: string;
+};
 
-export default function BulkUploadCandidatesDialog() {
+type BulkUploadCandidatesDialogProps = {
+  positions?: PositionOption[];
+};
+
+const ACCEPTED_EXTENSIONS = [".csv", ".zip", ".pdf"];
+
+export default function BulkUploadCandidatesDialog({
+  positions = [],
+}: BulkUploadCandidatesDialogProps) {
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [parsedCandidates, setParsedCandidates] = useState<ParsedCandidate[]>(
-    [],
-  );
-  const [validationErrors, setValidationErrors] = useState<
-    Map<number, BulkCandidateValidationError[]>
-  >(new Map());
+  const [positionId, setPositionId] = useState<string>("");
+  const [importId, setImportId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const router = useRouter();
+  const [isCancelling, startCancelTransition] = useTransition();
   const [fileInputKey, setFileInputKey] = useState(0);
+  const invalidate = useQueryInvalidation();
+  const hasNotifiedRef = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
+  const { data: status, refetch: refetchStatus } = useImportStatus(
+    importId,
+    open,
+  );
 
-    // Validate file type
-    const validTypes = [
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
-      "application/vnd.ms-excel", // .xls
-      "text/csv", // .csv
-    ];
-    const validExtensions = [".xlsx", ".xls", ".csv"];
-
-    const fileExtension = selectedFile.name
-      .toLowerCase()
-      .substring(selectedFile.name.lastIndexOf("."));
-
-    if (
-      !validTypes.includes(selectedFile.type) &&
-      !validExtensions.includes(fileExtension)
-    ) {
-      toast.error(
-        "Invalid file type. Please upload an Excel file (.xlsx, .xls) or CSV file.",
-        { position: "bottom-right" },
-      );
+  useEffect(() => {
+    if (!importId || !open) {
+      hasNotifiedRef.current = false;
       return;
     }
 
-    setFile(selectedFile);
-    parseExcelFile(selectedFile);
+    if (!status) {
+      return;
+    }
+
+    if (status.import.status === "completed" && !hasNotifiedRef.current) {
+      hasNotifiedRef.current = true;
+      toast.success(
+        `Import complete: ${status.summary.succeeded} created, ${status.summary.skipped} skipped, ${status.summary.failed} failed`,
+      );
+      void invalidate.candidateLists();
+      void invalidate.applicationLists();
+      return;
+    }
+
+    if (status.import.status === "failed" && !hasNotifiedRef.current) {
+      hasNotifiedRef.current = true;
+      toast.error(status.import.error ?? "Import failed");
+      return;
+    }
+
+    if (status.import.status === "cancelled" && !hasNotifiedRef.current) {
+      hasNotifiedRef.current = true;
+      toast.info("Import cancelled");
+      void invalidate.candidateLists();
+      void invalidate.applicationLists();
+    }
+  }, [status, importId, open, invalidate]);
+
+  const reset = () => {
+    setFile(null);
+    setImportId(null);
+    setPositionId("");
+    setFileInputKey((key) => key + 1);
   };
 
-  const parseExcelFile = async (file: File) => {
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const workbook = XLSX.read(arrayBuffer, { type: "array" });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName || ""] as WorkSheet;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
 
-      // Convert to JSON with header row
-      const jsonData = XLSX.utils.sheet_to_json(worksheet || {}, {
-        header: 1,
-        defval: "",
-      }) as any[];
+    const extension = selected.name
+      .toLowerCase()
+      .substring(selected.name.lastIndexOf("."));
 
-      if (jsonData.length < 2) {
-        toast.error(
-          "Excel file must have at least a header row and one data row.",
-          {
-            position: "bottom-right",
-          },
-        );
-        return;
-      }
-
-      // Get header row (first row)
-      const headers = jsonData[0] as string[];
-      const headerMap: Record<string, string> = {};
-
-      // Normalize headers (case-insensitive, trim whitespace)
-      headers.forEach((header, index) => {
-        const normalized = header?.toString().toLowerCase().trim() || "";
-        headerMap[normalized] =
-          header?.toString().trim() || `Column${index + 1}`;
-      });
-
-      // Map common header variations
-      const headerMappings: Record<string, string[]> = {
-        firstName: ["first name", "firstname", "first_name", "fname"],
-        lastName: ["last name", "lastname", "last_name", "lname"],
-        email: ["email", "e-mail", "email address"],
-        phone: ["phone", "phone number", "phone_number", "mobile", "tel"],
-        location: ["location", "city", "address"],
-        source: ["source", "source type", "source_type"],
-        sourceUrl: ["source url", "source_url", "source link", "url"],
-        note: ["note", "notes", "comments", "remarks"],
-        positionId: ["position id", "position_id", "position", "position name"],
-      };
-
-      const findHeaderKey = (variations: string[]): string | null => {
-        for (const normalized of Object.keys(headerMap)) {
-          if (variations.some((v) => normalized.includes(v))) {
-            return headerMap[normalized] || null;
-          }
-        }
-        return null as string | null;
-      };
-
-      // Parse data rows
-      const candidates: ParsedCandidate[] = [];
-      const errors = new Map<number, BulkCandidateValidationError[]>();
-
-      for (let i = 1; i < jsonData.length; i++) {
-        const row = jsonData[i] as any[];
-        const rowNumber = i + 1; // 1-indexed (accounting for header)
-
-        // Skip empty rows
-        if (row.every((cell) => !cell || cell.toString().trim() === "")) {
-          continue;
-        }
-
-        const candidate: ParsedCandidate = {
-          _rowNumber: rowNumber,
-          firstName: "",
-          lastName: "",
-          email: "",
-        };
-
-        // Extract data based on header mappings
-        Object.entries(headerMappings).forEach(([key, variations]) => {
-          const headerKey = findHeaderKey(variations);
-          if (headerKey) {
-            const headerIndex = headers.findIndex(
-              (h) => h?.toString().trim() === headerKey,
-            );
-            if (headerIndex >= 0 && row[headerIndex] !== undefined) {
-              const value = row[headerIndex]?.toString().trim() || "";
-              if (key === "positionId") {
-                // Position ID might be a name, we'll handle it later
-                (candidate as any)[key] = value;
-              } else {
-                (candidate as any)[key] = value;
-              }
-            }
-          }
-        });
-
-        // Validate required fields
-        const rowErrors: BulkCandidateValidationError[] = [];
-
-        if (!candidate.firstName || candidate.firstName.trim() === "") {
-          rowErrors.push({
-            row: rowNumber,
-            field: "firstName",
-            message: "First name is required",
-          });
-        }
-
-        if (!candidate.lastName || candidate.lastName.trim() === "") {
-          rowErrors.push({
-            row: rowNumber,
-            field: "lastName",
-            message: "Last name is required",
-          });
-        }
-
-        if (!candidate.email || candidate.email.trim() === "") {
-          rowErrors.push({
-            row: rowNumber,
-            field: "email",
-            message: "Email is required",
-          });
-        } else {
-          // Basic email validation
-          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          if (!emailRegex.test(candidate.email)) {
-            rowErrors.push({
-              row: rowNumber,
-              field: "email",
-              message: "Invalid email format",
-            });
-          }
-        }
-
-        // Check for duplicate emails in the batch (frontend validation)
-        if (candidate.email && candidate.email.trim() !== "") {
-          const duplicateInBatch = candidates.some(
-            (c) =>
-              c._rowNumber !== rowNumber &&
-              c.email?.toLowerCase() === candidate.email?.toLowerCase() &&
-              c.email?.trim() !== "",
-          );
-
-          if (duplicateInBatch) {
-            rowErrors.push({
-              row: rowNumber,
-              field: "email",
-              message: "Duplicate email in upload file",
-            });
-          }
-        }
-
-        if (rowErrors.length > 0) {
-          errors.set(rowNumber, rowErrors);
-          candidate._errors = rowErrors;
-        }
-
-        candidates.push(candidate);
-      }
-
-      setParsedCandidates(candidates);
-      setValidationErrors(errors);
-
-      if (candidates.length === 0) {
-        toast.error("No valid candidate data found in the file.", {
-          position: "bottom-right",
-        });
-      } else {
-        toast.success(
-          `Parsed ${candidates.length} candidate(s). ${errors.size} row(s) have errors.`,
-          { position: "bottom-right" },
-        );
-      }
-    } catch (error) {
-      console.error("Error parsing Excel file:", error);
-      toast.error("Failed to parse Excel file. Please check the file format.", {
-        position: "bottom-right",
-      });
+    if (!ACCEPTED_EXTENSIONS.includes(extension)) {
+      toast.error("Please upload a CSV, ZIP, or PDF file");
+      return;
     }
+
+    setFile(selected);
+    setImportId(null);
+    hasNotifiedRef.current = false;
   };
 
   const handleUpload = () => {
-    if (parsedCandidates.length === 0) {
-      toast.error("No candidates to upload.", { position: "bottom-right" });
-      return;
-    }
-
-    // Check if there are any errors - all candidates must be valid
-    const hasErrors = validationErrors.size > 0;
-
-    if (hasErrors) {
-      toast.error(
-        "Please fix all validation errors before uploading. All candidates must pass validation (all-or-nothing approach).",
-        { position: "bottom-right", duration: 6000 },
-      );
+    if (!file) {
+      toast.error("Please select a file");
       return;
     }
 
     startTransition(async () => {
       try {
-        // Create mapping: server array index -> Excel row number
-        const rowNumberMap = new Map<number, number>();
-        parsedCandidates.forEach((candidate, index) => {
-          rowNumberMap.set(index + 1, candidate._rowNumber);
+        const formData = new FormData();
+        formData.append("file", file);
+        if (positionId) {
+          formData.append("positionId", positionId);
+        }
+
+        const response = await fetch("/api/candidate/import", {
+          method: "POST",
+          body: formData,
         });
 
-        // Prepare ALL candidates for upload (all-or-nothing)
-        const candidatesToUpload: BulkCandidateRow[] = parsedCandidates.map(
-          (c) => ({
-            firstName: c.firstName,
-            lastName: c.lastName,
-            email: c.email,
-            phone: c.phone,
-            location: c.location,
-            source: c.source,
-            sourceUrl: c.sourceUrl,
-            note: c.note,
-            positionId: c.positionId,
-          }),
-        );
+        const data = (await response.json()) as {
+          importId?: string;
+          error?: string;
+        };
 
-        const result = await bulkCreateCandidates({ data: candidatesToUpload });
-
-        if (result.success) {
-          toast.success(
-            `Successfully uploaded all ${result.created} candidate(s).`,
-            { position: "bottom-right" },
-          );
-          setOpen(false);
-          resetDialog();
-          router.invalidate();
+        if (!response.ok) {
+          toast.error(data.error ?? "Upload failed");
           return;
         }
 
-        // Map server errors to Excel row numbers
-        const serverErrors = new Map<number, BulkCandidateValidationError[]>();
-        result.errors.forEach((error) => {
-          const excelRow = rowNumberMap.get(error.row) || error.row;
-          const existing = serverErrors.get(excelRow) || [];
-          existing.push({ ...error, row: excelRow });
-          serverErrors.set(excelRow, existing);
-        });
+        if (!data.importId) {
+          toast.error("Import job was not created");
+          return;
+        }
 
-        // Update validation errors
-        setValidationErrors((prev) => {
-          const merged = new Map(prev);
-          serverErrors.forEach((errors, row) => {
-            merged.set(row, errors);
-          });
-          return merged;
-        });
-
-        // Update parsed candidates with server errors
-        setParsedCandidates((prev) =>
-          prev.map((candidate) => {
-            const errors = serverErrors.get(candidate._rowNumber);
-            return errors ? { ...candidate, _errors: errors } : candidate;
-          }),
-        );
-
-        toast.error(
-          `Upload failed: ${result.failed} validation error(s) found. No candidates were uploaded (all-or-nothing). Please fix all errors and try again.`,
-          { position: "bottom-right", duration: 7000 },
-        );
+        hasNotifiedRef.current = false;
+        setImportId(data.importId);
+        toast.success("Import started. Processing in background...");
       } catch (error) {
-        console.error("Error uploading candidates:", error);
         toast.error(
-          error instanceof Error
-            ? error.message
-            : "Failed to upload candidates. All changes were rolled back.",
-          { position: "bottom-right", duration: 6000 },
+          error instanceof Error ? error.message : "Failed to start import",
         );
       }
     });
   };
 
-  const resetDialog = () => {
-    setFile(null);
-    setParsedCandidates([]);
-    setValidationErrors(new Map());
-    // Reset file input by changing key to force remount
-    setFileInputKey((prev) => prev + 1);
+  const handleStopImport = () => {
+    if (!importId) return;
+
+    startCancelTransition(async () => {
+      try {
+        const response = await fetch(`/api/candidate/import/${importId}`, {
+          method: "DELETE",
+        });
+
+        const data = (await response.json()) as { error?: string };
+
+        if (!response.ok) {
+          toast.error(data.error ?? "Failed to cancel import");
+          return;
+        }
+
+        toast.success("Import stopped");
+        hasNotifiedRef.current = true;
+        await refetchStatus();
+        void invalidate.candidateLists();
+        void invalidate.applicationLists();
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Failed to cancel import",
+        );
+      }
+    });
   };
 
-  const handleOpenChange = (newOpen: boolean) => {
-    setOpen(newOpen);
-    if (!newOpen) {
-      resetDialog();
-    }
-  };
+  const isProcessing =
+    importId !== null &&
+    status?.import.status !== "completed" &&
+    status?.import.status !== "failed" &&
+    status?.import.status !== "cancelled";
 
-  const validCandidatesCount = parsedCandidates.filter(
-    (c) => !c._errors || c._errors.length === 0,
-  ).length;
-  const errorCount = validationErrors.size;
+  const progressPercent =
+    status && status.import.totalCandidates > 0
+      ? Math.round(
+          (status.import.processedCandidates / status.import.totalCandidates) *
+            100,
+        )
+      : isProcessing
+        ? 10
+        : 0;
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen && status?.import.status === "completed") {
+          void invalidate.candidateLists();
+          void invalidate.applicationLists();
+        }
+        setOpen(nextOpen);
+        if (!nextOpen) reset();
+      }}
+    >
       <DialogTrigger asChild>
-        <Button variant="secondary">
-          <Upload className="mr-2 h-4 w-4" />
-          Bulk Upload
+        <Button variant="secondary" className="shrink-0">
+          <Upload className="mr-2 h-4 w-4 shrink-0" />
+          <span className="truncate">Bulk Upload</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-7xl sm:w-full sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-6xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[min(90dvh,40rem)] w-full max-w-[calc(100%-1rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
+        <DialogHeader className="shrink-0 space-y-1.5 px-4 pt-4 pr-12">
           <DialogTitle>Bulk Upload Candidates</DialogTitle>
-          <DialogDescription>
-            Upload an Excel file (.xlsx, .xls) or CSV file with candidate
-            information. The file should have columns: First Name, Last Name,
-            Email, Phone (optional), Location (optional), Source (optional),
-            Source URL (optional), Note (optional), Position ID (optional).
-            <br />
-            <strong>
-              All-or-nothing: All candidates must pass validation. If any
-              candidate fails validation, nothing will be uploaded.
-            </strong>
+          <DialogDescription className="text-pretty">
+            Upload a CSV, ZIP of resumes, or Handshake PDF. Files are processed
+            on the server — nothing is parsed in your browser.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden flex flex-col gap-4">
-          {/* File Upload Section */}
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-1">
+          {positions.length > 0 ? (
+            <div className="space-y-2">
+              <Label htmlFor="bulk-upload-position">Position (optional)</Label>
+              <Select
+                value={positionId || "none"}
+                onValueChange={(value) =>
+                  setPositionId(value === "none" ? "" : value)
+                }
+              >
+                <SelectTrigger id="bulk-upload-position" className="w-full min-w-0">
+                  <SelectValue placeholder="No position" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No position</SelectItem>
+                  {positions.map((position) => (
+                    <SelectItem key={position.id} value={position.id}>
+                      {position.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
+
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium">Upload File</label>
-              {(file || parsedCandidates.length > 0) && (
+            <Label htmlFor="bulk-upload-file">File</Label>
+            <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full shrink-0 sm:w-auto"
+                disabled={isPending || isProcessing}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="mr-2 h-4 w-4 shrink-0" />
+                Choose file
+              </Button>
+              <Input
+                ref={fileInputRef}
+                key={fileInputKey}
+                id="bulk-upload-file"
+                type="file"
+                accept=".csv,.zip,.pdf"
+                onChange={handleFileChange}
+                disabled={isPending || isProcessing}
+                className="sr-only"
+              />
+              {!file ? (
+                <p className="min-w-0 text-sm text-muted-foreground sm:flex-1">
+                  CSV, ZIP, or PDF
+                </p>
+              ) : null}
+            </div>
+            {file ? (
+              <div className="flex min-w-0 items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                <FileSpreadsheet className="h-4 w-4 shrink-0" />
+                <span className="min-w-0 flex-1 truncate" title={file.name}>
+                  {file.name}
+                </span>
                 <Button
                   type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={resetDialog}
-                  disabled={isPending}
-                  className="h-8"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  onClick={() => {
+                    setFile(null);
+                    setFileInputKey((key) => key + 1);
+                  }}
+                  disabled={isPending || isProcessing}
+                  aria-label="Remove selected file"
                 >
-                  <X className="mr-2 h-4 w-4" />
-                  Reset
+                  <X className="h-3.5 w-3.5" />
                 </Button>
-              )}
-            </div>
-            <div className="flex items-center gap-4">
-              <Input
-                key={fileInputKey}
-                type="file"
-                accept=".xlsx,.xls,.csv"
-                onChange={handleFileChange}
-                className="cursor-pointer"
-                disabled={isPending}
-              />
-              {file && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <FileSpreadsheet className="h-4 w-4" />
-                  <span>{file.name}</span>
-                </div>
-              )}
-            </div>
+              </div>
+            ) : null}
           </div>
 
-          {/* Summary Section */}
-          {parsedCandidates.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Total Rows</AlertTitle>
-                <AlertDescription>{parsedCandidates.length}</AlertDescription>
-              </Alert>
-              <Alert
-                variant={validCandidatesCount > 0 ? "default" : "destructive"}
-              >
-                {validCandidatesCount > 0 ? (
-                  <CheckCircle2 className="h-4 w-4" />
-                ) : (
-                  <AlertCircle className="h-4 w-4" />
-                )}
-                <AlertTitle>Valid</AlertTitle>
-                <AlertDescription>{validCandidatesCount}</AlertDescription>
-              </Alert>
-              <Alert variant={errorCount > 0 ? "destructive" : "default"}>
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Errors</AlertTitle>
-                <AlertDescription>{errorCount}</AlertDescription>
-              </Alert>
-            </div>
-          )}
-
-          {/* Preview Table */}
-          {parsedCandidates.length > 0 && (
-            <div className="flex-1 overflow-hidden flex flex-col">
-              <label className="text-sm font-medium mb-2">Preview</label>
-              <div className="flex-1 border rounded-md overflow-auto">
-                <div className="min-w-full inline-block">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-16 min-w-16 sticky left-0 bg-background z-10 border-r">
-                          Row
-                        </TableHead>
-                        <TableHead className="min-w-[120px]">
-                          First Name
-                        </TableHead>
-                        <TableHead className="min-w-[120px]">
-                          Last Name
-                        </TableHead>
-                        <TableHead className="min-w-[180px]">Email</TableHead>
-                        <TableHead className="min-w-[120px]">Phone</TableHead>
-                        <TableHead className="min-w-[120px]">
-                          Location
-                        </TableHead>
-                        <TableHead className="min-w-[100px]">Source</TableHead>
-                        <TableHead className="min-w-[150px]">
-                          Source URL
-                        </TableHead>
-                        <TableHead className="min-w-[150px]">Note</TableHead>
-                        <TableHead className="min-w-[120px]">
-                          Position ID
-                        </TableHead>
-                        <TableHead className="w-48 min-w-48">Errors</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {parsedCandidates.map((candidate) => {
-                        const errors =
-                          validationErrors.get(candidate._rowNumber) || [];
-                        const hasErrors = errors.length > 0;
-
-                        return (
-                          <TableRow
-                            key={candidate._rowNumber}
-                            className={hasErrors ? "bg-destructive/10" : ""}
-                          >
-                            <TableCell className="font-medium sticky left-0 bg-background z-10 border-r">
-                              {candidate._rowNumber}
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap">
-                              {candidate.firstName || "-"}
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap">
-                              {candidate.lastName || "-"}
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap">
-                              {candidate.email || "-"}
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap">
-                              {candidate.phone || "-"}
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap">
-                              {candidate.location || "-"}
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap">
-                              {candidate.source || "-"}
-                            </TableCell>
-                            <TableCell
-                              className="whitespace-nowrap max-w-[150px] truncate"
-                              title={candidate.sourceUrl || undefined}
-                            >
-                              {candidate.sourceUrl || "-"}
-                            </TableCell>
-                            <TableCell
-                              className="whitespace-nowrap max-w-[150px] truncate"
-                              title={candidate.note || undefined}
-                            >
-                              {candidate.note || "-"}
-                            </TableCell>
-                            <TableCell
-                              className="whitespace-nowrap max-w-[120px] truncate"
-                              title={candidate.positionId || undefined}
-                            >
-                              {candidate.positionId || "-"}
-                            </TableCell>
-                            <TableCell>
-                              {hasErrors ? (
-                                <div className="space-y-1">
-                                  {errors.map((error, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="text-xs text-destructive"
-                                    >
-                                      {error.field}: {error.message}
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">
-                                  Valid
-                                </span>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
+          {isProcessing ? (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm">
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                <span className="min-w-0">Processing import...</span>
               </div>
+              <Progress value={progressPercent} className="w-full" />
+              {status ? (
+                <p className="text-xs text-muted-foreground">
+                  {status.import.processedCandidates} /{" "}
+                  {status.import.totalCandidates || "…"} processed
+                </p>
+              ) : null}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full sm:w-auto"
+                onClick={handleStopImport}
+                disabled={isCancelling}
+              >
+                {isCancelling ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Stopping...
+                  </>
+                ) : (
+                  "Stop import"
+                )}
+              </Button>
             </div>
-          )}
+          ) : null}
+
+          {status?.import.status === "completed" ? (
+            <Alert>
+              <CheckCircle2 className="h-4 w-4" />
+              <AlertTitle>Import complete</AlertTitle>
+              <AlertDescription>
+                {status.summary.succeeded} created, {status.summary.skipped}{" "}
+                skipped, {status.summary.failed} failed.
+              </AlertDescription>
+            </Alert>
+          ) : null}
+
+          {status?.import.status === "failed" ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Import failed</AlertTitle>
+              <AlertDescription>
+                {status.import.error ?? "An unknown error occurred"}
+              </AlertDescription>
+            </Alert>
+          ) : null}
+
+          {status?.import.status === "cancelled" ? (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Import cancelled</AlertTitle>
+              <AlertDescription>
+                Processing was stopped. Any candidates created before cancellation
+                are still saved.
+              </AlertDescription>
+            </Alert>
+          ) : null}
+
+          {status && status.rows.some((row) => row.error) ? (
+            <div className="max-h-32 overflow-y-auto rounded-md border p-2 text-xs">
+              {status.rows
+                .filter((row) => row.error)
+                .slice(0, 10)
+                .map((row) => (
+                  <div key={row.rowIndex} className="text-muted-foreground">
+                    Row {row.rowIndex}: {row.error}
+                  </div>
+                ))}
+            </div>
+          ) : null}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="shrink-0 [&>button]:w-full sm:[&>button]:w-auto">
           <Button
-            variant="secondary"
+            type="button"
+            variant="outline"
             onClick={() => setOpen(false)}
-            disabled={isPending}
+            disabled={isPending || isCancelling}
           >
-            Cancel
+            {status?.import.status === "completed" ||
+            status?.import.status === "cancelled"
+              ? "Close"
+              : isProcessing
+                ? "Close"
+                : "Cancel"}
           </Button>
           <Button
+            type="button"
             onClick={handleUpload}
-            disabled={
-              isPending || parsedCandidates.length === 0 || errorCount > 0
-            }
+            disabled={!file || isPending || isProcessing || isCancelling}
           >
             {isPending ? (
               <>
@@ -606,10 +424,7 @@ export default function BulkUploadCandidatesDialog() {
                 Uploading...
               </>
             ) : (
-              <>
-                Upload All {parsedCandidates.length} Candidate
-                {parsedCandidates.length !== 1 ? "s" : ""}
-              </>
+              "Start Import"
             )}
           </Button>
         </DialogFooter>

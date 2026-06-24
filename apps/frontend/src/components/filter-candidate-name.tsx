@@ -1,6 +1,7 @@
 import { useUrlSearchParams } from "~/lib/hooks/use-url-search-params";
 
-import React, { useTransition, useEffect, useRef } from "react";
+import { useTransition, useEffect, useRef } from "react";
+import { resetListPageParam } from "~/lib/parse-search";
 import { Input } from "~/components/ui/input";
 import { Search } from "lucide-react";
 
@@ -22,6 +23,7 @@ const FilterCandidateName = () => {
         } else {
           params.delete("name");
         }
+        resetListPageParam(params);
         setSearchParams(params);
     });
     }, 300);
@@ -42,6 +44,7 @@ const FilterCandidateName = () => {
     >
       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       <Input
+        key={`name-${searchParams.get("name") ?? ""}`}
         type="text"
         placeholder="Search by name..."
         defaultValue={searchParams.get("name") || ""}

@@ -1,5 +1,5 @@
 export { openai, getOpenAIClient } from "./openai-client";
-export { getOpenAIProvider } from "./ai-sdk-provider";
+export { getOpenAIProvider, getOpenAIModel } from "./ai-sdk-provider";
 export {
   createRealtimeEphemeralSession,
   getRealtimeSidebandUrl,

@@ -10,6 +10,10 @@ import { type InferSelectModel } from "drizzle-orm";
 import type {
   ApplicationStatus,
   CandidateDocumentCategory,
+  CandidateImportDuplicatePolicy,
+  CandidateImportRowStatus,
+  CandidateImportStatus,
+  CandidateImportType,
   Department,
   DocumentCategoryValue,
   HireLevel,
@@ -155,6 +159,87 @@ export const candidateDocument = sqliteTable("candidate_document", {
   updatedAt: updatedAtCol(),
 });
 export type CandidateDocument = InferSelectModel<typeof candidateDocument>;
+
+export const candidateProfile = sqliteTable(
+  "candidate_profile",
+  {
+    id: uuidPk(),
+    candidateId: text("candidate_id")
+      .notNull()
+      .unique()
+      .references(() => candidate.id, { onDelete: "cascade" }),
+    school: text("school"),
+    major: text("major"),
+    graduationYear: integer("graduation_year"),
+    linkedinUrl: text("linkedin_url"),
+    resumeText: text("resume_text"),
+    createdAt: createdAtCol(),
+    updatedAt: updatedAtCol(),
+  },
+);
+
+export type CandidateProfile = InferSelectModel<typeof candidateProfile>;
+
+export const candidateImport = sqliteTable("candidate_import", {
+  id: uuidPk(),
+  filename: text("filename").notNull(),
+  type: text("type").$type<CandidateImportType>().notNull(),
+  status: text("status")
+    .$type<CandidateImportStatus>()
+    .default("pending")
+    .notNull(),
+  uploadedBy: text("uploaded_by")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  originalFileUrl: text("original_file_url").notNull(),
+  positionId: text("position_id").references(() => position.id, {
+    onDelete: "set null",
+  }),
+  duplicatePolicy: text("duplicate_policy")
+    .$type<CandidateImportDuplicatePolicy>()
+    .default("skip")
+    .notNull(),
+  totalCandidates: integer("total_candidates").default(0).notNull(),
+  processedCandidates: integer("processed_candidates").default(0).notNull(),
+  failedCandidates: integer("failed_candidates").default(0).notNull(),
+  error: text("error"),
+  createdAt: createdAtCol(),
+  updatedAt: updatedAtCol(),
+});
+
+export type CandidateImport = InferSelectModel<typeof candidateImport>;
+
+export const candidateImportRow = sqliteTable(
+  "candidate_import_row",
+  {
+    id: uuidPk(),
+    importId: text("import_id")
+      .notNull()
+      .references(() => candidateImport.id, { onDelete: "cascade" }),
+    rowIndex: integer("row_index").notNull(),
+    candidateId: text("candidate_id").references(() => candidate.id, {
+      onDelete: "set null",
+    }),
+    status: text("status")
+      .$type<CandidateImportRowStatus>()
+      .default("pending")
+      .notNull(),
+    error: text("error"),
+    metadata: text("metadata", { mode: "json" }).$type<
+      Record<string, unknown>
+    >(),
+    createdAt: createdAtCol(),
+    updatedAt: updatedAtCol(),
+  },
+  (table) => ({
+    importRowUnique: uniqueIndex("candidate_import_row_unique").on(
+      table.importId,
+      table.rowIndex,
+    ),
+  }),
+);
+
+export type CandidateImportRow = InferSelectModel<typeof candidateImportRow>;
 
 export const candidatePosition = sqliteTable(
   "candidate_position",

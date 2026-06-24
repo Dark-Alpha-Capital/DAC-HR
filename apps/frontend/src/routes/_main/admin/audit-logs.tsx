@@ -1,14 +1,12 @@
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute } from "@tanstack/react-router";
 import { AuditLogsClient } from "~/components/admin/audit-logs-client";
-import { loadAuditLogs, type AuditLogsPageData } from "~/lib/loaders/admin";
+import { auditLogsIndexQueryOptions } from "~/lib/query/options/admin";
+import { useAuditLogsIndex } from "~/hooks/queries/use-admin-index";
 import { toOptionalString, toPageNumber } from "~/lib/parse-search";
 
-export const Route = createFileRoute("/_main/admin/audit-logs")({
-  head: () => ({
-    meta: [{ title: "Audit Logs" }],
-  }),
-  validateSearch: (search: Record<string, unknown>) => ({
+function parseAuditLogsSearch(search: Record<string, unknown>) {
+  return {
     action: toOptionalString(search.action),
     entityType: toOptionalString(search.entityType),
     userId: toOptionalString(search.userId),
@@ -19,18 +17,37 @@ export const Route = createFileRoute("/_main/admin/audit-logs")({
       search.page !== undefined
         ? toPageNumber(search.page)
         : (undefined as number | undefined),
+  };
+}
+
+export const Route = createFileRoute("/_main/admin/audit-logs")({
+  head: () => ({
+    meta: [{ title: "Audit Logs" }],
   }),
-  loaderDeps: ({ search }) => search,
-  loader: async ({ deps }): Promise<AuditLogsPageData> => {
-    return loadAuditLogs({ data: deps });
+  validateSearch: parseAuditLogsSearch,
+  loader: async ({ context: { queryClient }, location }) => {
+    const search = parseAuditLogsSearch(
+      location.search as Record<string, unknown>,
+    );
+    await queryClient.ensureQueryData(auditLogsIndexQueryOptions(search));
   },
   component: AuditLogsPage,
-  pendingComponent: () => <ListPageSkeleton rowCount={8} showActions={false} />,
 });
 
 function AuditLogsPage() {
+  const search = Route.useSearch();
+  const { data, isLoading } = useAuditLogsIndex(search);
+
+  if (isLoading && !data) {
+    return <ListPageSkeleton rowCount={8} showActions={false} />;
+  }
+
+  if (!data) {
+    return null;
+  }
+
   const { logs, total, currentPage, totalPages, hasNextPage, hasPreviousPage } =
-    Route.useLoaderData();
+    data;
 
   return (
     <div className="container mx-auto py-8 space-y-6">

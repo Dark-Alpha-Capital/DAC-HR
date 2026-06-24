@@ -1,6 +1,7 @@
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { loadWeeklyCheckinRecords } from "~/lib/loaders/weekly-checkin";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { weeklyCheckinRecordsQueryOptions } from "~/lib/query/options/weekly-checkin";
+import { useWeeklyCheckinRecords } from "~/hooks/queries/use-weekly-checkin-records";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -26,40 +27,28 @@ import {
 import { sourcingChannelLabels } from "~/lib/schemas/weekly-checkin-form-schema";
 import PaginationControls from "~/components/pagination-controls";
 import { toPageNumber } from "~/lib/parse-search";
-import type { getWeeklyCheckins } from "@workspace/db/queries";
 
-type WeeklyCheckinRecordsData =
-  | { accessDenied: true }
-  | {
-      accessDenied: false;
-      checkins: Awaited<ReturnType<typeof getWeeklyCheckins>>["checkins"];
-      currentPage: number;
-      totalPages: number;
-      hasNextPage: boolean;
-      hasPreviousPage: boolean;
-      positionMap: Record<string, string>;
-    };
+function parseWeeklyCheckinRecordsSearch(search: Record<string, unknown>) {
+  return {
+    page:
+      search.page !== undefined
+        ? toPageNumber(search.page)
+        : (undefined as number | undefined),
+  };
+}
 
 export const Route = createFileRoute("/_main/weekly-checkin/records")({
   head: () => ({
     meta: [{ title: "Weekly Check-in Records" }],
   }),
-  validateSearch: (search: Record<string, unknown>) => ({
-    page:
-      search.page !== undefined
-        ? toPageNumber(search.page)
-        : (undefined as number | undefined),
-  }),
-  loaderDeps: ({ search }) => search,
-  loader: async ({ deps }) => {
-    const result = await loadWeeklyCheckinRecords({ data: deps });
-    if ((result as { unauthorized?: boolean }).unauthorized) {
-      throw redirect({ to: "/login" });
-    }
-    return result as unknown as WeeklyCheckinRecordsData;
+  validateSearch: parseWeeklyCheckinRecordsSearch,
+  loader: async ({ context: { queryClient }, location }) => {
+    const search = parseWeeklyCheckinRecordsSearch(
+      location.search as Record<string, unknown>,
+    );
+    await queryClient.ensureQueryData(weeklyCheckinRecordsQueryOptions(search));
   },
   component: WeeklyCheckinRecordsPage,
-  pendingComponent: () => <ListPageSkeleton rowCount={8} showActions={false} />,
 });
 
 function formatDate(date: Date) {
@@ -75,7 +64,16 @@ function formatWeekRange(start: Date, end: Date) {
 }
 
 function WeeklyCheckinRecordsPage() {
-  const data = Route.useLoaderData();
+  const search = Route.useSearch();
+  const { data, isLoading } = useWeeklyCheckinRecords(search);
+
+  if (isLoading && !data) {
+    return <ListPageSkeleton rowCount={8} showActions={false} />;
+  }
+
+  if (!data) {
+    return null;
+  }
 
   if (data.accessDenied) {
     return (

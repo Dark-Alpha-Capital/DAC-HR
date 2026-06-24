@@ -17,12 +17,12 @@ import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-r
 import { getApplicationWithInterviews } from "@workspace/db/repositories/interview-repository";
 import { getSessionsByApplicationId } from "@workspace/db/repositories/interview-session-repository";
 import {
-  getCachedApplicationsFiltered,
   getCachedCandidate,
   getCachedCandidatesWithPositionsFiltered,
   getCachedDocuments,
   getCachedPositions,
 } from "~/lib/cache/candidate";
+import { getKanbanFilteredTotalCount } from "@workspace/db/kanban-queries";
 import type { Session } from "better-auth";
 
 type CachedCandidate = Awaited<ReturnType<typeof getCachedCandidate>>;
@@ -62,6 +62,7 @@ type CandidatesIndexInput = {
   source?: string[];
   sort?: CandidateSortOption;
   page?: number;
+  view?: "table" | "kanban";
 };
 
 export const loadCandidatesIndex = createServerFn({ method: "GET" })
@@ -71,53 +72,70 @@ export const loadCandidatesIndex = createServerFn({ method: "GET" })
     const limit = 50;
     const currentPage = deps.page ?? 1;
     const sort = parseCandidateSortOption(deps.sort);
+    const isKanbanView = deps.view === "kanban";
 
-    const [{ positions }, candidatesResult, applicationsResult] =
-      await Promise.all([
+    const hasFilters = Boolean(
+      deps.name ||
+        deps.email ||
+        deps.position?.length ||
+        deps.status?.length ||
+        deps.source?.length ||
+        (deps.sort && deps.sort !== "newest"),
+    );
+
+    if (isKanbanView) {
+      const [{ positions }, totalCount] = await Promise.all([
         getCachedPositions(),
-        getCachedCandidatesWithPositionsFiltered(
-          deps.name,
-          deps.email,
-          deps.position,
-          currentPage,
-          limit,
-          deps.status,
-          deps.source,
+        getKanbanFilteredTotalCount({
+          name: deps.name,
+          email: deps.email,
+          position: deps.position,
+          status: deps.status,
+          source: deps.source,
           sort,
-        ),
-        getCachedApplicationsFiltered(
-          deps.name,
-          deps.email,
-          deps.position,
-          deps.status,
-          currentPage,
-          limit,
-          sort,
-        ),
+        }),
       ]);
 
-    const { candidates, total: candidatesTotal } = candidatesResult;
-    const { applications, total: applicationsTotal } = applicationsResult;
-    const totalPages = Math.ceil(
-      Math.max(candidatesTotal, applicationsTotal) / limit,
-    );
+      return {
+        positions: positions.map((p) => ({ id: p.id, name: p.name })),
+        candidates: [],
+        currentPage: 1,
+        limit,
+        totalCount,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+        hasFilters,
+      };
+    }
+
+    const [{ positions }, candidatesResult] = await Promise.all([
+      getCachedPositions(),
+      getCachedCandidatesWithPositionsFiltered(
+        deps.name,
+        deps.email,
+        deps.position,
+        currentPage,
+        limit,
+        deps.status,
+        deps.source,
+        sort,
+      ),
+    ]);
+
+    const { candidates, total: totalCount } = candidatesResult;
+    const totalPages = Math.max(1, Math.ceil(totalCount / limit));
 
     return {
       positions: positions.map((p) => ({ id: p.id, name: p.name })),
       candidates,
-      applications,
       currentPage,
+      limit,
+      totalCount,
       totalPages,
       hasNextPage: currentPage < totalPages,
       hasPreviousPage: currentPage > 1,
-      hasFilters: Boolean(
-        deps.name ||
-          deps.email ||
-          deps.position?.length ||
-          deps.status?.length ||
-          deps.source?.length ||
-          (deps.sort && deps.sort !== "newest"),
-      ),
+      hasFilters,
     };
   });
 

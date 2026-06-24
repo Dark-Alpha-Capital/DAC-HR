@@ -3,6 +3,7 @@ import { handleInterviewRealtimeWs } from "./lib/interview-realtime/ws-handler";
 
 export { DocumentIndexingWorkflow } from "./workflows/document-indexing";
 export { InterviewEvaluationWorkflow } from "./workflows/interview-evaluation";
+export { CandidateImportWorkflow } from "./workflows/candidate-import";
 export { InterviewSessionDO } from "./durable-objects/interview-session-do";
 
 export default {

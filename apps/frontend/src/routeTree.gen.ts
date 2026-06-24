@@ -37,6 +37,7 @@ import { Route as MainCandidatesIndexRouteImport } from './routes/_main/candidat
 import { Route as MainApplicationsIndexRouteImport } from './routes/_main/applications/index'
 import { Route as MainAdminIndexRouteImport } from './routes/_main/admin/index'
 import { Route as ApiLoginGoogleRouteImport } from './routes/api/login/google'
+import { Route as ApiKanbanCardsRouteImport } from './routes/api/kanban/cards'
 import { Route as ApiDocumentsViewRouteImport } from './routes/api/documents/view'
 import { Route as ApiDocumentsUploadRouteImport } from './routes/api/documents/upload'
 import { Route as ApiCandidateBulkRouteImport } from './routes/api/candidate/bulk'
@@ -62,6 +63,7 @@ import { Route as MainDocsApplicationsRouteImport } from './routes/_main/docs/ap
 import { Route as MainDocsAiFeaturesRouteImport } from './routes/_main/docs/ai-features'
 import { Route as MainCandidatesNewRouteImport } from './routes/_main/candidates/new'
 import { Route as MainAdminAuditLogsRouteImport } from './routes/_main/admin/audit-logs'
+import { Route as ApiCandidateImportIndexRouteImport } from './routes/api/candidate/import/index'
 import { Route as ApiCandidateIdIndexRouteImport } from './routes/api/candidate/$id/index'
 import { Route as MainRoundsIdIndexRouteImport } from './routes/_main/rounds/$id/index'
 import { Route as MainQuestionsIdIndexRouteImport } from './routes/_main/questions/$id/index'
@@ -77,6 +79,7 @@ import { Route as ApiInterviewTokenTokenStartVoiceRouteImport } from './routes/a
 import { Route as ApiInterviewTokenTokenSchemaRouteImport } from './routes/api/interview-token/$token/schema'
 import { Route as ApiInterviewTokenTokenResponsesRouteImport } from './routes/api/interview-token/$token/responses'
 import { Route as ApiInterviewTokenTokenCompleteRouteImport } from './routes/api/interview-token/$token/complete'
+import { Route as ApiCandidateImportIdRouteImport } from './routes/api/candidate/import/$id'
 import { Route as ApiCandidateIdDocumentsRouteImport } from './routes/api/candidate/$id/documents'
 import { Route as ApiCandidateIdAiScreeningRouteImport } from './routes/api/candidate/$id/ai-screening'
 import { Route as ApiCandidateIdAiAnalysisRouteImport } from './routes/api/candidate/$id/ai-analysis'
@@ -228,6 +231,11 @@ const ApiLoginGoogleRoute = ApiLoginGoogleRouteImport.update({
   path: '/api/login/google',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiKanbanCardsRoute = ApiKanbanCardsRouteImport.update({
+  id: '/api/kanban/cards',
+  path: '/api/kanban/cards',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDocumentsViewRoute = ApiDocumentsViewRouteImport.update({
   id: '/api/documents/view',
   path: '/api/documents/view',
@@ -355,6 +363,11 @@ const MainAdminAuditLogsRoute = MainAdminAuditLogsRouteImport.update({
   path: '/audit-logs',
   getParentRoute: () => MainAdminRouteRoute,
 } as any)
+const ApiCandidateImportIndexRoute = ApiCandidateImportIndexRouteImport.update({
+  id: '/api/candidate/import/',
+  path: '/api/candidate/import/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCandidateIdIndexRoute = ApiCandidateIdIndexRouteImport.update({
   id: '/api/candidate/$id/',
   path: '/api/candidate/$id/',
@@ -437,6 +450,11 @@ const ApiInterviewTokenTokenCompleteRoute =
     path: '/api/interview-token/$token/complete',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiCandidateImportIdRoute = ApiCandidateImportIdRouteImport.update({
+  id: '/api/candidate/import/$id',
+  path: '/api/candidate/import/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCandidateIdDocumentsRoute = ApiCandidateIdDocumentsRouteImport.update({
   id: '/api/candidate/$id/documents',
   path: '/api/candidate/$id/documents',
@@ -538,6 +556,7 @@ export interface FileRoutesByFullPath {
   '/api/candidate/bulk': typeof ApiCandidateBulkRoute
   '/api/documents/upload': typeof ApiDocumentsUploadRoute
   '/api/documents/view': typeof ApiDocumentsViewRoute
+  '/api/kanban/cards': typeof ApiKanbanCardsRoute
   '/api/login/google': typeof ApiLoginGoogleRoute
   '/admin/': typeof MainAdminIndexRoute
   '/applications/': typeof MainApplicationsIndexRoute
@@ -564,6 +583,7 @@ export interface FileRoutesByFullPath {
   '/api/candidate/$id/ai-analysis': typeof ApiCandidateIdAiAnalysisRoute
   '/api/candidate/$id/ai-screening': typeof ApiCandidateIdAiScreeningRoute
   '/api/candidate/$id/documents': typeof ApiCandidateIdDocumentsRouteWithChildren
+  '/api/candidate/import/$id': typeof ApiCandidateImportIdRoute
   '/api/interview-token/$token/complete': typeof ApiInterviewTokenTokenCompleteRoute
   '/api/interview-token/$token/responses': typeof ApiInterviewTokenTokenResponsesRoute
   '/api/interview-token/$token/schema': typeof ApiInterviewTokenTokenSchemaRoute
@@ -579,6 +599,7 @@ export interface FileRoutesByFullPath {
   '/questions/$id/': typeof MainQuestionsIdIndexRoute
   '/rounds/$id/': typeof MainRoundsIdIndexRoute
   '/api/candidate/$id/': typeof ApiCandidateIdIndexRoute
+  '/api/candidate/import/': typeof ApiCandidateImportIndexRoute
   '/api/candidate/$id/documents/$documentId': typeof ApiCandidateIdDocumentsDocumentIdRoute
   '/candidates/$uid/documents/$documentId/edit': typeof MainCandidatesUidDocumentsDocumentIdEditRoute
 }
@@ -616,6 +637,7 @@ export interface FileRoutesByTo {
   '/api/candidate/bulk': typeof ApiCandidateBulkRoute
   '/api/documents/upload': typeof ApiDocumentsUploadRoute
   '/api/documents/view': typeof ApiDocumentsViewRoute
+  '/api/kanban/cards': typeof ApiKanbanCardsRoute
   '/api/login/google': typeof ApiLoginGoogleRoute
   '/admin': typeof MainAdminIndexRoute
   '/applications': typeof MainApplicationsIndexRoute
@@ -642,6 +664,7 @@ export interface FileRoutesByTo {
   '/api/candidate/$id/ai-analysis': typeof ApiCandidateIdAiAnalysisRoute
   '/api/candidate/$id/ai-screening': typeof ApiCandidateIdAiScreeningRoute
   '/api/candidate/$id/documents': typeof ApiCandidateIdDocumentsRouteWithChildren
+  '/api/candidate/import/$id': typeof ApiCandidateImportIdRoute
   '/api/interview-token/$token/complete': typeof ApiInterviewTokenTokenCompleteRoute
   '/api/interview-token/$token/responses': typeof ApiInterviewTokenTokenResponsesRoute
   '/api/interview-token/$token/schema': typeof ApiInterviewTokenTokenSchemaRoute
@@ -657,6 +680,7 @@ export interface FileRoutesByTo {
   '/questions/$id': typeof MainQuestionsIdIndexRoute
   '/rounds/$id': typeof MainRoundsIdIndexRoute
   '/api/candidate/$id': typeof ApiCandidateIdIndexRoute
+  '/api/candidate/import': typeof ApiCandidateImportIndexRoute
   '/api/candidate/$id/documents/$documentId': typeof ApiCandidateIdDocumentsDocumentIdRoute
   '/candidates/$uid/documents/$documentId/edit': typeof MainCandidatesUidDocumentsDocumentIdEditRoute
 }
@@ -699,6 +723,7 @@ export interface FileRoutesById {
   '/api/candidate/bulk': typeof ApiCandidateBulkRoute
   '/api/documents/upload': typeof ApiDocumentsUploadRoute
   '/api/documents/view': typeof ApiDocumentsViewRoute
+  '/api/kanban/cards': typeof ApiKanbanCardsRoute
   '/api/login/google': typeof ApiLoginGoogleRoute
   '/_main/admin/': typeof MainAdminIndexRoute
   '/_main/applications/': typeof MainApplicationsIndexRoute
@@ -725,6 +750,7 @@ export interface FileRoutesById {
   '/api/candidate/$id/ai-analysis': typeof ApiCandidateIdAiAnalysisRoute
   '/api/candidate/$id/ai-screening': typeof ApiCandidateIdAiScreeningRoute
   '/api/candidate/$id/documents': typeof ApiCandidateIdDocumentsRouteWithChildren
+  '/api/candidate/import/$id': typeof ApiCandidateImportIdRoute
   '/api/interview-token/$token/complete': typeof ApiInterviewTokenTokenCompleteRoute
   '/api/interview-token/$token/responses': typeof ApiInterviewTokenTokenResponsesRoute
   '/api/interview-token/$token/schema': typeof ApiInterviewTokenTokenSchemaRoute
@@ -740,6 +766,7 @@ export interface FileRoutesById {
   '/_main/questions/$id/': typeof MainQuestionsIdIndexRoute
   '/_main/rounds/$id/': typeof MainRoundsIdIndexRoute
   '/api/candidate/$id/': typeof ApiCandidateIdIndexRoute
+  '/api/candidate/import/': typeof ApiCandidateImportIndexRoute
   '/api/candidate/$id/documents/$documentId': typeof ApiCandidateIdDocumentsDocumentIdRoute
   '/_main/candidates/$uid/documents/$documentId/edit': typeof MainCandidatesUidDocumentsDocumentIdEditRoute
 }
@@ -781,6 +808,7 @@ export interface FileRouteTypes {
     | '/api/candidate/bulk'
     | '/api/documents/upload'
     | '/api/documents/view'
+    | '/api/kanban/cards'
     | '/api/login/google'
     | '/admin/'
     | '/applications/'
@@ -807,6 +835,7 @@ export interface FileRouteTypes {
     | '/api/candidate/$id/ai-analysis'
     | '/api/candidate/$id/ai-screening'
     | '/api/candidate/$id/documents'
+    | '/api/candidate/import/$id'
     | '/api/interview-token/$token/complete'
     | '/api/interview-token/$token/responses'
     | '/api/interview-token/$token/schema'
@@ -822,6 +851,7 @@ export interface FileRouteTypes {
     | '/questions/$id/'
     | '/rounds/$id/'
     | '/api/candidate/$id/'
+    | '/api/candidate/import/'
     | '/api/candidate/$id/documents/$documentId'
     | '/candidates/$uid/documents/$documentId/edit'
   fileRoutesByTo: FileRoutesByTo
@@ -859,6 +889,7 @@ export interface FileRouteTypes {
     | '/api/candidate/bulk'
     | '/api/documents/upload'
     | '/api/documents/view'
+    | '/api/kanban/cards'
     | '/api/login/google'
     | '/admin'
     | '/applications'
@@ -885,6 +916,7 @@ export interface FileRouteTypes {
     | '/api/candidate/$id/ai-analysis'
     | '/api/candidate/$id/ai-screening'
     | '/api/candidate/$id/documents'
+    | '/api/candidate/import/$id'
     | '/api/interview-token/$token/complete'
     | '/api/interview-token/$token/responses'
     | '/api/interview-token/$token/schema'
@@ -900,6 +932,7 @@ export interface FileRouteTypes {
     | '/questions/$id'
     | '/rounds/$id'
     | '/api/candidate/$id'
+    | '/api/candidate/import'
     | '/api/candidate/$id/documents/$documentId'
     | '/candidates/$uid/documents/$documentId/edit'
   id:
@@ -941,6 +974,7 @@ export interface FileRouteTypes {
     | '/api/candidate/bulk'
     | '/api/documents/upload'
     | '/api/documents/view'
+    | '/api/kanban/cards'
     | '/api/login/google'
     | '/_main/admin/'
     | '/_main/applications/'
@@ -967,6 +1001,7 @@ export interface FileRouteTypes {
     | '/api/candidate/$id/ai-analysis'
     | '/api/candidate/$id/ai-screening'
     | '/api/candidate/$id/documents'
+    | '/api/candidate/import/$id'
     | '/api/interview-token/$token/complete'
     | '/api/interview-token/$token/responses'
     | '/api/interview-token/$token/schema'
@@ -982,6 +1017,7 @@ export interface FileRouteTypes {
     | '/_main/questions/$id/'
     | '/_main/rounds/$id/'
     | '/api/candidate/$id/'
+    | '/api/candidate/import/'
     | '/api/candidate/$id/documents/$documentId'
     | '/_main/candidates/$uid/documents/$documentId/edit'
   fileRoutesById: FileRoutesById
@@ -998,12 +1034,14 @@ export interface RootRouteChildren {
   ApiCandidateBulkRoute: typeof ApiCandidateBulkRoute
   ApiDocumentsUploadRoute: typeof ApiDocumentsUploadRoute
   ApiDocumentsViewRoute: typeof ApiDocumentsViewRoute
+  ApiKanbanCardsRoute: typeof ApiKanbanCardsRoute
   ApiLoginGoogleRoute: typeof ApiLoginGoogleRoute
   ApiCandidateIndexRoute: typeof ApiCandidateIndexRoute
   InterviewTokenIndexRoute: typeof InterviewTokenIndexRoute
   ApiCandidateIdAiAnalysisRoute: typeof ApiCandidateIdAiAnalysisRoute
   ApiCandidateIdAiScreeningRoute: typeof ApiCandidateIdAiScreeningRoute
   ApiCandidateIdDocumentsRoute: typeof ApiCandidateIdDocumentsRouteWithChildren
+  ApiCandidateImportIdRoute: typeof ApiCandidateImportIdRoute
   ApiInterviewTokenTokenCompleteRoute: typeof ApiInterviewTokenTokenCompleteRoute
   ApiInterviewTokenTokenResponsesRoute: typeof ApiInterviewTokenTokenResponsesRoute
   ApiInterviewTokenTokenSchemaRoute: typeof ApiInterviewTokenTokenSchemaRoute
@@ -1012,6 +1050,7 @@ export interface RootRouteChildren {
   ApiInterviewTokenTokenValidateRoute: typeof ApiInterviewTokenTokenValidateRoute
   ApiInterviewIdAiAnalysisRoute: typeof ApiInterviewIdAiAnalysisRoute
   ApiCandidateIdIndexRoute: typeof ApiCandidateIdIndexRoute
+  ApiCandidateImportIndexRoute: typeof ApiCandidateImportIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1212,6 +1251,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiLoginGoogleRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/kanban/cards': {
+      id: '/api/kanban/cards'
+      path: '/api/kanban/cards'
+      fullPath: '/api/kanban/cards'
+      preLoaderRoute: typeof ApiKanbanCardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/documents/view': {
       id: '/api/documents/view'
       path: '/api/documents/view'
@@ -1387,6 +1433,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainAdminAuditLogsRouteImport
       parentRoute: typeof MainAdminRouteRoute
     }
+    '/api/candidate/import/': {
+      id: '/api/candidate/import/'
+      path: '/api/candidate/import'
+      fullPath: '/api/candidate/import/'
+      preLoaderRoute: typeof ApiCandidateImportIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/candidate/$id/': {
       id: '/api/candidate/$id/'
       path: '/api/candidate/$id'
@@ -1490,6 +1543,13 @@ declare module '@tanstack/react-router' {
       path: '/api/interview-token/$token/complete'
       fullPath: '/api/interview-token/$token/complete'
       preLoaderRoute: typeof ApiInterviewTokenTokenCompleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/candidate/import/$id': {
+      id: '/api/candidate/import/$id'
+      path: '/api/candidate/import/$id'
+      fullPath: '/api/candidate/import/$id'
+      preLoaderRoute: typeof ApiCandidateImportIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/candidate/$id/documents': {
@@ -1755,12 +1815,14 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCandidateBulkRoute: ApiCandidateBulkRoute,
   ApiDocumentsUploadRoute: ApiDocumentsUploadRoute,
   ApiDocumentsViewRoute: ApiDocumentsViewRoute,
+  ApiKanbanCardsRoute: ApiKanbanCardsRoute,
   ApiLoginGoogleRoute: ApiLoginGoogleRoute,
   ApiCandidateIndexRoute: ApiCandidateIndexRoute,
   InterviewTokenIndexRoute: InterviewTokenIndexRoute,
   ApiCandidateIdAiAnalysisRoute: ApiCandidateIdAiAnalysisRoute,
   ApiCandidateIdAiScreeningRoute: ApiCandidateIdAiScreeningRoute,
   ApiCandidateIdDocumentsRoute: ApiCandidateIdDocumentsRouteWithChildren,
+  ApiCandidateImportIdRoute: ApiCandidateImportIdRoute,
   ApiInterviewTokenTokenCompleteRoute: ApiInterviewTokenTokenCompleteRoute,
   ApiInterviewTokenTokenResponsesRoute: ApiInterviewTokenTokenResponsesRoute,
   ApiInterviewTokenTokenSchemaRoute: ApiInterviewTokenTokenSchemaRoute,
@@ -1770,6 +1832,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiInterviewTokenTokenValidateRoute: ApiInterviewTokenTokenValidateRoute,
   ApiInterviewIdAiAnalysisRoute: ApiInterviewIdAiAnalysisRoute,
   ApiCandidateIdIndexRoute: ApiCandidateIdIndexRoute,
+  ApiCandidateImportIndexRoute: ApiCandidateImportIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

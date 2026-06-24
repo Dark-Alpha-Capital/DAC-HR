@@ -19,3 +19,11 @@ export function getOpenAIProvider() {
 
   return cachedProvider;
 }
+
+export function getOpenAIModel(
+  apiKey: string,
+  modelName: string = "gpt-4o-mini",
+) {
+  const openai = createOpenAI({ apiKey });
+  return openai(modelName);
+}

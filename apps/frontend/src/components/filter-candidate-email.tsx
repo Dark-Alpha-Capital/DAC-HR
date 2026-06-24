@@ -1,5 +1,7 @@
 import { useUrlSearchParams } from "~/lib/hooks/use-url-search-params";
 
+import { resetListPageParam } from "~/lib/parse-search";
+
 import React, { useTransition, useEffect, useRef } from "react";
 import { Input } from "~/components/ui/input";
 import { Mail } from "lucide-react";
@@ -22,6 +24,7 @@ const FilterCandidateEmail = () => {
         } else {
           params.delete("email");
         }
+        resetListPageParam(params);
         setSearchParams(params);
     });
     }, 300);
@@ -42,6 +45,7 @@ const FilterCandidateEmail = () => {
     >
       <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       <Input
+        key={`email-${searchParams.get("email") ?? ""}`}
         type="email"
         placeholder="Search by email..."
         defaultValue={searchParams.get("email") || ""}

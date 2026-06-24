@@ -1,6 +1,10 @@
 import { db } from "@workspace/db/db";
 import { eq } from "@workspace/db";
-import { application, candidate } from "@workspace/db/schema";
+import {
+  application,
+  candidate,
+  candidatePosition,
+} from "@workspace/db/schema";
 import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
 import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
 import { deleteFile } from "~/lib/storage";
@@ -55,6 +59,11 @@ export const createCandidateWithPositions = async (
       if (app) {
         appIds.push(app.id);
       }
+
+      await tx.insert(candidatePosition).values({
+        candidateId: newCandidate.id,
+        positionId,
+      });
     }
 
     return { candidate: newCandidate, applicationIds: appIds };

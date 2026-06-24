@@ -39,7 +39,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Session } from "better-auth";
-import { resetCacheForCandidates } from "~/lib/actions/reset-cache";
+import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 
 type Round = { roundTemplateId: string; name: string };
 
@@ -56,6 +56,7 @@ const CandidateUploadForm = ({
   userSession: Session;
 }) => {
   const router = useRouter();
+  const invalidate = useQueryInvalidation();
   const [isPending, startTransition] = useTransition();
   const { searchParams } = useUrlSearchParams();
   const [selectedSource, setSelectedSource] = React.useState<
@@ -206,7 +207,7 @@ const CandidateUploadForm = ({
             },
           });
 
-          await resetCacheForCandidates();
+          await invalidate.candidateLists();
 
           form.reset();
           setSelectedSource(undefined);

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useRouter } from "@tanstack/react-router";
+import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 import { useUrlSearchParams } from "~/lib/hooks/use-url-search-params";
 import { authClient } from "~/auth-client";
 import { cn } from "~/lib/utils";
@@ -116,6 +116,7 @@ function FilterAdminUserName() {
     >
       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       <Input
+        key={`name-${searchParams.get("name") ?? ""}`}
         type="text"
         placeholder="Search by name..."
         defaultValue={searchParams.get("name") || ""}
@@ -165,6 +166,7 @@ function FilterAdminUserEmail() {
     >
       <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       <Input
+        key={`email-${searchParams.get("email") ?? ""}`}
         type="email"
         placeholder="Search by email..."
         defaultValue={searchParams.get("email") || ""}
@@ -237,7 +239,7 @@ export function AdminUsersClient({
   hasNextPage,
   hasPreviousPage,
 }: Props) {
-  const router = useRouter();
+  const invalidate = useQueryInvalidation();
   const [view, setView] = React.useState<"cards" | "table">("cards");
   const [users, setUsers] = React.useState<AdminUser[]>(initialUsers);
   const [userStates, setUserStates] = React.useState<
@@ -320,7 +322,7 @@ export function AdminUsersClient({
       });
 
       // Refresh to get latest data from server
-      void router.invalidate();
+      void invalidate.adminUsers();
     } catch (error) {
       console.error("Error banning user", error);
 
@@ -360,7 +362,7 @@ export function AdminUsersClient({
       });
 
       // Refresh to get latest data from server
-      void router.invalidate();
+      void invalidate.adminUsers();
     } catch (error) {
       console.error("Error unbanning user", error);
 
@@ -390,7 +392,7 @@ export function AdminUsersClient({
       });
 
       // Refresh to ensure we have latest data
-      void router.invalidate();
+      void invalidate.adminUsers();
     } catch (error) {
       console.error("Error revoking user sessions", error);
       updateState(userId, {

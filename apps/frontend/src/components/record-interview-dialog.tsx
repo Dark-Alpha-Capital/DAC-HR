@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useRouter } from "@tanstack/react-router";
+import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -51,7 +51,7 @@ export default function RecordInterviewDialog({
   onOpenChange,
   initialPositionRoundTemplateId,
 }: RecordInterviewDialogProps) {
-  const router = useRouter();
+  const invalidate = useQueryInvalidation();
   const [loading, setLoading] = useState(false);
   const [interviewerId, setInterviewerId] = useState(currentUserId);
   const [positionRoundTemplateId, setPositionRoundTemplateId] = useState(
@@ -97,7 +97,7 @@ export default function RecordInterviewDialog({
       } else {
         toast.success("Interview recorded successfully");
         onOpenChange(false);
-        router.invalidate();
+        void invalidate.applicationDetail(applicationId);
       }
     } catch (error) {
       toast.error("An error occurred while recording the interview");

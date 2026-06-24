@@ -1,35 +1,54 @@
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
-import { loadPositionsIndex } from "~/lib/loaders/positions";
 import FilterPositionHireLevel from "~/components/filter-position-hire-level";
 import FilterPositionStatus from "~/components/filter-position-status";
 import ClearPositionFiltersButton from "~/components/clear-position-filters-button";
 import PositionContainer from "~/components/position-container";
 import PaginationControls from "~/components/pagination-controls";
+import { positionsIndexQueryOptions } from "~/lib/query/options/positions";
+import { usePositionsIndex } from "~/hooks/queries/use-positions-index";
 import { toPageNumber, toStringArray } from "~/lib/parse-search";
 
-export const Route = createFileRoute("/_main/positions/")({
-  head: () => ({
-    meta: [{ title: "Positions" }],
-  }),
-  validateSearch: (search: Record<string, unknown>) => ({
+function parsePositionsSearch(search: Record<string, unknown>) {
+  return {
     hireLevel: toStringArray(search.hireLevel as string | string[] | undefined),
     status: toStringArray(search.status as string | string[] | undefined),
     page:
       search.page !== undefined
         ? toPageNumber(search.page)
         : (undefined as number | undefined),
+  };
+}
+
+export const Route = createFileRoute("/_main/positions/")({
+  head: () => ({
+    meta: [{ title: "Positions" }],
   }),
-  loaderDeps: ({ search }) => search,
-  loader: async ({ deps }) => loadPositionsIndex({ data: deps }),
+  validateSearch: parsePositionsSearch,
+  loader: async ({ context: { queryClient }, location }) => {
+    const search = parsePositionsSearch(
+      location.search as Record<string, unknown>,
+    );
+    await queryClient.ensureQueryData(positionsIndexQueryOptions(search));
+  },
   component: PositionsPage,
-  pendingComponent: () => <ListPageSkeleton />,
 });
 
 function PositionsPage() {
+  const search = Route.useSearch();
+  const { data, isLoading, isFetching } = usePositionsIndex(search);
+
+  if (isLoading && !data) {
+    return <ListPageSkeleton />;
+  }
+
+  if (!data) {
+    return null;
+  }
+
   const { positions, currentPage, totalPages, hasNextPage, hasPreviousPage } =
-    Route.useLoaderData();
+    data;
 
   return (
     <div className="space-y-6">
@@ -42,7 +61,10 @@ function PositionsPage() {
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div
+        className="flex flex-wrap items-center gap-2 transition-opacity"
+        style={{ opacity: isFetching ? 0.7 : 1 }}
+      >
         <FilterPositionHireLevel />
         <FilterPositionStatus />
         <ClearPositionFiltersButton />
