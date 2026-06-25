@@ -19,23 +19,38 @@ function decodeBase64Url(value: string): string {
   return new TextDecoder().decode(bytes);
 }
 
+function normalizeUpdatedAt(value: unknown): string | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+  if (typeof value === "string" && value.length > 0) {
+    return value;
+  }
+  return null;
+}
+
 export function encodeKanbanCursor(payload: KanbanCursorPayload): string {
-  return encodeBase64Url(JSON.stringify(payload));
+  return encodeBase64Url(
+    JSON.stringify({
+      updatedAt: String(payload.updatedAt),
+      id: payload.id,
+    }),
+  );
 }
 
 export function decodeKanbanCursor(cursor: string): KanbanCursorPayload | null {
   try {
-    const parsed = JSON.parse(decodeBase64Url(cursor)) as KanbanCursorPayload;
+    const parsed = JSON.parse(decodeBase64Url(cursor)) as {
+      updatedAt?: unknown;
+      id?: unknown;
+    };
 
-    if (
-      typeof parsed.updatedAt !== "string" ||
-      typeof parsed.id !== "string" ||
-      !parsed.id
-    ) {
+    const updatedAt = normalizeUpdatedAt(parsed.updatedAt);
+    if (typeof parsed.id !== "string" || !parsed.id || !updatedAt) {
       return null;
     }
 
-    return parsed;
+    return { updatedAt, id: parsed.id };
   } catch {
     return null;
   }

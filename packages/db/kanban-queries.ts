@@ -216,7 +216,7 @@ type KanbanRow = {
   created_at: string;
   updated_at: string;
   application_status: string | null;
-  kanban_sort_at: string;
+  kanban_sort_at: string | number;
   position_id: string | null;
   position_name: string | null;
 };
@@ -261,6 +261,11 @@ export async function getKanbanColumnCandidates(
   }
 
   try {
+    const countWhereClause = buildKanbanWhereClause(
+      columnStatus,
+      filters,
+      null,
+    );
     const whereClause = buildKanbanWhereClause(
       columnStatus,
       filters,
@@ -272,7 +277,7 @@ export async function getKanbanColumnCandidates(
       ${kanbanCandidatesCte}
       SELECT COUNT(*) AS total
       FROM kanban_candidates kc
-      WHERE ${whereClause}
+      WHERE ${countWhereClause}
     `);
 
     const totalCount = Number(countResult[0]?.total ?? 0);
@@ -310,7 +315,7 @@ export async function getKanbanColumnCandidates(
     const nextCursor =
       hasMore && lastRow
         ? encodeKanbanCursor({
-            updatedAt: lastRow.kanban_sort_at,
+            updatedAt: String(lastRow.kanban_sort_at),
             id: lastRow.id,
           })
         : null;
