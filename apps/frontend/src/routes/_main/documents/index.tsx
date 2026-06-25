@@ -1,3 +1,8 @@
+import {
+  keepPreviousData,
+  queryOptions,
+  useQuery,
+} from "@tanstack/react-query";
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
@@ -7,21 +12,16 @@ import FilterDocumentName from "~/components/filter-document-name";
 import FilterDocumentScope from "~/components/filter-document-scope";
 import FilterDocumentTags from "~/components/filter-document-tags";
 import ClearDocumentFiltersButton from "~/components/clear-document-filters-button";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "~/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import DocumentCategoriesManager from "~/components/document-categories-manager";
 import PaginationControls from "~/components/pagination-controls";
-import { documentsIndexQueryOptions } from "~/lib/query/options/documents";
-import { useDocumentsIndex } from "~/hooks/queries/use-documents-index";
+import { loadDocumentsIndex } from "~/lib/loaders/documents";
 import {
   toOptionalString,
   toPageNumber,
   toStringArray,
 } from "~/lib/parse-search";
+import { queryKeys } from "~/lib/query/query-keys";
 
 function parseDocumentsSearch(search: Record<string, unknown>) {
   return {
@@ -35,6 +35,15 @@ function parseDocumentsSearch(search: Record<string, unknown>) {
         ? toPageNumber(search.page)
         : (undefined as number | undefined),
   };
+}
+
+type DocumentsIndexSearch = ReturnType<typeof parseDocumentsSearch>;
+
+function documentsIndexQueryOptions(deps: DocumentsIndexSearch) {
+  return queryOptions({
+    queryKey: queryKeys.documents.list(deps),
+    queryFn: () => loadDocumentsIndex({ data: deps }),
+  });
 }
 
 export const Route = createFileRoute("/_main/documents/")({
@@ -53,7 +62,10 @@ export const Route = createFileRoute("/_main/documents/")({
 
 function DocumentsPage() {
   const search = Route.useSearch();
-  const { data, isLoading, isFetching } = useDocumentsIndex(search);
+  const { data, isLoading, isFetching } = useQuery({
+    ...documentsIndexQueryOptions(search),
+    placeholderData: keepPreviousData,
+  });
 
   if (isLoading && !data) {
     return <ListPageSkeleton />;

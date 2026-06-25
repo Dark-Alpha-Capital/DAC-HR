@@ -1,3 +1,4 @@
+import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
@@ -5,9 +6,9 @@ import RoundContainer from "~/components/round-container";
 import FilterPositionType from "~/components/filter-position-type";
 import ClearParamsButton from "~/components/clear-params-button";
 import PaginationControls from "~/components/pagination-controls";
-import { roundsIndexQueryOptions } from "~/lib/query/options/rounds";
-import { useRoundsIndex } from "~/hooks/queries/use-rounds-index";
+import { loadRoundsIndex } from "~/lib/loaders/rounds";
 import { toPageNumber, toStringArray } from "~/lib/parse-search";
+import { queryKeys } from "~/lib/query/query-keys";
 
 function parseRoundsSearch(search: Record<string, unknown>) {
   return {
@@ -17,6 +18,15 @@ function parseRoundsSearch(search: Record<string, unknown>) {
         ? toPageNumber(search.page)
         : (undefined as number | undefined),
   };
+}
+
+type RoundsIndexSearch = ReturnType<typeof parseRoundsSearch>;
+
+function roundsIndexQueryOptions(deps: RoundsIndexSearch) {
+  return queryOptions({
+    queryKey: queryKeys.rounds.list(deps),
+    queryFn: () => loadRoundsIndex({ data: deps }),
+  });
 }
 
 export const Route = createFileRoute("/_main/rounds/")({
@@ -33,7 +43,10 @@ export const Route = createFileRoute("/_main/rounds/")({
 
 function RoundsPage() {
   const search = Route.useSearch();
-  const { data, isLoading, isFetching } = useRoundsIndex(search);
+  const { data, isLoading, isFetching } = useQuery({
+    ...roundsIndexQueryOptions(search),
+    placeholderData: keepPreviousData,
+  });
 
   if (isLoading && !data) {
     return <ListPageSkeleton />;

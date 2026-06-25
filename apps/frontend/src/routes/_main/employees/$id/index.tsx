@@ -1,7 +1,8 @@
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { DetailPageSkeleton } from "~/components/route-skeletons/detail-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { employeeDetailQueryOptions } from "~/lib/query/options/employees";
-import { useEmployeeDetail } from "~/hooks/queries/use-employee-detail";
+import { loadEmployeeDetail } from "~/lib/loaders/employees";
+import { queryKeys } from "~/lib/query/query-keys";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { Badge } from "~/components/ui/badge";
@@ -19,6 +20,13 @@ import {
 import DeleteEmployeeButton from "~/components/delete-employee-button";
 import EmployeeProfileImage from "~/components/employee-profile-image";
 
+function employeeDetailQueryOptions(id: string) {
+  return queryOptions({
+    queryKey: queryKeys.employees.detail(id),
+    queryFn: () => loadEmployeeDetail({ data: { id } }),
+  });
+}
+
 export const Route = createFileRoute("/_main/employees/$id/")({
   head: () => ({
     meta: [{ title: "Employee Detail" }],
@@ -31,7 +39,7 @@ export const Route = createFileRoute("/_main/employees/$id/")({
 
 function EmployeeDetailPage() {
   const { id } = Route.useParams();
-  const { data, isLoading } = useEmployeeDetail(id);
+  const { data, isLoading } = useQuery(employeeDetailQueryOptions(id));
 
   if (isLoading && !data) {
     return <DetailPageSkeleton container tabs showBreadcrumb />;

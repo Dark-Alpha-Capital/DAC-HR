@@ -1,9 +1,10 @@
+import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute } from "@tanstack/react-router";
 import { AuditLogsClient } from "~/components/admin/audit-logs-client";
-import { auditLogsIndexQueryOptions } from "~/lib/query/options/admin";
-import { useAuditLogsIndex } from "~/hooks/queries/use-admin-index";
+import { loadAuditLogs, type AuditLogsPageData } from "~/lib/loaders/admin";
 import { toOptionalString, toPageNumber } from "~/lib/parse-search";
+import { queryKeys } from "~/lib/query/query-keys";
 
 function parseAuditLogsSearch(search: Record<string, unknown>) {
   return {
@@ -18,6 +19,15 @@ function parseAuditLogsSearch(search: Record<string, unknown>) {
         ? toPageNumber(search.page)
         : (undefined as number | undefined),
   };
+}
+
+type AuditLogsIndexSearch = ReturnType<typeof parseAuditLogsSearch>;
+
+function auditLogsIndexQueryOptions(deps: AuditLogsIndexSearch) {
+  return queryOptions({
+    queryKey: queryKeys.admin.auditLogs(deps),
+    queryFn: (): Promise<AuditLogsPageData> => loadAuditLogs({ data: deps }),
+  });
 }
 
 export const Route = createFileRoute("/_main/admin/audit-logs")({
@@ -36,7 +46,10 @@ export const Route = createFileRoute("/_main/admin/audit-logs")({
 
 function AuditLogsPage() {
   const search = Route.useSearch();
-  const { data, isLoading } = useAuditLogsIndex(search);
+  const { data, isLoading } = useQuery({
+    ...auditLogsIndexQueryOptions(search),
+    placeholderData: keepPreviousData,
+  });
 
   if (isLoading && !data) {
     return <ListPageSkeleton rowCount={8} showActions={false} />;

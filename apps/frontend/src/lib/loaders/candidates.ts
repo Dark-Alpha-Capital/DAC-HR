@@ -76,11 +76,11 @@ export const loadCandidatesIndex = createServerFn({ method: "GET" })
 
     const hasFilters = Boolean(
       deps.name ||
-        deps.email ||
-        deps.position?.length ||
-        deps.status?.length ||
-        deps.source?.length ||
-        (deps.sort && deps.sort !== "newest"),
+      deps.email ||
+      deps.position?.length ||
+      deps.status?.length ||
+      deps.source?.length ||
+      (deps.sort && deps.sort !== "newest"),
     );
 
     if (isKanbanView) {

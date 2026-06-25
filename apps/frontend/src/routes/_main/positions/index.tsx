@@ -1,3 +1,4 @@
+import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
@@ -6,9 +7,9 @@ import FilterPositionStatus from "~/components/filter-position-status";
 import ClearPositionFiltersButton from "~/components/clear-position-filters-button";
 import PositionContainer from "~/components/position-container";
 import PaginationControls from "~/components/pagination-controls";
-import { positionsIndexQueryOptions } from "~/lib/query/options/positions";
-import { usePositionsIndex } from "~/hooks/queries/use-positions-index";
+import { loadPositionsIndex } from "~/lib/loaders/positions";
 import { toPageNumber, toStringArray } from "~/lib/parse-search";
+import { queryKeys } from "~/lib/query/query-keys";
 
 function parsePositionsSearch(search: Record<string, unknown>) {
   return {
@@ -19,6 +20,15 @@ function parsePositionsSearch(search: Record<string, unknown>) {
         ? toPageNumber(search.page)
         : (undefined as number | undefined),
   };
+}
+
+type PositionsIndexSearch = ReturnType<typeof parsePositionsSearch>;
+
+function positionsIndexQueryOptions(deps: PositionsIndexSearch) {
+  return queryOptions({
+    queryKey: queryKeys.positions.list(deps),
+    queryFn: () => loadPositionsIndex({ data: deps }),
+  });
 }
 
 export const Route = createFileRoute("/_main/positions/")({
@@ -37,7 +47,10 @@ export const Route = createFileRoute("/_main/positions/")({
 
 function PositionsPage() {
   const search = Route.useSearch();
-  const { data, isLoading, isFetching } = usePositionsIndex(search);
+  const { data, isLoading, isFetching } = useQuery({
+    ...positionsIndexQueryOptions(search),
+    placeholderData: keepPreviousData,
+  });
 
   if (isLoading && !data) {
     return <ListPageSkeleton />;

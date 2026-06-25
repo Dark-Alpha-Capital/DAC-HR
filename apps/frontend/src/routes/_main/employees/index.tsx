@@ -1,16 +1,17 @@
+import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
 import EmployeeFilters from "~/components/employee-filters";
 import EmployeeContainer from "~/components/employee-container";
 import PaginationControls from "~/components/pagination-controls";
-import { employeesIndexQueryOptions } from "~/lib/query/options/employees";
-import { useEmployeesIndex } from "~/hooks/queries/use-employees-index";
+import { loadEmployeesIndex } from "~/lib/loaders/employees";
 import {
   toOptionalString,
   toPageNumber,
   toStringArray,
 } from "~/lib/parse-search";
+import { queryKeys } from "~/lib/query/query-keys";
 
 function parseEmployeesSearch(search: Record<string, unknown>) {
   return {
@@ -25,6 +26,15 @@ function parseEmployeesSearch(search: Record<string, unknown>) {
         ? toPageNumber(search.page)
         : (undefined as number | undefined),
   };
+}
+
+type EmployeesIndexSearch = ReturnType<typeof parseEmployeesSearch>;
+
+function employeesIndexQueryOptions(deps: EmployeesIndexSearch) {
+  return queryOptions({
+    queryKey: queryKeys.employees.list(deps),
+    queryFn: () => loadEmployeesIndex({ data: deps }),
+  });
 }
 
 export const Route = createFileRoute("/_main/employees/")({
@@ -43,7 +53,10 @@ export const Route = createFileRoute("/_main/employees/")({
 
 function EmployeesPage() {
   const search = Route.useSearch();
-  const { data, isLoading, isFetching } = useEmployeesIndex(search);
+  const { data, isLoading, isFetching } = useQuery({
+    ...employeesIndexQueryOptions(search),
+    placeholderData: keepPreviousData,
+  });
 
   if (isLoading && !data) {
     return <ListPageSkeleton />;

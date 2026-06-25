@@ -1,3 +1,4 @@
+import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
@@ -7,9 +8,9 @@ import FilterQuestionPosition from "~/components/filter-question-position";
 import FilterQuestionRound from "~/components/filter-question-round";
 import ClearQuestionFiltersButton from "~/components/clear-question-filters-button";
 import PaginationControls from "~/components/pagination-controls";
-import { questionsIndexQueryOptions } from "~/lib/query/options/questions";
-import { useQuestionsIndex } from "~/hooks/queries/use-questions-index";
+import { loadQuestionsIndex } from "~/lib/loaders/questions";
 import { toPageNumber, toStringArray } from "~/lib/parse-search";
+import { queryKeys } from "~/lib/query/query-keys";
 
 function parseQuestionsSearch(search: Record<string, unknown>) {
   return {
@@ -21,6 +22,15 @@ function parseQuestionsSearch(search: Record<string, unknown>) {
         ? toPageNumber(search.page)
         : (undefined as number | undefined),
   };
+}
+
+type QuestionsIndexSearch = ReturnType<typeof parseQuestionsSearch>;
+
+function questionsIndexQueryOptions(deps: QuestionsIndexSearch) {
+  return queryOptions({
+    queryKey: queryKeys.questions.list(deps),
+    queryFn: () => loadQuestionsIndex({ data: deps }),
+  });
 }
 
 export const Route = createFileRoute("/_main/questions/")({
@@ -39,7 +49,10 @@ export const Route = createFileRoute("/_main/questions/")({
 
 function QuestionsPage() {
   const search = Route.useSearch();
-  const { data, isLoading, isFetching } = useQuestionsIndex(search);
+  const { data, isLoading, isFetching } = useQuery({
+    ...questionsIndexQueryOptions(search),
+    placeholderData: keepPreviousData,
+  });
 
   if (isLoading && !data) {
     return <ListPageSkeleton />;

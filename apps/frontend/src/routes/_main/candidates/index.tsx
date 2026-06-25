@@ -1,11 +1,11 @@
+import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
 import CandidateFilters from "~/components/candidate-filters";
 import BulkUploadCandidatesDialog from "~/components/bulk-upload-candidates-dialog";
 import CandidatesViewWrapper from "~/components/candidates-view-wrapper";
-import { candidatesIndexQueryOptions } from "~/lib/query/options/candidates";
-import { useCandidatesIndex } from "~/hooks/queries/use-candidates-index";
+import { loadCandidatesIndex } from "~/lib/loaders/candidates";
 import {
   toCandidateSort,
   toCandidateView,
@@ -14,6 +14,7 @@ import {
   toPageNumber,
   toStringArray,
 } from "~/lib/parse-search";
+import { queryKeys } from "~/lib/query/query-keys";
 
 function parseCandidatesSearch(search: Record<string, unknown>) {
   return {
@@ -29,6 +30,15 @@ function parseCandidatesSearch(search: Record<string, unknown>) {
         ? toPageNumber(search.page)
         : (undefined as number | undefined),
   };
+}
+
+type CandidatesIndexSearch = ReturnType<typeof parseCandidatesSearch>;
+
+function candidatesIndexQueryOptions(deps: CandidatesIndexSearch) {
+  return queryOptions({
+    queryKey: queryKeys.candidates.list(deps),
+    queryFn: () => loadCandidatesIndex({ data: deps }),
+  });
 }
 
 export const Route = createFileRoute("/_main/candidates/")({
@@ -49,7 +59,10 @@ function CandidatesPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
 
-  const { data, isLoading, isFetching } = useCandidatesIndex(search);
+  const { data, isLoading, isFetching } = useQuery({
+    ...candidatesIndexQueryOptions(search),
+    placeholderData: keepPreviousData,
+  });
 
   const setViewMode = (view: CandidateViewMode) => {
     void navigate({

@@ -1,3 +1,4 @@
+import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute } from "@tanstack/react-router";
 import { Briefcase } from "lucide-react";
@@ -8,9 +9,9 @@ import FilterCandidateName from "~/components/filter-candidate-name";
 import FilterCandidateEmail from "~/components/filter-candidate-email";
 import ClearApplicationFiltersButton from "~/components/clear-application-filters-button";
 import ApplicationsPaginationControls from "~/components/applications-pagination-controls";
-import { applicationsIndexQueryOptions } from "~/lib/query/options/applications";
-import { useApplicationsIndex } from "~/hooks/queries/use-applications-index";
+import { loadApplicationsIndex } from "~/lib/loaders/candidates";
 import { toOptionalString, toPageNumber, toStringArray } from "~/lib/parse-search";
+import { queryKeys } from "~/lib/query/query-keys";
 
 function parseApplicationsSearch(search: Record<string, unknown>) {
   return {
@@ -23,6 +24,15 @@ function parseApplicationsSearch(search: Record<string, unknown>) {
         ? toPageNumber(search.page)
         : (undefined as number | undefined),
   };
+}
+
+type ApplicationsIndexSearch = ReturnType<typeof parseApplicationsSearch>;
+
+function applicationsIndexQueryOptions(deps: ApplicationsIndexSearch) {
+  return queryOptions({
+    queryKey: queryKeys.applications.list(deps),
+    queryFn: () => loadApplicationsIndex({ data: deps }),
+  });
 }
 
 export const Route = createFileRoute("/_main/applications/")({
@@ -41,7 +51,10 @@ export const Route = createFileRoute("/_main/applications/")({
 
 function ApplicationsPage() {
   const search = Route.useSearch();
-  const { data, isLoading, isFetching } = useApplicationsIndex(search);
+  const { data, isLoading, isFetching } = useQuery({
+    ...applicationsIndexQueryOptions(search),
+    placeholderData: keepPreviousData,
+  });
 
   if (isLoading && !data) {
     return (

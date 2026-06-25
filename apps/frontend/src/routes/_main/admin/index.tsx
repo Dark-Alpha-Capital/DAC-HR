@@ -1,10 +1,11 @@
+import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { AdminUsersClient } from "~/components/admin/admin-users-client";
+import { fetchNonAdminUsers } from "~/lib/admin/fetch-non-admin-users";
 import { getSession } from "~/lib/get-session";
-import { adminUsersIndexQueryOptions } from "~/lib/query/options/admin";
-import { useAdminUsersIndex } from "~/hooks/queries/use-admin-index";
 import { toOptionalString, toPageNumber } from "~/lib/parse-search";
+import { queryKeys } from "~/lib/query/query-keys";
 
 function parseAdminUsersSearch(search: Record<string, unknown>) {
   return {
@@ -15,6 +16,36 @@ function parseAdminUsersSearch(search: Record<string, unknown>) {
         ? toPageNumber(search.page)
         : (undefined as number | undefined),
   };
+}
+
+type AdminUsersIndexSearch = ReturnType<typeof parseAdminUsersSearch>;
+
+function adminUsersIndexQueryOptions(deps: AdminUsersIndexSearch) {
+  return queryOptions({
+    queryKey: queryKeys.admin.usersList(deps),
+    queryFn: async () => {
+      const currentPage = deps.page ?? 1;
+      const limit = 10;
+      const { users, total } = await fetchNonAdminUsers({
+        data: {
+          name: deps.name,
+          email: deps.email,
+          page: currentPage,
+          limit,
+        },
+      });
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        users,
+        total,
+        currentPage,
+        totalPages,
+        hasNextPage: currentPage < totalPages,
+        hasPreviousPage: currentPage > 1,
+      };
+    },
+  });
 }
 
 export const Route = createFileRoute("/_main/admin/")({
@@ -41,7 +72,10 @@ export const Route = createFileRoute("/_main/admin/")({
 
 function AdminPage() {
   const search = Route.useSearch();
-  const { data, isLoading } = useAdminUsersIndex(search);
+  const { data, isLoading } = useQuery({
+    ...adminUsersIndexQueryOptions(search),
+    placeholderData: keepPreviousData,
+  });
 
   if (isLoading && !data) {
     return <ListPageSkeleton showActions={false} />;

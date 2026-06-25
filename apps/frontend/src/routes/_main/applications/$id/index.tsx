@@ -1,7 +1,11 @@
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { DetailPageSkeleton } from "~/components/route-skeletons/detail-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { applicationDetailQueryOptions } from "~/lib/query/options/applications";
-import { useApplicationDetail } from "~/hooks/queries/use-application-detail";
+import {
+  loadApplicationDetail,
+} from "~/lib/loaders/candidates";
+import { getSession } from "~/lib/get-session";
+import { queryKeys } from "~/lib/query/query-keys";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -22,6 +26,27 @@ import ApplicationPersonalitySelector from "~/components/application-personality
 import ApplicationProgressTimeline from "~/components/application-progress-timeline";
 import ApplicationBreadcrumb from "~/components/application-breadcrumb";
 
+function applicationDetailQueryOptions(id: string) {
+  return queryOptions({
+    queryKey: queryKeys.applications.detail(id),
+    queryFn: async () => {
+      const [detail, session] = await Promise.all([
+        loadApplicationDetail({ data: id }),
+        getSession(),
+      ]);
+      return {
+        application: (detail as { application: unknown }).application,
+        candidate: (detail as { candidate: unknown }).candidate,
+        sessions: (detail as { sessions: unknown }).sessions,
+        aiScreenings: (detail as { aiScreenings: unknown }).aiScreenings,
+        documents: (detail as { documents: unknown }).documents,
+        users: (detail as { users: unknown }).users,
+        currentUser: session?.user ?? null,
+      };
+    },
+  });
+}
+
 export const Route = createFileRoute("/_main/applications/$id/")({
   head: () => ({
     meta: [{ title: "Application Detail" }],
@@ -36,7 +61,7 @@ export const Route = createFileRoute("/_main/applications/$id/")({
 
 function ApplicationDetailPage() {
   const { id } = Route.useParams();
-  const { data, isLoading } = useApplicationDetail(id);
+  const { data, isLoading } = useQuery(applicationDetailQueryOptions(id));
 
   if (isLoading && !data) {
     return (

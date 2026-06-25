@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useTransition } from "react";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import {
   Upload,
   FileSpreadsheet,
@@ -33,8 +34,48 @@ import {
   AlertTitle,
 } from "~/components/ui/alert";
 import { Progress } from "~/components/ui/progress";
-import { useImportStatus } from "~/hooks/queries/use-import-status";
 import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
+import { queryKeys } from "~/lib/query/query-keys";
+
+type ImportStatus = {
+  import: {
+    id: string;
+    status: string;
+    filename: string;
+    type: string;
+    totalCandidates: number;
+    processedCandidates: number;
+    failedCandidates: number;
+    error?: string | null;
+  };
+  summary: {
+    total: number;
+    processed: number;
+    failed: number;
+    skipped: number;
+    succeeded: number;
+  };
+  rows: Array<{
+    rowIndex: number;
+    status: string;
+    error?: string | null;
+  }>;
+};
+
+const TERMINAL_IMPORT_STATUSES = new Set(["completed", "failed", "cancelled"]);
+
+function importStatusQueryOptions(importId: string) {
+  return queryOptions({
+    queryKey: queryKeys.imports.status(importId),
+    queryFn: async (): Promise<ImportStatus> => {
+      const response = await fetch(`/api/candidate/import/${importId}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch import status");
+      }
+      return response.json();
+    },
+  });
+}
 
 type PositionOption = {
   id: string;
@@ -61,10 +102,18 @@ export default function BulkUploadCandidatesDialog({
   const hasNotifiedRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: status, refetch: refetchStatus } = useImportStatus(
-    importId,
-    open,
-  );
+  const { data: status, refetch: refetchStatus } = useQuery({
+    ...importStatusQueryOptions(importId ?? ""),
+    enabled: Boolean(importId) && open,
+    refetchInterval: (query) => {
+      const importStatus = (query.state.data as ImportStatus | undefined)?.import
+        .status;
+      if (!importStatus || TERMINAL_IMPORT_STATUSES.has(importStatus)) {
+        return false;
+      }
+      return 2000;
+    },
+  });
 
   useEffect(() => {
     if (!importId || !open) {

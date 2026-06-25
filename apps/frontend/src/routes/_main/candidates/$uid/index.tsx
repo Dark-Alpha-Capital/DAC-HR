@@ -1,3 +1,4 @@
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { DetailPageSkeleton } from "~/components/route-skeletons/detail-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
@@ -19,8 +20,19 @@ import { CandidateOverviewTab } from "~/components/candidate-overview-tab";
 import { CandidateApplicationsTab } from "~/components/candidate-applications-tab";
 import { CandidateDocumentsTab } from "~/components/candidate-documents-tab";
 import OnboardingCard from "~/components/onboarding-card";
-import { candidateDetailQueryOptions } from "~/lib/query/options/candidates";
-import { useCandidateDetail } from "~/hooks/queries/use-candidate-detail";
+import {
+  loadCandidateDetail,
+  type CandidateDetailData,
+} from "~/lib/loaders/candidates";
+import { queryKeys } from "~/lib/query/query-keys";
+
+function candidateDetailQueryOptions(uid: string) {
+  return queryOptions({
+    queryKey: queryKeys.candidates.detail(uid),
+    queryFn: async () =>
+      (await loadCandidateDetail({ data: { uid } })) as CandidateDetailData,
+  });
+}
 
 export const Route = createFileRoute("/_main/candidates/$uid/")({
   head: () => ({
@@ -36,7 +48,7 @@ export const Route = createFileRoute("/_main/candidates/$uid/")({
 
 function CandidateDetailPage() {
   const { uid } = Route.useParams();
-  const { data, isLoading } = useCandidateDetail(uid);
+  const { data, isLoading } = useQuery(candidateDetailQueryOptions(uid));
 
   if (isLoading && !data) {
     return <DetailPageSkeleton tabs tabCount={4} />;

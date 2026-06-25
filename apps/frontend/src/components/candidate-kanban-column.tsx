@@ -1,14 +1,48 @@
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
+import { infiniteQueryOptions, useInfiniteQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import CandidateKanbanCard from "~/components/candidate-kanban-card";
 import { KanbanStatusHeader } from "~/components/application-status-badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
-import {
-  useKanbanColumn,
-  type KanbanFilters,
-} from "~/hooks/queries/use-kanban-column";
 import type { ApplicationStatus } from "@workspace/db/application-status";
+import {
+  buildKanbanCardsUrl,
+  KANBAN_COLUMN_PAGE_SIZE,
+  type KanbanFilters,
+  type KanbanPage,
+} from "~/lib/kanban/types";
+import { queryKeys } from "~/lib/query/query-keys";
+
+async function fetchKanbanColumnPage(url: string): Promise<KanbanPage> {
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as {
+      error?: string;
+    } | null;
+    throw new Error(body?.error ?? "Failed to load kanban column");
+  }
+
+  return response.json() as Promise<KanbanPage>;
+}
+
+function kanbanColumnQueryOptions(
+  status: ApplicationStatus,
+  filters: KanbanFilters = {},
+  limit: number = KANBAN_COLUMN_PAGE_SIZE,
+) {
+  return infiniteQueryOptions({
+    queryKey: queryKeys.kanban.column(status, filters),
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }) =>
+      fetchKanbanColumnPage(
+        buildKanbanCardsUrl(status, filters, pageParam, limit),
+      ),
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined,
+  });
+}
 
 interface CandidateKanbanColumnProps {
   status: ApplicationStatus;
@@ -35,9 +69,16 @@ function CandidateKanbanColumnInner({
   const scrollRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  const query = useInfiniteQuery(kanbanColumnQueryOptions(status, filters));
+
+  const allItems = useMemo(
+    () => query.data?.pages.flatMap((page) => page.items) ?? [],
+    [query.data?.pages],
+  );
+
+  const totalCount = query.data?.pages[0]?.totalCount;
+
   const {
-    allItems,
-    totalCount,
     isLoading,
     isError,
     error,
@@ -45,7 +86,7 @@ function CandidateKanbanColumnInner({
     hasNextPage,
     fetchNextPage,
     refetch,
-  } = useKanbanColumn(status, filters);
+  } = query;
 
   useEffect(() => {
     const root = scrollRef.current;
