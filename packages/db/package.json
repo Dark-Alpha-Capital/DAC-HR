@@ -19,6 +19,7 @@
     "./enums": "./enums.ts",
     "./application-status": "./application-status.ts",
     "./candidate-list-filters": "./candidate-list-filters.ts",
+    "./document-list-filters": "./document-list-filters.ts",
     "./default-rounds": "./default-rounds.ts",
     "./create-default-rounds": "./create-default-rounds.ts",
     "./kanban-cursor": "./kanban-cursor.ts",
