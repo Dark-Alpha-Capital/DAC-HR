@@ -10,7 +10,6 @@ import DocumentContainer from "~/components/document-container";
 import FilterDocumentCategory from "~/components/filter-document-category";
 import FilterDocumentName from "~/components/filter-document-name";
 import FilterDocumentScope from "~/components/filter-document-scope";
-import FilterDocumentTags from "~/components/filter-document-tags";
 import ClearDocumentFiltersButton from "~/components/clear-document-filters-button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import DocumentCategoriesManager from "~/components/document-categories-manager";
@@ -28,7 +27,6 @@ function parseDocumentsSearch(search: Record<string, unknown>) {
     scope: toOptionalString(search.scope),
     category: toStringArray(search.category as string | string[] | undefined),
     name: toOptionalString(search.name),
-    tags: toOptionalString(search.tags),
     candidateId: toOptionalString(search.candidateId),
     page:
       search.page !== undefined
@@ -80,6 +78,7 @@ function DocumentsPage() {
     categories,
     documents,
     currentPage,
+    total,
     totalPages,
     hasNextPage,
     hasPreviousPage,
@@ -122,7 +121,6 @@ function DocumentsPage() {
             {showFirmCategoryFilter ? (
               <FilterDocumentCategory categories={categories} />
             ) : null}
-            <FilterDocumentTags />
             <ClearDocumentFiltersButton />
           </div>
 
@@ -145,6 +143,12 @@ function DocumentsPage() {
             </div>
           ) : (
             <div className="space-y-6">
+              <div className="text-sm text-muted-foreground">
+                {total} document{total === 1 ? "" : "s"}
+                {totalPages > 1
+                  ? ` · page ${currentPage} of ${totalPages}`
+                  : null}
+              </div>
               <DocumentContainer
                 documents={documents}
                 showCandidateColumn={showCandidateColumn}

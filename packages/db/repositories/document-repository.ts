@@ -228,26 +228,26 @@ export async function getUnifiedDocuments(
     );
   }
 
+  const offset = (page - 1) * limit;
+  const fetchLimit = offset + limit;
+
   const [firmResult, candidateResult] = await Promise.all([
-    getDocuments(categoryFilters, nameSearch, tagsSearch, 1, Number.MAX_SAFE_INTEGER),
+    getDocuments(categoryFilters, nameSearch, tagsSearch, 1, fetchLimit),
     getCandidateDocumentsList(
       nameSearch,
       tagsSearch,
       candidateId,
       1,
-      Number.MAX_SAFE_INTEGER,
+      fetchLimit,
     ),
   ]);
 
   const merged = [
     ...mapFirmDocumentsToUnified(firmResult.documents),
     ...candidateResult.documents,
-  ].toSorted(
-    (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-  );
+  ].toSorted((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
-  const total = merged.length;
-  const offset = (page - 1) * limit;
+  const total = firmResult.total + candidateResult.total;
   const documents = merged.slice(offset, offset + limit);
 
   return { documents, total };

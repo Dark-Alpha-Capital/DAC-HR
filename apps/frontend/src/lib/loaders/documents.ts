@@ -47,14 +47,14 @@ export const loadDocumentsIndex = createServerFn({ method: "GET" })
       categories,
       documents,
       currentPage,
+      total,
       totalPages,
       hasNextPage: currentPage < totalPages,
       hasPreviousPage: currentPage > 1,
       hasFilters: Boolean(
-        scope !== "firm" ||
+        scope !== "all" ||
           deps.category?.length ||
           deps.name ||
-          deps.tags ||
           deps.candidateId,
       ),
     };

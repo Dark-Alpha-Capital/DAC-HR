@@ -1,5 +1,5 @@
 import { useUrlSearchParams } from "~/lib/hooks/use-url-search-params";
-
+import { resetListPageParam } from "~/lib/parse-search";
 import React, { useOptimistic, useTransition } from "react";
 import {
   DropdownMenu,
@@ -10,7 +10,8 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { Button } from "~/components/ui/button";
-import { Filter } from "lucide-react";
+import { Badge } from "~/components/ui/badge";
+import { Filter, X } from "lucide-react";
 import type { DocumentCategory } from "@workspace/db/schema";
 
 const FilterDocumentCategory = ({
@@ -24,25 +25,33 @@ const FilterDocumentCategory = ({
     searchParams.getAll("category"),
   );
 
-  const handleCheckedChange = (value: string, checked: boolean) => {
+  const categoryById = new Map(categories.map((category) => [category.id, category]));
+
+  const updateCategories = (nextSelected: string[]) => {
     startTransition(() => {
       const params = new URLSearchParams(searchParams);
       params.delete("category");
-
-      const newSelected = checked
-        ? [...selectedCategories, value]
-        : selectedCategories.filter((cat) => cat !== value);
-
-      newSelected.forEach((cat) => params.append("category", cat));
-      setSelectedCategories(newSelected);
-
+      nextSelected.forEach((categoryId) => params.append("category", categoryId));
+      resetListPageParam(params);
+      setSelectedCategories(nextSelected);
       setSearchParams(params);
-  });
+    });
+  };
+
+  const handleCheckedChange = (value: string, checked: boolean) => {
+    const nextSelected = checked
+      ? [...new Set([...selectedCategories, value])]
+      : selectedCategories.filter((categoryId) => categoryId !== value);
+    updateCategories(nextSelected);
+  };
+
+  const handleRemoveCategory = (value: string) => {
+    updateCategories(selectedCategories.filter((categoryId) => categoryId !== value));
   };
 
   return (
     <div
-      className="flex items-center gap-2"
+      className="flex flex-wrap items-center gap-2"
       data-pending={isPending ? "" : undefined}
     >
       <DropdownMenu>
@@ -50,11 +59,11 @@ const FilterDocumentCategory = ({
           <Button variant="secondary" size="sm">
             <Filter className="mr-2 h-4 w-4" />
             Category
-            {selectedCategories.length > 0 && (
+            {selectedCategories.length > 0 ? (
               <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
                 {selectedCategories.length}
               </span>
-            )}
+            ) : null}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56">
@@ -65,20 +74,46 @@ const FilterDocumentCategory = ({
               No categories available
             </div>
           ) : (
-            categories.map((cat) => (
+            categories.map((category) => (
               <DropdownMenuCheckboxItem
-                key={cat.id}
-                checked={selectedCategories.includes(cat.id)}
+                key={category.id}
+                checked={selectedCategories.includes(category.id)}
+                onSelect={(event) => event.preventDefault()}
                 onCheckedChange={(checked) =>
-                  handleCheckedChange(cat.id, checked as boolean)
+                  handleCheckedChange(category.id, checked === true)
                 }
               >
-                {cat.name}
+                {category.name}
               </DropdownMenuCheckboxItem>
             ))
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {selectedCategories.map((categoryId) => {
+        const category = categoryById.get(categoryId);
+        if (!category) {
+          return null;
+        }
+
+        return (
+          <Badge
+            key={categoryId}
+            variant="secondary"
+            className="gap-1 pr-1 font-normal"
+          >
+            {category.name}
+            <button
+              type="button"
+              aria-label={`Remove ${category.name} filter`}
+              className="rounded-sm p-0.5 hover:bg-muted"
+              onClick={() => handleRemoveCategory(categoryId)}
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </Badge>
+        );
+      })}
     </div>
   );
 };

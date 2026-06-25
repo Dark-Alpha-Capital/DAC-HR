@@ -18,7 +18,7 @@ export function parseDocumentScope(
   if (value && isDocumentScope(value)) {
     return value;
   }
-  return "firm";
+  return "all";
 }
 
 export type UnifiedDocumentListItem = {

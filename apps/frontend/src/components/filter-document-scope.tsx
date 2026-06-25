@@ -1,5 +1,5 @@
 import { useUrlSearchParams } from "~/lib/hooks/use-url-search-params";
-
+import { resetListPageParam } from "~/lib/parse-search";
 import React, { useOptimistic, useTransition } from "react";
 import {
   DropdownMenu,
@@ -26,13 +26,13 @@ const FilterDocumentScope = () => {
   const handleScopeChange = (value: string) => {
     startTransition(() => {
       const params = new URLSearchParams(searchParams);
-      if (value === "firm") {
+      if (value === "all") {
         params.delete("scope");
         params.delete("candidateId");
       } else {
         params.set("scope", value);
       }
-      params.delete("page");
+      resetListPageParam(params);
       setSelectedScope(parseDocumentScope(value));
       setSearchParams(params);
     });
@@ -48,11 +48,11 @@ const FilterDocumentScope = () => {
           <Button variant="secondary" size="sm">
             <Filter className="mr-2 h-4 w-4" />
             Type
-            {selectedScope !== "firm" && (
+            {selectedScope !== "all" ? (
               <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
                 {documentScopeLabels[selectedScope]}
               </span>
-            )}
+            ) : null}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56">

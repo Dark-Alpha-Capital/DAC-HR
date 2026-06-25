@@ -1,5 +1,5 @@
 import { useUrlSearchParams } from "~/lib/hooks/use-url-search-params";
-
+import { resetListPageParam } from "~/lib/parse-search";
 import React, { useTransition, useEffect, useRef } from "react";
 import { Input } from "~/components/ui/input";
 import { Search } from "lucide-react";
@@ -22,8 +22,9 @@ const FilterDocumentName = () => {
         } else {
           params.delete("name");
         }
+        resetListPageParam(params);
         setSearchParams(params);
-    });
+      });
     }, 300);
   };
 
