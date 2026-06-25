@@ -48,6 +48,7 @@ export const Route = createFileRoute("/_main/candidates/")({
 function CandidatesPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
+
   const { data, isLoading, isFetching } = useCandidatesIndex(search);
 
   const setViewMode = (view: CandidateViewMode) => {

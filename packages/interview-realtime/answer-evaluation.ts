@@ -1,6 +1,12 @@
 import type { InterviewQuestion } from "./types";
 
-export const MAX_ANSWER_FOLLOW_UPS = 3;
+export const MAX_NOISE_RETRIES = 3;
+
+/** @deprecated Use MAX_NOISE_RETRIES — kept for existing imports */
+export const MAX_ANSWER_FOLLOW_UPS = MAX_NOISE_RETRIES;
+
+export const NOISE_ENVIRONMENT_INSTRUCTION =
+  "Politely ask the candidate to please ensure their surroundings are stable and silenced, then repeat the current question. Do not advance to the next question.";
 const EVALUATION_MODEL = "gpt-4o-mini";
 
 export type AnswerRelevance =
@@ -118,18 +124,17 @@ function parseEvaluationJson(raw: string): AnswerEvaluationResult | null {
 }
 
 function fallbackEvaluation(
-  question: InterviewQuestion,
+  _question: InterviewQuestion,
   utterances: string[],
   followUpCount: number,
 ): AnswerEvaluationResult {
   const combinedAnswer = mergeAnswerUtterances(utterances);
   const normalized = combinedAnswer.toLowerCase().trim();
-  const wordCount = normalized.split(/\s+/).filter(Boolean).length;
 
-  if (followUpCount >= MAX_ANSWER_FOLLOW_UPS) {
+  if (followUpCount >= MAX_NOISE_RETRIES) {
     return {
       sufficient: true,
-      relevance: "partial",
+      relevance: "noise",
       followUpInstruction: null,
       combinedAnswer,
     };
@@ -139,53 +144,7 @@ function fallbackEvaluation(
     return {
       sufficient: false,
       relevance: "noise",
-      followUpInstruction:
-        "You heard background noise or an unclear sound instead of an answer. Ask the candidate to move to a quieter environment and try again. Do not advance to the next question.",
-      combinedAnswer,
-    };
-  }
-
-  if (wordCount <= 2 && !looksLikeReadyConfirmation(normalized)) {
-    return {
-      sufficient: false,
-      relevance: "unclear",
-      followUpInstruction:
-        "You did not catch a clear answer. Rephrase the same question in different words and ask them to answer again.",
-      combinedAnswer,
-    };
-  }
-
-  if (
-    question.questionType === "mcq" &&
-    question.options?.length &&
-    wordCount <= 6
-  ) {
-    const hasOptionHint = question.options.some((option, index) => {
-      const letter = String.fromCharCode(65 + index).toLowerCase();
-      return (
-        normalized.includes(`option ${letter}`) ||
-        normalized.startsWith(`${letter}`) ||
-        normalized.includes(option.text.toLowerCase())
-      );
-    });
-
-    if (!hasOptionHint) {
-      return {
-        sufficient: false,
-        relevance: "unclear",
-        followUpInstruction:
-          "Ask them to choose one of the listed options by letter (A, B, C, etc.) or by stating the option clearly.",
-        combinedAnswer,
-      };
-    }
-  }
-
-  if (wordCount < 4) {
-    return {
-      sufficient: false,
-      relevance: "partial",
-      followUpInstruction:
-        "Their answer was very brief. Ask a short follow-up so they can expand with a concrete example or detail.",
+      followUpInstruction: NOISE_ENVIRONMENT_INSTRUCTION,
       combinedAnswer,
     };
   }
@@ -216,10 +175,10 @@ export async function evaluateCandidateAnswer(options: {
   const allUtterances = [...priorUtterances, latestUtterance];
   const combinedAnswer = mergeAnswerUtterances(allUtterances);
 
-  if (followUpCount >= MAX_ANSWER_FOLLOW_UPS) {
+  if (followUpCount >= MAX_NOISE_RETRIES) {
     return {
       sufficient: true,
-      relevance: "partial",
+      relevance: "noise",
       followUpInstruction: null,
       combinedAnswer,
     };
@@ -249,15 +208,12 @@ export async function evaluateCandidateAnswer(options: {
         {
           role: "system",
           content: [
-            "You evaluate whether a job candidate's spoken answer is good enough to move on in a structured interview.",
+            "You evaluate whether a job candidate's spoken answer should advance the interview.",
             "Return JSON only with keys: sufficient (boolean), relevance (on_topic|partial|off_topic|refusal|unclear|noise), followUpInstruction (string|null), combinedAnswer (string).",
-            "Mark sufficient=true only when the candidate has given a substantive answer that addresses the question.",
-            "Mark sufficient=false when the answer is unrelated, evasive, a non-answer, nonsense, or too vague to evaluate.",
-            "Mark relevance=noise for background sounds, gibberish, filler-only utterances, or transcription artifacts — do NOT treat these as answers.",
-            "For noise: followUpInstruction must ask the candidate to find a quieter environment and try again.",
-            "For unclear answers: followUpInstruction must rephrase the same question in different words — do not advance.",
-            "For MCQ questions, sufficient=true only if they clearly pick an option by letter or option text.",
-            "If sufficient=false, followUpInstruction must be a concise instruction for the voice interviewer on what to say next to redirect or clarify — stay on the same question.",
+            "Mark sufficient=true for ANY substantive spoken response — including wrong, off-topic, incomplete, vague, or incorrect MCQ answers. Never ask the candidate to try again for content reasons.",
+            "Mark sufficient=false ONLY for noise: background sounds, gibberish, filler-only utterances, random unrelated single words, or transcription artifacts — not real attempts to answer.",
+            "For noise: set followUpInstruction to ask the candidate to please ensure their surroundings are stable and silenced, then repeat the current question.",
+            "For all sufficient answers: followUpInstruction must be null.",
             "combinedAnswer should merge all prior attempts plus the latest utterance into one coherent answer transcript.",
           ].join(" "),
         },
@@ -291,10 +247,15 @@ export async function evaluateCandidateAnswer(options: {
     return fallbackEvaluation(question, allUtterances, followUpCount);
   }
 
+  const isNoise = parsed.relevance === "noise";
+
   return {
     ...parsed,
     combinedAnswer: parsed.combinedAnswer || combinedAnswer,
-    followUpInstruction: parsed.sufficient ? null : parsed.followUpInstruction,
+    sufficient: !isNoise,
+    followUpInstruction: isNoise
+      ? (parsed.followUpInstruction ?? NOISE_ENVIRONMENT_INSTRUCTION)
+      : null,
   };
 }
 
@@ -310,7 +271,7 @@ function fallbackIntroEvaluation(utterance: string): IntroEvaluationResult {
       ready: false,
       relevance: "noise",
       followUpInstruction:
-        "You heard background noise instead of a clear response. Ask the candidate to move to a quieter environment, then ask if they are ready to begin.",
+        "You heard background noise instead of a clear response. Ask the candidate to please ensure their surroundings are stable and silenced, then ask if they are ready to begin.",
     };
   }
 
