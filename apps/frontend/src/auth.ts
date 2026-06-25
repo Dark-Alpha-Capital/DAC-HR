@@ -10,6 +10,10 @@ import {
 } from "@workspace/db/schema";
 import { admin, customSession } from "better-auth/plugins";
 import { createAuthMiddleware, APIError } from "better-auth/api";
+import {
+  isAllowedEmail,
+  UNAUTHORIZED_DOMAIN_MESSAGE,
+} from "~/lib/auth-domain";
 
 const ADMIN_EMAILS: string[] = [
   "rahul@darkalphacapital.com",
@@ -30,15 +34,6 @@ const redactEmail = (email: string | null | undefined): string => {
   const visible = localPart.slice(0, 2);
   return `${visible}${"*".repeat(Math.max(localPart.length - 2, 1))}@${domainPart}`;
 };
-
-const ALLOWED_DOMAIN = "darkalphacapital.com";
-
-const isAllowedEmail = (email: string | null | undefined): boolean => {
-  return !!email?.toLowerCase().endsWith(`@${ALLOWED_DOMAIN}`);
-};
-
-const UNAUTHORIZED_MESSAGE =
-  "Only Dark Alpha Capital (@darkalphacapital.com) email addresses can access this site.";
 
 const AUTH_ALLOWED_HOSTS = [
   "localhost",
@@ -111,7 +106,7 @@ export const auth = betterAuth({
               reason: "email_domain_not_allowed",
             });
             throw new APIError("BAD_REQUEST", {
-              message: UNAUTHORIZED_MESSAGE,
+              message: UNAUTHORIZED_DOMAIN_MESSAGE,
             });
           }
           if (userData.email && isAdminEmail(userData.email)) {
@@ -149,7 +144,7 @@ export const auth = betterAuth({
               reason: "user_not_found",
             });
             throw new APIError("BAD_REQUEST", {
-              message: UNAUTHORIZED_MESSAGE,
+              message: UNAUTHORIZED_DOMAIN_MESSAGE,
             });
           }
           if (!isAllowedEmail(user.email)) {
@@ -158,7 +153,7 @@ export const auth = betterAuth({
               reason: "email_domain_not_allowed",
             });
             throw new APIError("BAD_REQUEST", {
-              message: UNAUTHORIZED_MESSAGE,
+              message: UNAUTHORIZED_DOMAIN_MESSAGE,
             });
           }
           return { data: sessionData };
@@ -182,7 +177,7 @@ export const auth = betterAuth({
             reason: "email_domain_not_allowed",
           });
           throw new APIError("BAD_REQUEST", {
-            message: UNAUTHORIZED_MESSAGE,
+            message: UNAUTHORIZED_DOMAIN_MESSAGE,
           });
         }
       }
@@ -194,7 +189,13 @@ export const auth = betterAuth({
       });
       const isCallback = ctx.path.startsWith("/callback/");
       const isSignInSocial = ctx.path === "/sign-in/social";
-      if ((isCallback || isSignInSocial) && ctx.context.newSession) {
+      const isEmailAuth = ["/sign-in/email", "/sign-up/email"].includes(
+        ctx.path,
+      );
+      if (
+        (isCallback || isSignInSocial || isEmailAuth) &&
+        ctx.context.newSession
+      ) {
         const newSession = ctx.context.newSession;
         const signedInUser = newSession.user;
         console.info("[auth] hooks.after.session_created", {

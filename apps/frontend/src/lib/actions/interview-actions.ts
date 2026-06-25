@@ -11,7 +11,7 @@ import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export type InterviewRoundData = {
   applicationId: string;
-  positionRoundTemplateId: string;
+  roundId: string;
   interviewerId: string;
   scheduledAt?: Date;
   overallFeedback?: string;
@@ -44,7 +44,7 @@ export const saveInterviewRound = createServerFn({ method: "POST" })
         .insert(interview)
         .values({
           applicationId: data.applicationId,
-          positionRoundTemplateId: data.positionRoundTemplateId,
+          roundId: data.roundId,
           interviewerId: data.interviewerId,
           scheduledAt: data.scheduledAt,
           status: "pending",
@@ -93,7 +93,7 @@ export const saveInterviewRound = createServerFn({ method: "POST" })
           interview: {
             id: interviewId,
             applicationId: data.applicationId,
-            positionRoundTemplateId: data.positionRoundTemplateId,
+            roundId: data.roundId,
             interviewerId: data.interviewerId,
             scheduledAt: data.scheduledAt?.toISOString() || null,
             overallFeedback: data.overallFeedback,
@@ -101,7 +101,7 @@ export const saveInterviewRound = createServerFn({ method: "POST" })
           input: {
             interviewId: data.interviewId,
             applicationId: data.applicationId,
-            positionRoundTemplateId: data.positionRoundTemplateId,
+            roundId: data.roundId,
             interviewerId: data.interviewerId,
             scheduledAt: data.scheduledAt?.toISOString() || null,
             overallFeedback: data.overallFeedback,
@@ -134,7 +134,7 @@ export const startInterviewRound = createServerFn({ method: "POST" })
   .middleware([serverFnAuthGuard])
   .validator((data: {
   applicationId: string;
-  positionRoundTemplateId: string;
+  roundId: string;
   interviewerId: string;
 }) => data)
   .handler(async ({ data, context: { session } }) => {
@@ -144,7 +144,7 @@ export const startInterviewRound = createServerFn({ method: "POST" })
       .insert(interview)
       .values({
         applicationId: data.applicationId,
-        positionRoundTemplateId: data.positionRoundTemplateId,
+        roundId: data.roundId,
         interviewerId: data.interviewerId,
         status: "pending",
         scheduledAt: new Date(),
@@ -173,7 +173,7 @@ export const startInterviewRound = createServerFn({ method: "POST" })
             interview: {
               id: newInterview.id,
               applicationId: newInterview.applicationId,
-              positionRoundTemplateId: newInterview.positionRoundTemplateId,
+              roundId: newInterview.roundId,
               interviewerId: newInterview.interviewerId,
               status: newInterview.status,
               scheduledAt: newInterview.scheduledAt?.toISOString() || null,
@@ -181,7 +181,7 @@ export const startInterviewRound = createServerFn({ method: "POST" })
             },
             input: {
               applicationId: data.applicationId,
-              positionRoundTemplateId: data.positionRoundTemplateId,
+              roundId: data.roundId,
               interviewerId: data.interviewerId,
             },
             createdBy: {
@@ -209,7 +209,7 @@ export const startInterviewRound = createServerFn({ method: "POST" })
 export const getInterviewForRound = createServerFn({ method: "GET" })
   .middleware([serverFnAuthGuard])
   .validator((data: [string, string]) => data)
-  .handler(async ({ data: [applicationId, positionRoundTemplateId], context: { session } }) => {
+  .handler(async ({ data: [applicationId, roundId], context: { session } }) => {
   try {
     const [interviewData] = await db
       .select()
@@ -217,7 +217,7 @@ export const getInterviewForRound = createServerFn({ method: "GET" })
       .where(
         and(
           eq(interview.applicationId, applicationId),
-          eq(interview.positionRoundTemplateId, positionRoundTemplateId),
+          eq(interview.roundId, roundId),
         ),
       )
       .orderBy(desc(interview.createdAt))

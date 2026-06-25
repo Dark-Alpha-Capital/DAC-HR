@@ -53,7 +53,7 @@ export const deleteInterview = createServerFn({ method: "POST" })
           deletedInterview: {
             id: existingInterview.id,
             applicationId: existingInterview.applicationId,
-            positionRoundTemplateId: existingInterview.positionRoundTemplateId,
+            roundId: existingInterview.roundId,
             interviewerId: existingInterview.interviewerId,
             status: existingInterview.status,
             rating: existingInterview.rating,

@@ -18,9 +18,26 @@ const result = spawnSync(
   },
 );
 
-if (result.status !== 0) {
-  console.error("❌ Migration failed");
-  process.exit(result.status ?? 1);
-}
+  if (result.status !== 0) {
+    console.error("❌ Migration failed");
+    process.exit(result.status ?? 1);
+  }
 
-console.log("✅ Migrations completed");
+  if (!process.argv.includes("--remote")) {
+    const sharedRoundsResult = spawnSync(
+      "bun",
+      ["run", "scripts/migrate-shared-rounds.ts"],
+      {
+        cwd: __dirname,
+        stdio: "inherit",
+        env: process.env,
+      },
+    );
+
+    if (sharedRoundsResult.status !== 0) {
+      console.error("❌ Shared rounds data migration failed");
+      process.exit(sharedRoundsResult.status ?? 1);
+    }
+  }
+
+  console.log("✅ Migrations completed");

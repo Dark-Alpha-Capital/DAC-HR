@@ -4,7 +4,7 @@ import { z } from "zod";
 import { deliveryModes } from "@workspace/db/enums";
 import { eq, and } from "@workspace/db";
 import { db } from "@workspace/db/db";
-import { application, positionRoundTemplates } from "@workspace/db/schema";
+import { application, roundTemplate } from "@workspace/db/schema";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { createAiInterviewWithSession } from "@workspace/db/repositories/interview-session-repository";
 
@@ -66,28 +66,26 @@ export const Route = createFileRoute("/api/interview-sessions")({
             );
           }
 
-          // Find the positionRoundTemplateId for this position + round
-          const [prt] = await db
-            .select({ id: positionRoundTemplates.id })
-            .from(positionRoundTemplates)
+          const [round] = await db
+            .select({ id: roundTemplate.id })
+            .from(roundTemplate)
             .where(
               and(
-                eq(positionRoundTemplates.positionId, app.positionId),
-                eq(positionRoundTemplates.roundTemplateId, roundId),
+                eq(roundTemplate.positionId, app.positionId),
+                eq(roundTemplate.id, roundId),
               ),
             )
             .limit(1);
 
-          if (!prt) {
+          if (!round) {
             return Response.json(
-              { error: "Round template not found for this position" },
+              { error: "Round not found for this position" },
               { status: 404 },
             );
           }
 
           const result = await createAiInterviewWithSession({
             applicationId,
-            positionRoundTemplateId: prt.id,
             roundId,
             expiresAt,
             deliveryMode,

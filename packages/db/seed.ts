@@ -15,7 +15,6 @@ import {
   interviewResponse,
   interviewSession,
   position,
-  positionRoundTemplates,
   questionBank,
   roundTemplate,
   roundTemplateQuestions,
@@ -63,7 +62,6 @@ function clearSeedData(sqlite: Database) {
     "candidate_position",
     "candidate",
     "round_template_questions",
-    "position_round_templates",
     "question_bank",
     "round_template",
     "position",
@@ -206,25 +204,7 @@ async function seed() {
     .values(positions)
     .returning();
 
-  const roundTemplates = [
-    { name: "Screening", description: "Initial screening round" },
-    { name: "Technical", description: "Technical assessment round" },
-    {
-      name: "Final Executive",
-      description: "Final interview with leadership",
-    },
-  ];
-
-  const insertedRounds = await db
-    .insert(roundTemplate)
-    .values(roundTemplates)
-    .returning();
-
-  const screeningRound = insertedRounds.find((r) => r.name === "Screening")!;
-  const technicalRound = insertedRounds.find((r) => r.name === "Technical")!;
-  const finalRound = insertedRounds.find((r) => r.name === "Final Executive")!;
-
-  const questions = [
+  const questionTemplates = [
     {
       questionText: "Why are you interested in joining Dark Alpha Capital?",
       questionType: "text" as const,
@@ -387,52 +367,83 @@ async function seed() {
     },
   ];
 
-  const insertedQuestions = await db
-    .insert(questionBank)
-    .values(questions)
-    .returning();
+  type RoundIdsByPosition = {
+    screeningRoundId: string;
+    technicalRoundId: string;
+    finalRoundId?: string;
+    screeningQuestionIds: string[];
+  };
 
-  const byCategory = (cat: string) =>
-    insertedQuestions.filter((q) => q.category === cat);
-
-  const screeningQuestions = byCategory("screening");
-  const technicalQuestions = byCategory("technical");
-  const behavioralQuestions = byCategory("behavioral");
-
-  await db.insert(roundTemplateQuestions).values([
-    ...screeningQuestions.map((q) => ({
-      roundTemplateId: screeningRound.id,
-      questionId: q.id,
-    })),
-    ...technicalQuestions.map((q) => ({
-      roundTemplateId: technicalRound.id,
-      questionId: q.id,
-    })),
-    ...behavioralQuestions.map((q) => ({
-      roundTemplateId: finalRound.id,
-      questionId: q.id,
-    })),
-  ]);
-
-  const positionRoundRows: Array<{
-    positionId: string;
-    roundTemplateId: string;
-  }> = [];
+  const roundsByPositionSlug: Record<string, RoundIdsByPosition> = {};
 
   for (const pos of insertedPositions) {
-    positionRoundRows.push(
-      { positionId: pos.id, roundTemplateId: screeningRound.id },
-      { positionId: pos.id, roundTemplateId: technicalRound.id },
-    );
-    if (pos.slug !== "hr-assistant") {
-      positionRoundRows.push({
+    const roundValues = [
+      {
         positionId: pos.id,
-        roundTemplateId: finalRound.id,
-      });
-    }
-  }
+        name: "Screening",
+        description: "Initial screening round",
+      },
+      {
+        positionId: pos.id,
+        name: "Technical",
+        description: "Technical assessment round",
+      },
+      ...(pos.slug !== "hr-assistant"
+        ? [
+            {
+              positionId: pos.id,
+              name: "Final Executive",
+              description: "Final interview with leadership",
+            },
+          ]
+        : []),
+    ];
 
-  await db.insert(positionRoundTemplates).values(positionRoundRows);
+    const insertedRounds = await db
+      .insert(roundTemplate)
+      .values(roundValues)
+      .returning();
+
+    const screeningRound = insertedRounds.find((r) => r.name === "Screening")!;
+    const technicalRound = insertedRounds.find((r) => r.name === "Technical")!;
+    const finalRound = insertedRounds.find((r) => r.name === "Final Executive");
+
+    const insertedQuestions = await db
+      .insert(questionBank)
+      .values(questionTemplates)
+      .returning();
+
+    const byCategory = (cat: string) =>
+      insertedQuestions.filter((q) => q.category === cat);
+
+    const screeningQuestions = byCategory("screening");
+    const technicalQuestions = byCategory("technical");
+    const behavioralQuestions = byCategory("behavioral");
+
+    await db.insert(roundTemplateQuestions).values([
+      ...screeningQuestions.map((q) => ({
+        roundTemplateId: screeningRound.id,
+        questionId: q.id,
+      })),
+      ...technicalQuestions.map((q) => ({
+        roundTemplateId: technicalRound.id,
+        questionId: q.id,
+      })),
+      ...(finalRound
+        ? behavioralQuestions.map((q) => ({
+            roundTemplateId: finalRound.id,
+            questionId: q.id,
+          }))
+        : []),
+    ]);
+
+    roundsByPositionSlug[pos.slug] = {
+      screeningRoundId: screeningRound.id,
+      technicalRoundId: technicalRound.id,
+      finalRoundId: finalRound?.id,
+      screeningQuestionIds: screeningQuestions.map((q) => q.id),
+    };
+  }
 
   const positionBySlug = Object.fromEntries(
     insertedPositions.map((p) => [p.slug, p]),
@@ -640,25 +651,31 @@ async function seed() {
       aliceApplicationId = newApplication.id;
     }
 
-    const roundsForPosition = await db
-      .select()
-      .from(positionRoundTemplates)
-      .where(eq(positionRoundTemplates.positionId, pos.id));
+    const positionRounds = roundsByPositionSlug[seedCandidate.positionSlug];
+    if (positionRounds) {
+      const roundIds = [
+        positionRounds.screeningRoundId,
+        positionRounds.technicalRoundId,
+        ...(positionRounds.finalRoundId ? [positionRounds.finalRoundId] : []),
+      ];
 
-    for (const prt of roundsForPosition) {
-      await db
-        .insert(interview)
-        .values({
-          applicationId: newApplication.id,
-          positionRoundTemplateId: prt.id,
-          interviewerId: SEED_USER_ID,
-          status: "pending",
-        })
-        .onConflictDoNothing();
+      for (const roundId of roundIds) {
+        await db
+          .insert(interview)
+          .values({
+            applicationId: newApplication.id,
+            roundId,
+            interviewerId: SEED_USER_ID,
+            status: "pending",
+          })
+          .onConflictDoNothing();
+      }
     }
   }
 
-  if (aliceApplicationId) {
+  const frontendRounds = roundsByPositionSlug["frontend-developer"];
+
+  if (aliceApplicationId && frontendRounds) {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     const startedAt = new Date(Date.now() - 30 * 60 * 1000);
     const completedAt = new Date(Date.now() - 10 * 60 * 1000);
@@ -666,7 +683,7 @@ async function seed() {
     await db.insert(interviewSession).values({
       token: SEED_SESSION_TOKEN_PENDING,
       applicationId: aliceApplicationId,
-      roundId: screeningRound.id,
+      roundId: frontendRounds.screeningRoundId,
       expiresAt,
       status: "pending",
     });
@@ -674,7 +691,7 @@ async function seed() {
     await db.insert(interviewSession).values({
       token: SEED_SESSION_TOKEN_IN_PROGRESS,
       applicationId: aliceApplicationId,
-      roundId: technicalRound.id,
+      roundId: frontendRounds.technicalRoundId,
       expiresAt,
       status: "in_progress",
       startedAt,
@@ -686,7 +703,7 @@ async function seed() {
       .values({
         token: SEED_SESSION_TOKEN_COMPLETED,
         applicationId: aliceApplicationId,
-        roundId: screeningRound.id,
+        roundId: frontendRounds.screeningRoundId,
         expiresAt,
         status: "completed",
         startedAt,
@@ -695,10 +712,11 @@ async function seed() {
       })
       .returning();
 
-    if (completedSession && screeningQuestions[0]) {
+    const firstScreeningQuestionId = frontendRounds.screeningQuestionIds[0];
+    if (completedSession && firstScreeningQuestionId) {
       await db.insert(interviewResponse).values({
         sessionId: completedSession.id,
-        questionId: screeningQuestions[0]!.id,
+        questionId: firstScreeningQuestionId,
         answerText:
           "I am excited about DAC's focus on technology-driven capital markets and the opportunity to build impactful HR tooling.",
       });
@@ -706,9 +724,7 @@ async function seed() {
   }
 
   console.log(`✅ ${insertedPositions.length} positions`);
-  console.log(`✅ ${insertedRounds.length} round templates`);
-  console.log(`✅ ${insertedQuestions.length} questions`);
-  console.log(`✅ ${positionRoundRows.length} position–round links`);
+  console.log(`✅ Per-position rounds and questions seeded`);
   console.log(
     `✅ ${seedCandidates.length} candidates with applications & interview rounds`,
   );

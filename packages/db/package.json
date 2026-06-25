@@ -19,7 +19,8 @@
     "./enums": "./enums.ts",
     "./application-status": "./application-status.ts",
     "./candidate-list-filters": "./candidate-list-filters.ts",
-    "./document-list-filters": "./document-list-filters.ts",
+    "./default-rounds": "./default-rounds.ts",
+    "./create-default-rounds": "./create-default-rounds.ts",
     "./kanban-cursor": "./kanban-cursor.ts",
     "./kanban-queries": "./kanban-queries.ts",
     "./sqlite-helpers": "./sqlite-helpers.ts",
@@ -35,7 +36,9 @@
     "db:seed": "bun run seed.ts",
     "db:seed:remote": "bun run seed.ts --remote",
     "db:seed-positions": "bun run seed-positions.ts",
-    "db:seed-positions:remote": "bun run seed-positions.ts --remote"
+    "db:seed-positions:remote": "bun run seed-positions.ts --remote",
+    "db:reset-rounds": "bun run scripts/reset-position-rounds.ts",
+    "db:reset-rounds:remote": "bun run scripts/reset-position-rounds.ts --remote"
   },
   "peerDependencies": {
     "typescript": "^5.9.3"

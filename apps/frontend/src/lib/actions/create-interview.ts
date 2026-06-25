@@ -7,7 +7,7 @@ import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export interface CreateInterviewInput {
   applicationId: string;
-  positionRoundTemplateId: string;
+  roundId: string;
   interviewerId: string;
   scheduledAt?: Date;
 }
@@ -17,7 +17,7 @@ export const createInterview = createServerFn({ method: "POST" })
   .validator((data: CreateInterviewInput) => data)
   .handler(async ({ data, context: { session } }) => {
 
-    const { applicationId, positionRoundTemplateId, interviewerId, scheduledAt } =
+    const { applicationId, roundId, interviewerId, scheduledAt } =
       data;
 
     try {
@@ -37,7 +37,7 @@ export const createInterview = createServerFn({ method: "POST" })
         .insert(interview)
         .values({
           applicationId,
-          positionRoundTemplateId,
+          roundId,
           interviewerId,
           mode: "manual" as const,
           scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
@@ -65,7 +65,7 @@ export const createInterview = createServerFn({ method: "POST" })
           interview: {
             id: newInterview.id,
             applicationId: newInterview.applicationId,
-            positionRoundTemplateId: newInterview.positionRoundTemplateId,
+            roundId: newInterview.roundId,
             interviewerId: newInterview.interviewerId,
             scheduledAt: newInterview.scheduledAt?.toISOString() || null,
             status: newInterview.status,
@@ -73,7 +73,7 @@ export const createInterview = createServerFn({ method: "POST" })
           },
           input: {
             applicationId,
-            positionRoundTemplateId,
+            roundId,
             interviewerId,
             scheduledAt: scheduledAt
               ? new Date(scheduledAt).toISOString()

@@ -282,6 +282,9 @@ export type Question = InferSelectModel<typeof questionBank>;
 
 export const roundTemplate = sqliteTable("round_template", {
   id: uuidPk(),
+  positionId: text("position_id")
+    .notNull()
+    .references(() => position.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   description: text("description"),
   createdAt: createdAtCol(),
@@ -289,16 +292,6 @@ export const roundTemplate = sqliteTable("round_template", {
 });
 
 export type RoundTemplate = InferSelectModel<typeof roundTemplate>;
-
-export const positionRoundTemplates = sqliteTable("position_round_templates", {
-  id: uuidPk(),
-  positionId: text("position_id")
-    .notNull()
-    .references(() => position.id, { onDelete: "cascade" }),
-  roundTemplateId: text("round_template_id")
-    .notNull()
-    .references(() => roundTemplate.id, { onDelete: "cascade" }),
-});
 
 export const roundTemplateQuestions = sqliteTable("round_template_questions", {
   id: uuidPk(),
@@ -342,9 +335,9 @@ export const interview = sqliteTable(
     applicationId: text("application_id")
       .notNull()
       .references(() => application.id, { onDelete: "cascade" }),
-    positionRoundTemplateId: text("position_round_template_id")
+    roundId: text("round_id")
       .notNull()
-      .references(() => positionRoundTemplates.id, { onDelete: "cascade" }),
+      .references(() => roundTemplate.id, { onDelete: "cascade" }),
     interviewerId: text("interviewer_id")
       .references(() => user.id, { onDelete: "set null" }),
     mode: text("mode").$type<InterviewMode>().default("manual").notNull(),

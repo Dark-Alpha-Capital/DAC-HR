@@ -7,11 +7,8 @@ import { Database } from "bun:sqlite";
 import { eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import type { Department, HireLevel, PositionStatus } from "./enums";
-import {
-  position,
-  positionRoundTemplates,
-  roundTemplate,
-} from "./schema";
+import { position } from "./schema";
+import { createDefaultRoundsForPosition } from "./create-default-rounds";
 
 const webDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -315,26 +312,10 @@ function exportInsertedSql(sqlite: Database, positionIds: string[]): string {
       .join("\n");
   };
 
-  const roundIds = sqlite
-    .prepare(
-      `SELECT DISTINCT round_template_id AS id FROM position_round_templates WHERE position_id IN (${placeholders})`,
-    )
-    .all() as Array<{ id: string }>;
-
-  const roundIdList = roundIds.map((row) => sqlValue(row.id)).join(", ");
-  const roundWhere =
-    roundIdList.length > 0
-      ? `id IN (${roundIdList})`
-      : "0";
-
   return [
     "PRAGMA foreign_keys = ON;",
-    exportTable("round_template", roundWhere),
     exportTable("position", `id IN (${placeholders})`),
-    exportTable(
-      "position_round_templates",
-      `position_id IN (${placeholders})`,
-    ),
+    exportTable("round_template", `position_id IN (${placeholders})`),
   ]
     .filter(Boolean)
     .join("\n");
@@ -357,45 +338,6 @@ async function seedPositions(remote: boolean) {
     return;
   }
 
-  const existingRounds = await db
-    .select()
-    .from(roundTemplate)
-    .where(
-      inArray(roundTemplate.name, [
-        SCREENING_ROUND_NAME,
-        TECHNICAL_ROUND_NAME,
-      ]),
-    );
-
-  let screeningRound = existingRounds.find((r) => r.name === SCREENING_ROUND_NAME);
-  let technicalRound = existingRounds.find((r) => r.name === TECHNICAL_ROUND_NAME);
-
-  if (!screeningRound) {
-    const [created] = await db
-      .insert(roundTemplate)
-      .values({
-        name: SCREENING_ROUND_NAME,
-        description: "Initial screening and recruiter interview round",
-      })
-      .returning();
-    screeningRound = created;
-  }
-
-  if (!technicalRound) {
-    const [created] = await db
-      .insert(roundTemplate)
-      .values({
-        name: TECHNICAL_ROUND_NAME,
-        description: "Technical assessment round",
-      })
-      .returning();
-    technicalRound = created;
-  }
-
-  if (!screeningRound || !technicalRound) {
-    throw new Error("Failed to resolve screening and technical round templates");
-  }
-
   const insertedPositions = await db
     .insert(position)
     .values(
@@ -410,16 +352,14 @@ async function seedPositions(remote: boolean) {
     )
     .returning();
 
-  const positionRoundRows = insertedPositions.flatMap((pos) => [
-    { positionId: pos.id, roundTemplateId: screeningRound.id },
-    { positionId: pos.id, roundTemplateId: technicalRound.id },
-  ]);
-
-  await db.insert(positionRoundTemplates).values(positionRoundRows);
+  for (const pos of insertedPositions) {
+    await createDefaultRoundsForPosition(pos.id);
+  }
 
   console.log(`✅ Inserted ${insertedPositions.length} positions`);
-  console.log(`✅ Linked ${positionRoundRows.length} position–round pairs`);
-  console.log(`   Rounds: "${SCREENING_ROUND_NAME}", "${TECHNICAL_ROUND_NAME}"`);
+  console.log(
+    `✅ Created default rounds for each position ("${SCREENING_ROUND_NAME}", "${TECHNICAL_ROUND_NAME}")`,
+  );
 
   if (remote) {
     const tempDir = mkdtempSync(path.join(tmpdir(), "hr-automation-positions-"));

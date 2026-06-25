@@ -22,7 +22,6 @@ import {
 
 export const createAiInterviewWithSession = async (data: {
   applicationId: string;
-  positionRoundTemplateId: string;
   roundId: string;
   expiresAt: Date;
   deliveryMode?: DeliveryMode;
@@ -37,7 +36,7 @@ export const createAiInterviewWithSession = async (data: {
     .values({
       id: interviewId,
       applicationId: data.applicationId,
-      positionRoundTemplateId: data.positionRoundTemplateId,
+      roundId: data.roundId,
       mode: "ai_session",
       status: "pending",
     })

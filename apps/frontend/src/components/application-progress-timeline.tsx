@@ -43,12 +43,11 @@ interface Round {
   id: string;
   name: string;
   description: string | null;
-  positionRoundTemplateId: string;
 }
 
 interface Interview {
   id: string;
-  positionRoundTemplateId: string;
+  roundId: string;
   mode: InterviewMode;
   status: "pending" | "completed" | "move_forward" | "rejected" | "scheduled";
   rating: number | null;
@@ -165,15 +164,15 @@ export default function ApplicationProgressTimeline({
 
     // Initialize with all rounds
     rounds.forEach((round) => {
-      grouped.set(round.positionRoundTemplateId, []);
+      grouped.set(round.id, []);
     });
 
     // Add interviews to their respective rounds
     interviews.forEach((interview) => {
       const roundInterviews =
-        grouped.get(interview.positionRoundTemplateId) || [];
+        grouped.get(interview.roundId) || [];
       roundInterviews.push(interview);
-      grouped.set(interview.positionRoundTemplateId, roundInterviews);
+      grouped.set(interview.roundId, roundInterviews);
     });
 
     return grouped;
@@ -289,7 +288,7 @@ export default function ApplicationProgressTimeline({
         <div className="divide-y divide-border">
           {rounds.map((round) => {
             const roundInterviews =
-              interviewsByRound.get(round.positionRoundTemplateId) || [];
+              interviewsByRound.get(round.id) || [];
             const hasInterviews = roundInterviews.length > 0;
 
             return (

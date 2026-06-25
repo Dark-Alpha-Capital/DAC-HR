@@ -3,6 +3,7 @@ import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
 import { position } from "@workspace/db/schema";
 import slugify from "slugify";
+import { createDefaultRoundsForPosition } from "@workspace/db/create-default-rounds";
 import {
   PositionFormSchema,
   positionFormSchema,
@@ -44,6 +45,8 @@ export const createPosition = createServerFn({ method: "POST" })
     if (!newPosition) {
       return { error: "Failed to create position" };
     }
+
+    await createDefaultRoundsForPosition(newPosition.id);
 
     console.log("new position created", newPosition);
     insertAuditLog({

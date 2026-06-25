@@ -6,7 +6,6 @@ import {
   candidatePosition,
   questionBank,
   roundTemplate,
-  positionRoundTemplates,
   roundTemplateQuestions,
   application,
   interview,
@@ -955,11 +954,7 @@ export const getQuestionsWithRounds = async (
         roundTemplate,
         eq(roundTemplateQuestions.roundTemplateId, roundTemplate.id),
       )
-      .leftJoin(
-        positionRoundTemplates,
-        eq(roundTemplate.id, positionRoundTemplates.roundTemplateId),
-      )
-      .leftJoin(position, eq(positionRoundTemplates.positionId, position.id));
+      .leftJoin(position, eq(roundTemplate.positionId, position.id));
 
     // Group questions by question ID and collect rounds and positions
     const questionsMap = new Map<
@@ -1243,11 +1238,11 @@ export const getRoundsWithPositions = async (
 
     if (positionIds && positionIds.length > 0) {
       const matchingRounds = await db
-        .select({ roundId: positionRoundTemplates.roundTemplateId })
-        .from(positionRoundTemplates)
-        .where(inArray(positionRoundTemplates.positionId, positionIds));
+        .select({ roundId: roundTemplate.id })
+        .from(roundTemplate)
+        .where(inArray(roundTemplate.positionId, positionIds));
 
-      filteredRoundIds = [...new Set(matchingRounds.map((r) => r.roundId))];
+      filteredRoundIds = matchingRounds.map((r) => r.roundId);
 
       // If no rounds match, return empty array
       if (filteredRoundIds.length === 0) {
@@ -1270,11 +1265,7 @@ export const getRoundsWithPositions = async (
         },
       })
       .from(roundTemplate)
-      .leftJoin(
-        positionRoundTemplates,
-        eq(roundTemplate.id, positionRoundTemplates.roundTemplateId),
-      )
-      .leftJoin(position, eq(positionRoundTemplates.positionId, position.id))
+      .innerJoin(position, eq(roundTemplate.positionId, position.id))
       .where(
         filteredRoundIds && filteredRoundIds.length > 0
           ? inArray(roundTemplate.id, filteredRoundIds)
@@ -1337,30 +1328,17 @@ export const getRoundsWithPositions = async (
  */
 export const getRoundsByPositionId = async (positionId: string) => {
   try {
-    const results = await db
+    return await db
       .select({
-        round: {
-          id: roundTemplate.id,
-          name: roundTemplate.name,
-          description: roundTemplate.description,
-          createdAt: roundTemplate.createdAt,
-          updatedAt: roundTemplate.updatedAt,
-        },
-        positionRoundTemplate: {
-          id: positionRoundTemplates.id,
-        },
+        id: roundTemplate.id,
+        name: roundTemplate.name,
+        description: roundTemplate.description,
+        createdAt: roundTemplate.createdAt,
+        updatedAt: roundTemplate.updatedAt,
+        positionId: roundTemplate.positionId,
       })
-      .from(positionRoundTemplates)
-      .innerJoin(
-        roundTemplate,
-        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id),
-      )
-      .where(eq(positionRoundTemplates.positionId, positionId));
-
-    return results.map((result) => ({
-      ...result.round,
-      positionRoundTemplateId: result.positionRoundTemplate.id,
-    }));
+      .from(roundTemplate)
+      .where(eq(roundTemplate.positionId, positionId));
   } catch (error) {
     console.error("Error fetching rounds by position id", error);
     return [];
@@ -1378,6 +1356,7 @@ export const getRoundById = async (id: string) => {
     const [roundResult] = await db
       .select({
         id: roundTemplate.id,
+        positionId: roundTemplate.positionId,
         name: roundTemplate.name,
         description: roundTemplate.description,
         createdAt: roundTemplate.createdAt,
@@ -1393,29 +1372,27 @@ export const getRoundById = async (id: string) => {
 };
 
 /**
- * Fetches the first position ID linked to a round template (for pre-selecting in forms).
- * @param roundTemplateId The ID of the round template
- * @returns The first linked position ID, or empty string if none
+ * Returns the position that owns a round.
  */
-export const getFirstPositionIdForRoundTemplate = async (
-  roundTemplateId: string,
+export const getPositionIdForRound = async (
+  roundId: string,
 ): Promise<string> => {
   try {
     const [result] = await db
-      .select({ positionId: positionRoundTemplates.positionId })
-      .from(positionRoundTemplates)
-      .where(eq(positionRoundTemplates.roundTemplateId, roundTemplateId))
+      .select({ positionId: roundTemplate.positionId })
+      .from(roundTemplate)
+      .where(eq(roundTemplate.id, roundId))
       .limit(1);
 
     return result?.positionId ?? "";
   } catch (error) {
-    console.error(
-      "Error fetching first position for round template",
-      error,
-    );
+    console.error("Error fetching position for round", error);
     return "";
   }
 };
+
+/** @deprecated Use getPositionIdForRound */
+export const getFirstPositionIdForRoundTemplate = getPositionIdForRound;
 
 /**
  * Fetches all positions linked to a specific round template
@@ -1430,47 +1407,14 @@ export const getPositionsByRoundId = async (roundId: string) => {
         name: position.name,
         slug: position.slug,
       })
-      .from(positionRoundTemplates)
-      .innerJoin(position, eq(positionRoundTemplates.positionId, position.id))
-      .where(eq(positionRoundTemplates.roundTemplateId, roundId));
+      .from(roundTemplate)
+      .innerJoin(position, eq(roundTemplate.positionId, position.id))
+      .where(eq(roundTemplate.id, roundId));
 
     return results;
   } catch (error) {
     console.error("Error fetching positions by round id", error);
     return [];
-  }
-};
-
-/**
- * Fetches a positionRoundTemplate by ID
- * @param positionRoundTemplateId The ID of the position round template
- * @returns The positionRoundTemplate or null if not found
- */
-export const getPositionRoundTemplateById = async (
-  positionRoundTemplateId: string,
-) => {
-  try {
-    const [result] = await db
-      .select({
-        id: positionRoundTemplates.id,
-        positionId: positionRoundTemplates.positionId,
-        roundTemplateId: positionRoundTemplates.roundTemplateId,
-        roundTemplate: {
-          id: roundTemplate.id,
-          name: roundTemplate.name,
-          description: roundTemplate.description,
-        },
-      })
-      .from(positionRoundTemplates)
-      .innerJoin(
-        roundTemplate,
-        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id),
-      )
-      .where(eq(positionRoundTemplates.id, positionRoundTemplateId));
-    return result || null;
-  } catch (error) {
-    console.error("Error fetching position round template by id", error);
-    return null;
   }
 };
 
@@ -1546,9 +1490,6 @@ export const getInterviewsByApplicationId = async (applicationId: string) => {
           name: roundTemplate.name,
           description: roundTemplate.description,
         },
-        positionRoundTemplate: {
-          id: positionRoundTemplates.id,
-        },
         interviewer: {
           id: user.id,
           name: user.name,
@@ -1556,21 +1497,14 @@ export const getInterviewsByApplicationId = async (applicationId: string) => {
         },
       })
       .from(interview)
-      .innerJoin(
-        positionRoundTemplates,
-        eq(interview.positionRoundTemplateId, positionRoundTemplates.id),
-      )
-      .innerJoin(
-        roundTemplate,
-        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id),
-      )
+      .innerJoin(roundTemplate, eq(interview.roundId, roundTemplate.id))
       .leftJoin(user, eq(interview.interviewerId, user.id))
       .where(eq(interview.applicationId, applicationId));
 
     return results.map((result) => ({
       ...result.interview,
       roundTemplate: result.roundTemplate,
-      positionRoundTemplateId: result.positionRoundTemplate.id,
+      roundId: result.roundTemplate.id,
       interviewer: result.interviewer,
     }));
   } catch (error) {
@@ -1602,9 +1536,6 @@ export const getInterviewById = async (interviewId: string) => {
           name: roundTemplate.name,
           description: roundTemplate.description,
         },
-        positionRoundTemplate: {
-          id: positionRoundTemplates.id,
-        },
         interviewer: {
           id: user.id,
           name: user.name,
@@ -1612,14 +1543,7 @@ export const getInterviewById = async (interviewId: string) => {
         },
       })
       .from(interview)
-      .innerJoin(
-        positionRoundTemplates,
-        eq(interview.positionRoundTemplateId, positionRoundTemplates.id),
-      )
-      .innerJoin(
-        roundTemplate,
-        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id),
-      )
+      .innerJoin(roundTemplate, eq(interview.roundId, roundTemplate.id))
       .leftJoin(user, eq(interview.interviewerId, user.id))
       .where(eq(interview.id, interviewId));
 
@@ -1671,7 +1595,7 @@ export const getInterviewById = async (interviewId: string) => {
     return {
       ...interviewResult.interview,
       roundTemplate: interviewResult.roundTemplate,
-      positionRoundTemplateId: interviewResult.positionRoundTemplate.id,
+      roundId: interviewResult.roundTemplate.id,
       interviewer: interviewResult.interviewer,
       questions: questionsWithFeedback,
     };
@@ -2184,14 +2108,7 @@ export const getUpcomingInterviews = async (limit?: number) => {
       .innerJoin(application, eq(interview.applicationId, application.id))
       .innerJoin(candidate, eq(application.candidateId, candidate.id))
       .innerJoin(position, eq(application.positionId, position.id))
-      .innerJoin(
-        positionRoundTemplates,
-        eq(interview.positionRoundTemplateId, positionRoundTemplates.id),
-      )
-      .innerJoin(
-        roundTemplate,
-        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id),
-      )
+      .innerJoin(roundTemplate, eq(interview.roundId, roundTemplate.id))
       .leftJoin(user, eq(interview.interviewerId, user.id))
       .where(
         and(
@@ -2267,14 +2184,7 @@ export const getRecentActivity = async (limit: number = 10) => {
       .innerJoin(application, eq(interview.applicationId, application.id))
       .innerJoin(candidate, eq(application.candidateId, candidate.id))
       .innerJoin(position, eq(application.positionId, position.id))
-      .innerJoin(
-        positionRoundTemplates,
-        eq(interview.positionRoundTemplateId, positionRoundTemplates.id),
-      )
-      .innerJoin(
-        roundTemplate,
-        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id),
-      )
+      .innerJoin(roundTemplate, eq(interview.roundId, roundTemplate.id))
       .leftJoin(user, eq(interview.interviewerId, user.id))
       .orderBy(sql`${interview.createdAt} DESC`)
       .limit(limit);

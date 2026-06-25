@@ -5,7 +5,6 @@ const SEED_TABLES_IN_INSERT_ORDER = [
   "position",
   "round_template",
   "question_bank",
-  "position_round_templates",
   "round_template_questions",
   "candidate",
   "application",
@@ -30,7 +29,6 @@ DELETE FROM application;
 DELETE FROM candidate_position;
 DELETE FROM candidate;
 DELETE FROM round_template_questions;
-DELETE FROM position_round_templates;
 DELETE FROM question_bank;
 DELETE FROM round_template;
 DELETE FROM position;
@@ -85,7 +83,6 @@ export function exportSeedDataSql(sqlite: Database): string {
     exportTable(sqlite, "position"),
     exportTable(sqlite, "round_template"),
     exportTable(sqlite, "question_bank"),
-    exportTable(sqlite, "position_round_templates"),
     exportTable(sqlite, "round_template_questions"),
     exportTable(sqlite, "candidate"),
     exportTable(sqlite, "application"),

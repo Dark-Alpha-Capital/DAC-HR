@@ -18,6 +18,7 @@ import { Route as ApiInterviewSessionsRouteImport } from './routes/api/interview
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as MainDashboardRouteImport } from './routes/_main/dashboard'
 import { Route as AuthUnauthorizedRouteImport } from './routes/_auth/unauthorized'
+import { Route as AuthSignupRouteImport } from './routes/_auth/signup'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as MainDocsRouteRouteImport } from './routes/_main/docs/route'
 import { Route as MainAdminRouteRouteImport } from './routes/_main/admin/route'
@@ -135,6 +136,11 @@ const MainDashboardRoute = MainDashboardRouteImport.update({
 const AuthUnauthorizedRoute = AuthUnauthorizedRouteImport.update({
   id: '/unauthorized',
   path: '/unauthorized',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+const AuthSignupRoute = AuthSignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => AuthRouteRoute,
 } as any)
 const AuthLoginRoute = AuthLoginRouteImport.update({
@@ -532,6 +538,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof MainAdminRouteRouteWithChildren
   '/docs': typeof MainDocsRouteRouteWithChildren
   '/login': typeof AuthLoginRoute
+  '/signup': typeof AuthSignupRoute
   '/unauthorized': typeof AuthUnauthorizedRoute
   '/dashboard': typeof MainDashboardRoute
   '/api/health': typeof ApiHealthRoute
@@ -614,6 +621,7 @@ export interface FileRoutesByTo {
   '/': typeof MainIndexRoute
   '/customScript.js': typeof CustomScriptDotjsRoute
   '/login': typeof AuthLoginRoute
+  '/signup': typeof AuthSignupRoute
   '/unauthorized': typeof AuthUnauthorizedRoute
   '/dashboard': typeof MainDashboardRoute
   '/api/health': typeof ApiHealthRoute
@@ -700,6 +708,7 @@ export interface FileRoutesById {
   '/_main/admin': typeof MainAdminRouteRouteWithChildren
   '/_main/docs': typeof MainDocsRouteRouteWithChildren
   '/_auth/login': typeof AuthLoginRoute
+  '/_auth/signup': typeof AuthSignupRoute
   '/_auth/unauthorized': typeof AuthUnauthorizedRoute
   '/_main/dashboard': typeof MainDashboardRoute
   '/api/health': typeof ApiHealthRoute
@@ -787,6 +796,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/docs'
     | '/login'
+    | '/signup'
     | '/unauthorized'
     | '/dashboard'
     | '/api/health'
@@ -869,6 +879,7 @@ export interface FileRouteTypes {
     | '/'
     | '/customScript.js'
     | '/login'
+    | '/signup'
     | '/unauthorized'
     | '/dashboard'
     | '/api/health'
@@ -954,6 +965,7 @@ export interface FileRouteTypes {
     | '/_main/admin'
     | '/_main/docs'
     | '/_auth/login'
+    | '/_auth/signup'
     | '/_auth/unauthorized'
     | '/_main/dashboard'
     | '/api/health'
@@ -1128,6 +1140,13 @@ declare module '@tanstack/react-router' {
       path: '/unauthorized'
       fullPath: '/unauthorized'
       preLoaderRoute: typeof AuthUnauthorizedRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
+    '/_auth/signup': {
+      id: '/_auth/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof AuthSignupRouteImport
       parentRoute: typeof AuthRouteRoute
     }
     '/_auth/login': {
@@ -1660,11 +1679,13 @@ declare module '@tanstack/react-router' {
 
 interface AuthRouteRouteChildren {
   AuthLoginRoute: typeof AuthLoginRoute
+  AuthSignupRoute: typeof AuthSignupRoute
   AuthUnauthorizedRoute: typeof AuthUnauthorizedRoute
 }
 
 const AuthRouteRouteChildren: AuthRouteRouteChildren = {
   AuthLoginRoute: AuthLoginRoute,
+  AuthSignupRoute: AuthSignupRoute,
   AuthUnauthorizedRoute: AuthUnauthorizedRoute,
 }
 

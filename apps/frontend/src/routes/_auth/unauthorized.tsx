@@ -15,8 +15,8 @@ function UnauthorizedPage() {
           Cannot sign in
         </h1>
         <p className="text-sm text-muted-foreground">
-          You cannot access DAC Recruiting because you signed in with a
-          non-Dark Alpha Capital email address. Please use an account ending in
+          You cannot access DAC Recruiting because you used a non-Dark Alpha
+          Capital email address. Please sign in with an account ending in
           @darkalphacapital.com.
         </p>
       </div>

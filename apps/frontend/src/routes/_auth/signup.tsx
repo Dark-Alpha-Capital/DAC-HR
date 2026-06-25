@@ -1,12 +1,10 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { fetchSession } from "~/lib/auth-session";
-import EmailSignInForm from "~/components/email-signin-form";
-import GoogleSignInButton from "~/components/google-signin-button";
-import { Separator } from "~/components/ui/separator";
+import EmailSignUpForm from "~/components/email-signup-form";
 
-export const Route = createFileRoute("/_auth/login")({
+export const Route = createFileRoute("/_auth/signup")({
   head: () => ({
-    meta: [{ title: "Login - DAC-HR" }],
+    meta: [{ title: "Sign Up - DAC-HR" }],
   }),
   validateSearch: (search: Record<string, unknown>) => ({
     redirect:
@@ -18,36 +16,27 @@ export const Route = createFileRoute("/_auth/login")({
     const session = await fetchSession();
     if (session) throw redirect({ to: "/dashboard" });
   },
-  component: LoginPage,
+  component: SignUpPage,
 });
 
-function LoginPage() {
+function SignUpPage() {
   const { redirect: callbackURL } = Route.useSearch();
 
   return (
     <>
       <div className="space-y-3 text-center">
         <h1 className="text-2xl font-semibold tracking-tight">
-          Welcome to DAC Recruiting
+          Create your account
         </h1>
         <p className="text-sm text-muted-foreground">
-          Manage candidates, interviews, applications, and hiring workflows in
-          one place.
+          Sign up with your @darkalphacapital.com work email to access DAC
+          Recruiting.
         </p>
       </div>
 
-      <EmailSignInForm callbackURL={callbackURL} />
-
-      <div className="flex items-center gap-3">
-        <Separator className="flex-1" />
-        <span className="text-xs text-muted-foreground">or</span>
-        <Separator className="flex-1" />
-      </div>
-
-      <GoogleSignInButton callbackURL={callbackURL} />
+      <EmailSignUpForm callbackURL={callbackURL} />
 
       <p className="text-center text-xs text-muted-foreground">
-        Use your @darkalphacapital.com work email with email/password or Google.
         Access is limited to Dark Alpha Capital team members.
       </p>
     </>

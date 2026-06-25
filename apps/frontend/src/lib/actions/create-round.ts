@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
-import { roundTemplate, positionRoundTemplates } from "@workspace/db/schema";
+import { roundTemplate } from "@workspace/db/schema";
 import { RoundFormSchema, roundFormSchema } from "../schemas/round-form-schema";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
@@ -26,6 +26,7 @@ export const createRound = createServerFn({ method: "POST" })
       const [newRound] = await db
         .insert(roundTemplate)
         .values({
+          positionId,
           name,
           description: description || null,
         })
@@ -35,12 +36,6 @@ export const createRound = createServerFn({ method: "POST" })
         return { error: "Failed to create round" };
       }
 
-      // Create the link between position and round template
-      await db.insert(positionRoundTemplates).values({
-        positionId,
-        roundTemplateId: newRound.id,
-      });
-      // Invalidate cache for all applications using this position
       insertAuditLog({
         userId: session.user.id,
         action: "create_round",

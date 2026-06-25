@@ -1,4 +1,4 @@
-const PUBLIC_PAGE_PATHS = new Set(["/login", "/unauthorized"]);
+const PUBLIC_PAGE_PATHS = new Set(["/login", "/signup", "/unauthorized"]);
 
 const PUBLIC_PAGE_PREFIXES = ["/interview/"] as const;
 

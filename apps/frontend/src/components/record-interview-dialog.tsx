@@ -28,7 +28,6 @@ interface RecordInterviewDialogProps {
     rounds: Array<{
       id: string;
       name: string;
-      positionRoundTemplateId: string;
     }>;
   };
   users: Array<{
@@ -39,7 +38,7 @@ interface RecordInterviewDialogProps {
   currentUserId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initialPositionRoundTemplateId?: string;
+  initialRoundId?: string;
 }
 
 export default function RecordInterviewDialog({
@@ -49,29 +48,26 @@ export default function RecordInterviewDialog({
   currentUserId,
   open,
   onOpenChange,
-  initialPositionRoundTemplateId,
+  initialRoundId,
 }: RecordInterviewDialogProps) {
   const invalidate = useQueryInvalidation();
   const [loading, setLoading] = useState(false);
   const [interviewerId, setInterviewerId] = useState(currentUserId);
-  const [positionRoundTemplateId, setPositionRoundTemplateId] = useState(
-    initialPositionRoundTemplateId ||
-      application.rounds[0]?.positionRoundTemplateId ||
-      "",
+  const [roundId, setRoundId] = useState(
+    initialRoundId || application.rounds[0]?.id || "",
   );
   const [scheduledAt, setScheduledAt] = useState("");
 
-  // Update positionRoundTemplateId when initialPositionRoundTemplateId changes
   useEffect(() => {
-    if (initialPositionRoundTemplateId) {
-      setPositionRoundTemplateId(initialPositionRoundTemplateId);
+    if (initialRoundId) {
+      setRoundId(initialRoundId);
     }
-  }, [initialPositionRoundTemplateId]);
+  }, [initialRoundId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!positionRoundTemplateId) {
+    if (!roundId) {
       toast.error("Please select a round");
       return;
     }
@@ -82,7 +78,7 @@ export default function RecordInterviewDialog({
       const result = await createInterview({
         data: {
           applicationId,
-          positionRoundTemplateId,
+          roundId,
           interviewerId,
           scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
         },
@@ -119,20 +115,13 @@ export default function RecordInterviewDialog({
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="round">Round</Label>
-              <Select
-                value={positionRoundTemplateId}
-                onValueChange={setPositionRoundTemplateId}
-                required
-              >
+              <Select value={roundId} onValueChange={setRoundId} required>
                 <SelectTrigger id="round">
                   <SelectValue placeholder="Select a round" />
                 </SelectTrigger>
                 <SelectContent>
                   {application.rounds.map((round) => (
-                    <SelectItem
-                      key={round.positionRoundTemplateId}
-                      value={round.positionRoundTemplateId}
-                    >
+                    <SelectItem key={round.id} value={round.id}>
                       {round.name}
                     </SelectItem>
                   ))}

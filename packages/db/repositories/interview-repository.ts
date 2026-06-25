@@ -4,7 +4,6 @@ import {
   interview,
   interviewAiAnalysis,
   interviewFeedback,
-  positionRoundTemplates,
   questionBank,
   roundTemplate,
   user,
@@ -30,9 +29,6 @@ export const getInterviewsByApplicationId = async (applicationId: string) => {
           name: roundTemplate.name,
           description: roundTemplate.description,
         },
-        positionRoundTemplate: {
-          id: positionRoundTemplates.id,
-        },
         interviewer: {
           id: user.id,
           name: user.name,
@@ -40,21 +36,14 @@ export const getInterviewsByApplicationId = async (applicationId: string) => {
         },
       })
       .from(interview)
-      .innerJoin(
-        positionRoundTemplates,
-        eq(interview.positionRoundTemplateId, positionRoundTemplates.id),
-      )
-      .innerJoin(
-        roundTemplate,
-        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id),
-      )
+      .innerJoin(roundTemplate, eq(interview.roundId, roundTemplate.id))
       .leftJoin(user, eq(interview.interviewerId, user.id))
       .where(eq(interview.applicationId, applicationId));
 
     return results.map((result) => ({
       ...result.interview,
       roundTemplate: result.roundTemplate,
-      positionRoundTemplateId: result.positionRoundTemplate.id,
+      roundId: result.roundTemplate.id,
       interviewer: result.interviewer,
     }));
   } catch (error) {
@@ -82,9 +71,6 @@ export const getInterviewById = async (interviewId: string) => {
           name: roundTemplate.name,
           description: roundTemplate.description,
         },
-        positionRoundTemplate: {
-          id: positionRoundTemplates.id,
-        },
         interviewer: {
           id: user.id,
           name: user.name,
@@ -92,14 +78,7 @@ export const getInterviewById = async (interviewId: string) => {
         },
       })
       .from(interview)
-      .innerJoin(
-        positionRoundTemplates,
-        eq(interview.positionRoundTemplateId, positionRoundTemplates.id),
-      )
-      .innerJoin(
-        roundTemplate,
-        eq(positionRoundTemplates.roundTemplateId, roundTemplate.id),
-      )
+      .innerJoin(roundTemplate, eq(interview.roundId, roundTemplate.id))
       .leftJoin(user, eq(interview.interviewerId, user.id))
       .where(eq(interview.id, interviewId));
 
@@ -148,7 +127,7 @@ export const getInterviewById = async (interviewId: string) => {
     return {
       ...interviewResult.interview,
       roundTemplate: interviewResult.roundTemplate,
-      positionRoundTemplateId: interviewResult.positionRoundTemplate.id,
+      roundId: interviewResult.roundTemplate.id,
       interviewer: interviewResult.interviewer,
       questions: questionsWithFeedback,
     };
