@@ -88,6 +88,7 @@ import { Route as MainRoundsIdEditRouteImport } from './routes/_main/rounds/$id/
 import { Route as MainRoundsIdAddQuestionRouteImport } from './routes/_main/rounds/$id/add-question'
 import { Route as MainQuestionsIdEditRouteImport } from './routes/_main/questions/$id/edit'
 import { Route as MainPositionsSlugEditRouteImport } from './routes/_main/positions/$slug/edit'
+import { Route as MainEmployeesMemberUidRouteImport } from './routes/_main/employees/member/$uid'
 import { Route as MainEmployeesIdEditRouteImport } from './routes/_main/employees/$id/edit'
 import { Route as MainCandidatesUidEditRouteImport } from './routes/_main/candidates/$uid/edit'
 import { Route as ApiCandidateIdDocumentsDocumentIdRouteImport } from './routes/api/candidate/$id/documents/$documentId'
@@ -497,6 +498,11 @@ const MainPositionsSlugEditRoute = MainPositionsSlugEditRouteImport.update({
   path: '/positions/$slug/edit',
   getParentRoute: () => MainRouteRoute,
 } as any)
+const MainEmployeesMemberUidRoute = MainEmployeesMemberUidRouteImport.update({
+  id: '/employees/member/$uid',
+  path: '/employees/member/$uid',
+  getParentRoute: () => MainRouteRoute,
+} as any)
 const MainEmployeesIdEditRoute = MainEmployeesIdEditRouteImport.update({
   id: '/employees/$id/edit',
   path: '/employees/$id/edit',
@@ -575,6 +581,7 @@ export interface FileRoutesByFullPath {
   '/interview/$token/': typeof InterviewTokenIndexRoute
   '/candidates/$uid/edit': typeof MainCandidatesUidEditRoute
   '/employees/$id/edit': typeof MainEmployeesIdEditRoute
+  '/employees/member/$uid': typeof MainEmployeesMemberUidRoute
   '/positions/$slug/edit': typeof MainPositionsSlugEditRoute
   '/questions/$id/edit': typeof MainQuestionsIdEditRoute
   '/rounds/$id/add-question': typeof MainRoundsIdAddQuestionRoute
@@ -656,6 +663,7 @@ export interface FileRoutesByTo {
   '/interview/$token': typeof InterviewTokenIndexRoute
   '/candidates/$uid/edit': typeof MainCandidatesUidEditRoute
   '/employees/$id/edit': typeof MainEmployeesIdEditRoute
+  '/employees/member/$uid': typeof MainEmployeesMemberUidRoute
   '/positions/$slug/edit': typeof MainPositionsSlugEditRoute
   '/questions/$id/edit': typeof MainQuestionsIdEditRoute
   '/rounds/$id/add-question': typeof MainRoundsIdAddQuestionRoute
@@ -742,6 +750,7 @@ export interface FileRoutesById {
   '/interview/$token/': typeof InterviewTokenIndexRoute
   '/_main/candidates/$uid/edit': typeof MainCandidatesUidEditRoute
   '/_main/employees/$id/edit': typeof MainEmployeesIdEditRoute
+  '/_main/employees/member/$uid': typeof MainEmployeesMemberUidRoute
   '/_main/positions/$slug/edit': typeof MainPositionsSlugEditRoute
   '/_main/questions/$id/edit': typeof MainQuestionsIdEditRoute
   '/_main/rounds/$id/add-question': typeof MainRoundsIdAddQuestionRoute
@@ -827,6 +836,7 @@ export interface FileRouteTypes {
     | '/interview/$token/'
     | '/candidates/$uid/edit'
     | '/employees/$id/edit'
+    | '/employees/member/$uid'
     | '/positions/$slug/edit'
     | '/questions/$id/edit'
     | '/rounds/$id/add-question'
@@ -908,6 +918,7 @@ export interface FileRouteTypes {
     | '/interview/$token'
     | '/candidates/$uid/edit'
     | '/employees/$id/edit'
+    | '/employees/member/$uid'
     | '/positions/$slug/edit'
     | '/questions/$id/edit'
     | '/rounds/$id/add-question'
@@ -993,6 +1004,7 @@ export interface FileRouteTypes {
     | '/interview/$token/'
     | '/_main/candidates/$uid/edit'
     | '/_main/employees/$id/edit'
+    | '/_main/employees/member/$uid'
     | '/_main/positions/$slug/edit'
     | '/_main/questions/$id/edit'
     | '/_main/rounds/$id/add-question'
@@ -1608,6 +1620,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainPositionsSlugEditRouteImport
       parentRoute: typeof MainRouteRoute
     }
+    '/_main/employees/member/$uid': {
+      id: '/_main/employees/member/$uid'
+      path: '/employees/member/$uid'
+      fullPath: '/employees/member/$uid'
+      preLoaderRoute: typeof MainEmployeesMemberUidRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
     '/_main/employees/$id/edit': {
       id: '/_main/employees/$id/edit'
       path: '/employees/$id/edit'
@@ -1726,6 +1745,7 @@ interface MainRouteRouteChildren {
   MainWeeklyCheckinIndexRoute: typeof MainWeeklyCheckinIndexRoute
   MainCandidatesUidEditRoute: typeof MainCandidatesUidEditRoute
   MainEmployeesIdEditRoute: typeof MainEmployeesIdEditRoute
+  MainEmployeesMemberUidRoute: typeof MainEmployeesMemberUidRoute
   MainPositionsSlugEditRoute: typeof MainPositionsSlugEditRoute
   MainQuestionsIdEditRoute: typeof MainQuestionsIdEditRoute
   MainRoundsIdAddQuestionRoute: typeof MainRoundsIdAddQuestionRoute
@@ -1768,6 +1788,7 @@ const MainRouteRouteChildren: MainRouteRouteChildren = {
   MainWeeklyCheckinIndexRoute: MainWeeklyCheckinIndexRoute,
   MainCandidatesUidEditRoute: MainCandidatesUidEditRoute,
   MainEmployeesIdEditRoute: MainEmployeesIdEditRoute,
+  MainEmployeesMemberUidRoute: MainEmployeesMemberUidRoute,
   MainPositionsSlugEditRoute: MainPositionsSlugEditRoute,
   MainQuestionsIdEditRoute: MainQuestionsIdEditRoute,
   MainRoundsIdAddQuestionRoute: MainRoundsIdAddQuestionRoute,

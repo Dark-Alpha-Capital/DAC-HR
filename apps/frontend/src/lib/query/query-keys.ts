@@ -1,6 +1,15 @@
 import { normalizeListDeps } from "~/lib/query/normalize-deps";
 
+const prismicKeys = {
+  all: ["prismic"] as const,
+  members: (deps: Record<string, unknown>) =>
+    [...prismicKeys.all, "members", deps] as const,
+  member: (uid: string, kind: string) =>
+    [...prismicKeys.all, "member", uid, kind] as const,
+};
+
 export const queryKeys = {
+  prismic: prismicKeys,
   candidates: {
     all: ["candidates"] as const,
     list: (deps: Record<string, unknown>) =>

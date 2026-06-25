@@ -17,4 +17,8 @@ interface Env {
   NEXTCLOUD_URL: string;
   NEXTCLOUD_USER: string;
   NEXTCLOUD_PASSWORD: string;
+  PRISMIC_REPOSITORY_NAME: string;
+  PRISMIC_TEAM_MEMBER_TYPE?: string;
+  PRISMIC_OPERATING_MEMBER_TYPE?: string;
+  PRISMIC_ACCESS_TOKEN?: string;
 }
