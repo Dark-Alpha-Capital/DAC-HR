@@ -1,5 +1,7 @@
 import { useUrlSearchParams } from "~/lib/hooks/use-url-search-params";
 
+import { resetListPageParam } from "~/lib/parse-search";
+
 import React, { useOptimistic, useTransition } from "react";
 import {
   DropdownMenu,
@@ -29,6 +31,7 @@ const FilterQuestionPosition = ({
   const handleCheckedChange = (value: string, checked: boolean) => {
     startTransition(() => {
       const params = new URLSearchParams(searchParams);
+      resetListPageParam(params);
       params.delete("position");
 
       const newSelected = checked

@@ -15,7 +15,10 @@
   // Do NOT add secrets here — deploying empty vars would overwrite dashboard values.
   // Local dev uses the top-level vars (localhost). Production deploy uses --env production.
   "vars": {
-    "BETTER_AUTH_URL": "http://localhost:3000"
+    "BETTER_AUTH_URL": "http://localhost:3000",
+    "PRISMIC_REPOSITORY_NAME": "darkalpha",
+    "PRISMIC_TEAM_MEMBER_TYPE": "teammember",
+    "PRISMIC_OPERATING_MEMBER_TYPE": "operatingmember"
   },
 
   "env": {

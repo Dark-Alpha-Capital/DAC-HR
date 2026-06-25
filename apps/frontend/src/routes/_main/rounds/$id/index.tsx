@@ -148,7 +148,11 @@ function RoundDetailPage() {
             ) : null}
           </div>
           <Button variant="default" size="sm" asChild>
-            <Link to="/rounds/$id/add-question" params={{ id }}>
+            <Link
+              to="/rounds/$id/add-question"
+              params={{ id }}
+              search={{ position: "" }}
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add Question
             </Link>
@@ -162,7 +166,11 @@ function RoundDetailPage() {
               No questions are currently linked to this round.
             </p>
             <Button variant="secondary" asChild>
-              <Link to="/rounds/$id/add-question" params={{ id }}>
+              <Link
+              to="/rounds/$id/add-question"
+              params={{ id }}
+              search={{ position: "" }}
+            >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Question
               </Link>

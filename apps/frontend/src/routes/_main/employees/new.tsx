@@ -31,7 +31,9 @@ function NewEmployeePage() {
   return (
     <div className="narrow-container mx-auto space-y-8 py-6">
       <Button asChild variant="secondary" size="sm">
-        <Link to="/employees" search="{}">Back to Employees</Link>
+        <Link to="/employees" search={{ memberType: "all" }}>
+          Back to Employees
+        </Link>
       </Button>
       <Suspense fallback={<FormLoadingFallback />}>
         <EmployeeUploadForm
