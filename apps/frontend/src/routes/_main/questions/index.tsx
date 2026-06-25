@@ -1,4 +1,8 @@
-import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  queryOptions,
+  useQuery,
+} from "@tanstack/react-query";
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
@@ -15,7 +19,8 @@ import { queryKeys } from "~/lib/query/query-keys";
 function parseQuestionsSearch(search: Record<string, unknown>) {
   return {
     search: typeof search.search === "string" ? search.search : "",
-    position: toStringArray(search.position as string | string[] | undefined) ?? [],
+    position:
+      toStringArray(search.position as string | string[] | undefined) ?? [],
     round: toStringArray(search.round as string | string[] | undefined) ?? [],
     page:
       search.page !== undefined
@@ -67,6 +72,8 @@ function QuestionsPage() {
     rounds,
     questions,
     currentPage,
+    limit,
+    totalCount,
     totalPages,
     hasNextPage,
     hasPreviousPage,
@@ -78,7 +85,7 @@ function QuestionsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Questions</h1>
         <Button asChild>
-          <Link to="/questions/new" search="{}">New Question</Link>
+          <Link to="/questions/new">New Question</Link>
         </Button>
       </div>
 
@@ -92,7 +99,7 @@ function QuestionsPage() {
         <ClearQuestionFiltersButton />
       </div>
 
-      {questions.length === 0 ? (
+      {totalCount === 0 ? (
         <div className="text-center py-12">
           <p className="text-muted-foreground">
             {hasFilters
@@ -100,12 +107,16 @@ function QuestionsPage() {
               : "No questions found."}
           </p>
           <Button asChild className="mt-4">
-            <Link to="/questions/new" search="{}">Add your first question</Link>
+            <Link to="/questions/new">Add your first question</Link>
           </Button>
         </div>
       ) : (
         <div className="space-y-6">
-          <QuestionContainer questions={questions} />
+          <QuestionContainer
+            questions={questions}
+            currentPage={currentPage}
+            limit={limit}
+          />
           {totalPages > 1 ? (
             <PaginationControls
               currentPage={currentPage}

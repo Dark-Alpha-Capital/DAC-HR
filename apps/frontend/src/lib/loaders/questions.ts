@@ -5,7 +5,6 @@ import {
   getQuestionById,
   getQuestionsWithRounds,
   getRounds,
-  getRoundsByPositionId,
 } from "@workspace/db/queries";
 
 type QuestionsIndexInput = {
@@ -42,6 +41,8 @@ export const loadQuestionsIndex = createServerFn({ method: "GET" })
       rounds,
       questions,
       currentPage,
+      limit,
+      totalCount: total,
       totalPages,
       hasNextPage: currentPage < totalPages,
       hasPreviousPage: currentPage > 1,
@@ -51,32 +52,16 @@ export const loadQuestionsIndex = createServerFn({ method: "GET" })
     };
   });
 
-type QuestionsNewInput = {
-  position?: string;
-  round?: string;
-};
-
 export const loadQuestionsNew = createServerFn({ method: "GET" })
   .middleware([serverFnAuthGuard])
-  .validator((data: QuestionsNewInput) => data)
-  .handler(async ({ data: deps, context: { session } }) => {
+  .handler(async () => {
     const { positions } = await getPositions();
-    const rounds = deps.position
-      ? (await getRoundsByPositionId(deps.position)).map((round) => ({
-          id: round.id,
-          name: round.name,
-          description: round.description,
-        }))
-      : [];
 
     return {
       positions: positions.map((position) => ({
         id: position.id,
         name: position.name,
       })),
-      rounds,
-      preSelectedPositionId: deps.position ?? "",
-      preSelectedRoundId: deps.round ?? "",
     };
   });
 

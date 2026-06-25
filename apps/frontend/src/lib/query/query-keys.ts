@@ -42,6 +42,8 @@ export const queryKeys = {
     all: ["rounds"] as const,
     list: (deps: Record<string, unknown>) =>
       ["rounds", "list", normalizeListDeps(deps)] as const,
+    byPosition: (positionId: string) =>
+      ["rounds", "by-position", positionId] as const,
   },
   questions: {
     all: ["questions"] as const,

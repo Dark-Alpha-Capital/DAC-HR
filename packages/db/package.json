@@ -33,7 +33,9 @@
     "db:studio": "drizzle-kit studio",
     "db:push": "drizzle-kit push",
     "db:seed": "bun run seed.ts",
-    "db:seed:remote": "bun run seed.ts --remote"
+    "db:seed:remote": "bun run seed.ts --remote",
+    "db:seed-positions": "bun run seed-positions.ts",
+    "db:seed-positions:remote": "bun run seed-positions.ts --remote"
   },
   "peerDependencies": {
     "typescript": "^5.9.3"

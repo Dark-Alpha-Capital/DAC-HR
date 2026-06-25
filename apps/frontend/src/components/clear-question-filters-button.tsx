@@ -1,5 +1,7 @@
 import { useUrlSearchParams } from "~/lib/hooks/use-url-search-params";
 
+import { resetListPageParam } from "~/lib/parse-search";
+
 import React from "react";
 import { Button } from "~/components/ui/button";
 import { X } from "lucide-react";
@@ -22,6 +24,7 @@ const ClearQuestionFiltersButton = () => {
       size="sm"
       onClick={() => {
         const params = new URLSearchParams(searchParams);
+        resetListPageParam(params);
         params.delete("search");
         params.delete("position");
         params.delete("round");
