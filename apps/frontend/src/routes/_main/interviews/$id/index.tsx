@@ -3,6 +3,7 @@ import {
   formatPersonName,
 } from "@workspace/nextcloud/paths";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { DetailPageSkeleton } from "~/components/route-skeletons/detail-page-skeleton";
 import {
   loadInterviewById,
   type InterviewDetailData,
