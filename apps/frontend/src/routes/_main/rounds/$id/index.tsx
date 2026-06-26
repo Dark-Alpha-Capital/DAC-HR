@@ -2,26 +2,10 @@ import { DetailPageSkeleton } from "~/components/route-skeletons/detail-page-ske
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { loadRoundById } from "~/lib/loaders/rounds";
 import { Button } from "~/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
 import BackButton from "~/components/back-button";
-import {
-  Pencil,
-  Calendar,
-  Clock,
-  Plus,
-  Eye,
-  HelpCircle,
-  Briefcase,
-} from "lucide-react";
+import { Pencil, Calendar, Clock, Briefcase } from "lucide-react";
 import DeleteRoundButton from "~/components/delete-round-button";
-import DeleteQuestionButton from "~/components/delete-question-button";
+import { RoundDetailQuestions } from "~/components/round-detail-questions";
 import { formatDate } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 
@@ -31,12 +15,13 @@ export const Route = createFileRoute("/_main/rounds/$id/")({
   }),
   loader: async ({ params }) => loadRoundById({ data: params.id }),
   component: RoundDetailPage,
-  pendingComponent: () => <DetailPageSkeleton container contentBlocks={3} showActions />,
+  pendingComponent: () => (
+    <DetailPageSkeleton container contentBlocks={3} showActions />
+  ),
 });
 
 function RoundDetailPage() {
   const { round, positions, questions } = Route.useLoaderData();
-  const { id } = Route.useParams();
 
   if (!round) {
     return (
@@ -48,11 +33,17 @@ function RoundDetailPage() {
           removed.
         </p>
         <Button asChild>
-          <Link to="/rounds" search={{} as any}>Back to Rounds</Link>
+          <Link to="/rounds" search={{} as any}>
+            Back to Rounds
+          </Link>
         </Button>
       </div>
     );
   }
+
+  const position = positions[0];
+  const positionId = round.positionId ?? position?.id ?? "";
+  const positionName = position?.name ?? "this position";
 
   return (
     <div className="container mx-auto py-6 space-y-8">
@@ -76,7 +67,8 @@ function RoundDetailPage() {
                 Created {formatDate(round.createdAt)}
               </Badge>
               {round.updatedAt &&
-              round.updatedAt.getTime() !== round.createdAt.getTime() ? (
+              new Date(round.updatedAt).getTime() !==
+                new Date(round.createdAt).getTime() ? (
                 <Badge variant="secondary" className="text-xs gap-1.5">
                   <Clock className="h-3 w-3" />
                   Updated {formatDate(round.updatedAt)}
@@ -136,91 +128,13 @@ function RoundDetailPage() {
         </div>
       </div>
 
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <HelpCircle className="h-5 w-5" />
-            <h2 className="text-lg font-semibold">Questions</h2>
-            {questions.length > 0 ? (
-              <Badge variant="secondary" className="ml-2">
-                {questions.length}
-              </Badge>
-            ) : null}
-          </div>
-          <Button variant="default" size="sm" asChild>
-            <Link
-              to="/rounds/$id/add-question"
-              params={{ id }}
-              search={{ position: "" }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Question
-            </Link>
-          </Button>
-        </div>
-
-        {questions.length === 0 ? (
-          <div className="text-center py-12">
-            <HelpCircle className="h-12 w-12 mx-auto mb-3 opacity-50 text-muted-foreground" />
-            <p className="text-muted-foreground mb-4">
-              No questions are currently linked to this round.
-            </p>
-            <Button variant="secondary" asChild>
-              <Link
-              to="/rounds/$id/add-question"
-              params={{ id }}
-              search={{ position: "" }}
-            >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Question
-              </Link>
-            </Button>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-16">#</TableHead>
-                <TableHead>Question</TableHead>
-                <TableHead className="w-40 text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {questions.map((question, index) => (
-                <TableRow key={question.id}>
-                  <TableCell className="text-muted-foreground font-medium">
-                    {index + 1}
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {question.questionText}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end gap-2">
-                      <Button variant="secondary" size="sm" asChild>
-                        <Link
-                          to="/questions/$id"
-                          params={{ id: question.id }}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                      <Button variant="secondary" size="sm" asChild>
-                        <Link
-                          to="/questions/$id/edit"
-                          params={{ id: question.id }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                      <DeleteQuestionButton questionId={question.id} />
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </div>
+      <RoundDetailQuestions
+        roundId={round.id}
+        roundName={round.name}
+        positionId={positionId}
+        positionName={positionName}
+        questions={questions}
+      />
     </div>
   );
 }

@@ -1,7 +1,6 @@
 import {
   LayoutDashboard,
   Users,
-  HelpCircle,
   Briefcase,
   FileText,
   Folders,
@@ -47,7 +46,6 @@ const peopleOpsLinks = [
 const configurationLinks = [
   { href: "/positions", label: "Positions", icon: Briefcase },
   { href: "/rounds", label: "Rounds", icon: CircleDot },
-  { href: "/questions", label: "Questions", icon: HelpCircle },
   { href: "/screeners", label: "Screeners", icon: ScanSearch },
 ] as const;
 

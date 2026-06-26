@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Calendar, Clock, HelpCircle, Loader2 } from "lucide-react";
+import { Calendar, Clock, Loader2 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Separator } from "~/components/ui/separator";
@@ -10,8 +10,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "~/components/ui/sheet";
-import { AddRoundQuestionDialog } from "~/components/dialogs/add-round-question-dialog";
-import { PositionRoundQuestionItem } from "~/components/position-round-question-item";
+import { RoundQuestionsSection } from "~/components/round-questions-section";
 import { loadRoundById } from "~/lib/loaders/rounds";
 import { queryKeys } from "~/lib/query/query-keys";
 import { formatDate } from "~/lib/utils";
@@ -111,54 +110,15 @@ export function PositionRoundSheet({
 
                 <Separator />
 
-                <section className="space-y-5">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2">
-                      <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                      <h3 className="text-sm font-semibold">Questions</h3>
-                      <Badge variant="secondary">{questions.length}</Badge>
-                    </div>
-                    {roundId ? (
-                      <AddRoundQuestionDialog
-                        positionId={positionId}
-                        positionName={positionName}
-                        roundId={roundId}
-                        roundName={displayRound?.name ?? "this round"}
-                        onQuestionAdded={() => refetch()}
-                      />
-                    ) : null}
-                  </div>
-
-                  {questions.length === 0 ? (
-                    <div className="rounded-lg border border-dashed px-6 py-12 text-center">
-                      <HelpCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground opacity-50" />
-                      <p className="mb-5 text-sm text-muted-foreground">
-                        No questions in this round yet.
-                      </p>
-                      {roundId ? (
-                        <AddRoundQuestionDialog
-                          positionId={positionId}
-                          positionName={positionName}
-                          roundId={roundId}
-                          roundName={displayRound?.name ?? "this round"}
-                          onQuestionAdded={() => refetch()}
-                          variant="empty-state"
-                        />
-                      ) : null}
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {questions.map((question, index) => (
-                        <PositionRoundQuestionItem
-                          key={question.id}
-                          question={question}
-                          index={index}
-                          onChanged={() => refetch()}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </section>
+                <RoundQuestionsSection
+                  roundId={roundId}
+                  roundName={displayRound?.name ?? "this round"}
+                  positionId={positionId}
+                  positionName={positionName}
+                  questions={questions}
+                  onChanged={() => refetch()}
+                  variant="compact"
+                />
               </>
             )}
             </div>

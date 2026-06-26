@@ -1,5 +1,3 @@
-
-import React from "react";
 import {
   Table,
   TableBody,
@@ -8,10 +6,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { Button } from "~/components/ui/button";
 import { Link } from "@tanstack/react-router";
-import { Eye, Pencil } from "lucide-react";
-import DeleteRoundButton from "~/components/delete-round-button";
 import { Badge } from "~/components/ui/badge";
 
 interface Position {
@@ -60,15 +55,12 @@ const RoundContainer = ({ rounds }: RoundContainerProps) => {
           <TableHead className="py-1.5 px-2 text-xs">Positions</TableHead>
           <TableHead className="py-1.5 px-2 text-xs">Created</TableHead>
           <TableHead className="py-1.5 px-2 text-xs">Description</TableHead>
-          <TableHead className="text-right py-1.5 px-2 text-xs">
-            Actions
-          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {rounds.map((round, index) => (
-          <TableRow key={round.id}>
-            <TableCell className="py-1.5 px-2 text-sm text-muted-foreground">
+          <TableRow key={round.id} className="relative cursor-pointer">
+            <TableCell className="py-1.5 px-2 text-sm text-muted-foreground tabular-nums">
               {index + 1}
             </TableCell>
             <TableCell className="py-1.5 px-2 font-medium text-sm">
@@ -97,31 +89,12 @@ const RoundContainer = ({ rounds }: RoundContainerProps) => {
             <TableCell className="py-1.5 px-2 text-sm text-muted-foreground">
               {truncateDescription(round.description)}
             </TableCell>
-            <TableCell className="text-right py-1.5 px-2">
-              <div className="flex items-center justify-end gap-1">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="h-7 w-7 p-0"
-                  asChild
-                >
-                  <Link to="/rounds/$id" params={{ id: round.id }}>
-                    <Eye className="h-3.5 w-3.5" />
-                  </Link>
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="h-7 w-7 p-0"
-                  asChild
-                >
-                  <Link to="/rounds/$id/edit" params={{ id: round.id }}>
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Link>
-                </Button>
-                <DeleteRoundButton roundId={round.id} />
-              </div>
-            </TableCell>
+            <Link
+              to="/rounds/$id"
+              params={{ id: round.id }}
+              className="absolute inset-0"
+              aria-label={`View ${round.name}`}
+            />
           </TableRow>
         ))}
       </TableBody>
