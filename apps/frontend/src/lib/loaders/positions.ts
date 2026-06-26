@@ -8,6 +8,7 @@ import {
 } from "@workspace/db/queries";
 
 type PositionsIndexInput = {
+  search?: string;
   hireLevel?: string[];
   status?: string[];
   page?: number;
@@ -16,7 +17,7 @@ type PositionsIndexInput = {
 export const loadPositionsIndex = createServerFn({ method: "GET" })
   .middleware([serverFnAuthGuard])
   .validator((data: PositionsIndexInput) => data)
-  .handler(async ({ data: deps, context: { session } }) => {
+  .handler(async ({ data: deps }) => {
     const limit = 50;
     const currentPage = deps.page ?? 1;
     const { positions, total } = await getPositions(
@@ -24,6 +25,7 @@ export const loadPositionsIndex = createServerFn({ method: "GET" })
       deps.status,
       currentPage,
       limit,
+      deps.search,
     );
 
     const totalPages = Math.ceil(total / limit);
@@ -34,6 +36,9 @@ export const loadPositionsIndex = createServerFn({ method: "GET" })
       totalPages,
       hasNextPage: currentPage < totalPages,
       hasPreviousPage: currentPage > 1,
+      hasFilters: Boolean(
+        deps.search?.trim() || deps.hireLevel?.length || deps.status?.length,
+      ),
     };
   });
 

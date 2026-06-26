@@ -9,6 +9,7 @@ import {
   user,
 } from "../schema";
 import { getApplicationById, getQuestionsByRoundId } from "../queries";
+import { getBundlesByApplicationId } from "./interview-bundle-repository";
 
 export const getInterviewsByApplicationId = async (applicationId: string) => {
   try {
@@ -144,11 +145,15 @@ export const getApplicationWithInterviews = async (applicationId: string) => {
       return null;
     }
 
-    const interviews = await getInterviewsByApplicationId(applicationId);
+    const [interviews, bundles] = await Promise.all([
+      getInterviewsByApplicationId(applicationId),
+      getBundlesByApplicationId(applicationId),
+    ]);
 
     return {
       ...app,
       interviews,
+      bundles,
     };
   } catch (error) {
     console.error("Error fetching application with interviews", error);

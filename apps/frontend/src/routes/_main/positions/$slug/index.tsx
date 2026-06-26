@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import DeletePositionButton from "~/components/delete-position-button";
 import PositionTabsClient from "~/components/position-tabs-client";
+import { CreateRoundDialog } from "~/components/dialogs/create-round-dialog";
 
 function htmlToPlainText(html: string) {
   return html
@@ -183,20 +184,26 @@ function PositionDetailPage() {
           <TabsContent value="rounds" className="mt-6">
             <div className="space-y-4">
               <div className="flex items-center justify-between gap-2">
-                <h2 className="text-lg font-semibold">Associated Rounds</h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-semibold">Associated Rounds</h2>
+                  <CreateRoundDialog
+                    positionId={position.id}
+                    positionName={position.name}
+                  />
+                </div>
                 <Badge variant="secondary">{rounds.length}</Badge>
               </div>
               {rounds.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground border rounded-md">
-                  <ClipboardList className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm mb-4">
+                <div className="rounded-md border py-8 text-center text-muted-foreground">
+                  <ClipboardList className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                  <p className="mb-4 text-sm">
                     No rounds are currently linked to this position.
                   </p>
-                  <Button size="sm" variant="secondary" asChild>
-                    <Link to="/rounds/new" search={{ position: position.id }}>
-                      Create a round
-                    </Link>
-                  </Button>
+                  <CreateRoundDialog
+                    positionId={position.id}
+                    positionName={position.name}
+                    variant="empty-state"
+                  />
                 </div>
               ) : (
                 <div className="space-y-3">

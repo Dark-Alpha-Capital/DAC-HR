@@ -1,10 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import {
-  getSessionByToken,
-  upsertResponse,
-} from "@workspace/db/repositories/interview-session-repository";
+import { upsertResponse } from "@workspace/db/repositories/interview-session-repository";
 import { getQuestionById } from "@workspace/db/queries";
+import { resolveInterviewToken } from "~/lib/interview-token";
 
 const answerRequestSchema = z.object({
   questionId: z.string().min(1),
@@ -23,20 +21,20 @@ export const Route = createFileRoute("/api/interview-token/$token/responses")({
             return Response.json({ error: "Token is required" }, { status: 400 });
           }
 
-          const row = await getSessionByToken(token);
+          const resolved = await resolveInterviewToken(token);
 
-          if (!row) {
+          if (!resolved.ok) {
             return Response.json(
-              { error: "Interview not found" },
-              { status: 404 },
+              { error: resolved.error },
+              { status: resolved.status },
             );
           }
 
-          const { session } = row;
+          const { session } = resolved;
 
           if (session.status === "completed" || session.status === "reviewed") {
             return Response.json(
-              { error: "This interview has already been completed" },
+              { error: "This interview round has already been completed" },
               { status: 410 },
             );
           }

@@ -18,9 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { createInterview } from "~/lib/actions/create-interview";
+import { createInterviewSession } from "~/lib/actions/create-interview-session";
+import type { RoundDeliveryMode } from "@workspace/db/enums";
 import { toast } from "sonner";
-import { Calendar } from "lucide-react";
+import { Bot, Calendar, Check, Copy, Link2, Mic, Plus } from "lucide-react";
+
+type DialogMode = "ai_link" | "manual";
 
 interface RecordInterviewDialogProps {
   applicationId: string;
@@ -52,19 +57,57 @@ export default function RecordInterviewDialog({
 }: RecordInterviewDialogProps) {
   const invalidate = useQueryInvalidation();
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState<DialogMode>("ai_link");
   const [interviewerId, setInterviewerId] = useState(currentUserId);
   const [roundId, setRoundId] = useState(
     initialRoundId || application.rounds[0]?.id || "",
   );
   const [scheduledAt, setScheduledAt] = useState("");
+  const [roundModes, setRoundModes] = useState<Record<string, RoundDeliveryMode>>(
+    () =>
+      Object.fromEntries(
+        application.rounds.map((r) => [r.id, "form" as RoundDeliveryMode]),
+      ),
+  );
+  const [generatedLink, setGeneratedLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (initialRoundId) {
       setRoundId(initialRoundId);
+      setMode("manual");
     }
   }, [initialRoundId]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    setRoundModes((prev) => {
+      const next = { ...prev };
+      for (const round of application.rounds) {
+        if (!next[round.id]) {
+          next[round.id] = "form";
+        }
+      }
+      return next;
+    });
+  }, [application.rounds]);
+
+  const resetState = () => {
+    setGeneratedLink(null);
+    setCopied(false);
+    setMode("ai_link");
+    if (!initialRoundId) {
+      setRoundId(application.rounds[0]?.id || "");
+    }
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      resetState();
+    }
+    onOpenChange(nextOpen);
+  };
+
+  const handleManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!roundId) {
@@ -92,93 +135,272 @@ export default function RecordInterviewDialog({
         );
       } else {
         toast.success("Interview recorded successfully");
-        onOpenChange(false);
+        handleOpenChange(false);
         void invalidate.applicationDetail(applicationId);
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred while recording the interview");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleAiLinkSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (application.rounds.length === 0) {
+      toast.error("No rounds configured for this position");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const result = await createInterviewSession({
+        data: {
+          applicationId,
+          roundConfigs: application.rounds.map((round) => ({
+            roundId: round.id,
+            deliveryMode: roundModes[round.id] ?? "form",
+          })),
+        },
+      });
+
+      if (result.error) {
+        toast.error(
+          typeof result.error === "string"
+            ? result.error
+            : "Failed to generate interview link",
+        );
+      } else if (result.data?.token) {
+        const link = `${window.location.origin}/interview/${result.data.token}`;
+        setGeneratedLink(link);
+        toast.success("Interview link generated");
+        void invalidate.applicationDetail(applicationId);
+      }
+    } catch {
+      toast.error("An error occurred while generating the interview link");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopy = async () => {
+    if (!generatedLink) return;
+
+    try {
+      await navigator.clipboard.writeText(generatedLink);
+      setCopied(true);
+      toast.success("Link copied to clipboard");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Failed to copy link");
+    }
+  };
+
+  const setRoundMode = (roundIdKey: string, deliveryMode: RoundDeliveryMode) => {
+    setRoundModes((prev) => ({ ...prev, [roundIdKey]: deliveryMode }));
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="overflow-hidden sm:max-w-[560px]">
         <DialogHeader>
           <DialogTitle>Record Interview</DialogTitle>
           <DialogDescription>
-            Record an interview that has been conducted for this application
+            Generate a position-level AI interview link or record a manual
+            interview for a single round
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="round">Round</Label>
-              <Select value={roundId} onValueChange={setRoundId} required>
-                <SelectTrigger id="round">
-                  <SelectValue placeholder="Select a round" />
-                </SelectTrigger>
-                <SelectContent>
-                  {application.rounds.map((round) => (
-                    <SelectItem key={round.id} value={round.id}>
-                      {round.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="interviewer">Interviewer</Label>
-              <Select
-                value={interviewerId}
-                onValueChange={setInterviewerId}
-                required
-              >
-                <SelectTrigger id="interviewer">
-                  <SelectValue placeholder="Select an interviewer" />
-                </SelectTrigger>
-                <SelectContent>
-                  {users.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.name || user.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="scheduledAt">
-                Interview Date & Time (Optional)
-              </Label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="scheduledAt"
-                  type="datetime-local"
-                  value={scheduledAt}
-                  onChange={(e) => setScheduledAt(e.target.value)}
-                  className="pl-10"
-                />
+
+        {generatedLink ? (
+          <div className="min-w-0 space-y-4 py-2">
+            <div className="min-w-0 space-y-2">
+              <Label>Shareable link</Label>
+              <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+                <code className="block min-w-0 flex-1 rounded-md border bg-muted px-3 py-2 text-sm break-all sm:truncate">
+                  {generatedLink}
+                </code>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="icon"
+                  className="shrink-0 self-end sm:self-auto"
+                  onClick={handleCopy}
+                >
+                  {copied ? (
+                    <Check className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                When the interview took place (or leave empty)
+                Covers all {application.rounds.length} round
+                {application.rounds.length !== 1 ? "s" : ""} for this position.
+                Expires in 72 hours.
               </p>
             </div>
+            <DialogFooter>
+              <Button type="button" onClick={() => handleOpenChange(false)}>
+                Done
+              </Button>
+            </DialogFooter>
           </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Recording..." : "Record Interview"}
-            </Button>
-          </DialogFooter>
-        </form>
+        ) : (
+          <Tabs
+            value={mode}
+            onValueChange={(v) => setMode(v as DialogMode)}
+            className="w-full"
+          >
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="ai_link" className="gap-2">
+                <Bot className="h-4 w-4" />
+                Generate AI Link
+              </TabsTrigger>
+              <TabsTrigger value="manual" className="gap-2">
+                <Plus className="h-4 w-4" />
+                Record Manual
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="ai_link">
+              <form onSubmit={handleAiLinkSubmit}>
+                <div className="space-y-4 py-4">
+                  <p className="text-sm text-muted-foreground">
+                    One link covers all rounds for this position. Choose how
+                    each round should be conducted.
+                  </p>
+                  <div className="space-y-3">
+                    {application.rounds.map((round) => (
+                      <div
+                        key={round.id}
+                        className="flex items-center justify-between gap-3 rounded-md border p-3"
+                      >
+                        <span className="text-sm font-medium">{round.name}</span>
+                        <Select
+                          value={roundModes[round.id] ?? "form"}
+                          onValueChange={(value) =>
+                            setRoundMode(round.id, value as RoundDeliveryMode)
+                          }
+                        >
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="form">
+                              <span className="flex items-center gap-2">
+                                Form
+                              </span>
+                            </SelectItem>
+                            <SelectItem value="voice">
+                              <span className="flex items-center gap-2">
+                                <Mic className="h-3.5 w-3.5" />
+                                Voice
+                              </span>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ))}
+                  </div>
+                  {application.rounds.length === 0 ? (
+                    <p className="text-sm text-destructive">
+                      No interview rounds configured for this position.
+                    </p>
+                  ) : null}
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => handleOpenChange(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={loading || application.rounds.length === 0}
+                  >
+                    <Link2 className="h-4 w-4 mr-2" />
+                    {loading ? "Generating..." : "Generate Link"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="manual">
+              <form onSubmit={handleManualSubmit}>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="round">Round</Label>
+                    <Select value={roundId} onValueChange={setRoundId} required>
+                      <SelectTrigger id="round">
+                        <SelectValue placeholder="Select a round" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {application.rounds.map((round) => (
+                          <SelectItem key={round.id} value={round.id}>
+                            {round.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="interviewer">Interviewer</Label>
+                    <Select
+                      value={interviewerId}
+                      onValueChange={setInterviewerId}
+                      required
+                    >
+                      <SelectTrigger id="interviewer">
+                        <SelectValue placeholder="Select an interviewer" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {users.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.name || user.email}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="scheduledAt">
+                      Interview Date & Time (Optional)
+                    </Label>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="scheduledAt"
+                        type="datetime-local"
+                        value={scheduledAt}
+                        onChange={(e) => setScheduledAt(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      When the interview took place (or leave empty)
+                    </p>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => handleOpenChange(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={loading}>
+                    {loading ? "Recording..." : "Record Interview"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </TabsContent>
+          </Tabs>
+        )}
       </DialogContent>
     </Dialog>
   );

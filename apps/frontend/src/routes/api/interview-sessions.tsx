@@ -1,12 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getSession } from "~/lib/get-session";
 import { z } from "zod";
-import { deliveryModes } from "@workspace/db/enums";
-import { eq, and } from "@workspace/db";
+import { roundDeliveryModes } from "@workspace/db/enums";
+import { eq } from "@workspace/db";
 import { db } from "@workspace/db/db";
-import { application, roundTemplate } from "@workspace/db/schema";
+import { application } from "@workspace/db/schema";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import { createAiInterviewWithSession } from "@workspace/db/repositories/interview-session-repository";
+import {
+  createPositionInterviewBundle,
+  validatePositionRounds,
+} from "@workspace/db/repositories/interview-bundle-repository";
+import { getRoundsByPositionId } from "@workspace/db/queries";
 
 const agentConfigSchema = z.object({
   provider: z.literal("openai"),
@@ -15,11 +19,15 @@ const agentConfigSchema = z.object({
   instructions: z.string().optional(),
 });
 
+const roundConfigSchema = z.object({
+  roundId: z.string().min(1),
+  deliveryMode: z.enum(roundDeliveryModes),
+});
+
 const createSchema = z.object({
   applicationId: z.string().min(1),
-  roundId: z.string().min(1),
+  roundConfigs: z.array(roundConfigSchema).optional(),
   expiryHours: z.number().min(1).max(720).default(72),
-  deliveryMode: z.enum(deliveryModes).default("hybrid"),
   agentConfig: agentConfigSchema.optional(),
 });
 
@@ -46,13 +54,11 @@ export const Route = createFileRoute("/api/interview-sessions")({
             );
           }
 
-          const { applicationId, roundId, expiryHours, deliveryMode, agentConfig } =
-            parsed.data;
+          const { applicationId, expiryHours, agentConfig } = parsed.data;
           const expiresAt = new Date(
             Date.now() + expiryHours * 60 * 60 * 1000,
           );
 
-          // Find the positionId from the application
           const [app] = await db
             .select({ positionId: application.positionId })
             .from(application)
@@ -66,47 +72,42 @@ export const Route = createFileRoute("/api/interview-sessions")({
             );
           }
 
-          const [round] = await db
-            .select({ id: roundTemplate.id })
-            .from(roundTemplate)
-            .where(
-              and(
-                eq(roundTemplate.positionId, app.positionId),
-                eq(roundTemplate.id, roundId),
-              ),
-            )
-            .limit(1);
+          let roundConfigs = parsed.data.roundConfigs;
 
-          if (!round) {
-            return Response.json(
-              { error: "Round not found for this position" },
-              { status: 404 },
-            );
+          if (!roundConfigs || roundConfigs.length === 0) {
+            const positionRounds = await getRoundsByPositionId(app.positionId);
+            roundConfigs = positionRounds.map((round) => ({
+              roundId: round.id,
+              deliveryMode: "form" as const,
+            }));
           }
 
-          const result = await createAiInterviewWithSession({
+          const validation = await validatePositionRounds(
             applicationId,
-            roundId,
+            roundConfigs,
+          );
+
+          if (!validation.ok) {
+            return Response.json({ error: validation.error }, { status: 404 });
+          }
+
+          const result = await createPositionInterviewBundle({
+            applicationId,
+            roundConfigs,
             expiresAt,
-            deliveryMode,
             agentConfig,
           });
 
           insertAuditLog({
             userId: authSession.user.id,
-            action: "create_interview_session",
-            entityType: "interview_session",
-            entityId: result.session.id,
+            action: "create_interview_bundle",
+            entityType: "interview_bundle",
+            entityId: result.bundle.id,
             details: {
-              interview: {
-                id: result.interview.id,
+              bundle: {
+                id: result.bundle.id,
                 applicationId,
-                mode: "ai_session",
-              },
-              session: {
-                id: result.session.id,
-                applicationId,
-                roundId,
+                roundCount: result.bundleRounds.length,
                 expiresAt: expiresAt.toISOString(),
               },
               createdBy: {
@@ -117,11 +118,12 @@ export const Route = createFileRoute("/api/interview-sessions")({
             },
           }).catch((error) => console.error("Audit log error:", error));
 
-          const interviewLink = `${new URL(request.url).origin}/interview/${result.session.token}`;
+          const interviewLink = `${new URL(request.url).origin}/interview/${result.token}`;
 
           return Response.json({
-            session: result.session,
-            interviewId: result.interview.id,
+            bundle: result.bundle,
+            bundleId: result.bundle.id,
+            token: result.token,
             interviewLink,
           });
         } catch (error) {

@@ -148,19 +148,18 @@ function InterviewsDocsPage() {
               Go to the <strong>Application</strong> page for the candidate
             </li>
             <li>
-              Click <strong>"Record Interview"</strong>
+              Click <strong>&quot;Record Interview&quot;</strong>
             </li>
             <li>
-              Select the <strong>Round Template</strong> for this interview
+              Choose <strong>Generate AI Link</strong> for a position-level link
+              (all rounds) or <strong>Record Manual</strong> for a single round
             </li>
             <li>
-              Select the <strong>Interviewer</strong> (defaults to you)
+              For AI links, set <strong>Form</strong> or <strong>Voice</strong>{" "}
+              mode per round
             </li>
             <li>
-              Optionally set a <strong>Scheduled Date</strong>
-            </li>
-            <li>
-              Click <strong>"Create Interview"</strong>
+              For manual interviews, select round, interviewer, and optional date
             </li>
           </ol>
         </CardContent>

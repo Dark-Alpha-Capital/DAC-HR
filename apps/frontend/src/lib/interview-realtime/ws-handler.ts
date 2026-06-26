@@ -1,6 +1,6 @@
 /// <reference types="@cloudflare/workers-types" />
 
-import { assertInterviewTokenValid } from "@workspace/db/repositories/interview-session-repository";
+import { resolveSessionFromToken } from "@workspace/db/repositories/interview-bundle-repository";
 
 export interface InterviewRealtimeEnv {
   INTERVIEW_SESSION_DO: DurableObjectNamespace;
@@ -22,12 +22,12 @@ export async function handleInterviewRealtimeWs(
     return new Response("Token is required", { status: 400 });
   }
 
-  const validation = await assertInterviewTokenValid(token);
-  if (!validation.ok) {
-    return new Response(validation.error, { status: validation.status });
+  const resolved = await resolveSessionFromToken(token);
+  if (!resolved.ok) {
+    return new Response(resolved.error, { status: resolved.status });
   }
 
-  const sessionId = validation.row.session.id;
+  const sessionId = resolved.session.id;
   const id = env.INTERVIEW_SESSION_DO.idFromName(sessionId);
   const stub = env.INTERVIEW_SESSION_DO.get(id);
 

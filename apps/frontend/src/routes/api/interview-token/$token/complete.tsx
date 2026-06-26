@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import {
-  assertInterviewTokenValid,
   updateSessionStatus,
   updateSessionVoiceMetadata,
 } from "@workspace/db/repositories/interview-session-repository";
+import { advanceBundleRound } from "@workspace/db/repositories/interview-bundle-repository";
+import { resolveInterviewToken } from "~/lib/interview-token";
 
 const completeSchema = z.object({
   tabSwitches: z.number().int().min(0).default(0),
@@ -30,16 +31,24 @@ export const Route = createFileRoute("/api/interview-token/$token/complete")({
             return Response.json({ error: "Token is required" }, { status: 400 });
           }
 
-          const validation = await assertInterviewTokenValid(token);
+          const resolved = await resolveInterviewToken(token);
 
-          if (!validation.ok) {
-            return Response.json({ error: validation.error }, { status: validation.status });
+          if (!resolved.ok) {
+            return Response.json(
+              { error: resolved.error },
+              { status: resolved.status },
+            );
           }
 
-          const { session } = validation.row;
+          const { session } = resolved;
 
           if (session.status === "completed") {
-            return Response.json({ session });
+            return Response.json({
+              session,
+              hasMoreRounds:
+                resolved.type === "bundle" &&
+                resolved.currentRoundIndex < resolved.totalRounds - 1,
+            });
           }
 
           const body = await request.json();
@@ -60,12 +69,29 @@ export const Route = createFileRoute("/api/interview-token/$token/complete")({
             cheatingSummary,
           });
 
-          const updated = await updateSessionStatus(session.id, "completed", {
-            completedAt: new Date(),
-            tabSwitches: parsed.data.tabSwitches,
-          });
+          let advanceResult = null;
 
-          return Response.json({ session: updated });
+          if (resolved.type === "bundle") {
+            advanceResult = await advanceBundleRound(session.id);
+          } else {
+            await updateSessionStatus(session.id, "completed", {
+              completedAt: new Date(),
+              tabSwitches: parsed.data.tabSwitches,
+            });
+          }
+
+          const hasMoreRounds =
+            resolved.type === "bundle" &&
+            advanceResult != null &&
+            !advanceResult.allCompleted &&
+            advanceResult.nextRound != null;
+
+          return Response.json({
+            session: { ...session, status: "completed" as const },
+            hasMoreRounds,
+            allCompleted: advanceResult?.allCompleted ?? true,
+            nextRoundName: advanceResult?.nextRound?.round.name,
+          });
         } catch (error) {
           console.error("Error completing interview:", error);
           return Response.json(

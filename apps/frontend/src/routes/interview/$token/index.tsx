@@ -62,6 +62,9 @@ interface WelcomeData {
   positionName: string;
   roundName: string;
   deliveryMode: DeliveryMode;
+  currentRoundIndex?: number;
+  totalRounds?: number;
+  interviewType?: "legacy" | "bundle";
 }
 
 type SessionMode = "form" | "voice";
@@ -562,6 +565,7 @@ function InterviewPage() {
     | "mode_picker"
     | "voice"
     | "in_progress"
+    | "round_complete"
     | "completed"
   >("loading");
   const [error, setError] = useState("");
@@ -576,6 +580,8 @@ function InterviewPage() {
     useState<VoiceWelcomeStep>("welcome");
   const [completing, setCompleting] = useState(false);
   const [sessionMode, setSessionMode] = useState<SessionMode | null>(null);
+  const [completionType, setCompletionType] = useState<"round" | "all">("all");
+  const [nextRoundName, setNextRoundName] = useState<string | null>(null);
   const answersRef = useRef(answers);
   const wasPracticeSessionRef = useRef(false);
   const voiceInterview = useVoiceInterview(token);
@@ -591,9 +597,35 @@ function InterviewPage() {
       voiceInterview.state.status === "completed" &&
       !voiceInterview.state.isPractice
     ) {
-      setStatus("completed");
+      void (async () => {
+        try {
+          const validateRes = await fetch(
+            `/api/interview-token/${token}/validate`,
+          );
+          if (validateRes.ok) {
+            const validation = await validateRes.json();
+            if (
+              validation.type === "bundle" &&
+              validation.status !== "completed"
+            ) {
+              setCompletionType("round");
+              setNextRoundName(
+                validation.rounds?.find(
+                  (r: { status: string }) => r.status === "pending",
+                )?.roundName ?? null,
+              );
+              setStatus("round_complete");
+              return;
+            }
+          }
+        } catch {
+          /* fall through */
+        }
+        setCompletionType("all");
+        setStatus("completed");
+      })();
     }
-  }, [voiceInterview.state.status, voiceInterview.state.isPractice]);
+  }, [voiceInterview.state.status, voiceInterview.state.isPractice, token]);
 
   useEffect(() => {
     if (
@@ -629,19 +661,42 @@ function InterviewPage() {
         }
 
         const validation = await validateRes.json();
+        const isBundle = validation.type === "bundle";
+        const activeDeliveryMode: DeliveryMode = isBundle
+          ? validation.deliveryMode
+          : validation.deliveryMode;
         const storedMode = sessionStorage.getItem(
           getModeStorageKey(token),
         ) as SessionMode | null;
 
+        const buildWelcome = (): WelcomeData => ({
+          candidateName: validation.candidateName,
+          positionName: validation.positionName,
+          roundName: validation.roundName ?? "Interview",
+          deliveryMode: activeDeliveryMode,
+          currentRoundIndex: isBundle
+            ? validation.currentRoundIndex
+            : undefined,
+          totalRounds: isBundle ? validation.totalRounds : undefined,
+          interviewType: isBundle ? "bundle" : "legacy",
+        });
+
+        const resolveMode = (): SessionMode => {
+          if (isBundle) {
+            return activeDeliveryMode === "voice" ? "voice" : "form";
+          }
+          if (storedMode) return storedMode;
+          if (activeDeliveryMode === "voice") return "voice";
+          if (activeDeliveryMode === "form") return "form";
+          return "form";
+        };
+
         if (validation.status === "in_progress") {
-          if (storedMode === "voice") {
+          const mode = resolveMode();
+
+          if (mode === "voice") {
             if (!cancelled) {
-              setWelcomeData({
-                candidateName: validation.candidateName,
-                positionName: validation.positionName,
-                roundName: validation.roundName,
-                deliveryMode: validation.deliveryMode,
-              });
+              setWelcomeData(buildWelcome());
               setSessionMode("voice");
               if (
                 voiceInterview.state.status === "active" ||
@@ -655,24 +710,36 @@ function InterviewPage() {
             return;
           }
 
-          const interviewData = await loadInterviewSchema(token);
+          if (validation.status === "in_progress") {
+            const interviewData = await loadInterviewSchema(token);
+            if (!cancelled) {
+              setData(interviewData);
+              setWelcomeData(buildWelcome());
+              setSessionMode("form");
+              setStatus("in_progress");
+            }
+            return;
+          }
+        }
+
+        if (validation.status === "completed") {
           if (!cancelled) {
-            setData(interviewData);
-            setStatus("in_progress");
+            setCompletionType("all");
+            setStatus("completed");
           }
           return;
         }
 
         if (!cancelled) {
-          const welcome: WelcomeData = {
-            candidateName: validation.candidateName,
-            positionName: validation.positionName,
-            roundName: validation.roundName,
-            deliveryMode: validation.deliveryMode,
-          };
+          const welcome = buildWelcome();
           setWelcomeData(welcome);
+          const mode = resolveMode();
 
-          if (storedMode === "voice") {
+          if (isBundle) {
+            sessionStorage.setItem(getModeStorageKey(token), mode);
+            setSessionMode(mode);
+            setStatus("welcome");
+          } else if (storedMode === "voice") {
             setSessionMode("voice");
             setStatus("welcome");
           } else if (storedMode === "form") {
@@ -793,18 +860,62 @@ function InterviewPage() {
     }
     setCompleting(true);
     try {
-      await fetch(`/api/interview-token/${token}/complete`, {
+      const res = await fetch(`/api/interview-token/${token}/complete`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tabSwitches: tabSwitchCount }),
       });
-      setStatus("completed");
+      const body = await res.json().catch(() => ({}));
+      if (body.hasMoreRounds) {
+        setCompletionType("round");
+        setNextRoundName(body.nextRoundName ?? null);
+        setData(null);
+        setCurrentStep(0);
+        setAnswers({});
+        setStatus("round_complete");
+      } else {
+        setCompletionType("all");
+        setStatus("completed");
+      }
     } catch {
-      // continue
+      setCompletionType("all");
+      setStatus("completed");
     } finally {
       setCompleting(false);
     }
   }, [data, currentStep, answers, saveAnswer, token]);
+
+  const handleContinueToNextRound = useCallback(async () => {
+    setStarting(true);
+    try {
+      sessionStorage.removeItem(getModeStorageKey(token));
+      const validateRes = await fetch(`/api/interview-token/${token}/validate`);
+      if (!validateRes.ok) {
+        setStatus("invalid");
+        return;
+      }
+      const validation = await validateRes.json();
+      const isBundle = validation.type === "bundle";
+      const mode: SessionMode =
+        isBundle && validation.deliveryMode === "voice" ? "voice" : "form";
+
+      setWelcomeData({
+        candidateName: validation.candidateName,
+        positionName: validation.positionName,
+        roundName: validation.roundName ?? "Interview",
+        deliveryMode: validation.deliveryMode,
+        currentRoundIndex: isBundle ? validation.currentRoundIndex : undefined,
+        totalRounds: isBundle ? validation.totalRounds : undefined,
+        interviewType: isBundle ? "bundle" : "legacy",
+      });
+      sessionStorage.setItem(getModeStorageKey(token), mode);
+      setSessionMode(mode);
+      setVoiceWelcomeStep("welcome");
+      setStatus("welcome");
+    } finally {
+      setStarting(false);
+    }
+  }, [token]);
 
   const handleSelectForm = useCallback(() => {
     sessionStorage.setItem(getModeStorageKey(token), "form");
@@ -869,6 +980,42 @@ function InterviewPage() {
     );
   }
 
+  if (status === "round_complete") {
+    return (
+      <div className="flex min-h-svh items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-primary/10">
+              <CheckCircle2 className="size-5 text-primary" />
+            </div>
+            <CardTitle className="mt-3">Round Complete</CardTitle>
+            <CardDescription>
+              Great work! You&apos;ve finished this round.
+              {nextRoundName
+                ? ` Next up: ${nextRoundName}.`
+                : " Continue to the next round when you're ready."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center">
+            <Button onClick={handleContinueToNextRound} disabled={starting}>
+              {starting ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                <>
+                  Continue to Next Round
+                  <ArrowRight className="ml-2 size-4" />
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (status === "completed") {
     return (
       <div className="flex min-h-svh items-center justify-center bg-background p-4">
@@ -877,7 +1024,11 @@ function InterviewPage() {
             <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-primary/10">
               <CheckCircle2 className="size-5 text-primary" />
             </div>
-            <CardTitle className="mt-3">Interview Completed</CardTitle>
+            <CardTitle className="mt-3">
+              {completionType === "all"
+                ? "All Rounds Complete"
+                : "Interview Completed"}
+            </CardTitle>
             <CardDescription>
               Thank you for completing the interview. Your responses have been
               recorded.

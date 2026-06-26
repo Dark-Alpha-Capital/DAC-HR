@@ -9,9 +9,7 @@ import {
   Shield,
   Building2,
   ScrollText,
-  ClipboardCheck,
   BookOpen,
-  ClipboardList,
   ShieldCheckIcon,
   ScanSearch,
 } from "lucide-react";
@@ -39,17 +37,11 @@ const recruitingLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/candidates", label: "Candidates", icon: Users },
   { href: "/documents", label: "Documents", icon: Folders },
-  { href: "/weekly-checkin", label: "Weekly Check-in", icon: ClipboardCheck },
   { href: "/docs", label: "Documentation", icon: BookOpen },
 ] as const;
 
 const peopleOpsLinks = [
   { href: "/employees", label: "Employees", icon: Building2 },
-  {
-    href: "/weekly-checkin/records",
-    label: "Check-in Records",
-    icon: ClipboardList,
-  },
 ] as const;
 
 const configurationLinks = [

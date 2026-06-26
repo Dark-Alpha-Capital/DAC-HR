@@ -11,6 +11,7 @@ import {
   updateSessionVoiceMetadata,
   upsertVoiceResponse,
 } from "@workspace/db/repositories/interview-session-repository";
+import { advanceBundleRound } from "@workspace/db/repositories/interview-bundle-repository";
 import {
   parseClientMessage,
   serializeDoMessage,
@@ -1682,15 +1683,21 @@ export class InterviewSessionDO implements DurableObject {
     this.interviewState.status = "completed";
     const cheatingSummary = this.buildCheatingSummary();
 
-    await updateSessionStatus(this.interviewState.sessionId, "completed", {
-      completedAt: new Date(),
-      tabSwitches: cheatingSummary.tabSwitches ?? 0,
-    });
-
     await updateSessionVoiceMetadata(this.interviewState.sessionId, {
       cheatingSummary,
       realtimeSessionId: this.interviewState.realtimeSessionId,
     });
+
+    const bundleAdvance = await advanceBundleRound(
+      this.interviewState.sessionId,
+    );
+
+    if (!bundleAdvance) {
+      await updateSessionStatus(this.interviewState.sessionId, "completed", {
+        completedAt: new Date(),
+        tabSwitches: cheatingSummary.tabSwitches ?? 0,
+      });
+    }
 
     await this.persistState();
     this.closeSideband({ intentional: true });

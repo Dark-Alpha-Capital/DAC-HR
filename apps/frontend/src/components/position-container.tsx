@@ -61,13 +61,11 @@ export default function PositionContainer({
       <Table className="min-w-[640px]">
         <TableHeader>
           <TableRow>
-            <TableHead className="py-1.5 px-2 text-xs w-16">#</TableHead>
-            <TableHead className="py-1.5 px-2 text-xs">Name</TableHead>
-            <TableHead className="py-1.5 px-2 text-xs">Status</TableHead>
-            <TableHead className="py-1.5 px-2 text-xs">Hire Level</TableHead>
-            <TableHead className="py-1.5 px-2 text-xs">Slug</TableHead>
-            <TableHead className="py-1.5 px-2 text-xs">Created</TableHead>
-            <TableHead className="text-right py-1.5 px-2 text-xs">
+            <TableHead className="w-16 px-2 py-1.5 text-xs">#</TableHead>
+            <TableHead className="px-2 py-1.5 text-xs">Name</TableHead>
+            <TableHead className="px-2 py-1.5 text-xs">Status</TableHead>
+            <TableHead className="px-2 py-1.5 text-xs">Hire Level</TableHead>
+            <TableHead className="px-2 py-1.5 text-right text-xs">
               Actions
             </TableHead>
           </TableRow>
@@ -102,15 +100,7 @@ export default function PositionContainer({
                   <span className="text-xs text-muted-foreground">—</span>
                 )}
               </TableCell>
-              <TableCell className="py-1.5 px-2 text-sm">
-                <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
-                  {position.slug}
-                </code>
-              </TableCell>
-              <TableCell className="py-1.5 px-2 text-xs text-muted-foreground">
-                —
-              </TableCell>
-              <TableCell className="text-right py-1.5 px-2">
+              <TableCell className="px-2 py-1.5 text-right">
                 <div className="flex items-center justify-end gap-1">
                   <Button
                     variant="secondary"

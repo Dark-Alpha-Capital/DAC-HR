@@ -1,15 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
-import {
-  getApplicationWithInterviews,
-  getInterviewById,
-} from "@workspace/db/repositories/interview-repository";
+import { getInterviewById, getApplicationWithInterviews } from "@workspace/db/repositories/interview-repository";
 import {
   getSessionByInterviewId,
   getResponsesBySessionId,
   getEvaluationBySessionId,
 } from "@workspace/db/repositories/interview-session-repository";
+import {
+  getBundleById,
+  getBundleRounds,
+} from "@workspace/db/repositories/interview-bundle-repository";
 
 export type InterviewDetailData = {
   interview: Awaited<ReturnType<typeof getInterviewById>>;
@@ -20,6 +21,18 @@ export type InterviewDetailData = {
   evaluation:
     | Awaited<ReturnType<typeof getEvaluationBySessionId>>
     | null;
+};
+
+export type InterviewBundleDetailData = {
+  bundle: NonNullable<Awaited<ReturnType<typeof getBundleById>>>;
+  application: Awaited<ReturnType<typeof getApplicationWithInterviews>>;
+  candidate: Awaited<ReturnType<typeof getCandidateById>>;
+  rounds: Awaited<ReturnType<typeof getBundleRounds>>;
+  roundDetails: Array<{
+    round: Awaited<ReturnType<typeof getBundleRounds>>[number];
+    responses: Awaited<ReturnType<typeof getResponsesBySessionId>>;
+    evaluation: Awaited<ReturnType<typeof getEvaluationBySessionId>> | null;
+  }>;
 };
 
 export type InterviewResponse = InterviewDetailData["responses"][number];
@@ -78,4 +91,40 @@ export const loadInterviewById = createServerFn({ method: "GET" })
       responses,
       evaluation,
     } as InterviewDetailData;
+  });
+
+export const loadInterviewBundleById = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
+  .validator((data: string) => data)
+  .handler(async ({ data: bundleId }) => {
+    const bundle = await getBundleById(bundleId);
+
+    if (!bundle) {
+      return null;
+    }
+
+    const application = await getApplicationWithInterviews(bundle.applicationId);
+    const candidate = application
+      ? await getCandidateById(application.candidateId)
+      : null;
+
+    const rounds = await getBundleRounds(bundleId);
+
+    const roundDetails = await Promise.all(
+      rounds.map(async (round) => {
+        const [responses, evaluation] = await Promise.all([
+          getResponsesBySessionId(round.session.id).catch(() => []),
+          getEvaluationBySessionId(round.session.id).catch(() => null),
+        ]);
+        return { round, responses, evaluation };
+      }),
+    );
+
+    return {
+      bundle,
+      application,
+      candidate,
+      rounds,
+      roundDetails,
+    } satisfies InterviewBundleDetailData;
   });

@@ -92,6 +92,7 @@ import { Route as MainPositionsSlugEditRouteImport } from './routes/_main/positi
 import { Route as MainEmployeesMemberUidRouteImport } from './routes/_main/employees/member/$uid'
 import { Route as MainEmployeesIdEditRouteImport } from './routes/_main/employees/$id/edit'
 import { Route as MainCandidatesUidEditRouteImport } from './routes/_main/candidates/$uid/edit'
+import { Route as MainInterviewsBundleBundleIdIndexRouteImport } from './routes/_main/interviews/bundle/$bundleId/index'
 import { Route as ApiCandidateIdDocumentsDocumentIdRouteImport } from './routes/api/candidate/$id/documents/$documentId'
 import { Route as MainCandidatesUidDocumentsDocumentIdEditRouteImport } from './routes/_main/candidates/$uid/documents/$documentId/edit'
 
@@ -519,6 +520,12 @@ const MainCandidatesUidEditRoute = MainCandidatesUidEditRouteImport.update({
   path: '/candidates/$uid/edit',
   getParentRoute: () => MainRouteRoute,
 } as any)
+const MainInterviewsBundleBundleIdIndexRoute =
+  MainInterviewsBundleBundleIdIndexRouteImport.update({
+    id: '/interviews/bundle/$bundleId/',
+    path: '/interviews/bundle/$bundleId/',
+    getParentRoute: () => MainRouteRoute,
+  } as any)
 const ApiCandidateIdDocumentsDocumentIdRoute =
   ApiCandidateIdDocumentsDocumentIdRouteImport.update({
     id: '/$documentId',
@@ -615,6 +622,7 @@ export interface FileRoutesByFullPath {
   '/api/candidate/$id/': typeof ApiCandidateIdIndexRoute
   '/api/candidate/import/': typeof ApiCandidateImportIndexRoute
   '/api/candidate/$id/documents/$documentId': typeof ApiCandidateIdDocumentsDocumentIdRoute
+  '/interviews/bundle/$bundleId/': typeof MainInterviewsBundleBundleIdIndexRoute
   '/candidates/$uid/documents/$documentId/edit': typeof MainCandidatesUidDocumentsDocumentIdEditRoute
 }
 export interface FileRoutesByTo {
@@ -698,6 +706,7 @@ export interface FileRoutesByTo {
   '/api/candidate/$id': typeof ApiCandidateIdIndexRoute
   '/api/candidate/import': typeof ApiCandidateImportIndexRoute
   '/api/candidate/$id/documents/$documentId': typeof ApiCandidateIdDocumentsDocumentIdRoute
+  '/interviews/bundle/$bundleId': typeof MainInterviewsBundleBundleIdIndexRoute
   '/candidates/$uid/documents/$documentId/edit': typeof MainCandidatesUidDocumentsDocumentIdEditRoute
 }
 export interface FileRoutesById {
@@ -786,6 +795,7 @@ export interface FileRoutesById {
   '/api/candidate/$id/': typeof ApiCandidateIdIndexRoute
   '/api/candidate/import/': typeof ApiCandidateImportIndexRoute
   '/api/candidate/$id/documents/$documentId': typeof ApiCandidateIdDocumentsDocumentIdRoute
+  '/_main/interviews/bundle/$bundleId/': typeof MainInterviewsBundleBundleIdIndexRoute
   '/_main/candidates/$uid/documents/$documentId/edit': typeof MainCandidatesUidDocumentsDocumentIdEditRoute
 }
 export interface FileRouteTypes {
@@ -873,6 +883,7 @@ export interface FileRouteTypes {
     | '/api/candidate/$id/'
     | '/api/candidate/import/'
     | '/api/candidate/$id/documents/$documentId'
+    | '/interviews/bundle/$bundleId/'
     | '/candidates/$uid/documents/$documentId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -956,6 +967,7 @@ export interface FileRouteTypes {
     | '/api/candidate/$id'
     | '/api/candidate/import'
     | '/api/candidate/$id/documents/$documentId'
+    | '/interviews/bundle/$bundleId'
     | '/candidates/$uid/documents/$documentId/edit'
   id:
     | '__root__'
@@ -1043,6 +1055,7 @@ export interface FileRouteTypes {
     | '/api/candidate/$id/'
     | '/api/candidate/import/'
     | '/api/candidate/$id/documents/$documentId'
+    | '/_main/interviews/bundle/$bundleId/'
     | '/_main/candidates/$uid/documents/$documentId/edit'
   fileRoutesById: FileRoutesById
 }
@@ -1660,6 +1673,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainCandidatesUidEditRouteImport
       parentRoute: typeof MainRouteRoute
     }
+    '/_main/interviews/bundle/$bundleId/': {
+      id: '/_main/interviews/bundle/$bundleId/'
+      path: '/interviews/bundle/$bundleId'
+      fullPath: '/interviews/bundle/$bundleId/'
+      preLoaderRoute: typeof MainInterviewsBundleBundleIdIndexRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
     '/api/candidate/$id/documents/$documentId': {
       id: '/api/candidate/$id/documents/$documentId'
       path: '/$documentId'
@@ -1779,6 +1799,7 @@ interface MainRouteRouteChildren {
   MainPositionsSlugIndexRoute: typeof MainPositionsSlugIndexRoute
   MainQuestionsIdIndexRoute: typeof MainQuestionsIdIndexRoute
   MainRoundsIdIndexRoute: typeof MainRoundsIdIndexRoute
+  MainInterviewsBundleBundleIdIndexRoute: typeof MainInterviewsBundleBundleIdIndexRoute
   MainCandidatesUidDocumentsDocumentIdEditRoute: typeof MainCandidatesUidDocumentsDocumentIdEditRoute
 }
 
@@ -1822,6 +1843,8 @@ const MainRouteRouteChildren: MainRouteRouteChildren = {
   MainPositionsSlugIndexRoute: MainPositionsSlugIndexRoute,
   MainQuestionsIdIndexRoute: MainQuestionsIdIndexRoute,
   MainRoundsIdIndexRoute: MainRoundsIdIndexRoute,
+  MainInterviewsBundleBundleIdIndexRoute:
+    MainInterviewsBundleBundleIdIndexRoute,
   MainCandidatesUidDocumentsDocumentIdEditRoute:
     MainCandidatesUidDocumentsDocumentIdEditRoute,
 }

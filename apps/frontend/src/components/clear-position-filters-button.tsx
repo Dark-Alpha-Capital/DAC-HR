@@ -8,7 +8,9 @@ const ClearPositionFiltersButton = () => {
   const { searchParams, setSearchParams } = useUrlSearchParams();
 
   const hasFilters =
-    searchParams.has("hireLevel") || searchParams.has("status");
+    searchParams.has("search") ||
+    searchParams.has("hireLevel") ||
+    searchParams.has("status");
 
   if (!hasFilters) {
     return null;
@@ -20,6 +22,7 @@ const ClearPositionFiltersButton = () => {
       size="sm"
       onClick={() => {
         const params = new URLSearchParams(searchParams);
+        params.delete("search");
         params.delete("hireLevel");
         params.delete("status");
         setSearchParams(params);

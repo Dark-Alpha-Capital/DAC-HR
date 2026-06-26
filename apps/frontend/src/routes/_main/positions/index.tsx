@@ -1,7 +1,12 @@
-import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  queryOptions,
+  useQuery,
+} from "@tanstack/react-query";
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
+import FilterPositionSearch from "~/components/filter-position-search";
 import FilterPositionHireLevel from "~/components/filter-position-hire-level";
 import FilterPositionStatus from "~/components/filter-position-status";
 import ClearPositionFiltersButton from "~/components/clear-position-filters-button";
@@ -13,6 +18,7 @@ import { queryKeys } from "~/lib/query/query-keys";
 
 function parsePositionsSearch(search: Record<string, unknown>) {
   return {
+    search: typeof search.search === "string" ? search.search : "",
     hireLevel: toStringArray(search.hireLevel as string | string[] | undefined),
     status: toStringArray(search.status as string | string[] | undefined),
     page:
@@ -60,8 +66,14 @@ function PositionsPage() {
     return null;
   }
 
-  const { positions, currentPage, totalPages, hasNextPage, hasPreviousPage } =
-    data;
+  const {
+    positions,
+    currentPage,
+    totalPages,
+    hasNextPage,
+    hasPreviousPage,
+    hasFilters,
+  } = data;
 
   return (
     <div className="space-y-6">
@@ -78,6 +90,7 @@ function PositionsPage() {
         className="flex flex-wrap items-center gap-2 transition-opacity"
         style={{ opacity: isFetching ? 0.7 : 1 }}
       >
+        <FilterPositionSearch />
         <FilterPositionHireLevel />
         <FilterPositionStatus />
         <ClearPositionFiltersButton />
@@ -85,12 +98,18 @@ function PositionsPage() {
 
       {positions.length === 0 ? (
         <div className="rounded-xl border bg-card p-10 text-center">
-          <p className="text-muted-foreground">No positions found.</p>
-          <Button asChild className="mt-4">
-            <Link to="/positions/new" search="{}">
-              Create your first position
-            </Link>
-          </Button>
+          <p className="text-muted-foreground">
+            {hasFilters
+              ? "No positions found matching your filters."
+              : "No positions found."}
+          </p>
+          {hasFilters ? null : (
+            <Button asChild className="mt-4">
+              <Link to="/positions/new" search="{}">
+                Create your first position
+              </Link>
+            </Button>
+          )}
         </div>
       ) : (
         <div className="space-y-6">

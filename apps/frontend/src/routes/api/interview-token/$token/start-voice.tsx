@@ -2,11 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createRealtimeEphemeralSession } from "@workspace/ai-config";
 import { getQuestionsForInterviewSession } from "@workspace/db/queries";
 import {
-  assertInterviewTokenValid,
   updateSessionStatus,
 } from "@workspace/db/repositories/interview-session-repository";
+import {
+  startBundleRound,
+} from "@workspace/db/repositories/interview-bundle-repository";
 import { PRACTICE_QUESTIONS } from "@workspace/interview-realtime";
 import { buildRealtimeInstructions } from "@workspace/interview-realtime/prompts";
+import { resolveInterviewToken } from "~/lib/interview-token";
 
 export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
   {
@@ -28,20 +31,23 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
               | null;
             const isPractice = body?.practice === true;
 
-            const validation = await assertInterviewTokenValid(token);
-            if (!validation.ok) {
+            const resolved = await resolveInterviewToken(token);
+            if (!resolved.ok) {
               return Response.json(
-                { error: validation.error },
-                { status: validation.status },
+                { error: resolved.error },
+                { status: resolved.status },
               );
             }
 
-            const { session, candidate, position, round } = validation.row;
+            const { session, candidate, position, round } = resolved;
 
-            if (
-              session.deliveryMode !== "voice" &&
-              session.deliveryMode !== "hybrid"
-            ) {
+            const voiceAllowed =
+              resolved.type === "bundle"
+                ? resolved.deliveryMode === "voice"
+                : session.deliveryMode === "voice" ||
+                  session.deliveryMode === "hybrid";
+
+            if (!isPractice && !voiceAllowed) {
               return Response.json(
                 { error: "Voice interviews are not enabled for this session" },
                 { status: 400 },
@@ -60,9 +66,18 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
               !isPractice &&
               (session.status === "pending" || session.status === "invited")
             ) {
-              await updateSessionStatus(session.id, "in_progress", {
-                startedAt: new Date(),
-              });
+              if (resolved.type === "bundle") {
+                const activeRound = resolved.rounds.find(
+                  (r) => r.session.id === session.id,
+                );
+                if (activeRound) {
+                  await startBundleRound(activeRound.bundleRound.id);
+                }
+              } else {
+                await updateSessionStatus(session.id, "in_progress", {
+                  startedAt: new Date(),
+                });
+              }
             }
 
             const practiceInstructions = [
@@ -108,6 +123,11 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
               wsUrl,
               isPractice,
               agentConfig: session.agentConfig,
+              type: resolved.type,
+              currentRoundIndex:
+                resolved.type === "bundle" ? resolved.currentRoundIndex : 0,
+              totalRounds:
+                resolved.type === "bundle" ? resolved.totalRounds : 1,
               questions: questions.map((question) => ({
                 id: question.id,
                 questionText: question.questionText,

@@ -170,14 +170,20 @@ const CandidateUploadForm = ({
           }
 
           // Generate AI interview session if requested
-          if (generateAiSession && selectedRoundId && applicationIds.length > 0) {
+          if (generateAiSession && applicationIds.length > 0) {
             try {
+              const roundConfigs = roundsForPosition.map((round) => ({
+                roundId: round.roundTemplateId,
+                deliveryMode: "form" as const,
+              }));
+
               const sessionResponse = await fetch("/api/interview-sessions", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   applicationId: applicationIds[0],
-                  roundId: selectedRoundId,
+                  roundConfigs:
+                    roundConfigs.length > 0 ? roundConfigs : undefined,
                   expiryHours: 72,
                 }),
               });
@@ -703,7 +709,6 @@ const CandidateUploadForm = ({
                 checked={generateAiSession}
                 onCheckedChange={(checked) => {
                   setGenerateAiSession(checked === true);
-                  if (!checked) setSelectedRoundId("");
                 }}
               />
               <div className="grid gap-1">
@@ -711,43 +716,16 @@ const CandidateUploadForm = ({
                   Generate AI Interview Link
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Automatically create a shareable interview link for this
-                  candidate after submission
+                  Creates a position-level link for all rounds (form mode).
+                  Expires in 72 hours.
                 </p>
               </div>
             </div>
 
-            {showRoundSelector && (
-              <div className="pl-8 space-y-2">
-                <Label className="text-sm">Select Round</Label>
-                <Select
-                  value={selectedRoundId}
-                  onValueChange={setSelectedRoundId}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Choose an interview round..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {roundsForPosition.length === 0 ? (
-                      <div className="px-2 py-4 text-sm text-muted-foreground text-center">
-                        No rounds configured for this position
-                      </div>
-                    ) : (
-                      roundsForPosition.map((round) => (
-                        <SelectItem
-                          key={round.roundTemplateId}
-                          value={round.roundTemplateId}
-                        >
-                          {round.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  The interview link will expire in 72 hours
-                </p>
-              </div>
+            {showRoundSelector && roundsForPosition.length === 0 && (
+              <p className="pl-8 text-xs text-muted-foreground">
+                No rounds configured for this position yet.
+              </p>
             )}
           </div>
         </FieldGroup>

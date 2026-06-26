@@ -1,18 +1,22 @@
 import { createServerFn } from "@tanstack/react-start";
 import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
-import { application, roundTemplate } from "@workspace/db/schema";
-import { eq, and } from "@workspace/db";
+import { application } from "@workspace/db/schema";
+import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import { createAiInterviewWithSession } from "@workspace/db/repositories/interview-session-repository";
+import {
+  createPositionInterviewBundle,
+  validatePositionRounds,
+  type RoundConfig,
+} from "@workspace/db/repositories/interview-bundle-repository";
+import { getRoundsByPositionId } from "@workspace/db/queries";
 
-import type { AgentConfig, DeliveryMode } from "@workspace/db/enums";
+import type { AgentConfig, RoundDeliveryMode } from "@workspace/db/enums";
 
 export interface CreateInterviewSessionInput {
   applicationId: string;
-  roundId: string;
+  roundConfigs?: RoundConfig[];
   expiryHours?: number;
-  deliveryMode?: DeliveryMode;
   agentConfig?: AgentConfig;
 }
 
@@ -20,7 +24,7 @@ export const createInterviewSession = createServerFn({ method: "POST" })
   .middleware([serverFnAuthGuard])
   .validator((data: CreateInterviewSessionInput) => data)
   .handler(async ({ data, context: { session } }) => {
-    const { applicationId, roundId, expiryHours = 72, deliveryMode, agentConfig } = data;
+    const { applicationId, expiryHours = 72, agentConfig } = data;
     const expiresAt = new Date(Date.now() + expiryHours * 60 * 60 * 1000);
 
     try {
@@ -37,26 +41,29 @@ export const createInterviewSession = createServerFn({ method: "POST" })
         return { error: "Application not found" };
       }
 
-      const [round] = await db
-        .select({ id: roundTemplate.id })
-        .from(roundTemplate)
-        .where(
-          and(
-            eq(roundTemplate.positionId, app.positionId),
-            eq(roundTemplate.id, roundId),
-          ),
-        )
-        .limit(1);
+      let roundConfigs = data.roundConfigs;
 
-      if (!round) {
-        return { error: "Round not found for this position" };
+      if (!roundConfigs || roundConfigs.length === 0) {
+        const positionRounds = await getRoundsByPositionId(app.positionId);
+        roundConfigs = positionRounds.map((round) => ({
+          roundId: round.id,
+          deliveryMode: "form" as RoundDeliveryMode,
+        }));
       }
 
-      const result = await createAiInterviewWithSession({
+      const validation = await validatePositionRounds(
         applicationId,
-        roundId,
+        roundConfigs,
+      );
+
+      if (!validation.ok) {
+        return { error: validation.error };
+      }
+
+      const result = await createPositionInterviewBundle({
+        applicationId,
+        roundConfigs,
         expiresAt,
-        deliveryMode,
         agentConfig,
       });
 
@@ -69,19 +76,14 @@ export const createInterviewSession = createServerFn({ method: "POST" })
 
       insertAuditLog({
         userId: session.user.id,
-        action: "create_interview_session",
-        entityType: "interview_session",
-        entityId: result.session.id,
+        action: "create_interview_bundle",
+        entityType: "interview_bundle",
+        entityId: result.bundle.id,
         details: {
-          interview: {
-            id: result.interview.id,
+          bundle: {
+            id: result.bundle.id,
             applicationId,
-            mode: "ai_session",
-          },
-          session: {
-            id: result.session.id,
-            applicationId,
-            roundId,
+            roundCount: result.bundleRounds.length,
             expiresAt: expiresAt.toISOString(),
           },
           createdBy: {
@@ -95,9 +97,9 @@ export const createInterviewSession = createServerFn({ method: "POST" })
       return {
         success: true,
         data: {
-          interviewId: result.interview.id,
-          token: result.session.token,
-          expiresAt: result.session.expiresAt,
+          bundleId: result.bundle.id,
+          token: result.token,
+          expiresAt: result.bundle.expiresAt,
         },
       };
     } catch (error) {

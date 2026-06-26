@@ -23,9 +23,12 @@ import type {
   InputMethod,
   CheatingEventType,
   InterviewEvaluationRecommendation,
+  InterviewBundleRoundStatus,
+  InterviewBundleStatus,
   InterviewMode,
   InterviewSessionStatus,
   InterviewStatus,
+  RoundDeliveryMode,
   Personality,
   PositionStatus,
   QuestionCategory,
@@ -580,6 +583,23 @@ export type RecruiterWeeklyCheckin = InferSelectModel<
   typeof recruiterWeeklyCheckin
 >;
 
+export const interviewBundle = sqliteTable("interview_bundle", {
+  id: uuidPk(),
+  token: text("token").notNull().unique(),
+  applicationId: text("application_id")
+    .notNull()
+    .references(() => application.id, { onDelete: "cascade" }),
+  status: text("status")
+    .$type<InterviewBundleStatus>()
+    .default("pending")
+    .notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+  createdAt: createdAtCol(),
+  updatedAt: updatedAtCol(),
+});
+
+export type InterviewBundle = InferSelectModel<typeof interviewBundle>;
+
 export const interviewSession = sqliteTable("interview_session", {
   id: uuidPk(),
   token: text("token").notNull().unique(),
@@ -589,6 +609,9 @@ export const interviewSession = sqliteTable("interview_session", {
   applicationId: text("application_id")
     .notNull()
     .references(() => application.id, { onDelete: "cascade" }),
+  bundleId: text("bundle_id").references(() => interviewBundle.id, {
+    onDelete: "cascade",
+  }),
   roundId: text("round_id")
     .notNull()
     .references(() => roundTemplate.id, { onDelete: "cascade" }),
@@ -617,6 +640,43 @@ export const interviewSession = sqliteTable("interview_session", {
 });
 
 export type InterviewSession = InferSelectModel<typeof interviewSession>;
+
+export const interviewBundleRound = sqliteTable(
+  "interview_bundle_round",
+  {
+    id: uuidPk(),
+    bundleId: text("bundle_id")
+      .notNull()
+      .references(() => interviewBundle.id, { onDelete: "cascade" }),
+    roundId: text("round_id")
+      .notNull()
+      .references(() => roundTemplate.id, { onDelete: "cascade" }),
+    roundOrder: integer("round_order").notNull(),
+    deliveryMode: text("delivery_mode")
+      .$type<RoundDeliveryMode>()
+      .notNull(),
+    interviewId: text("interview_id")
+      .notNull()
+      .references(() => interview.id, { onDelete: "cascade" }),
+    sessionId: text("session_id")
+      .notNull()
+      .references(() => interviewSession.id, { onDelete: "cascade" }),
+    status: text("status")
+      .$type<InterviewBundleRoundStatus>()
+      .default("pending")
+      .notNull(),
+    createdAt: createdAtCol(),
+    updatedAt: updatedAtCol(),
+  },
+  (table) => ({
+    bundleRoundUnique: uniqueIndex("interview_bundle_round_unique").on(
+      table.bundleId,
+      table.roundId,
+    ),
+  }),
+);
+
+export type InterviewBundleRound = InferSelectModel<typeof interviewBundleRound>;
 
 export const interviewResponse = sqliteTable(
   "interview_response",

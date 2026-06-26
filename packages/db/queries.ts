@@ -36,6 +36,7 @@ import {
   lte,
 } from "drizzle-orm";
 import type { ApplicationStatus } from "./application-status";
+import { getBundlesByApplicationId } from "./repositories/interview-bundle-repository";
 import {
   parseCandidateSortOption,
   type CandidateSortOption,
@@ -129,6 +130,7 @@ export const getPositions = async (
   statuses?: string[],
   page: number = 1,
   limit: number = 50,
+  search?: string,
 ): Promise<{
   positions: Array<{
     id: string;
@@ -189,6 +191,16 @@ export const getPositions = async (
       if (validStatuses.length > 0) {
         conditions.push(inArray(position.status, validStatuses));
       }
+    }
+
+    if (search && search.trim()) {
+      const searchTerm = `%${search.trim()}%`;
+      conditions.push(
+        or(
+          ilike(position.name, searchTerm),
+          ilike(position.description, searchTerm),
+        )!,
+      );
     }
 
     // Apply all conditions with AND
@@ -1617,11 +1629,15 @@ export const getApplicationWithInterviews = async (applicationId: string) => {
       return null;
     }
 
-    const interviews = await getInterviewsByApplicationId(applicationId);
+    const [interviews, bundles] = await Promise.all([
+      getInterviewsByApplicationId(applicationId),
+      getBundlesByApplicationId(applicationId),
+    ]);
 
     return {
       ...app,
       interviews,
+      bundles,
     };
   } catch (error) {
     console.error("Error fetching application with interviews", error);

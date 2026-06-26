@@ -97,6 +97,7 @@ function ApplicationDetailPage() {
 
   const rounds = (application as any).rounds ?? [];
   const interviews = (application as any).interviews ?? [];
+  const bundles = (application as any).bundles ?? [];
 
   return (
     <div className="container mx-auto py-6 max-w-4xl space-y-6">
@@ -231,6 +232,7 @@ function ApplicationDetailPage() {
           <ApplicationProgressTimeline
             rounds={rounds}
             interviews={interviews}
+            bundles={bundles}
             applicationId={application.id}
             currentUser={currentUser}
             users={users}

@@ -1,6 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSessionByToken, updateSessionStatus } from "@workspace/db/repositories/interview-session-repository";
+import {
+  updateSessionStatus,
+} from "@workspace/db/repositories/interview-session-repository";
+import {
+  startBundleRound,
+} from "@workspace/db/repositories/interview-bundle-repository";
 import { getQuestionsForInterviewSession } from "@workspace/db/queries";
+import { resolveInterviewToken } from "~/lib/interview-token";
 
 export const Route = createFileRoute("/api/interview-token/$token/schema")({
   server: {
@@ -13,20 +19,20 @@ export const Route = createFileRoute("/api/interview-token/$token/schema")({
             return Response.json({ error: "Token is required" }, { status: 400 });
           }
 
-          const row = await getSessionByToken(token);
+          const resolved = await resolveInterviewToken(token);
 
-          if (!row) {
+          if (!resolved.ok) {
             return Response.json(
-              { error: "Interview not found" },
-              { status: 404 },
+              { error: resolved.error },
+              { status: resolved.status },
             );
           }
 
-          const { session, candidate, position, round } = row;
+          const { session, candidate, position, round } = resolved;
 
           if (session.status === "completed" || session.status === "reviewed") {
             return Response.json(
-              { error: "This interview has already been completed" },
+              { error: "This interview round has already been completed" },
               { status: 410 },
             );
           }
@@ -38,15 +44,35 @@ export const Route = createFileRoute("/api/interview-token/$token/schema")({
             );
           }
 
+          if (resolved.type === "bundle" && resolved.deliveryMode !== "form") {
+            return Response.json(
+              { error: "This round uses voice mode" },
+              { status: 400 },
+            );
+          }
+
           const questions = await getQuestionsForInterviewSession(
             session.roundId,
             session.id,
           );
 
           if (session.status === "pending" || session.status === "invited") {
-            await updateSessionStatus(session.id, "in_progress", {
-              startedAt: new Date(),
-            }).catch((e) => console.error("Failed to update session status:", e));
+            if (resolved.type === "bundle") {
+              const activeRound = resolved.rounds.find(
+                (r) => r.session.id === session.id,
+              );
+              if (activeRound) {
+                await startBundleRound(activeRound.bundleRound.id).catch((e) =>
+                  console.error("Failed to start bundle round:", e),
+                );
+              }
+            } else {
+              await updateSessionStatus(session.id, "in_progress", {
+                startedAt: new Date(),
+              }).catch((e) =>
+                console.error("Failed to update session status:", e),
+              );
+            }
           }
 
           return Response.json({
@@ -54,6 +80,13 @@ export const Route = createFileRoute("/api/interview-token/$token/schema")({
             candidateName: `${candidate.firstName} ${candidate.lastName}`,
             positionName: position.name,
             roundName: round.name,
+            type: resolved.type,
+            currentRoundIndex: resolved.type === "bundle" ? resolved.currentRoundIndex : 0,
+            totalRounds: resolved.type === "bundle" ? resolved.totalRounds : 1,
+            deliveryMode:
+              resolved.type === "bundle"
+                ? resolved.deliveryMode
+                : session.deliveryMode,
             questions: questions.map((q) => ({
               id: q.id,
               questionText: q.questionText,

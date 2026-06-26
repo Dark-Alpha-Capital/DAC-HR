@@ -12,7 +12,6 @@ import {
   candidate,
   candidatePosition,
   interview,
-  interviewResponse,
   interviewSession,
   position,
   questionBank,
@@ -21,6 +20,7 @@ import {
   user,
 } from "./schema";
 import { CLEAR_SEED_SQL, exportSeedDataSql } from "./seed-sql";
+import { createPositionInterviewBundle } from "./repositories/interview-bundle-repository";
 
 const webDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -677,50 +677,55 @@ async function seed() {
 
   if (aliceApplicationId && frontendRounds) {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    await createPositionInterviewBundle({
+      applicationId: aliceApplicationId,
+      roundConfigs: [
+        {
+          roundId: frontendRounds.screeningRoundId,
+          deliveryMode: "form",
+        },
+        {
+          roundId: frontendRounds.technicalRoundId,
+          deliveryMode: "voice",
+        },
+        ...(frontendRounds.finalRoundId
+          ? [
+              {
+                roundId: frontendRounds.finalRoundId,
+                deliveryMode: "form" as const,
+              },
+            ]
+          : []),
+      ],
+      expiresAt,
+    });
+
+    // Legacy single-session tokens for backward compatibility testing
     const startedAt = new Date(Date.now() - 30 * 60 * 1000);
     const completedAt = new Date(Date.now() - 10 * 60 * 1000);
+    const legacyInterviewId = crypto.randomUUID();
+
+    await db.insert(interview).values({
+      id: legacyInterviewId,
+      applicationId: aliceApplicationId,
+      roundId: frontendRounds.screeningRoundId,
+      mode: "ai_session",
+      status: "completed",
+    });
 
     await db.insert(interviewSession).values({
-      token: SEED_SESSION_TOKEN_PENDING,
+      token: SEED_SESSION_TOKEN_COMPLETED,
+      interviewId: legacyInterviewId,
       applicationId: aliceApplicationId,
       roundId: frontendRounds.screeningRoundId,
       expiresAt,
-      status: "pending",
-    });
-
-    await db.insert(interviewSession).values({
-      token: SEED_SESSION_TOKEN_IN_PROGRESS,
-      applicationId: aliceApplicationId,
-      roundId: frontendRounds.technicalRoundId,
-      expiresAt,
-      status: "in_progress",
+      status: "completed",
       startedAt,
-      tabSwitches: 1,
+      completedAt,
+      tabSwitches: 0,
+      deliveryMode: "form",
     });
-
-    const [completedSession] = await db
-      .insert(interviewSession)
-      .values({
-        token: SEED_SESSION_TOKEN_COMPLETED,
-        applicationId: aliceApplicationId,
-        roundId: frontendRounds.screeningRoundId,
-        expiresAt,
-        status: "completed",
-        startedAt,
-        completedAt,
-        tabSwitches: 0,
-      })
-      .returning();
-
-    const firstScreeningQuestionId = frontendRounds.screeningQuestionIds[0];
-    if (completedSession && firstScreeningQuestionId) {
-      await db.insert(interviewResponse).values({
-        sessionId: completedSession.id,
-        questionId: firstScreeningQuestionId,
-        answerText:
-          "I am excited about DAC's focus on technology-driven capital markets and the opportunity to build impactful HR tooling.",
-      });
-    }
   }
 
   console.log(`✅ ${insertedPositions.length} positions`);

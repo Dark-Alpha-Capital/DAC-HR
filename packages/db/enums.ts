@@ -131,6 +131,27 @@ export type InterviewEvaluationRecommendation =
 export const deliveryModes = ["form", "voice", "hybrid"] as const;
 export type DeliveryMode = (typeof deliveryModes)[number];
 
+/** Recruiter-assigned per-round mode in a position interview bundle */
+export const roundDeliveryModes = ["form", "voice"] as const;
+export type RoundDeliveryMode = (typeof roundDeliveryModes)[number];
+
+export const interviewBundleStatuses = [
+  "pending",
+  "in_progress",
+  "completed",
+  "reviewed",
+] as const;
+export type InterviewBundleStatus =
+  (typeof interviewBundleStatuses)[number];
+
+export const interviewBundleRoundStatuses = [
+  "pending",
+  "in_progress",
+  "completed",
+] as const;
+export type InterviewBundleRoundStatus =
+  (typeof interviewBundleRoundStatuses)[number];
+
 export const inputMethods = ["typed", "mcq", "voice"] as const;
 export type InputMethod = (typeof inputMethods)[number];
 

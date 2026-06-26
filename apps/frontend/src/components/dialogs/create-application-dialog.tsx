@@ -1,5 +1,3 @@
-"use client";
-
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
@@ -22,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { createApplication } from "~/lib/actions/application-actions";
+import { createApplication } from "~/lib/actions/create-application";
 import { loadPositionOptions } from "~/lib/loaders/positions";
 import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 
