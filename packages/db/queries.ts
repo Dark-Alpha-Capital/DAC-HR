@@ -1103,6 +1103,8 @@ export const getQuestionsByRoundId = async (roundId: string) => {
       .select({
         id: questionBank.id,
         questionText: questionBank.questionText,
+        questionType: questionBank.questionType,
+        options: questionBank.options,
         createdAt: questionBank.createdAt,
         updatedAt: questionBank.updatedAt,
       })

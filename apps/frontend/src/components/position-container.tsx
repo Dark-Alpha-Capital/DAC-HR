@@ -7,9 +7,6 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { Button } from "~/components/ui/button";
-import { Eye, Pencil } from "lucide-react";
-import DeletePositionButton from "~/components/delete-position-button";
 import { Badge } from "~/components/ui/badge";
 
 const hireLevelLabels: Record<string, string> = {
@@ -65,15 +62,12 @@ export default function PositionContainer({
             <TableHead className="px-2 py-1.5 text-xs">Name</TableHead>
             <TableHead className="px-2 py-1.5 text-xs">Status</TableHead>
             <TableHead className="px-2 py-1.5 text-xs">Hire Level</TableHead>
-            <TableHead className="px-2 py-1.5 text-right text-xs">
-              Actions
-            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {positions.map((position, index) => (
-            <TableRow key={position.id}>
-              <TableCell className="py-1.5 px-2 text-sm text-muted-foreground">
+            <TableRow key={position.id} className="relative cursor-pointer">
+              <TableCell className="py-1.5 px-2 text-sm text-muted-foreground tabular-nums">
                 {index + 1}
               </TableCell>
               <TableCell className="py-1.5 px-2 font-medium text-sm">
@@ -100,37 +94,12 @@ export default function PositionContainer({
                   <span className="text-xs text-muted-foreground">—</span>
                 )}
               </TableCell>
-              <TableCell className="px-2 py-1.5 text-right">
-                <div className="flex items-center justify-end gap-1">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="h-7 w-7 p-0"
-                    asChild
-                  >
-                    <Link
-                      to="/positions/$slug"
-                      params={{ slug: position.slug }}
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                    </Link>
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="h-7 w-7 p-0"
-                    asChild
-                  >
-                    <Link
-                      to="/positions/$slug/edit"
-                      params={{ slug: position.slug }}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Link>
-                  </Button>
-                  <DeletePositionButton positionId={position.id} />
-                </div>
-              </TableCell>
+              <Link
+                to="/positions/$slug"
+                params={{ slug: position.slug }}
+                className="absolute inset-0"
+                aria-label={`View ${position.name}`}
+              />
             </TableRow>
           ))}
         </TableBody>

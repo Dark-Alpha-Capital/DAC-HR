@@ -21,7 +21,13 @@ import {
   TooltipTrigger,
 } from "~/components/ui/tooltip";
 
-const DeleteQuestionButton = ({ questionId }: { questionId: string }) => {
+const DeleteQuestionButton = ({
+  questionId,
+  onDeleted,
+}: {
+  questionId: string;
+  onDeleted?: () => void;
+}) => {
   const [isPending, startTransition] = useTransition();
   const invalidate = useQueryInvalidation();
 
@@ -65,7 +71,8 @@ const DeleteQuestionButton = ({ questionId }: { questionId: string }) => {
                   }
                   if (response?.success) {
                     toast.success("Question deleted successfully");
-                    void invalidate.questionLists();
+                    await invalidate.questionLists();
+                    onDeleted?.();
                   }
                 });
               }}

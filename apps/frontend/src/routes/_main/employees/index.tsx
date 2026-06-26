@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-query";
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Button } from "~/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import FilterEmployeeName from "~/components/filter-employee-name";
 import { PrismicMemberTypeFilter } from "~/components/prismic-member-type-filter";
 import {
@@ -36,6 +36,15 @@ function parseEmployeesSearch(search: Record<string, unknown>) {
 }
 
 type EmployeesIndexSearch = ReturnType<typeof parseEmployeesSearch>;
+
+function getMemberInitials(name: string) {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
 
 function prismicMembersQueryOptions(deps: EmployeesIndexSearch) {
   return queryOptions({
@@ -112,35 +121,49 @@ function EmployeesPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-12">#</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Designation</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {members.map((member: PrismicMember) => (
-              <TableRow key={member.id}>
-                <TableCell className="font-medium">{member.name}</TableCell>
+            {members.map((member: PrismicMember, index) => (
+              <TableRow
+                key={member.id}
+                className={member.uid ? "relative cursor-pointer" : undefined}
+              >
+                <TableCell className="text-muted-foreground tabular-nums">
+                  {index + 1}
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="size-9 shrink-0">
+                      {member.photoUrl ? (
+                        <AvatarImage src={member.photoUrl} alt={member.name} />
+                      ) : null}
+                      <AvatarFallback>
+                        {getMemberInitials(member.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="font-medium">{member.name}</span>
+                  </div>
+                </TableCell>
                 <TableCell className="text-muted-foreground">
                   {member.designation ?? "—"}
                 </TableCell>
-                <TableCell className="text-right">
-                  {member.uid ? (
-                    <Button asChild variant="secondary" size="sm">
-                      <Link
-                        to="/employees/member/$uid"
-                        params={{ uid: member.uid }}
-                        search={{
-                          kind: member.kind,
-                          memberType: search.memberType,
-                          name: search.name,
-                        }}
-                      >
-                        View
-                      </Link>
-                    </Button>
-                  ) : null}
-                </TableCell>
+                {member.uid ? (
+                  <Link
+                    to="/employees/member/$uid"
+                    params={{ uid: member.uid }}
+                    search={{
+                      kind: member.kind,
+                      memberType: search.memberType,
+                      name: search.name,
+                    }}
+                    className="absolute inset-0"
+                    aria-label={`View ${member.name}`}
+                  />
+                ) : null}
               </TableRow>
             ))}
           </TableBody>

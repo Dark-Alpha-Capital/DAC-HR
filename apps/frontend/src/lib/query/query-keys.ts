@@ -44,6 +44,7 @@ export const queryKeys = {
       ["rounds", "list", normalizeListDeps(deps)] as const,
     byPosition: (positionId: string) =>
       ["rounds", "by-position", positionId] as const,
+    detail: (id: string) => ["rounds", "detail", id] as const,
   },
   questions: {
     all: ["questions"] as const,

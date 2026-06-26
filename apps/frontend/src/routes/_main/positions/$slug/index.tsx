@@ -7,8 +7,6 @@ import { Badge } from "~/components/ui/badge";
 import { TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import {
   Pencil,
-  Calendar,
-  Clock,
   Eye,
   Users,
   User,
@@ -17,7 +15,7 @@ import {
 } from "lucide-react";
 import DeletePositionButton from "~/components/delete-position-button";
 import PositionTabsClient from "~/components/position-tabs-client";
-import { CreateRoundDialog } from "~/components/dialogs/create-round-dialog";
+import { PositionRoundsSection } from "~/components/position-rounds-section";
 
 function htmlToPlainText(html: string) {
   return html
@@ -182,61 +180,11 @@ function PositionDetailPage() {
           </TabsContent>
 
           <TabsContent value="rounds" className="mt-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-semibold">Associated Rounds</h2>
-                  <CreateRoundDialog
-                    positionId={position.id}
-                    positionName={position.name}
-                  />
-                </div>
-                <Badge variant="secondary">{rounds.length}</Badge>
-              </div>
-              {rounds.length === 0 ? (
-                <div className="rounded-md border py-8 text-center text-muted-foreground">
-                  <ClipboardList className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                  <p className="mb-4 text-sm">
-                    No rounds are currently linked to this position.
-                  </p>
-                  <CreateRoundDialog
-                    positionId={position.id}
-                    positionName={position.name}
-                    variant="empty-state"
-                  />
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {rounds.map((round, index) => (
-                    <div key={round.id} className="space-y-1">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 space-y-1">
-                          <h3 className="text-sm font-medium">{round.name}</h3>
-                          {round.description ? (
-                            <p className="text-xs text-muted-foreground line-clamp-2">
-                              {round.description}
-                            </p>
-                          ) : (
-                            <p className="text-xs text-muted-foreground italic">
-                              No description provided.
-                            </p>
-                          )}
-                        </div>
-                        <Button variant="secondary" size="sm" asChild>
-                          <Link to="/rounds/$id" params={{ id: round.id }}>
-                            <Eye className="h-3 w-3 mr-1" />
-                            View
-                          </Link>
-                        </Button>
-                      </div>
-                      {index !== rounds.length - 1 ? (
-                        <Separator className="my-2" />
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <PositionRoundsSection
+              positionId={position.id}
+              positionName={position.name}
+              rounds={rounds}
+            />
           </TabsContent>
 
           <TabsContent value="candidates" className="mt-6">
