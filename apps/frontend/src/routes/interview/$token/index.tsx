@@ -1,9 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
@@ -15,10 +11,7 @@ import {
   CardTitle,
   CardDescription,
 } from "~/components/ui/card";
-import {
-  RadioGroup,
-  RadioGroupItem,
-} from "~/components/ui/radio-group";
+import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { Label } from "~/components/ui/label";
 import BundleRoundsOverview from "~/components/interview/BundleRoundsOverview";
 import DeliveryModePicker from "~/components/interview/DeliveryModePicker";
@@ -264,10 +257,7 @@ function VoiceWelcomeSlide({
         </div>
         <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {VOICE_INSTRUCTIONS.map((item) => (
-            <li
-              key={item.title}
-              className="flex gap-2.5 rounded-lg border p-3"
-            >
+            <li key={item.title} className="flex gap-2.5 rounded-lg border p-3">
               <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
                 <item.icon className="size-3.5 text-primary" />
               </div>
@@ -374,7 +364,9 @@ function VoiceLandingScreen({
           >
             <GraduationCap className="mr-3 size-5 shrink-0" />
             <span className="text-left">
-              <span className="block font-medium">Practice Interview Session</span>
+              <span className="block font-medium">
+                Practice Interview Session
+              </span>
               <span className="block text-xs font-normal opacity-80">
                 Try sample questions — not recorded for evaluation
               </span>
@@ -515,7 +507,9 @@ function WelcomeScreen({
 
         <div className="flex min-h-0 flex-col lg:justify-center">
           <div className="shrink-0">
-            <h2 className="text-base font-medium sm:text-lg">Before You Begin</h2>
+            <h2 className="text-base font-medium sm:text-lg">
+              Before You Begin
+            </h2>
             <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
               {isVoice
                 ? "Review these voice interview instructions to ensure a smooth experience."
@@ -672,7 +666,9 @@ function InterviewPage() {
         status: validation.status,
         deliveryMode: validation.deliveryMode,
         currentRoundIndex:
-          validation.type === "bundle" ? validation.currentRoundIndex : undefined,
+          validation.type === "bundle"
+            ? validation.currentRoundIndex
+            : undefined,
       });
     }
   }, [validation, token]);
@@ -910,8 +906,7 @@ function InterviewPage() {
         logInterview.warn("form", "answer_save_failed", {
           token: truncateId(token),
           questionId: truncateId(question.id),
-          error:
-            saveErr instanceof Error ? saveErr.message : String(saveErr),
+          error: saveErr instanceof Error ? saveErr.message : String(saveErr),
         });
         // continue regardless
       } finally {
@@ -1161,7 +1156,9 @@ function InterviewPage() {
         roundName={welcomeData.roundName}
         state={voiceInterview.state}
         videoStreamRef={voiceInterview.videoStreamRef}
-        onStart={() => voiceInterview.start({ practice: voiceInterview.state.isPractice })}
+        onStart={() =>
+          voiceInterview.start({ practice: voiceInterview.state.isPractice })
+        }
         onEnd={voiceInterview.endInterview}
       />
     );

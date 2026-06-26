@@ -1,6 +1,7 @@
 export { openai, getOpenAIClient } from "./openai-client";
 export {
   formatOpenAIApiError,
+  formatRealtimeCallsError,
   openAIKeyFingerprint,
 } from "./openai-api-error";
 export { getOpenAIProvider, getOpenAIModel } from "./ai-sdk-provider";

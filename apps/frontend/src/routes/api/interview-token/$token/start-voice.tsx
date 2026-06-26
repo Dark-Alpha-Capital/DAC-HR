@@ -162,6 +162,8 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
               type: resolved.type,
               roundIndex:
                 resolved.type === "bundle" ? resolved.currentRoundIndex : 0,
+              clientSecretPrefix: ephemeral.clientSecret.slice(0, 8),
+              model: ephemeral.model,
             });
 
             return Response.json({
@@ -205,7 +207,7 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
               openaiKey: resolvedKeyFingerprint,
             });
             const clientMessage = detail.startsWith("OpenAI Realtime client secret request failed: ")
-              ? detail.replace("OpenAI Realtime client secret request failed: ", "")
+              ? `[start-voice] ${detail.replace("OpenAI Realtime client secret request failed: ", "")}`
               : "Failed to start voice session";
             return Response.json({ error: clientMessage }, { status: 500 });
           }

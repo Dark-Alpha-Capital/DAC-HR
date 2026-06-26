@@ -1,5 +1,4 @@
 import { formatOpenAIApiError } from "./openai-api-error";
-import { getOpenAIClient } from "./openai-client";
 
 export const REALTIME_MODEL = "gpt-realtime-2";
 export const DEFAULT_REALTIME_VOICE = "alloy";
@@ -40,9 +39,6 @@ export async function createRealtimeEphemeralSession(
       "OPENAI_API_KEY is not set. Please configure it in your environment variables.",
     );
   }
-
-  // GA Realtime API: beta /v1/realtime/sessions was retired.
-  getOpenAIClient();
 
   const response = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
     method: "POST",

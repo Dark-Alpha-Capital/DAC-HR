@@ -46,3 +46,26 @@ export function formatOpenAIApiError(status: number, bodyText: string): string {
 
   return `HTTP ${status} · ${trimmed.length <= 400 ? trimmed : `${trimmed.slice(0, 400)}…`}`;
 }
+
+const REALTIME_CALLS_QUOTA_HELP =
+  "Realtime WebRTC calls bill separately from client_secrets token minting. " +
+  "In platform.openai.com → Billing: confirm prepaid balance > $0 (or enable auto-recharge), " +
+  "monthly hard limit is above current spend, and the API key org/project matches billing. " +
+  "See https://platform.openai.com/docs/guides/error-codes/api-errors";
+
+/** User-facing error for browser POST /v1/realtime/calls (SDP exchange). */
+export function formatRealtimeCallsError(status: number, bodyText: string): string {
+  const base = formatOpenAIApiError(status, bodyText);
+
+  try {
+    const parsed = JSON.parse(bodyText.trim()) as OpenAIErrorPayload;
+    const code = parsed.error?.code ?? parsed.error?.type;
+    if (code === "insufficient_quota") {
+      return `${base} — ${REALTIME_CALLS_QUOTA_HELP}`;
+    }
+  } catch {
+    // non-JSON body
+  }
+
+  return base;
+}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { VoiceInterviewPhase } from "@workspace/interview-realtime/types";
-import { formatOpenAIApiError } from "@workspace/ai-config";
+import { formatRealtimeCallsError } from "@workspace/ai-config";
 import type { CheatingEventType } from "@workspace/db/enums";
 import { useCheatingPrevention } from "./useCheatingPrevention";
 import { logInterview, truncateId } from "~/lib/interview-debug-log";
@@ -181,7 +181,7 @@ async function waitForIceGathering(
 }
 
 function parseRealtimeSdpError(status: number, body: string): string {
-  return formatOpenAIApiError(status, body);
+  return formatRealtimeCallsError(status, body);
 }
 
 function getRecordingMimeType(): string {
@@ -779,7 +779,7 @@ export function useVoiceInterview(token: string) {
                 : String(parseError),
           });
         }
-        throw new Error(errorMessage);
+        throw new Error(`[start-voice] ${errorMessage}`);
       }
 
       const config = await parseStartVoiceResponse(startRes);
@@ -887,7 +887,7 @@ export function useVoiceInterview(token: string) {
           status: sdpResponse.status,
           bodyPreview: answerSdp.slice(0, 400),
         });
-        throw new Error(parseRealtimeSdpError(sdpResponse.status, answerSdp));
+        throw new Error(`[realtime/calls] ${parseRealtimeSdpError(sdpResponse.status, answerSdp)}`);
       }
 
       const location = sdpResponse.headers.get("Location");
