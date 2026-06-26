@@ -15,7 +15,7 @@ import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { Badge } from "~/components/ui/badge";
 import { McqOptionsField } from "~/components/forms/mcq-options-field";
-import { updateQuestion } from "~/lib/actions/update-question";
+import { patchQuestion } from "~/lib/actions/patch-question";
 import {
   questionEditFormSchema,
   type QuestionEditFormSchema,
@@ -104,8 +104,11 @@ export function EditRoundQuestionDialog({
     setLoading(true);
 
     try {
-      const result = await updateQuestion({
-        data: [question.id, parsed.data],
+      const result = await patchQuestion({
+        data: {
+          questionId: question.id,
+          formData: parsed.data,
+        },
       });
 
       if (result.error) {

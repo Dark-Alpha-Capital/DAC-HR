@@ -2,21 +2,26 @@ import { createServerFn } from "@tanstack/react-start";
 import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
 import { questionBank } from "@workspace/db/schema";
-import {
-  QuestionEditFormSchema,
-  questionEditFormSchema,
-} from "../schemas/question-form-schema";
 import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { normalizeMcqOptions } from "~/lib/question-options";
+import {
+  questionEditFormSchema,
+  type QuestionEditFormSchema,
+} from "~/lib/schemas/question-form-schema";
 
-export const updateQuestion = createServerFn({ method: "POST" })
+export interface PatchQuestionInput {
+  questionId: string;
+  formData: QuestionEditFormSchema;
+}
+
+export const patchQuestion = createServerFn({ method: "POST" })
   .middleware([serverFnAuthGuard])
-  .validator((data: [string, QuestionEditFormSchema]) => data)
-  .handler(async ({ data: [questionId, formData], context: { session } }) => {
-    const data = formData;
+  .validator((data: PatchQuestionInput) => data)
+  .handler(async ({ data, context: { session } }) => {
+    const { questionId, formData } = data;
 
-    const result = questionEditFormSchema.safeParse(data);
+    const result = questionEditFormSchema.safeParse(formData);
     if (!result.success) {
       return { error: result.error.flatten().fieldErrors };
     }
@@ -41,6 +46,7 @@ export const updateQuestion = createServerFn({ method: "POST" })
       if (!updatedQuestion) {
         return { error: "Question not found" };
       }
+
       insertAuditLog({
         userId: session.user.id,
         action: "update_question",

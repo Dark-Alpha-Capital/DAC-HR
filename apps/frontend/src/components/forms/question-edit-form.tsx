@@ -22,7 +22,7 @@ import {
   type QuestionEditFormSchema,
 } from "~/lib/schemas/question-form-schema";
 import { Loader2 } from "lucide-react";
-import { updateQuestion } from "~/lib/actions/update-question";
+import { patchQuestion } from "~/lib/actions/patch-question";
 import { useRouter } from "@tanstack/react-router";
 import type { Question } from "@workspace/db/schema";
 import { McqOptionsField } from "~/components/forms/mcq-options-field";
@@ -72,8 +72,11 @@ const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
       }
 
       startTransition(async () => {
-        const result = await updateQuestion({
-          data: [question.id, parsed.data],
+        const result = await patchQuestion({
+          data: {
+            questionId: question.id,
+            formData: parsed.data,
+          },
         });
         if (result.success) {
           toast.success("Question updated successfully", {
