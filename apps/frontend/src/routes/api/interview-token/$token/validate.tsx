@@ -1,6 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { assertInterviewTokenValid } from "@workspace/db/repositories/interview-session-repository";
 import { resolveSessionFromToken } from "@workspace/db/repositories/interview-bundle-repository";
+import {
+  interviewServerLog,
+  truncateId,
+} from "@workspace/interview-realtime/debug-log";
+
+const COMPONENT = "validate-api";
 
 export const Route = createFileRoute("/api/interview-token/$token/validate")({
   server: {
@@ -10,12 +16,22 @@ export const Route = createFileRoute("/api/interview-token/$token/validate")({
           const { token } = params;
 
           if (!token) {
+            interviewServerLog.warn("validate", COMPONENT, "token_missing");
             return Response.json({ valid: false, error: "Token is required" }, { status: 400 });
           }
+
+          interviewServerLog.info("validate", COMPONENT, "validate_start", {
+            token: truncateId(token),
+          });
 
           const validation = await assertInterviewTokenValid(token);
 
           if (!validation.ok) {
+            interviewServerLog.warn("validate", COMPONENT, "token_invalid", {
+              token: truncateId(token),
+              status: validation.status,
+              error: validation.error,
+            });
             return Response.json(
               { valid: false, error: validation.error },
               { status: validation.status },
@@ -25,6 +41,16 @@ export const Route = createFileRoute("/api/interview-token/$token/validate")({
           if (validation.type === "bundle") {
             const activeRound = validation.activeRound;
             const session = activeRound?.session;
+
+            interviewServerLog.success("bundle", COMPONENT, "validate_ok", {
+              token: truncateId(token),
+              type: "bundle",
+              bundleId: truncateId(validation.bundle.bundle.id),
+              sessionId: truncateId(session?.id),
+              currentRoundIndex: validation.currentRoundIndex,
+              totalRounds: validation.rounds.length,
+              deliveryMode: activeRound?.bundleRound.deliveryMode,
+            });
 
             return Response.json({
               valid: true,
@@ -51,6 +77,9 @@ export const Route = createFileRoute("/api/interview-token/$token/validate")({
 
           const resolved = await resolveSessionFromToken(token);
           if (!resolved.ok || resolved.type !== "legacy") {
+            interviewServerLog.warn("validate", COMPONENT, "legacy_not_found", {
+              token: truncateId(token),
+            });
             return Response.json(
               { valid: false, error: "Interview not found" },
               { status: 404 },
@@ -58,6 +87,14 @@ export const Route = createFileRoute("/api/interview-token/$token/validate")({
           }
 
           const { session, candidate, position, round } = resolved.row;
+
+          interviewServerLog.success("validate", COMPONENT, "validate_ok", {
+            token: truncateId(token),
+            type: "legacy",
+            sessionId: truncateId(session.id),
+            deliveryMode: session.deliveryMode,
+            status: session.status,
+          });
 
           return Response.json({
             valid: true,
@@ -71,7 +108,9 @@ export const Route = createFileRoute("/api/interview-token/$token/validate")({
             roundName: round.name,
           });
         } catch (error) {
-          console.error("Error validating interview token:", error);
+          interviewServerLog.error("validate", COMPONENT, "validate_failed", {
+            error: error instanceof Error ? error.message : String(error),
+          });
           return Response.json(
             { valid: false, error: "Failed to validate interview token" },
             { status: 500 },

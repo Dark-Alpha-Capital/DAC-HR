@@ -7,6 +7,7 @@ const PUBLIC_API_PREFIXES = [
   "/api/health",
   "/api/login/google",
   "/api/interview-token",
+  "/api/debug",
 ] as const;
 
 export function isPublicPagePath(pathname: string): boolean {

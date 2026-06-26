@@ -7,6 +7,12 @@ import {
 } from "@workspace/db/repositories/interview-bundle-repository";
 import { getQuestionsForInterviewSession } from "@workspace/db/queries";
 import { resolveInterviewToken } from "~/lib/interview-token";
+import {
+  interviewServerLog,
+  truncateId,
+} from "@workspace/interview-realtime/debug-log";
+
+const COMPONENT = "schema-api";
 
 export const Route = createFileRoute("/api/interview-token/$token/schema")({
   server: {
@@ -16,12 +22,21 @@ export const Route = createFileRoute("/api/interview-token/$token/schema")({
           const { token } = params;
 
           if (!token) {
+            interviewServerLog.warn("form", COMPONENT, "token_missing");
             return Response.json({ error: "Token is required" }, { status: 400 });
           }
+
+          interviewServerLog.info("form", COMPONENT, "schema_request", {
+            token: truncateId(token),
+          });
 
           const resolved = await resolveInterviewToken(token);
 
           if (!resolved.ok) {
+            interviewServerLog.warn("form", COMPONENT, "token_resolve_failed", {
+              token: truncateId(token),
+              error: resolved.error,
+            });
             return Response.json(
               { error: resolved.error },
               { status: resolved.status },
@@ -63,17 +78,34 @@ export const Route = createFileRoute("/api/interview-token/$token/schema")({
               );
               if (activeRound) {
                 await startBundleRound(activeRound.bundleRound.id).catch((e) =>
-                  console.error("Failed to start bundle round:", e),
+                  interviewServerLog.error("bundle", COMPONENT, "start_bundle_round_failed", {
+                    bundleRoundId: truncateId(activeRound.bundleRound.id),
+                    error: e instanceof Error ? e.message : String(e),
+                  }),
                 );
               }
             } else {
               await updateSessionStatus(session.id, "in_progress", {
                 startedAt: new Date(),
               }).catch((e) =>
-                console.error("Failed to update session status:", e),
+                interviewServerLog.error("form", COMPONENT, "session_start_failed", {
+                  sessionId: truncateId(session.id),
+                  error: e instanceof Error ? e.message : String(e),
+                }),
               );
             }
           }
+
+          interviewServerLog.success("form", COMPONENT, "schema_ok", {
+            token: truncateId(token),
+            sessionId: truncateId(session.id),
+            questionCount: questions.length,
+            type: resolved.type,
+            deliveryMode:
+              resolved.type === "bundle"
+                ? resolved.deliveryMode
+                : session.deliveryMode,
+          });
 
           return Response.json({
             sessionId: session.id,
@@ -97,7 +129,9 @@ export const Route = createFileRoute("/api/interview-token/$token/schema")({
             })),
           });
         } catch (error) {
-          console.error("Error fetching interview schema:", error);
+          interviewServerLog.error("form", COMPONENT, "schema_failed", {
+            error: error instanceof Error ? error.message : String(error),
+          });
           return Response.json(
             { error: "Failed to fetch interview schema" },
             { status: 500 },

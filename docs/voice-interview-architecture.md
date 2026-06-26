@@ -198,7 +198,7 @@ The DO sends **two types** of messages to OpenAI via the sideband:
 }
 ```
 
-**Key file:** `packages/interview-realtime/prompts.ts`
+**Key file:** `packages/interview-realtime/prompts.ts` — see also [voice-interview-prompting.md](./voice-interview-prompting.md) for cost optimization and phase-specific updates.
 
 **Critical settings explained:**
 
@@ -208,6 +208,75 @@ The DO sends **two types** of messages to OpenAI via the sideband:
 | `interrupt_response` | `false` | The AI should finish speaking each question before listening. If `true`, the candidate could interrupt mid-question |
 | `silence_duration_ms` | `700` | After 700ms of silence, the VAD considers the turn complete |
 | `threshold` | `0.5` | VAD sensitivity (0.0-1.0) |
+| `truncation.retention_ratio` | `0.7` | Drop extra history on truncate to improve cache hit rate |
+| `token_limits.post_instructions` | `6000` | Cap conversation tokens after instructions |
+| `reasoning.effort` | `low` | Lower latency for gpt-realtime-2 |
+
+---
+
+## Cost Optimization (Phase A)
+
+1. **Truncation** — `retention_ratio: 0.7` + `post_instructions: 6000` reduces cache-busting on long sessions ([Realtime costs guide](https://developers.openai.com/api/docs/guides/realtime-costs)).
+2. **Deduped `response.create`** — Brief events reference question numbers instead of re-embedding full question text.
+3. **`max_output_tokens`** — Capped on ack (80), intro follow-up (120), closing (150).
+4. **Eval short-circuit** — `looksLikeNoise()` skips Chat Completions for obvious noise; `looksLikeReadyConfirmation()` skips intro eval for clear "yes/ready" utterances.
+
+---
+
+## Prompt Structure (Phase B)
+
+Instructions use labeled Realtime 2 sections: Role, Personality, Language, Reasoning, Preambles, Verbosity, Unclear Audio, Questions (single source of truth), Interview Flow (phase-specific). Full detail in [voice-interview-prompting.md](./voice-interview-prompting.md).
+
+---
+
+## Phase Flow & Dynamic session.update (Phase C)
+
+On sideband connect, the DO sends a full `session.update` with intro-phase flow. When `voicePhase` transitions, it sends a lightweight `session.update` that reuses the cached base prefix (role + questions) and swaps only the Interview Flow appendix:
+
+| Transition | Phase update |
+|------------|--------------|
+| Welcome done | `awaiting_ready` or `questions` |
+| Candidate ready | `questions` |
+| Last answer acked | `closing` |
+| Closing done | `awaiting_end` |
+
+Log grep: `"action":"phase_session_update_sent"`.
+
+---
+
+## cached_tokens Observability
+
+Each `response.done` logs parsed token usage on `response_metrics` and `response_done`:
+
+```bash
+wrangler tail | grep response_metrics | grep cachedTokens
+wrangler tail | grep '"cachedTokens":[1-9]'
+```
+
+Example:
+
+```json
+{"msg":"🔌 [interview:ws] response_metrics","action":"response_metrics","reason":"ask_current_question","cachedTokens":1100,"inputTokens":1240,"outputTokens":45}
+```
+
+---
+
+## Eval Pipeline
+
+```
+Candidate utterance
+       │
+       ▼
+ looksLikeNoise? ──yes──► fallback (no API)
+       │ no
+       ▼
+ (intro only) looksLikeReadyConfirmation? ──yes──► ready (no API)
+       │ no
+       ▼
+ gpt-4o-mini Chat Completions eval
+```
+
+Logs: `"action":"noise_short_circuit"`, `"action":"ready_short_circuit"`, `"action":"answer_evaluated"`.
 
 ---
 
@@ -295,6 +364,8 @@ After the interview completes, `InterviewEvaluationWorkflow` runs:
 | MDN WebRTC API | https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API |
 | MDN getUserMedia | https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia |
 | MDN RTCPeerConnection | https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection |
+| OpenAI Realtime costs | https://developers.openai.com/api/docs/guides/realtime-costs |
+| OpenAI Realtime prompting | https://platform.openai.com/docs/guides/realtime |
 | Server-sent VAD (OpenAI) | https://platform.openai.com/docs/guides/realtime-vad |
 
 ---
@@ -399,7 +470,8 @@ CANDIDATE BROWSER                           SERVER (Cloudflare Worker)          
 | 1 | `apps/frontend/src/durable-objects/interview-session-do.ts` | 1604 | Core DO — state machine, sideband, transcripts, cheating |
 | 2 | `packages/interview-realtime/types.ts` | 79 | All shared type definitions |
 | 3 | `packages/interview-realtime/events.ts` | 50 | Zod schemas + parse/serialize for WS messages |
-| 4 | `packages/interview-realtime/prompts.ts` | 137 | System instructions + event builders |
+| 4 | `packages/interview-realtime/prompts.ts` | System instructions, session config, event builders |
+| 4b | `docs/voice-interview-prompting.md` | Prompt structure, cost optimization, observability |
 | 5 | `packages/interview-realtime/index.ts` | 3 | Barrel re-exports |
 | 6 | `packages/ai-config/realtime.ts` | 91 | OpenAI Realtime ephemeral sessions + sideband URLs |
 | 7 | `packages/ai-config/index.ts` | 19 | Barrel exports for ai-config |

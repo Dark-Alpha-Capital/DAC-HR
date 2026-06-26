@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createRealtimeEphemeralSession } from "@workspace/ai-config";
+import { createRealtimeEphemeralSession, openAIKeyFingerprint } from "@workspace/ai-config";
+import { getServerOpenAIApiKey } from "~/lib/server/openai-api-key";
 import { getQuestionsForInterviewSession } from "@workspace/db/queries";
 import {
   updateSessionStatus,
@@ -10,6 +11,12 @@ import {
 import { PRACTICE_QUESTIONS } from "@workspace/interview-realtime";
 import { buildRealtimeInstructions } from "@workspace/interview-realtime/prompts";
 import { resolveInterviewToken } from "~/lib/interview-token";
+import {
+  interviewServerLog,
+  truncateId,
+} from "@workspace/interview-realtime/debug-log";
+
+const COMPONENT = "start-voice-api";
 
 export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
   {
@@ -20,6 +27,7 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
             const { token } = params;
 
             if (!token) {
+              interviewServerLog.warn("voice", COMPONENT, "token_missing");
               return Response.json(
                 { error: "Token is required" },
                 { status: 400 },
@@ -31,8 +39,21 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
               | null;
             const isPractice = body?.practice === true;
 
+            const openaiApiKey = getServerOpenAIApiKey();
+
+            interviewServerLog.info("voice", COMPONENT, "start_voice_request", {
+              token: truncateId(token),
+              isPractice,
+              openaiKey: openAIKeyFingerprint(openaiApiKey),
+            });
+
             const resolved = await resolveInterviewToken(token);
             if (!resolved.ok) {
+              interviewServerLog.warn("voice", COMPONENT, "token_resolve_failed", {
+                token: truncateId(token),
+                status: resolved.status,
+                error: resolved.error,
+              });
               return Response.json(
                 { error: resolved.error },
                 { status: resolved.status },
@@ -48,6 +69,14 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
                   session.deliveryMode === "hybrid";
 
             if (!isPractice && !voiceAllowed) {
+              interviewServerLog.warn("voice", COMPONENT, "voice_not_enabled", {
+                token: truncateId(token),
+                sessionId: truncateId(session.id),
+                deliveryMode:
+                  resolved.type === "bundle"
+                    ? resolved.deliveryMode
+                    : session.deliveryMode,
+              });
               return Response.json(
                 { error: "Voice interviews are not enabled for this session" },
                 { status: 400 },
@@ -61,6 +90,15 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
                   session.roundId,
                   session.id,
                 );
+
+            if (!isPractice && questions.length === 0) {
+              interviewServerLog.warn("voice", COMPONENT, "no_questions_for_round", {
+                token: truncateId(token),
+                sessionId: truncateId(session.id),
+                roundId: truncateId(session.roundId),
+                type: resolved.type,
+              });
+            }
 
             if (
               !isPractice &&
@@ -108,12 +146,23 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
             });
 
             const ephemeral = await createRealtimeEphemeralSession({
+              apiKey: openaiApiKey,
               voice: session.agentConfig?.voice,
               instructions,
             });
 
             const origin = new URL(request.url).origin;
             const wsUrl = `${origin.replace(/^http/, "ws")}/api/interview-realtime/ws?token=${encodeURIComponent(token)}${isPractice ? "&practice=1" : ""}`;
+
+            interviewServerLog.success("voice", COMPONENT, "start_voice_ok", {
+              token: truncateId(token),
+              sessionId: truncateId(session.id),
+              questionCount: questions.length,
+              isPractice,
+              type: resolved.type,
+              roundIndex:
+                resolved.type === "bundle" ? resolved.currentRoundIndex : 0,
+            });
 
             return Response.json({
               clientSecret: ephemeral.clientSecret,
@@ -139,11 +188,26 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
               })),
             });
           } catch (error) {
-            console.error("Error starting voice session:", error);
-            return Response.json(
-              { error: "Failed to start voice session" },
-              { status: 500 },
-            );
+            const detail =
+              error instanceof Error ? error.message : String(error);
+            let resolvedKeyFingerprint: string | undefined;
+            try {
+              resolvedKeyFingerprint = openAIKeyFingerprint(
+                getServerOpenAIApiKey(),
+              );
+            } catch {
+              resolvedKeyFingerprint = openAIKeyFingerprint(
+                process.env.OPENAI_API_KEY,
+              );
+            }
+            interviewServerLog.error("voice", COMPONENT, "start_voice_failed", {
+              error: detail,
+              openaiKey: resolvedKeyFingerprint,
+            });
+            const clientMessage = detail.startsWith("OpenAI Realtime client secret request failed: ")
+              ? detail.replace("OpenAI Realtime client secret request failed: ", "")
+              : "Failed to start voice session";
+            return Response.json({ error: clientMessage }, { status: 500 });
           }
         },
       },

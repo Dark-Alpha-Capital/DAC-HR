@@ -72,4 +72,10 @@ export const queryKeys = {
     column: (status: string, filters: Record<string, unknown>) =>
       ["kanban", status, normalizeListDeps(filters)] as const,
   },
+  interviewToken: {
+    all: ["interview-token"] as const,
+    validate: (token: string) =>
+      ["interview-token", "validate", token] as const,
+    schema: (token: string) => ["interview-token", "schema", token] as const,
+  },
 };

@@ -45,7 +45,7 @@ import type {
   RoundDeliveryMode,
 } from "@workspace/db/enums";
 import { deleteInterview } from "~/lib/actions/delete-interview";
-import { deleteInterviewBundle } from "~/lib/actions/delete-interview-bundle";
+import { removeInterviewBundle } from "~/lib/actions/remove-interview-bundle";
 import { toast } from "sonner";
 import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 
@@ -377,7 +377,7 @@ export default function ApplicationProgressTimeline({
     setDeletingBundleId(bundleId);
     setDeleteBundleDialogOpen(false);
     try {
-      const result = await deleteInterviewBundle({ data: bundleId });
+      const result = await removeInterviewBundle({ data: bundleId });
       if (result.error) {
         toast.error(result.error);
       } else {

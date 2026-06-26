@@ -6,6 +6,12 @@ import {
 } from "@workspace/db/repositories/interview-session-repository";
 import { advanceBundleRound } from "@workspace/db/repositories/interview-bundle-repository";
 import { resolveInterviewToken } from "~/lib/interview-token";
+import {
+  interviewServerLog,
+  truncateId,
+} from "@workspace/interview-realtime/debug-log";
+
+const COMPONENT = "complete-api";
 
 const completeSchema = z.object({
   tabSwitches: z.number().int().min(0).default(0),
@@ -28,12 +34,21 @@ export const Route = createFileRoute("/api/interview-token/$token/complete")({
           const { token } = params;
 
           if (!token) {
+            interviewServerLog.warn("api", COMPONENT, "token_missing");
             return Response.json({ error: "Token is required" }, { status: 400 });
           }
+
+          interviewServerLog.info("api", COMPONENT, "complete_request", {
+            token: truncateId(token),
+          });
 
           const resolved = await resolveInterviewToken(token);
 
           if (!resolved.ok) {
+            interviewServerLog.warn("api", COMPONENT, "token_resolve_failed", {
+              token: truncateId(token),
+              error: resolved.error,
+            });
             return Response.json(
               { error: resolved.error },
               { status: resolved.status },
@@ -43,6 +58,9 @@ export const Route = createFileRoute("/api/interview-token/$token/complete")({
           const { session } = resolved;
 
           if (session.status === "completed") {
+            interviewServerLog.info("api", COMPONENT, "already_completed", {
+              sessionId: truncateId(session.id),
+            });
             return Response.json({
               session,
               hasMoreRounds:
@@ -55,6 +73,9 @@ export const Route = createFileRoute("/api/interview-token/$token/complete")({
           const parsed = completeSchema.safeParse(body);
 
           if (!parsed.success) {
+            interviewServerLog.warn("api", COMPONENT, "validation_failed", {
+              sessionId: truncateId(session.id),
+            });
             return Response.json(
               { error: parsed.error.flatten().fieldErrors },
               { status: 400 },
@@ -86,6 +107,14 @@ export const Route = createFileRoute("/api/interview-token/$token/complete")({
             !advanceResult.allCompleted &&
             advanceResult.nextRound != null;
 
+          interviewServerLog.success("api", COMPONENT, "complete_ok", {
+            token: truncateId(token),
+            sessionId: truncateId(session.id),
+            type: resolved.type,
+            hasMoreRounds,
+            allCompleted: advanceResult?.allCompleted ?? true,
+          });
+
           return Response.json({
             session: { ...session, status: "completed" as const },
             hasMoreRounds,
@@ -93,7 +122,9 @@ export const Route = createFileRoute("/api/interview-token/$token/complete")({
             nextRoundName: advanceResult?.nextRound?.round.name,
           });
         } catch (error) {
-          console.error("Error completing interview:", error);
+          interviewServerLog.error("api", COMPONENT, "complete_failed", {
+            error: error instanceof Error ? error.message : String(error),
+          });
           return Response.json(
             { error: "Failed to complete interview" },
             { status: 500 },

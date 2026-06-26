@@ -39,7 +39,9 @@
     "db:seed-positions": "bun run seed-positions.ts",
     "db:seed-positions:remote": "bun run seed-positions.ts --remote",
     "db:reset-rounds": "bun run scripts/reset-position-rounds.ts",
-    "db:reset-rounds:remote": "bun run scripts/reset-position-rounds.ts --remote"
+    "db:reset-rounds:remote": "bun run scripts/reset-position-rounds.ts --remote",
+    "db:finalize-interview-schema": "bun run scripts/finalize-interview-schema.ts",
+    "db:finalize-interview-schema:remote": "bun run scripts/finalize-interview-schema.ts --remote"
   },
   "peerDependencies": {
     "typescript": "^5.9.3"

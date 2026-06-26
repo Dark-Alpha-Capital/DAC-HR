@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { ClipboardList, Mic } from "lucide-react";
+import { logInterview } from "~/lib/interview-debug-log";
 
 interface DeliveryModePickerProps {
   onSelectForm: () => void;
@@ -29,7 +30,10 @@ export default function DeliveryModePicker({
         <Button
           variant="outline"
           className="h-auto flex-col items-start gap-2 p-4"
-          onClick={onSelectForm}
+          onClick={() => {
+            logInterview.info("state", "mode_selected", { mode: "form" });
+            onSelectForm();
+          }}
         >
           <ClipboardList className="h-5 w-5" />
           <span className="font-medium">Form interview</span>
@@ -40,7 +44,10 @@ export default function DeliveryModePicker({
         <Button
           variant="outline"
           className="h-auto flex-col items-start gap-2 p-4"
-          onClick={onSelectVoice}
+          onClick={() => {
+            logInterview.info("state", "mode_selected", { mode: "voice" });
+            onSelectVoice();
+          }}
         >
           <Mic className="h-5 w-5" />
           <span className="font-medium">Voice interview</span>

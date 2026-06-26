@@ -3,6 +3,12 @@ import { z } from "zod";
 import { upsertResponse } from "@workspace/db/repositories/interview-session-repository";
 import { getQuestionById } from "@workspace/db/queries";
 import { resolveInterviewToken } from "~/lib/interview-token";
+import {
+  interviewServerLog,
+  truncateId,
+} from "@workspace/interview-realtime/debug-log";
+
+const COMPONENT = "responses-api";
 
 const answerRequestSchema = z.object({
   questionId: z.string().min(1),
@@ -18,12 +24,17 @@ export const Route = createFileRoute("/api/interview-token/$token/responses")({
           const { token } = params;
 
           if (!token) {
+            interviewServerLog.warn("form", COMPONENT, "token_missing");
             return Response.json({ error: "Token is required" }, { status: 400 });
           }
 
           const resolved = await resolveInterviewToken(token);
 
           if (!resolved.ok) {
+            interviewServerLog.warn("form", COMPONENT, "token_resolve_failed", {
+              token: truncateId(token),
+              error: resolved.error,
+            });
             return Response.json(
               { error: resolved.error },
               { status: resolved.status },
@@ -33,6 +44,9 @@ export const Route = createFileRoute("/api/interview-token/$token/responses")({
           const { session } = resolved;
 
           if (session.status === "completed" || session.status === "reviewed") {
+            interviewServerLog.warn("form", COMPONENT, "round_already_completed", {
+              sessionId: truncateId(session.id),
+            });
             return Response.json(
               { error: "This interview round has already been completed" },
               { status: 410 },
@@ -90,6 +104,12 @@ export const Route = createFileRoute("/api/interview-token/$token/responses")({
               inputMethod: "mcq",
             });
 
+            interviewServerLog.success("form", COMPONENT, "response_saved", {
+              sessionId: truncateId(session.id),
+              questionId: truncateId(questionId),
+              inputMethod: "mcq",
+            });
+
             return Response.json({ response }, { status: 200 });
           }
 
@@ -108,9 +128,17 @@ export const Route = createFileRoute("/api/interview-token/$token/responses")({
             inputMethod: "typed",
           });
 
+          interviewServerLog.success("form", COMPONENT, "response_saved", {
+            sessionId: truncateId(session.id),
+            questionId: truncateId(questionId),
+            inputMethod: "typed",
+          });
+
           return Response.json({ response }, { status: 200 });
         } catch (error) {
-          console.error("Error saving interview response:", error);
+          interviewServerLog.error("form", COMPONENT, "response_save_failed", {
+            error: error instanceof Error ? error.message : String(error),
+          });
           return Response.json(
             { error: "Failed to save response" },
             { status: 500 },

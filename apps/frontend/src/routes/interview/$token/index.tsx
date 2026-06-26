@@ -1,4 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
@@ -15,11 +20,23 @@ import {
   RadioGroupItem,
 } from "~/components/ui/radio-group";
 import { Label } from "~/components/ui/label";
-import type { QuestionOption } from "@workspace/db/question-types";
-import type { DeliveryMode } from "@workspace/db/enums";
+import BundleRoundsOverview from "~/components/interview/BundleRoundsOverview";
 import DeliveryModePicker from "~/components/interview/DeliveryModePicker";
 import VoiceInterview from "~/components/interview/VoiceInterview";
 import { useVoiceInterview } from "~/hooks/useVoiceInterview";
+import {
+  buildWelcomeFromValidation,
+  completeInterview,
+  getModeStorageKey,
+  interviewSchemaOptions,
+  interviewTokenValidateOptions,
+  resolveSessionMode,
+  type InterviewQuestion,
+  type InterviewSchemaData,
+  type SessionMode,
+  type WelcomeData,
+} from "~/lib/queries/interview-token";
+import { logInterview, truncateId } from "~/lib/interview-debug-log";
 
 import {
   Clock,
@@ -40,38 +57,8 @@ import {
   BookOpen,
 } from "lucide-react";
 
-interface Question {
-  id: string;
-  questionText: string;
-  questionType: string;
-  category: string | null;
-  timeLimitSeconds: number | null;
-  options?: QuestionOption[] | null;
-}
-
-interface InterviewData {
-  sessionId: string;
-  candidateName: string;
-  positionName: string;
-  roundName: string;
-  questions: Question[];
-}
-
-interface WelcomeData {
-  candidateName: string;
-  positionName: string;
-  roundName: string;
-  deliveryMode: DeliveryMode;
-  currentRoundIndex?: number;
-  totalRounds?: number;
-  interviewType?: "legacy" | "bundle";
-}
-
-type SessionMode = "form" | "voice";
-
-function getModeStorageKey(token: string) {
-  return `interview-mode:${token}`;
-}
+type Question = InterviewQuestion;
+type InterviewData = InterviewSchemaData;
 
 type AnswerValue =
   | { type: "text"; text: string }
@@ -101,15 +88,6 @@ function hasAnswer(answer: AnswerValue | undefined): boolean {
   }
 
   return answer.selectedOptionId.length > 0;
-}
-
-async function loadInterviewSchema(token: string): Promise<InterviewData> {
-  const schemaRes = await fetch(`/api/interview-token/${token}/schema`);
-  if (!schemaRes.ok) {
-    const body = await schemaRes.json();
-    throw new Error(body.error || "Failed to load interview");
-  }
-  return schemaRes.json();
 }
 
 const INSTRUCTIONS = [
@@ -207,7 +185,7 @@ function VoiceWelcomeSlide({
     return (
       <div className="flex h-svh flex-col overflow-hidden bg-background">
         <VoiceWelcomeHeader />
-        <main className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center gap-6 px-4 py-8">
+        <main className="mx-auto flex w-full max-w-lg flex-1 min-h-0 flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-8">
           <div className="text-center">
             <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
               Welcome to Your Voice Interview
@@ -256,6 +234,13 @@ function VoiceWelcomeSlide({
               </div>
             </CardContent>
           </Card>
+
+          {data.interviewType === "bundle" && data.rounds ? (
+            <BundleRoundsOverview
+              rounds={data.rounds}
+              currentRoundIndex={data.currentRoundIndex}
+            />
+          ) : null}
 
           <Button className="w-full sm:w-auto" size="lg" onClick={onContinue}>
             Continue
@@ -488,6 +473,13 @@ function WelcomeScreen({
             </CardContent>
           </Card>
 
+          {data.interviewType === "bundle" && data.rounds ? (
+            <BundleRoundsOverview
+              rounds={data.rounds}
+              currentRoundIndex={data.currentRoundIndex}
+            />
+          ) : null}
+
           <div>
             <Button
               className="w-full sm:w-auto"
@@ -558,6 +550,7 @@ function WelcomeScreen({
 
 function InterviewPage() {
   const { token } = Route.useParams();
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState<
     | "loading"
     | "invalid"
@@ -578,13 +571,123 @@ function InterviewPage() {
   const [practiceStarting, setPracticeStarting] = useState(false);
   const [voiceWelcomeStep, setVoiceWelcomeStep] =
     useState<VoiceWelcomeStep>("welcome");
-  const [completing, setCompleting] = useState(false);
   const [sessionMode, setSessionMode] = useState<SessionMode | null>(null);
   const [completionType, setCompletionType] = useState<"round" | "all">("all");
   const [nextRoundName, setNextRoundName] = useState<string | null>(null);
   const answersRef = useRef(answers);
   const wasPracticeSessionRef = useRef(false);
+  const hasInitializedRef = useRef(false);
+  const prevPageStatusRef = useRef(status);
   const voiceInterview = useVoiceInterview(token);
+
+  const {
+    data: validation,
+    isPending: isValidating,
+    isError: isValidationError,
+    error: validationError,
+    refetch: refetchValidation,
+  } = useQuery(interviewTokenValidateOptions(token));
+
+  const resolvedMode = validation
+    ? resolveSessionMode(validation, token)
+    : null;
+
+  const needsInitSchema =
+    validation?.status === "in_progress" && resolvedMode === "form";
+
+  const {
+    data: schemaData,
+    isPending: isSchemaLoading,
+    isError: isSchemaError,
+    error: schemaError,
+  } = useQuery({
+    ...interviewSchemaOptions(token),
+    enabled: needsInitSchema,
+  });
+
+  const completeMutation = useMutation({
+    mutationFn: () => completeInterview(token, tabSwitchCount),
+    onSuccess: (body) => {
+      logInterview.success("api", "complete_mutation_ok", {
+        token: truncateId(token),
+        hasMoreRounds: body.hasMoreRounds,
+        nextRoundName: body.nextRoundName,
+      });
+      if (body.hasMoreRounds) {
+        setCompletionType("round");
+        setNextRoundName(body.nextRoundName ?? null);
+        setData(null);
+        setCurrentStep(0);
+        setAnswers({});
+        setStatus("round_complete");
+      } else {
+        setCompletionType("all");
+        setStatus("completed");
+      }
+    },
+    onError: (err) => {
+      logInterview.error("api", "complete_mutation_failed", {
+        token: truncateId(token),
+        error: err instanceof Error ? err.message : String(err),
+      });
+      setCompletionType("all");
+      setStatus("completed");
+    },
+  });
+
+  useEffect(() => {
+    hasInitializedRef.current = false;
+    logInterview.info("validate", "page_token_changed", {
+      token: truncateId(token),
+    });
+  }, [token]);
+
+  useEffect(() => {
+    if (prevPageStatusRef.current !== status) {
+      logInterview.info("state", "page_status_transition", {
+        token: truncateId(token),
+        from: prevPageStatusRef.current,
+        to: status,
+        sessionMode,
+        bundleType: validation?.type,
+        deliveryMode: validation?.deliveryMode,
+      });
+      prevPageStatusRef.current = status;
+    }
+  }, [status, sessionMode, token, validation?.type, validation?.deliveryMode]);
+
+  useEffect(() => {
+    if (isValidating) {
+      logInterview.info("validate", "validation_loading", {
+        token: truncateId(token),
+      });
+    }
+  }, [isValidating, token]);
+
+  useEffect(() => {
+    if (validation) {
+      logInterview.success("validate", "validation_ok", {
+        token: truncateId(token),
+        type: validation.type,
+        status: validation.status,
+        deliveryMode: validation.deliveryMode,
+        currentRoundIndex:
+          validation.type === "bundle" ? validation.currentRoundIndex : undefined,
+      });
+    }
+  }, [validation, token]);
+
+  useEffect(() => {
+    if (isValidationError) {
+      logInterview.error("validate", "validation_failed", {
+        token: truncateId(token),
+        error:
+          validationError instanceof Error
+            ? validationError.message
+            : String(validationError),
+      });
+    }
+  }, [isValidationError, validationError, token]);
 
   useEffect(() => {
     if (voiceInterview.state.isPractice) {
@@ -597,35 +700,29 @@ function InterviewPage() {
       voiceInterview.state.status === "completed" &&
       !voiceInterview.state.isPractice
     ) {
-      void (async () => {
-        try {
-          const validateRes = await fetch(
-            `/api/interview-token/${token}/validate`,
+      void refetchValidation().then((result) => {
+        const freshValidation = result.data;
+        if (
+          freshValidation?.type === "bundle" &&
+          freshValidation.status !== "completed"
+        ) {
+          setCompletionType("round");
+          setNextRoundName(
+            freshValidation.rounds?.find((round) => round.status === "pending")
+              ?.roundName ?? null,
           );
-          if (validateRes.ok) {
-            const validation = await validateRes.json();
-            if (
-              validation.type === "bundle" &&
-              validation.status !== "completed"
-            ) {
-              setCompletionType("round");
-              setNextRoundName(
-                validation.rounds?.find(
-                  (r: { status: string }) => r.status === "pending",
-                )?.roundName ?? null,
-              );
-              setStatus("round_complete");
-              return;
-            }
-          }
-        } catch {
-          /* fall through */
+          setStatus("round_complete");
+          return;
         }
         setCompletionType("all");
         setStatus("completed");
-      })();
+      });
     }
-  }, [voiceInterview.state.status, voiceInterview.state.isPractice, token]);
+  }, [
+    voiceInterview.state.status,
+    voiceInterview.state.isPractice,
+    refetchValidation,
+  ]);
 
   useEffect(() => {
     if (
@@ -644,144 +741,131 @@ function InterviewPage() {
   }, [answers]);
 
   useEffect(() => {
-    let cancelled = false;
+    if (!validation || hasInitializedRef.current) {
+      return;
+    }
+    hasInitializedRef.current = true;
 
-    async function init() {
-      try {
-        const validateRes = await fetch(
-          `/api/interview-token/${token}/validate`,
-        );
-        if (!validateRes.ok) {
-          const body = await validateRes.json();
-          if (!cancelled) {
-            setStatus("invalid");
-            setError(body.error || "Invalid interview link");
-          }
-          return;
+    logInterview.info("state", "init_from_validation", {
+      token: truncateId(token),
+      validationStatus: validation.status,
+      type: validation.type,
+      mode: resolveSessionMode(validation, token),
+    });
+
+    const isBundle = validation.type === "bundle";
+    const storedMode = sessionStorage.getItem(
+      getModeStorageKey(token),
+    ) as SessionMode | null;
+    const welcome = buildWelcomeFromValidation(validation);
+    const mode = resolveSessionMode(validation, token);
+
+    if (validation.status === "in_progress") {
+      if (mode === "voice") {
+        setWelcomeData(welcome);
+        setSessionMode("voice");
+        if (
+          voiceInterview.state.status === "active" ||
+          voiceInterview.state.status === "connecting"
+        ) {
+          setStatus("voice");
+        } else {
+          setStatus("welcome");
         }
-
-        const validation = await validateRes.json();
-        const isBundle = validation.type === "bundle";
-        const activeDeliveryMode: DeliveryMode = isBundle
-          ? validation.deliveryMode
-          : validation.deliveryMode;
-        const storedMode = sessionStorage.getItem(
-          getModeStorageKey(token),
-        ) as SessionMode | null;
-
-        const buildWelcome = (): WelcomeData => ({
-          candidateName: validation.candidateName,
-          positionName: validation.positionName,
-          roundName: validation.roundName ?? "Interview",
-          deliveryMode: activeDeliveryMode,
-          currentRoundIndex: isBundle
-            ? validation.currentRoundIndex
-            : undefined,
-          totalRounds: isBundle ? validation.totalRounds : undefined,
-          interviewType: isBundle ? "bundle" : "legacy",
-        });
-
-        const resolveMode = (): SessionMode => {
-          if (isBundle) {
-            return activeDeliveryMode === "voice" ? "voice" : "form";
-          }
-          if (storedMode) return storedMode;
-          if (activeDeliveryMode === "voice") return "voice";
-          if (activeDeliveryMode === "form") return "form";
-          return "form";
-        };
-
-        if (validation.status === "in_progress") {
-          const mode = resolveMode();
-
-          if (mode === "voice") {
-            if (!cancelled) {
-              setWelcomeData(buildWelcome());
-              setSessionMode("voice");
-              if (
-                voiceInterview.state.status === "active" ||
-                voiceInterview.state.status === "connecting"
-              ) {
-                setStatus("voice");
-              } else {
-                setStatus("welcome");
-              }
-            }
-            return;
-          }
-
-          if (validation.status === "in_progress") {
-            const interviewData = await loadInterviewSchema(token);
-            if (!cancelled) {
-              setData(interviewData);
-              setWelcomeData(buildWelcome());
-              setSessionMode("form");
-              setStatus("in_progress");
-            }
-            return;
-          }
-        }
-
-        if (validation.status === "completed") {
-          if (!cancelled) {
-            setCompletionType("all");
-            setStatus("completed");
-          }
-          return;
-        }
-
-        if (!cancelled) {
-          const welcome = buildWelcome();
-          setWelcomeData(welcome);
-          const mode = resolveMode();
-
-          if (isBundle) {
-            sessionStorage.setItem(getModeStorageKey(token), mode);
-            setSessionMode(mode);
-            setStatus("welcome");
-          } else if (storedMode === "voice") {
-            setSessionMode("voice");
-            setStatus("welcome");
-          } else if (storedMode === "form") {
-            setSessionMode("form");
-            setStatus("welcome");
-          } else if (validation.deliveryMode === "voice") {
-            sessionStorage.setItem(getModeStorageKey(token), "voice");
-            setSessionMode("voice");
-            setStatus("welcome");
-          } else if (validation.deliveryMode === "form") {
-            sessionStorage.setItem(getModeStorageKey(token), "form");
-            setSessionMode("form");
-            setStatus("welcome");
-          } else {
-            setStatus("mode_picker");
-          }
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setStatus("invalid");
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Failed to connect. Please try again.",
-          );
-        }
+        return;
       }
+
+      setWelcomeData(welcome);
+      setSessionMode("form");
+      return;
     }
 
-    init();
-    return () => {
-      cancelled = true;
-    };
-  }, [token]);
+    if (validation.status === "completed") {
+      setCompletionType("all");
+      setStatus("completed");
+      return;
+    }
+
+    setWelcomeData(welcome);
+
+    if (isBundle) {
+      sessionStorage.setItem(getModeStorageKey(token), mode);
+      setSessionMode(mode);
+      setStatus("welcome");
+    } else if (storedMode === "voice") {
+      setSessionMode("voice");
+      setStatus("welcome");
+    } else if (storedMode === "form") {
+      setSessionMode("form");
+      setStatus("welcome");
+    } else if (validation.deliveryMode === "voice") {
+      sessionStorage.setItem(getModeStorageKey(token), "voice");
+      setSessionMode("voice");
+      setStatus("welcome");
+    } else if (validation.deliveryMode === "form") {
+      sessionStorage.setItem(getModeStorageKey(token), "form");
+      setSessionMode("form");
+      setStatus("welcome");
+    } else {
+      setStatus("mode_picker");
+    }
+  }, [validation, token, voiceInterview.state.status]);
+
+  useEffect(() => {
+    if (!needsInitSchema || !schemaData || status !== "loading") {
+      return;
+    }
+
+    setData(schemaData);
+    logInterview.info("form", "schema_loaded_resume", {
+      token: truncateId(token),
+      questionCount: schemaData.questions.length,
+    });
+    setStatus("in_progress");
+  }, [needsInitSchema, schemaData, status]);
+
+  useEffect(() => {
+    if (isValidationError && status === "loading") {
+      setStatus("invalid");
+      setError(
+        validationError instanceof Error
+          ? validationError.message
+          : "Invalid interview link",
+      );
+    }
+  }, [isValidationError, validationError, status]);
+
+  useEffect(() => {
+    if (isSchemaError && status === "loading") {
+      setStatus("invalid");
+      setError(
+        schemaError instanceof Error
+          ? schemaError.message
+          : "Failed to load interview",
+      );
+    }
+  }, [isSchemaError, schemaError, status]);
 
   const handleStartInterview = useCallback(async () => {
+    logInterview.info("form", "start_interview_clicked", {
+      token: truncateId(token),
+    });
     setStarting(true);
     try {
-      const interviewData = await loadInterviewSchema(token);
+      const interviewData = await queryClient.fetchQuery(
+        interviewSchemaOptions(token),
+      );
       setData(interviewData);
+      logInterview.success("form", "start_interview_ok", {
+        token: truncateId(token),
+        questionCount: interviewData.questions.length,
+      });
       setStatus("in_progress");
     } catch (err) {
+      logInterview.error("form", "start_interview_failed", {
+        token: truncateId(token),
+        error: err instanceof Error ? err.message : String(err),
+      });
       setStatus("invalid");
       setError(
         err instanceof Error
@@ -791,7 +875,7 @@ function InterviewPage() {
     } finally {
       setStarting(false);
     }
-  }, [token]);
+  }, [queryClient, token]);
 
   const saveAnswer = useCallback(
     async (question: Question, answer: AnswerValue) => {
@@ -817,7 +901,18 @@ function InterviewPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
-      } catch {
+        logInterview.info("form", "answer_saved", {
+          token: truncateId(token),
+          questionId: truncateId(question.id),
+          inputMethod: answer.type === "mcq" ? "mcq" : "typed",
+        });
+      } catch (saveErr) {
+        logInterview.warn("form", "answer_save_failed", {
+          token: truncateId(token),
+          questionId: truncateId(question.id),
+          error:
+            saveErr instanceof Error ? saveErr.message : String(saveErr),
+        });
         // continue regardless
       } finally {
         setSaving(false);
@@ -853,83 +948,81 @@ function InterviewPage() {
 
   const handleComplete = useCallback(async () => {
     if (!data) return;
+    logInterview.info("api", "complete_clicked", {
+      token: truncateId(token),
+      currentStep,
+      questionCount: data.questions.length,
+    });
     const question = data.questions[currentStep];
     const answer = answers[question.id];
     if (answer && hasAnswer(answer)) {
       await saveAnswer(question, answer);
     }
-    setCompleting(true);
-    try {
-      const res = await fetch(`/api/interview-token/${token}/complete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tabSwitches: tabSwitchCount }),
-      });
-      const body = await res.json().catch(() => ({}));
-      if (body.hasMoreRounds) {
-        setCompletionType("round");
-        setNextRoundName(body.nextRoundName ?? null);
-        setData(null);
-        setCurrentStep(0);
-        setAnswers({});
-        setStatus("round_complete");
-      } else {
-        setCompletionType("all");
-        setStatus("completed");
-      }
-    } catch {
-      setCompletionType("all");
-      setStatus("completed");
-    } finally {
-      setCompleting(false);
-    }
-  }, [data, currentStep, answers, saveAnswer, token]);
+    completeMutation.mutate();
+  }, [data, currentStep, answers, saveAnswer, completeMutation]);
 
   const handleContinueToNextRound = useCallback(async () => {
+    logInterview.info("bundle", "continue_next_round", {
+      token: truncateId(token),
+    });
     setStarting(true);
     try {
       sessionStorage.removeItem(getModeStorageKey(token));
-      const validateRes = await fetch(`/api/interview-token/${token}/validate`);
-      if (!validateRes.ok) {
-        setStatus("invalid");
-        return;
-      }
-      const validation = await validateRes.json();
-      const isBundle = validation.type === "bundle";
+      const freshValidation = await queryClient.fetchQuery(
+        interviewTokenValidateOptions(token),
+      );
+      const isBundle = freshValidation.type === "bundle";
       const mode: SessionMode =
-        isBundle && validation.deliveryMode === "voice" ? "voice" : "form";
+        isBundle && freshValidation.deliveryMode === "voice" ? "voice" : "form";
 
-      setWelcomeData({
-        candidateName: validation.candidateName,
-        positionName: validation.positionName,
-        roundName: validation.roundName ?? "Interview",
-        deliveryMode: validation.deliveryMode,
-        currentRoundIndex: isBundle ? validation.currentRoundIndex : undefined,
-        totalRounds: isBundle ? validation.totalRounds : undefined,
-        interviewType: isBundle ? "bundle" : "legacy",
-      });
+      setWelcomeData(buildWelcomeFromValidation(freshValidation));
       sessionStorage.setItem(getModeStorageKey(token), mode);
       setSessionMode(mode);
       setVoiceWelcomeStep("welcome");
       setStatus("welcome");
+      logInterview.success("bundle", "next_round_ready", {
+        token: truncateId(token),
+        mode,
+        deliveryMode: freshValidation.deliveryMode,
+        currentRoundIndex:
+          freshValidation.type === "bundle"
+            ? freshValidation.currentRoundIndex
+            : undefined,
+      });
+    } catch (continueErr) {
+      logInterview.error("bundle", "continue_next_round_failed", {
+        token: truncateId(token),
+        error:
+          continueErr instanceof Error
+            ? continueErr.message
+            : String(continueErr),
+      });
+      setStatus("invalid");
+      setError("Invalid interview link");
     } finally {
       setStarting(false);
     }
-  }, [token]);
+  }, [queryClient, token]);
 
   const handleSelectForm = useCallback(() => {
+    logInterview.info("state", "mode_selected", { mode: "form" });
     sessionStorage.setItem(getModeStorageKey(token), "form");
     setSessionMode("form");
     setStatus("welcome");
   }, [token]);
 
   const handleSelectVoice = useCallback(() => {
+    logInterview.info("state", "mode_selected", { mode: "voice" });
     sessionStorage.setItem(getModeStorageKey(token), "voice");
     setSessionMode("voice");
     setStatus("welcome");
   }, [token]);
 
   const handleStartVoiceInterview = useCallback(async () => {
+    logInterview.info("voice", "start_voice_clicked", {
+      token: truncateId(token),
+      practice: false,
+    });
     setStarting(true);
     sessionStorage.setItem(getModeStorageKey(token), "voice");
     setSessionMode("voice");
@@ -942,6 +1035,9 @@ function InterviewPage() {
   }, [token, voiceInterview]);
 
   const handleStartPracticeInterview = useCallback(async () => {
+    logInterview.info("voice", "start_practice_clicked", {
+      token: truncateId(token),
+    });
     setPracticeStarting(true);
     sessionStorage.setItem(getModeStorageKey(token), "voice");
     setSessionMode("voice");
@@ -953,7 +1049,10 @@ function InterviewPage() {
     }
   }, [token, voiceInterview]);
 
-  if (status === "loading") {
+  if (
+    status === "loading" &&
+    (isValidating || (needsInitSchema && isSchemaLoading))
+  ) {
     return (
       <div className="flex min-h-svh items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
@@ -1223,10 +1322,10 @@ function InterviewPage() {
             {isLast ? (
               <Button
                 onClick={handleComplete}
-                disabled={completing || saving}
+                disabled={completeMutation.isPending || saving}
                 size="sm"
               >
-                {completing ? (
+                {completeMutation.isPending ? (
                   <Loader2 className="mr-1.5 size-4 animate-spin" />
                 ) : (
                   <CheckCircle2 className="mr-1.5 size-4" />

@@ -41,6 +41,7 @@ import { Route as ApiLoginGoogleRouteImport } from './routes/api/login/google'
 import { Route as ApiKanbanCardsRouteImport } from './routes/api/kanban/cards'
 import { Route as ApiDocumentsViewRouteImport } from './routes/api/documents/view'
 import { Route as ApiDocumentsUploadRouteImport } from './routes/api/documents/upload'
+import { Route as ApiDebugOpenaiPingRouteImport } from './routes/api/debug/openai-ping'
 import { Route as ApiCandidateBulkRouteImport } from './routes/api/candidate/bulk'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAuditLogsGenerateReportRouteImport } from './routes/api/audit-logs/generate-report'
@@ -252,6 +253,11 @@ const ApiDocumentsViewRoute = ApiDocumentsViewRouteImport.update({
 const ApiDocumentsUploadRoute = ApiDocumentsUploadRouteImport.update({
   id: '/api/documents/upload',
   path: '/api/documents/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDebugOpenaiPingRoute = ApiDebugOpenaiPingRouteImport.update({
+  id: '/api/debug/openai-ping',
+  path: '/api/debug/openai-ping',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCandidateBulkRoute = ApiCandidateBulkRouteImport.update({
@@ -574,6 +580,7 @@ export interface FileRoutesByFullPath {
   '/api/audit-logs/generate-report': typeof ApiAuditLogsGenerateReportRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/candidate/bulk': typeof ApiCandidateBulkRoute
+  '/api/debug/openai-ping': typeof ApiDebugOpenaiPingRoute
   '/api/documents/upload': typeof ApiDocumentsUploadRoute
   '/api/documents/view': typeof ApiDocumentsViewRoute
   '/api/kanban/cards': typeof ApiKanbanCardsRoute
@@ -658,6 +665,7 @@ export interface FileRoutesByTo {
   '/api/audit-logs/generate-report': typeof ApiAuditLogsGenerateReportRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/candidate/bulk': typeof ApiCandidateBulkRoute
+  '/api/debug/openai-ping': typeof ApiDebugOpenaiPingRoute
   '/api/documents/upload': typeof ApiDocumentsUploadRoute
   '/api/documents/view': typeof ApiDocumentsViewRoute
   '/api/kanban/cards': typeof ApiKanbanCardsRoute
@@ -747,6 +755,7 @@ export interface FileRoutesById {
   '/api/audit-logs/generate-report': typeof ApiAuditLogsGenerateReportRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/candidate/bulk': typeof ApiCandidateBulkRoute
+  '/api/debug/openai-ping': typeof ApiDebugOpenaiPingRoute
   '/api/documents/upload': typeof ApiDocumentsUploadRoute
   '/api/documents/view': typeof ApiDocumentsViewRoute
   '/api/kanban/cards': typeof ApiKanbanCardsRoute
@@ -835,6 +844,7 @@ export interface FileRouteTypes {
     | '/api/audit-logs/generate-report'
     | '/api/auth/$'
     | '/api/candidate/bulk'
+    | '/api/debug/openai-ping'
     | '/api/documents/upload'
     | '/api/documents/view'
     | '/api/kanban/cards'
@@ -919,6 +929,7 @@ export interface FileRouteTypes {
     | '/api/audit-logs/generate-report'
     | '/api/auth/$'
     | '/api/candidate/bulk'
+    | '/api/debug/openai-ping'
     | '/api/documents/upload'
     | '/api/documents/view'
     | '/api/kanban/cards'
@@ -1007,6 +1018,7 @@ export interface FileRouteTypes {
     | '/api/audit-logs/generate-report'
     | '/api/auth/$'
     | '/api/candidate/bulk'
+    | '/api/debug/openai-ping'
     | '/api/documents/upload'
     | '/api/documents/view'
     | '/api/kanban/cards'
@@ -1069,6 +1081,7 @@ export interface RootRouteChildren {
   ApiAuditLogsGenerateReportRoute: typeof ApiAuditLogsGenerateReportRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCandidateBulkRoute: typeof ApiCandidateBulkRoute
+  ApiDebugOpenaiPingRoute: typeof ApiDebugOpenaiPingRoute
   ApiDocumentsUploadRoute: typeof ApiDocumentsUploadRoute
   ApiDocumentsViewRoute: typeof ApiDocumentsViewRoute
   ApiKanbanCardsRoute: typeof ApiKanbanCardsRoute
@@ -1314,6 +1327,13 @@ declare module '@tanstack/react-router' {
       path: '/api/documents/upload'
       fullPath: '/api/documents/upload'
       preLoaderRoute: typeof ApiDocumentsUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/debug/openai-ping': {
+      id: '/api/debug/openai-ping'
+      path: '/api/debug/openai-ping'
+      fullPath: '/api/debug/openai-ping'
+      preLoaderRoute: typeof ApiDebugOpenaiPingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/candidate/bulk': {
@@ -1878,6 +1898,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuditLogsGenerateReportRoute: ApiAuditLogsGenerateReportRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCandidateBulkRoute: ApiCandidateBulkRoute,
+  ApiDebugOpenaiPingRoute: ApiDebugOpenaiPingRoute,
   ApiDocumentsUploadRoute: ApiDocumentsUploadRoute,
   ApiDocumentsViewRoute: ApiDocumentsViewRoute,
   ApiKanbanCardsRoute: ApiKanbanCardsRoute,

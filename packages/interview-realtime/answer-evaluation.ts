@@ -1,4 +1,5 @@
 import type { InterviewQuestion } from "./types";
+import { interviewServerLog } from "./debug-log";
 
 export const MAX_NOISE_RETRIES = 3;
 
@@ -8,6 +9,60 @@ export const MAX_ANSWER_FOLLOW_UPS = MAX_NOISE_RETRIES;
 export const NOISE_ENVIRONMENT_INSTRUCTION =
   "Politely ask the candidate to please ensure their surroundings are stable and silenced, then repeat the current question. Do not advance to the next question.";
 const EVALUATION_MODEL = "gpt-4o-mini";
+const EVAL_COMPONENT = "answer-evaluation";
+
+function logEvaluation(
+  action: string,
+  data: Record<string, unknown> = {},
+  level: "info" | "warn" | "error" = "info",
+): void {
+  interviewServerLog[level]("eval", EVAL_COMPONENT, action, data);
+}
+
+type ChatCompletionsPayload = {
+  choices?: Array<{ message?: { content?: string } }>;
+};
+
+async function parseChatCompletionsResponse(
+  response: Response,
+  context: string,
+): Promise<ChatCompletionsPayload | null> {
+  const contentType = response.headers.get("content-type") ?? "";
+  let bodyText: string;
+
+  try {
+    bodyText = await response.text();
+  } catch (error) {
+    logEvaluation("response_body_read_failed", {
+      context,
+      status: response.status,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
+
+  if (!bodyText.trim()) {
+    logEvaluation("response_body_empty", {
+      context,
+      status: response.status,
+      contentType,
+    });
+    return null;
+  }
+
+  try {
+    return JSON.parse(bodyText) as ChatCompletionsPayload;
+  } catch (error) {
+    logEvaluation("response_json_parse_failed", {
+      context,
+      status: response.status,
+      contentType,
+      bodyPreview: bodyText.slice(0, 200),
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
+}
 
 export type AnswerRelevance =
   | "on_topic"
@@ -184,6 +239,15 @@ export async function evaluateCandidateAnswer(options: {
     };
   }
 
+  if (looksLikeNoise(latestUtterance)) {
+    logEvaluation("noise_short_circuit", {
+      questionId: question.id,
+      followUpCount,
+      utterancePreview: latestUtterance.trim().slice(0, 80),
+    });
+    return fallbackEvaluation(question, allUtterances, followUpCount);
+  }
+
   if (!apiKey.trim()) {
     return fallbackEvaluation(question, allUtterances, followUpCount);
   }
@@ -231,12 +295,20 @@ export async function evaluateCandidateAnswer(options: {
   });
 
   if (!response.ok) {
+    const errorBody = await response.text().catch(() => "");
+    logEvaluation("answer_eval_http_error", {
+      status: response.status,
+      questionId: question.id,
+      bodyPreview: errorBody.slice(0, 200),
+    });
     return fallbackEvaluation(question, allUtterances, followUpCount);
   }
 
-  const payload = (await response.json()) as {
-    choices?: Array<{ message?: { content?: string } }>;
-  };
+  const payload = await parseChatCompletionsResponse(response, "answer_eval");
+  if (!payload) {
+    return fallbackEvaluation(question, allUtterances, followUpCount);
+  }
+
   const content = payload.choices?.[0]?.message?.content;
   if (!content) {
     return fallbackEvaluation(question, allUtterances, followUpCount);
@@ -249,7 +321,7 @@ export async function evaluateCandidateAnswer(options: {
 
   const isNoise = parsed.relevance === "noise";
 
-  return {
+  const result = {
     ...parsed,
     combinedAnswer: parsed.combinedAnswer || combinedAnswer,
     sufficient: !isNoise,
@@ -257,6 +329,13 @@ export async function evaluateCandidateAnswer(options: {
       ? (parsed.followUpInstruction ?? NOISE_ENVIRONMENT_INSTRUCTION)
       : null,
   };
+  interviewServerLog.success("eval", EVAL_COMPONENT, "answer_evaluated", {
+    questionId: question.id,
+    relevance: result.relevance,
+    sufficient: result.sufficient,
+    followUpCount,
+  });
+  return result;
 }
 
 function looksLikeReadyConfirmation(text: string): boolean {
@@ -311,6 +390,25 @@ export async function evaluateIntroUtterance(options: {
     return fallbackIntroEvaluation(trimmed);
   }
 
+  if (looksLikeNoise(trimmed)) {
+    logEvaluation("noise_short_circuit", {
+      context: "intro",
+      utterancePreview: trimmed.slice(0, 80),
+    });
+    return fallbackIntroEvaluation(trimmed);
+  }
+
+  if (looksLikeReadyConfirmation(trimmed)) {
+    logEvaluation("ready_short_circuit", {
+      utterancePreview: trimmed.slice(0, 80),
+    });
+    return {
+      ready: true,
+      relevance: "ready",
+      followUpInstruction: null,
+    };
+  }
+
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -342,12 +440,19 @@ export async function evaluateIntroUtterance(options: {
   });
 
   if (!response.ok) {
+    const errorBody = await response.text().catch(() => "");
+    logEvaluation("intro_eval_http_error", {
+      status: response.status,
+      bodyPreview: errorBody.slice(0, 200),
+    });
     return fallbackIntroEvaluation(trimmed);
   }
 
-  const payload = (await response.json()) as {
-    choices?: Array<{ message?: { content?: string } }>;
-  };
+  const payload = await parseChatCompletionsResponse(response, "intro_eval");
+  if (!payload) {
+    return fallbackIntroEvaluation(trimmed);
+  }
+
   const content = payload.choices?.[0]?.message?.content;
   if (!content) {
     return fallbackIntroEvaluation(trimmed);
@@ -366,7 +471,7 @@ export async function evaluateIntroUtterance(options: {
       return fallbackIntroEvaluation(trimmed);
     }
 
-    return {
+    const introResult: IntroEvaluationResult = {
       ready: parsed.ready,
       relevance,
       followUpInstruction:
@@ -374,6 +479,11 @@ export async function evaluateIntroUtterance(options: {
           ? parsed.followUpInstruction
           : null,
     };
+    interviewServerLog.success("eval", EVAL_COMPONENT, "intro_evaluated", {
+      ready: introResult.ready,
+      relevance: introResult.relevance,
+    });
+    return introResult;
   } catch {
     return fallbackIntroEvaluation(trimmed);
   }

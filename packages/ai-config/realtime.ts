@@ -1,3 +1,4 @@
+import { formatOpenAIApiError } from "./openai-api-error";
 import { getOpenAIClient } from "./openai-client";
 
 export const REALTIME_MODEL = "gpt-realtime-2";
@@ -7,6 +8,8 @@ export interface CreateRealtimeSessionOptions {
   model?: string;
   voice?: string;
   instructions?: string;
+  /** Worker route handlers should pass getServerOpenAIApiKey() when env binding differs from .dev.vars */
+  apiKey?: string;
 }
 
 export interface RealtimeEphemeralSession {
@@ -30,6 +33,13 @@ export async function createRealtimeEphemeralSession(
 ): Promise<RealtimeEphemeralSession> {
   const model = options.model ?? REALTIME_MODEL;
   const voice = options.voice ?? DEFAULT_REALTIME_VOICE;
+  const apiKey = options.apiKey?.trim() || process.env.OPENAI_API_KEY?.trim();
+
+  if (!apiKey) {
+    throw new Error(
+      "OPENAI_API_KEY is not set. Please configure it in your environment variables.",
+    );
+  }
 
   // GA Realtime API: beta /v1/realtime/sessions was retired.
   getOpenAIClient();
@@ -37,7 +47,7 @@ export async function createRealtimeEphemeralSession(
   const response = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -45,6 +55,14 @@ export async function createRealtimeEphemeralSession(
         type: "realtime",
         model,
         instructions: options.instructions,
+        reasoning: { effort: "low" },
+        truncation: {
+          type: "retention_ratio",
+          retention_ratio: 0.7,
+          token_limits: {
+            post_instructions: 6000,
+          },
+        },
         audio: {
           input: {
             transcription: { model: "whisper-1" },
@@ -58,7 +76,7 @@ export async function createRealtimeEphemeralSession(
   if (!response.ok) {
     const errorBody = await response.text();
     throw new Error(
-      `OpenAI Realtime client secret request failed (${response.status}): ${errorBody}`,
+      `OpenAI Realtime client secret request failed: ${formatOpenAIApiError(response.status, errorBody)}`,
     );
   }
 

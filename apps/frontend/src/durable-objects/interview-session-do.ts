@@ -11,7 +11,11 @@ import {
   updateSessionVoiceMetadata,
   upsertVoiceResponse,
 } from "@workspace/db/repositories/interview-session-repository";
-import { advanceBundleRound } from "@workspace/db/repositories/interview-bundle-repository";
+import {
+  advanceBundleRound,
+  resolveSessionFromToken,
+} from "@workspace/db/repositories/interview-bundle-repository";
+import { interviewServerLog, truncateId } from "@workspace/interview-realtime/debug-log";
 import {
   parseClientMessage,
   serializeDoMessage,
@@ -23,6 +27,8 @@ import {
   buildClosingEvent,
   buildFollowUpAnswerEvent,
   buildIntroFollowUpEvent,
+  buildPhaseSessionUpdateEvent,
+  buildRealtimeInstructionBase,
   buildRealtimeInstructions,
   buildSessionUpdateEvent,
   buildWelcomeIntroEvent,
@@ -31,6 +37,7 @@ import type {
   ConversationEntry,
   InterviewQuestion,
   InterviewState,
+  VoiceInterviewPhase,
 } from "@workspace/interview-realtime/types";
 
 interface WorkflowBinding {
@@ -47,7 +54,7 @@ declare const WebSocketPair: {
 };
 
 const CHEATING_RATE_LIMIT_MS = 1000;
-const VOICE_TRANSCRIPT_LOG_TOPIC = "voice-transcript";
+const DO_COMPONENT = "InterviewSessionDO";
 const SIDEBAND_CONNECT_MAX_RETRIES = 3;
 const SIDEBAND_RECONNECT_MAX_ATTEMPTS = 5;
 const SIDEBAND_BACKOFF_BASE_MS = 1000;
@@ -88,6 +95,7 @@ export class InterviewSessionDO implements DurableObject {
   private focusLostStartedAt: number | null = null;
   private pendingAdvanceAfterAck = false;
   private evaluatingAnswer = false;
+  private cachedBaseInstructions: string | null = null;
 
   constructor(state: DurableObjectState, env: InterviewSessionEnv) {
     this.durableState = state;
@@ -98,17 +106,25 @@ export class InterviewSessionDO implements DurableObject {
     action: string,
     data: Record<string, unknown> = {},
   ): void {
-    console.info(
-      JSON.stringify({
-        level: "info",
-        topic: VOICE_TRANSCRIPT_LOG_TOPIC,
-        component: "InterviewSessionDO",
-        action,
-        sessionId: this.interviewState?.sessionId,
-        voicePhase: this.interviewState?.voicePhase,
-        ...data,
-      }),
-    );
+    interviewServerLog.info("ws", DO_COMPONENT, action, {
+      sessionId: truncateId(this.interviewState?.sessionId),
+      voicePhase: this.interviewState?.voicePhase,
+      ...data,
+    });
+  }
+
+  private logError(
+    action: string,
+    error: unknown,
+    data: Record<string, unknown> = {},
+  ): void {
+    interviewServerLog.error("ws", DO_COMPONENT, action, {
+      sessionId: truncateId(this.interviewState?.sessionId),
+      voicePhase: this.interviewState?.voicePhase,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      ...data,
+    });
   }
 
   async fetch(request: Request): Promise<Response> {
@@ -169,56 +185,74 @@ export class InterviewSessionDO implements DurableObject {
   }
 
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer) {
-    const parsed = parseClientMessage(message);
-    if (!parsed || !this.interviewState) {
-      return;
-    }
+    try {
+      const parsed = parseClientMessage(message);
+      if (!parsed || !this.interviewState) {
+        if (!parsed) {
+          this.logTranscript("websocket_message_unparsed", {
+            messagePreview:
+              typeof message === "string"
+                ? previewText(message, 80)
+                : `ArrayBuffer(${message.byteLength})`,
+          });
+        }
+        return;
+      }
 
-    switch (parsed.type) {
-      case "PING":
-        this.sendToClient(ws, { type: "PONG" });
-        break;
-      case "CALL_STARTED":
-        this.logTranscript("call_started_received", {
-          callId: parsed.callId,
-          clientSecretPrefix: parsed.clientSecret.slice(0, 8),
-        });
-        this.sidebandIntentionalClose = false;
-        this.sidebandReconnectAttempt = 0;
-        this.cancelSidebandReconnect();
-        this.resetVoiceSessionForNewCall();
-        await this.persistState();
-        await this.connectSideband(parsed.callId, parsed.clientSecret);
-        break;
-      case "REALTIME_EVENT": {
-        const raw =
-          typeof parsed.event === "string"
-            ? parsed.event
-            : JSON.stringify(parsed.event);
-        void this.handleRealtimeEvent(raw, "client_dc");
-        break;
-      }
-      case "CHEATING_EVENT":
-        await this.recordCheatingEvent(parsed.eventType, parsed.metadata);
-        break;
-      case "FULLSCREEN_STATE":
-        this.interviewState.isFullscreen = parsed.isFullscreen;
-        if (!parsed.isFullscreen) {
-          await this.recordCheatingEvent("FULLSCREEN_EXITED");
+      this.logTranscript("websocket_message_received", { type: parsed.type });
+
+      switch (parsed.type) {
+        case "PING":
+          this.sendToClient(ws, { type: "PONG" });
+          break;
+        case "CALL_STARTED":
+          this.logTranscript("call_started_received", {
+            callId: parsed.callId,
+            clientSecretPrefix: parsed.clientSecret.slice(0, 8),
+          });
+          this.sidebandIntentionalClose = false;
+          this.sidebandReconnectAttempt = 0;
+          this.cancelSidebandReconnect();
+          this.resetVoiceSessionForNewCall();
+          await this.persistState();
+          await this.connectSideband(parsed.callId, parsed.clientSecret);
+          break;
+        case "REALTIME_EVENT": {
+          const raw =
+            typeof parsed.event === "string"
+              ? parsed.event
+              : JSON.stringify(parsed.event);
+          await this.handleRealtimeEvent(raw, "client_dc");
+          break;
         }
-        await this.persistState();
-        break;
-      case "END_INTERVIEW":
-        if (this.interviewState.isPracticeMode) {
-          await this.endPracticeSession();
-        } else {
-          await this.completeInterview();
+        case "CHEATING_EVENT":
+          await this.recordCheatingEvent(parsed.eventType, parsed.metadata);
+          break;
+        case "FULLSCREEN_STATE":
+          this.interviewState.isFullscreen = parsed.isFullscreen;
+          if (!parsed.isFullscreen) {
+            await this.recordCheatingEvent("FULLSCREEN_EXITED");
+          }
+          await this.persistState();
+          break;
+        case "END_INTERVIEW":
+          if (this.interviewState.isPracticeMode) {
+            await this.endPracticeSession();
+          } else {
+            await this.completeInterview();
+          }
+          break;
+        default: {
+          const _exhaustive: never = parsed;
+          void _exhaustive;
         }
-        break;
-      default: {
-        const _exhaustive: never = parsed;
-        void _exhaustive;
       }
+    } catch (error) {
+      this.logError("websocket_message_failed", error);
+      this.broadcast({
+        type: "ERROR",
+        message: "An internal error occurred. The interview may continue.",
+      });
     }
   }
 
@@ -239,14 +273,7 @@ export class InterviewSessionDO implements DurableObject {
   }
 
   async webSocketError(ws: WebSocket, error: unknown) {
-    console.error(
-      JSON.stringify({
-        level: "error",
-        component: "InterviewSessionDO",
-        sessionId: this.interviewState?.sessionId,
-        error: error instanceof Error ? error.message : String(error),
-      }),
-    );
+    this.logError("client_websocket_error", error);
     void ws;
   }
 
@@ -268,9 +295,26 @@ export class InterviewSessionDO implements DurableObject {
     }
 
     const row = await getSessionById(sessionId);
-    if (!row || row.session.token !== token) {
+    if (!row) {
       throw new Error("Invalid interview session");
     }
+
+    const resolved = await resolveSessionFromToken(token);
+    if (!resolved.ok || resolved.session.id !== sessionId) {
+      this.logError("ensure_state_invalid_token", new Error("Token mismatch"), {
+        sessionId,
+        tokenPrefix: token.slice(0, 8),
+        resolvedOk: resolved.ok,
+        resolvedSessionId: resolved.ok ? resolved.session.id : undefined,
+      });
+      throw new Error("Invalid interview session");
+    }
+
+    this.logTranscript("ensure_state_initialized", {
+      sessionId,
+      bundleId: row.session.bundleId ?? null,
+      deliveryMode: row.session.deliveryMode,
+    });
 
     const questions = await getQuestionsForInterviewSession(
       row.session.roundId,
@@ -551,19 +595,102 @@ export class InterviewSessionDO implements DurableObject {
     });
   }
 
-  private logResponseMetrics() {
+  private logResponseMetrics(usage?: Record<string, unknown>) {
     if (!this.pendingResponseMetric) {
       return;
     }
 
     const doneAt = Date.now();
     const { reason, sentAt, firstAudioAt } = this.pendingResponseMetric;
+    const tokenUsage = usage ? this.extractTokenUsage(usage) : null;
     this.logTranscript("response_metrics", {
       reason,
       msToFirstAudio: firstAudioAt ? firstAudioAt - sentAt : null,
       msToDone: doneAt - sentAt,
+      ...(tokenUsage ?? {}),
     });
     this.pendingResponseMetric = null;
+  }
+
+  private extractTokenUsage(
+    usage: Record<string, unknown>,
+  ): Record<string, number> | null {
+    const inputTokens =
+      typeof usage.input_tokens === "number" ? usage.input_tokens : undefined;
+    const outputTokens =
+      typeof usage.output_tokens === "number" ? usage.output_tokens : undefined;
+    const totalTokens =
+      typeof usage.total_tokens === "number" ? usage.total_tokens : undefined;
+
+    let cachedTokens: number | undefined;
+    if (typeof usage.cached_tokens === "number") {
+      cachedTokens = usage.cached_tokens;
+    } else if (
+      usage.input_token_details &&
+      typeof usage.input_token_details === "object"
+    ) {
+      const details = usage.input_token_details as Record<string, unknown>;
+      if (typeof details.cached_tokens === "number") {
+        cachedTokens = details.cached_tokens;
+      }
+    }
+
+    if (
+      inputTokens === undefined &&
+      outputTokens === undefined &&
+      cachedTokens === undefined
+    ) {
+      return null;
+    }
+
+    const result: Record<string, number> = {};
+    if (inputTokens !== undefined) {
+      result.inputTokens = inputTokens;
+    }
+    if (outputTokens !== undefined) {
+      result.outputTokens = outputTokens;
+    }
+    if (totalTokens !== undefined) {
+      result.totalTokens = totalTokens;
+    }
+    if (cachedTokens !== undefined) {
+      result.cachedTokens = cachedTokens;
+    }
+    return result;
+  }
+
+  private extractResponseUsage(
+    event: Record<string, unknown>,
+  ): Record<string, unknown> | undefined {
+    const response = event.response;
+    if (!response || typeof response !== "object") {
+      return undefined;
+    }
+    const usage = (response as Record<string, unknown>).usage;
+    if (!usage || typeof usage !== "object") {
+      return undefined;
+    }
+    return usage as Record<string, unknown>;
+  }
+
+  private sendPhaseSessionUpdate(phase: VoiceInterviewPhase) {
+    if (!this.sideband || !this.interviewState || !this.cachedBaseInstructions) {
+      return;
+    }
+
+    const sessionUpdate = buildPhaseSessionUpdateEvent({
+      baseInstructions: this.cachedBaseInstructions,
+      questions: this.interviewState.questions,
+      phase,
+      agentConfig: this.interviewState.agentConfig,
+      voice: this.interviewState.agentConfig?.voice,
+    });
+
+    this.sideband.send(JSON.stringify(sessionUpdate));
+    this.logTranscript("phase_session_update_sent", {
+      phase,
+      instructionsLength: String(sessionUpdate.session.instructions).length,
+    });
   }
 
   private async onSidebandConnected(callId: string, isReconnect: boolean) {
@@ -575,6 +702,14 @@ export class InterviewSessionDO implements DurableObject {
       callId,
       via: "fetch_upgrade",
       voicePhase: this.interviewState.voicePhase,
+    });
+
+    this.cachedBaseInstructions = buildRealtimeInstructionBase({
+      roundName: this.interviewState.roundName,
+      positionName: this.interviewState.positionName,
+      candidateName: this.interviewState.candidateName,
+      questions: this.interviewState.questions,
+      agentConfig: this.interviewState.agentConfig,
     });
 
     const instructions = buildRealtimeInstructions({
@@ -659,6 +794,7 @@ export class InterviewSessionDO implements DurableObject {
 
     const isReconnect = options?.isReconnect ?? false;
 
+    try {
     this.logTranscript("sideband_connect_start", {
       callId,
       auth: "ephemeral_client_secret",
@@ -717,6 +853,16 @@ export class InterviewSessionDO implements DurableObject {
       lastError,
     });
     this.scheduleSidebandReconnect(undefined, lastError);
+    } catch (error) {
+      this.logError("sideband_connect_unexpected", error, {
+        callId,
+        isReconnect: options?.isReconnect ?? false,
+      });
+      this.scheduleSidebandReconnect(
+        undefined,
+        error instanceof Error ? error.message : String(error),
+      );
+    }
   }
 
   private closeSideband(options?: { intentional?: boolean }) {
@@ -809,6 +955,7 @@ export class InterviewSessionDO implements DurableObject {
     if (this.interviewState.candidateReady) {
       this.welcomeIntroCompleted = true;
       this.interviewState.voicePhase = "questions";
+      this.sendPhaseSessionUpdate("questions");
       await this.persistState();
       await this.askCurrentQuestion();
       return;
@@ -821,20 +968,25 @@ export class InterviewSessionDO implements DurableObject {
     raw: string,
     source: "sideband" | "client_dc",
   ) {
-    if (source === "client_dc" && this.sideband) {
-      return;
-    }
-
-    if (!this.interviewState) {
-      return;
-    }
-
-    let event: Record<string, unknown>;
     try {
-      event = JSON.parse(raw) as Record<string, unknown>;
-    } catch {
-      return;
-    }
+      if (source === "client_dc" && this.sideband) {
+        return;
+      }
+
+      if (!this.interviewState) {
+        return;
+      }
+
+      let event: Record<string, unknown>;
+      try {
+        event = JSON.parse(raw) as Record<string, unknown>;
+      } catch {
+        this.logTranscript("realtime_event_parse_failed", {
+          source,
+          rawPreview: previewText(raw, 80),
+        });
+        return;
+      }
 
     const type = typeof event.type === "string" ? event.type : "";
 
@@ -1036,17 +1188,16 @@ export class InterviewSessionDO implements DurableObject {
     }
 
     if (type === "response.done") {
-      this.logResponseMetrics();
+      const usage = this.extractResponseUsage(event);
+      const tokenUsage = usage ? this.extractTokenUsage(usage) : null;
+      this.logResponseMetrics(usage);
       const responseStatus = this.extractResponseStatus(event);
       this.logTranscript("response_done", {
         voicePhase: this.interviewState.voicePhase,
         awaitingAnswerForIndex: this.interviewState.awaitingAnswerForIndex,
         currentQuestionIndex: this.interviewState.currentQuestionIndex,
         responseStatus,
-        usage:
-          event.response && typeof event.response === "object"
-            ? (event.response as Record<string, unknown>).usage
-            : undefined,
+        ...(tokenUsage ?? {}),
       });
 
       if (
@@ -1094,6 +1245,12 @@ export class InterviewSessionDO implements DurableObject {
       });
       return;
     }
+    } catch (error) {
+      this.logError("handle_realtime_event_failed", error, {
+        source,
+        rawPreview: previewText(raw, 80),
+      });
+    }
   }
 
   private async handleResponseDone(_responseStatus?: string) {
@@ -1105,9 +1262,11 @@ export class InterviewSessionDO implements DurableObject {
 
     if (phase === "intro") {
       this.welcomeIntroCompleted = true;
-      this.interviewState.voicePhase = this.interviewState.candidateReady
+      const nextPhase = this.interviewState.candidateReady
         ? "questions"
         : "awaiting_ready";
+      this.interviewState.voicePhase = nextPhase;
+      this.sendPhaseSessionUpdate(nextPhase);
       await this.persistState();
       if (this.interviewState.candidateReady) {
         await this.askCurrentQuestion();
@@ -1134,6 +1293,7 @@ export class InterviewSessionDO implements DurableObject {
 
     if (phase === "closing") {
       this.interviewState.voicePhase = "awaiting_end";
+      this.sendPhaseSessionUpdate("awaiting_end");
       await this.persistState();
       this.broadcast({ type: "ALL_QUESTIONS_ASKED" });
       return;
@@ -1183,15 +1343,7 @@ export class InterviewSessionDO implements DurableObject {
         answers,
       });
     } catch (error) {
-      console.error(
-        JSON.stringify({
-          level: "error",
-          component: "InterviewSessionDO",
-          action: "flushResponsesToDatabase",
-          sessionId: this.interviewState.sessionId,
-          error: error instanceof Error ? error.message : String(error),
-        }),
-      );
+      this.logError("flush_responses_to_database_failed", error);
     }
   }
 
@@ -1248,16 +1400,9 @@ export class InterviewSessionDO implements DurableObject {
         transcript: combinedAnswer,
       });
     } catch (error) {
-      console.error(
-        JSON.stringify({
-          level: "error",
-          component: "InterviewSessionDO",
-          action: "persistQuestionAnswer",
-          sessionId: this.interviewState.sessionId,
-          questionId: question.id,
-          error: error instanceof Error ? error.message : String(error),
-        }),
-      );
+      this.logError("persist_question_answer_failed", error, {
+        questionId: truncateId(question.id),
+      });
     }
   }
 
@@ -1318,7 +1463,7 @@ export class InterviewSessionDO implements DurableObject {
         this.interviewState.awaitingAnswerForIndex = null;
         this.pendingAdvanceAfterAck = true;
         this.dispatchResponseCreate(
-          buildAcknowledgeAnswerEvent(question),
+          buildAcknowledgeAnswerEvent(questionIndex),
           "acknowledge_answer",
           { questionId: question.id, questionIndex },
         );
@@ -1328,7 +1473,7 @@ export class InterviewSessionDO implements DurableObject {
         this.interviewState.awaitingAnswerForIndex = null;
         this.dispatchResponseCreate(
           buildFollowUpAnswerEvent({
-            question,
+            questionIndex,
             candidateUtterance: trimmed,
             followUpInstruction: evaluation.followUpInstruction,
           }),
@@ -1343,6 +1488,11 @@ export class InterviewSessionDO implements DurableObject {
       }
 
       await this.persistState();
+    } catch (error) {
+      this.logError("handle_question_answer_failed", error, {
+        questionId: question.id,
+        questionIndex,
+      });
     } finally {
       this.evaluatingAnswer = false;
     }
@@ -1415,44 +1565,52 @@ export class InterviewSessionDO implements DurableObject {
       return;
     }
 
-    const evaluation = await evaluateIntroUtterance({
-      apiKey: this.env.OPENAI_API_KEY,
-      utterance: trimmed,
-    });
+    try {
+      const evaluation = await evaluateIntroUtterance({
+        apiKey: this.env.OPENAI_API_KEY,
+        utterance: trimmed,
+      });
 
-    this.logTranscript("intro_utterance_evaluated", {
-      phase,
-      ready: evaluation.ready,
-      relevance: evaluation.relevance,
-      textPreview: previewText(trimmed),
-    });
+      this.logTranscript("intro_utterance_evaluated", {
+        phase,
+        ready: evaluation.ready,
+        relevance: evaluation.relevance,
+        textPreview: previewText(trimmed),
+      });
 
-    this.appendConversation("user", trimmed);
+      this.appendConversation("user", trimmed);
 
-    if (evaluation.ready) {
-      this.interviewState.candidateReady = true;
-      await this.persistState();
-
-      if (phase === "awaiting_ready" || this.welcomeIntroCompleted) {
-        this.interviewState.voicePhase = "questions";
+      if (evaluation.ready) {
+        this.interviewState.candidateReady = true;
         await this.persistState();
-        await this.askCurrentQuestion();
+
+        if (phase === "awaiting_ready" || this.welcomeIntroCompleted) {
+          this.interviewState.voicePhase = "questions";
+          this.sendPhaseSessionUpdate("questions");
+          await this.persistState();
+          await this.askCurrentQuestion();
+        }
+        return;
       }
-      return;
-    }
 
-    if (evaluation.followUpInstruction) {
-      this.dispatchResponseCreate(
-        buildIntroFollowUpEvent({
-          candidateUtterance: trimmed,
-          followUpInstruction: evaluation.followUpInstruction,
-        }),
-        "intro_follow_up",
-        { phase, relevance: evaluation.relevance },
-      );
-    }
+      if (evaluation.followUpInstruction) {
+        this.dispatchResponseCreate(
+          buildIntroFollowUpEvent({
+            candidateUtterance: trimmed,
+            followUpInstruction: evaluation.followUpInstruction,
+          }),
+          "intro_follow_up",
+          { phase, relevance: evaluation.relevance },
+        );
+      }
 
-    await this.persistState();
+      await this.persistState();
+    } catch (error) {
+      this.logError("handle_intro_utterance_failed", error, {
+        phase,
+        textPreview: previewText(trimmed),
+      });
+    }
   }
 
   private matchMcqOption(
@@ -1634,6 +1792,7 @@ export class InterviewSessionDO implements DurableObject {
     }
 
     this.interviewState.voicePhase = "closing";
+    this.sendPhaseSessionUpdate("closing");
     await this.persistState();
     this.dispatchResponseCreate(
       buildClosingEvent({
@@ -1678,30 +1837,45 @@ export class InterviewSessionDO implements DurableObject {
       return;
     }
 
-    await this.flushResponsesToDatabase();
-
-    this.interviewState.status = "completed";
-    const cheatingSummary = this.buildCheatingSummary();
-
-    await updateSessionVoiceMetadata(this.interviewState.sessionId, {
-      cheatingSummary,
-      realtimeSessionId: this.interviewState.realtimeSessionId,
+    this.logTranscript("complete_interview_start", {
+      sessionId: this.interviewState.sessionId,
     });
 
-    const bundleAdvance = await advanceBundleRound(
-      this.interviewState.sessionId,
-    );
+    try {
+      await this.flushResponsesToDatabase();
 
-    if (!bundleAdvance) {
-      await updateSessionStatus(this.interviewState.sessionId, "completed", {
-        completedAt: new Date(),
-        tabSwitches: cheatingSummary.tabSwitches ?? 0,
+      this.interviewState.status = "completed";
+      const cheatingSummary = this.buildCheatingSummary();
+
+      await updateSessionVoiceMetadata(this.interviewState.sessionId, {
+        cheatingSummary,
+        realtimeSessionId: this.interviewState.realtimeSessionId,
+      });
+
+      const bundleAdvance = await advanceBundleRound(
+        this.interviewState.sessionId,
+      );
+
+      if (!bundleAdvance) {
+        await updateSessionStatus(this.interviewState.sessionId, "completed", {
+          completedAt: new Date(),
+          tabSwitches: cheatingSummary.tabSwitches ?? 0,
+        });
+      }
+
+      await this.persistState();
+      this.closeSideband({ intentional: true });
+      this.broadcast({ type: "INTERVIEW_COMPLETED" });
+      this.logTranscript("complete_interview_success", {
+        bundleAdvanced: Boolean(bundleAdvance),
+      });
+    } catch (error) {
+      this.logError("complete_interview_failed", error);
+      this.broadcast({
+        type: "ERROR",
+        message: "Failed to complete interview. Please try again.",
       });
     }
-
-    await this.persistState();
-    this.closeSideband({ intentional: true });
-    this.broadcast({ type: "INTERVIEW_COMPLETED" });
   }
 
   private async markInterrupted() {

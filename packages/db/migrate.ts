@@ -18,26 +18,42 @@ const result = spawnSync(
   },
 );
 
-  if (result.status !== 0) {
-    console.error("❌ Migration failed");
-    process.exit(result.status ?? 1);
+if (result.status !== 0) {
+  console.error("❌ Migration failed");
+  process.exit(result.status ?? 1);
+}
+
+const finalizeArgs = process.argv.includes("--remote") ? ["--remote"] : [];
+const finalizeResult = spawnSync(
+  "bun",
+  ["run", "scripts/finalize-interview-schema.ts", ...finalizeArgs],
+  {
+    cwd: __dirname,
+    stdio: "inherit",
+    env: process.env,
+  },
+);
+
+if (finalizeResult.status !== 0) {
+  console.error("❌ Interview schema finalization failed");
+  process.exit(finalizeResult.status ?? 1);
+}
+
+if (!process.argv.includes("--remote")) {
+  const sharedRoundsResult = spawnSync(
+    "bun",
+    ["run", "scripts/migrate-shared-rounds.ts"],
+    {
+      cwd: __dirname,
+      stdio: "inherit",
+      env: process.env,
+    },
+  );
+
+  if (sharedRoundsResult.status !== 0) {
+    console.error("❌ Shared rounds data migration failed");
+    process.exit(sharedRoundsResult.status ?? 1);
   }
+}
 
-  if (!process.argv.includes("--remote")) {
-    const sharedRoundsResult = spawnSync(
-      "bun",
-      ["run", "scripts/migrate-shared-rounds.ts"],
-      {
-        cwd: __dirname,
-        stdio: "inherit",
-        env: process.env,
-      },
-    );
-
-    if (sharedRoundsResult.status !== 0) {
-      console.error("❌ Shared rounds data migration failed");
-      process.exit(sharedRoundsResult.status ?? 1);
-    }
-  }
-
-  console.log("✅ Migrations completed");
+console.log("✅ Migrations completed");

@@ -1,5 +1,5 @@
 import type { AgentConfig } from "@workspace/db/enums";
-import type { InterviewQuestion } from "./types";
+import type { InterviewQuestion, VoiceInterviewPhase } from "./types";
 
 function formatQuestion(question: InterviewQuestion, index: number): string {
   const prefix = `Question ${index + 1}`;
@@ -16,7 +16,20 @@ function formatQuestion(question: InterviewQuestion, index: number): string {
   return `${prefix}: ${question.questionText}`;
 }
 
-export function buildRealtimeInstructions(options: {
+export function buildQuestionsSection(questions: InterviewQuestion[]): string {
+  if (questions.length === 0) {
+    return "## Questions\n\n(No questions configured.)";
+  }
+
+  return [
+    "## Questions",
+    "",
+    "Ask these in order — this list is the single source of truth:",
+    ...questions.map((question, index) => formatQuestion(question, index)),
+  ].join("\n");
+}
+
+export function buildRealtimeInstructionBase(options: {
   roundName?: string;
   positionName?: string;
   candidateName?: string;
@@ -27,7 +40,8 @@ export function buildRealtimeInstructions(options: {
   const questionCount = options.questions.length;
 
   return [
-    "You are conducting a structured job interview for Dark Alpha Capital.",
+    "## Role and Objective",
+    "You are conducting a structured voice job interview for Dark Alpha Capital.",
     options.positionName
       ? `Position: ${options.positionName}.`
       : "Position: not specified.",
@@ -36,32 +50,116 @@ export function buildRealtimeInstructions(options: {
       ? `Candidate: ${options.candidateName}.`
       : "Candidate name is available in the session.",
     `This interview has ${questionCount} questions total.`,
-    questionCount > 0
-      ? [
-        "",
-        "Questions (in order):",
-        ...options.questions.map((question, index) =>
-          formatQuestion(question, index),
-        ),
-      ].join("\n")
-      : "",
-    "",
-    "Rules:",
-    "- At the start of the interview, introduce yourself, welcome the candidate, and ask if they are ready before any questions.",
-    "- Ask one question at a time, in order. Wait for the candidate to finish speaking before responding.",
-    "- Treat this as a natural conversation, not a script. Listen to what the candidate actually says.",
-    "- Always accept the candidate's answer and move to the next question — even if it is wrong, off-topic, vague, or incomplete. Never ask them to try again, redirect, or say 'not quite'.",
-    "- After any real answer, give a brief acknowledgment (e.g. 'Thank you.') and proceed to the next question.",
-    "- If you hear background noise, gibberish, filler sounds, or a random unrelated word instead of a real answer: ask the candidate to please ensure their surroundings are stable and silenced, then repeat the current question. Do NOT advance.",
-    "- For MCQ questions, read all options clearly (A, B, C, D). Accept whatever option they choose and move on — do not ask them to pick again.",
-    "- Keep acknowledgments brief. Never say you are waiting for questions or instructions.",
-    "- After the final question, thank the candidate and tell them to click the End Interview button on screen to finish.",
-    "- Do not reveal correct answers or coach the candidate.",
-    "- Keep a professional, warm, conversational tone.",
-    customInstructions ? `Additional instructions: ${customInstructions}` : "",
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+export function buildInterviewFlowSection(phase: VoiceInterviewPhase): string {
+  switch (phase) {
+    case "intro":
+      return [
+        "## Interview Flow",
+        "Phase: INTRO.",
+        "- Introduce yourself, welcome the candidate, and explain the format (one question at a time, spoken answers).",
+        "- Ask if they are ready to begin. Do not ask interview questions yet.",
+      ].join("\n");
+    case "awaiting_ready":
+      return [
+        "## Interview Flow",
+        "Phase: AWAITING_READY.",
+        "- Wait for a clear readiness confirmation before any interview questions.",
+        "- If you hear noise or an unclear response, ask them to confirm when ready.",
+        "- Do not ask interview questions until they confirm readiness.",
+      ].join("\n");
+    case "questions":
+      return [
+        "## Interview Flow",
+        "Phase: QUESTIONS.",
+        "- Ask one question at a time from the Questions section, in order.",
+        "- Wait for the candidate to finish speaking before responding.",
+        "- Always accept any substantive answer and move on — even if wrong, off-topic, vague, or incomplete.",
+        "- After a real answer, give a brief acknowledgment (e.g. 'Thank you.') and proceed to the next question.",
+        "- If you hear background noise, gibberish, filler sounds, or a random unrelated word: ask them to stabilize and silence their surroundings, then repeat the current question. Do NOT advance.",
+        "- For MCQ questions, read all options clearly (A, B, C, D). Accept whatever option they choose.",
+        "- Do not reveal correct answers or coach the candidate.",
+      ].join("\n");
+    case "closing":
+    case "awaiting_end":
+      return [
+        "## Interview Flow",
+        "Phase: CLOSING.",
+        "- All interview questions are complete.",
+        "- Thank the candidate sincerely and tell them to click the End Interview button on screen to finish.",
+        "- Do not ask any more questions.",
+      ].join("\n");
+    default: {
+      const _exhaustive: never = phase;
+      return _exhaustive;
+    }
+  }
+}
+
+function buildSharedBehaviorSections(agentConfig?: AgentConfig): string {
+  const customInstructions = agentConfig?.instructions?.trim();
+
+  return [
+    "## Personality and Tone",
+    "Professional, warm, and conversational — not robotic or scripted.",
+    "",
+    "## Language",
+    "Conduct the interview in English unless the candidate clearly requests another language.",
+    "",
+    "## Reasoning",
+    "Respond quickly for acknowledgments and question delivery. Use brief internal reasoning only when deciding whether audio was unclear vs a real answer.",
+    "",
+    "## Preambles",
+    "Before longer pauses (e.g. moving to the next question), you may say a short spoken update like 'Thank you — next question.' Keep preambles under one sentence.",
+    "",
+    "## Verbosity",
+    "- Acknowledgments: 1–2 sentences maximum.",
+    "- Questions: read clearly and completely, including all MCQ options.",
+    "- Intro and closing: concise (under 30 seconds).",
+    "",
+    "## Unclear Audio",
+    "- Do not guess what the candidate said.",
+    "- If audio is unclear, ask them to repeat. No preamble on unclear audio — just ask to repeat.",
+    "- Do not respond to silence, background noise, or non-speech sounds.",
+    "- Wait for the candidate; do not fill silence with chatter.",
+    customInstructions ? `## Additional Instructions\n${customInstructions}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+export function buildInstructionsForPhase(
+  baseInstructions: string,
+  questions: InterviewQuestion[],
+  phase: VoiceInterviewPhase,
+  agentConfig?: AgentConfig,
+): string {
+  return [
+    baseInstructions,
+    buildSharedBehaviorSections(agentConfig),
+    buildQuestionsSection(questions),
+    buildInterviewFlowSection(phase),
+  ].join("\n\n");
+}
+
+export function buildRealtimeInstructions(options: {
+  roundName?: string;
+  positionName?: string;
+  candidateName?: string;
+  questions: InterviewQuestion[];
+  agentConfig?: AgentConfig;
+}): string {
+  const base = buildRealtimeInstructionBase(options);
+  return buildInstructionsForPhase(
+    base,
+    options.questions,
+    "intro",
+    options.agentConfig,
+  );
 }
 
 export function buildSessionUpdateEvent(instructions: string, voice?: string) {
@@ -71,6 +169,14 @@ export function buildSessionUpdateEvent(instructions: string, voice?: string) {
       type: "realtime",
       instructions,
       output_modalities: ["audio"],
+      reasoning: { effort: "low" },
+      truncation: {
+        type: "retention_ratio",
+        retention_ratio: 0.7,
+        token_limits: {
+          post_instructions: 6000,
+        },
+      },
       audio: {
         input: {
           transcription: { model: "whisper-1" },
@@ -87,6 +193,22 @@ export function buildSessionUpdateEvent(instructions: string, voice?: string) {
       },
     },
   };
+}
+
+export function buildPhaseSessionUpdateEvent(options: {
+  baseInstructions: string;
+  questions: InterviewQuestion[];
+  phase: VoiceInterviewPhase;
+  agentConfig?: AgentConfig;
+  voice?: string;
+}) {
+  const instructions = buildInstructionsForPhase(
+    options.baseInstructions,
+    options.questions,
+    options.phase,
+    options.agentConfig,
+  );
+  return buildSessionUpdateEvent(instructions, options.voice);
 }
 
 export function buildWelcomeIntroEvent(options: {
@@ -116,14 +238,18 @@ export function buildAskCurrentQuestionEvent(
   question: InterviewQuestion,
   index: number,
 ) {
-  const prompt = formatQuestion(question, index);
+  const questionNumber = index + 1;
+  const mcqNote =
+    question.questionType === "mcq" && question.options?.length
+      ? " Read all MCQ options (A, B, C, D) clearly from the session Questions list."
+      : "";
 
   return {
     type: "response.create",
     response: {
       instructions: [
-        `Ask this interview question now. Read it clearly and completely: ${prompt}`,
-        "Then stop and wait for the candidate to answer.",
+        `Ask Question ${questionNumber} from the session Questions list now.${mcqNote}`,
+        "Read it clearly and completely, then stop and wait for the candidate to answer.",
         "Do not ask the next question or acknowledge yet — just ask this one question.",
       ].join(" "),
     },
@@ -131,23 +257,21 @@ export function buildAskCurrentQuestionEvent(
 }
 
 export function buildFollowUpAnswerEvent(options: {
-  question: InterviewQuestion;
+  questionIndex: number;
   candidateUtterance: string;
   followUpInstruction: string | null;
 }) {
-  const questionPrompt = formatQuestion(options.question, 0).replace(
-    /^Question \d+:\s*/,
-    "",
-  );
+  const questionNumber = options.questionIndex + 1;
 
   return {
     type: "response.create",
     response: {
+      max_output_tokens: 120,
       instructions: [
-        `You are still on the same interview question: "${questionPrompt}".`,
+        `You are still on Question ${questionNumber} from the session Questions list.`,
         `The candidate just said: "${options.candidateUtterance.trim()}".`,
         options.followUpInstruction ??
-        "You did not hear a clear answer — only noise or gibberish. Politely ask the candidate to please ensure their surroundings are stable and silenced, then repeat the current question. Do not advance.",
+          "You did not hear a clear answer — only noise or gibberish. Politely ask the candidate to please ensure their surroundings are stable and silenced, then repeat the current question. Do not advance.",
         "Stay on this question only. Do not move on or ask a different question.",
         "Keep it conversational — one or two sentences.",
       ].join(" "),
@@ -155,17 +279,15 @@ export function buildFollowUpAnswerEvent(options: {
   };
 }
 
-export function buildAcknowledgeAnswerEvent(question: InterviewQuestion) {
-  const questionPrompt = formatQuestion(question, 0).replace(
-    /^Question \d+:\s*/,
-    "",
-  );
+export function buildAcknowledgeAnswerEvent(questionIndex: number) {
+  const questionNumber = questionIndex + 1;
 
   return {
     type: "response.create",
     response: {
+      max_output_tokens: 80,
       instructions: [
-        `The candidate just answered the question: "${questionPrompt}".`,
+        `The candidate just answered Question ${questionNumber}.`,
         "Give a brief, natural acknowledgment (one short sentence such as 'Thank you.' or 'Got it, thank you.').",
         "Do NOT evaluate correctness, say 'not quite', or ask them to try again.",
         "Do not ask any follow-up questions. Do not repeat the question.",
@@ -182,6 +304,7 @@ export function buildIntroFollowUpEvent(options: {
   return {
     type: "response.create",
     response: {
+      max_output_tokens: 120,
       instructions: [
         "You are welcoming the candidate before the interview begins.",
         `The candidate just said: "${options.candidateUtterance.trim()}".`,
@@ -201,6 +324,7 @@ export function buildClosingEvent(options?: { isPractice?: boolean }) {
   return {
     type: "response.create",
     response: {
+      max_output_tokens: 150,
       instructions: [
         options?.isPractice
           ? "This was a practice session with sample questions."

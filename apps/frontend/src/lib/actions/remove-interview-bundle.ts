@@ -3,7 +3,7 @@ import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { deleteBundle } from "@workspace/db/repositories/interview-bundle-repository";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
-export const deleteInterviewBundle = createServerFn({ method: "POST" })
+export const removeInterviewBundle = createServerFn({ method: "POST" })
   .middleware([serverFnAuthGuard])
   .validator((data: string) => data)
   .handler(async ({ data: bundleId, context: { session } }) => {

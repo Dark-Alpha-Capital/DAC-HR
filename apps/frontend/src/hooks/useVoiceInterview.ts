@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { VoiceInterviewPhase } from "@workspace/interview-realtime/types";
+import { formatOpenAIApiError } from "@workspace/ai-config";
 import type { CheatingEventType } from "@workspace/db/enums";
 import { useCheatingPrevention } from "./useCheatingPrevention";
+import { logInterview, truncateId } from "~/lib/interview-debug-log";
 
 export interface VoiceQuestion {
   id: string;
@@ -38,17 +40,6 @@ export interface VoiceInterviewState {
 }
 
 const LIVE_TRANSCRIPT_FLUSH_MS = 1000;
-const VOICE_TRANSCRIPT_LOG_TOPIC = "voice-transcript";
-
-function logVoiceTranscript(
-  action: string,
-  data: Record<string, unknown> = {},
-): void {
-  console.info(
-    `[${VOICE_TRANSCRIPT_LOG_TOPIC}] ${action}`,
-    JSON.stringify(data),
-  );
-}
 
 function previewTranscriptText(text: string, maxLength = 120): string {
   const trimmed = text.trim();
@@ -69,6 +60,44 @@ function mapConversationHistory(
     role: entry.role,
     text: entry.content,
   }));
+}
+
+function parseWsMessageData(
+  data: unknown,
+): Record<string, unknown> | null {
+  try {
+    return JSON.parse(String(data)) as Record<string, unknown>;
+  } catch (error) {
+    logInterview.error("voice", "ws_message_parse_failed", {
+      dataPreview: previewTranscriptText(String(data), 80),
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
+}
+
+async function parseStartVoiceResponse(
+  response: Response,
+): Promise<StartVoiceResponse> {
+  const bodyText = await response.text();
+  if (!bodyText.trim()) {
+    logInterview.error("voice", "start_voice_empty_body", {
+      status: response.status,
+      contentType: response.headers.get("content-type"),
+    });
+    throw new Error("Empty response from start-voice");
+  }
+
+  try {
+    return JSON.parse(bodyText) as StartVoiceResponse;
+  } catch (error) {
+    logInterview.error("voice", "start_voice_json_parse_failed", {
+      status: response.status,
+      bodyPreview: bodyText.slice(0, 200),
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw new Error("Invalid response from start-voice");
+  }
 }
 
 function resolveQuestionForIndex(
@@ -96,6 +125,63 @@ function mergeQuestion(
     return next;
   }
   return [...questions, question];
+}
+
+async function requestDisplayMedia(): Promise<MediaStream> {
+  const advanced: DisplayMediaStreamOptions = {
+    video: {
+      displaySurface: "browser",
+      width: { ideal: 1920 },
+      height: { ideal: 1080 },
+      frameRate: { ideal: 30 },
+    },
+    audio: true,
+    preferCurrentTab: true,
+    selfBrowserSurface: "include",
+    monitorTypeSurfaces: "exclude",
+  } as DisplayMediaStreamOptions;
+
+  try {
+    return await navigator.mediaDevices.getDisplayMedia(advanced);
+  } catch (error) {
+    logInterview.warn("voice", "display_media_advanced_failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return await navigator.mediaDevices.getDisplayMedia({
+      video: true,
+      audio: true,
+    });
+  }
+}
+
+async function waitForIceGathering(
+  pc: RTCPeerConnection,
+  timeoutMs = 5000,
+): Promise<void> {
+  if (pc.iceGatheringState === "complete") {
+    return;
+  }
+
+  await new Promise<void>((resolve) => {
+    const timeout = window.setTimeout(() => {
+      pc.removeEventListener("icegatheringstatechange", onChange);
+      resolve();
+    }, timeoutMs);
+
+    const onChange = () => {
+      if (pc.iceGatheringState === "complete") {
+        window.clearTimeout(timeout);
+        pc.removeEventListener("icegatheringstatechange", onChange);
+        resolve();
+      }
+    };
+
+    pc.addEventListener("icegatheringstatechange", onChange);
+  });
+}
+
+function parseRealtimeSdpError(status: number, body: string): string {
+  return formatOpenAIApiError(status, body);
 }
 
 function getRecordingMimeType(): string {
@@ -190,6 +276,34 @@ export function useVoiceInterview(token: string) {
   const isPracticeRef = useRef(false);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const liveTranscriptBuffersRef = useRef({ user: "", assistant: "" });
+  const startInFlightRef = useRef(false);
+  const prevVoiceStatusRef = useRef(state.status);
+  const prevVoicePhaseRef = useRef(state.voicePhase);
+
+  useEffect(() => {
+    if (prevVoiceStatusRef.current !== state.status) {
+      logInterview.info("state", "voice_status_transition", {
+        token: truncateId(token),
+        from: prevVoiceStatusRef.current,
+        to: state.status,
+        voicePhase: state.voicePhase,
+        isPractice: state.isPractice,
+      });
+      prevVoiceStatusRef.current = state.status;
+    }
+  }, [state.status, state.voicePhase, state.isPractice, token]);
+
+  useEffect(() => {
+    if (prevVoicePhaseRef.current !== state.voicePhase) {
+      logInterview.info("state", "voice_phase_transition", {
+        token: truncateId(token),
+        from: prevVoicePhaseRef.current,
+        to: state.voicePhase,
+        questionIndex: state.currentQuestionIndex,
+      });
+      prevVoicePhaseRef.current = state.voicePhase;
+    }
+  }, [state.voicePhase, state.currentQuestionIndex, token]);
 
   const completeSessionViaApi = useCallback(async () => {
     const response = await fetch(`/api/interview-token/${token}/complete`, {
@@ -223,16 +337,6 @@ export function useVoiceInterview(token: string) {
 
     const flushLiveTranscripts = () => {
       const { user, assistant } = liveTranscriptBuffersRef.current;
-      if (user || assistant) {
-        logVoiceTranscript("live_flush", {
-          userLength: user.length,
-          assistantLength: assistant.length,
-          userPreview: user ? previewTranscriptText(user, 80) : undefined,
-          assistantPreview: assistant
-            ? previewTranscriptText(assistant, 80)
-            : undefined,
-        });
-      }
 
       setState((current) => {
         if (
@@ -301,6 +405,10 @@ export function useVoiceInterview(token: string) {
   }, [token]);
 
   const endInterview = useCallback(async () => {
+    logInterview.info("voice", "end_interview_start", {
+      token: truncateId(token),
+      isPractice: isPracticeRef.current,
+    });
     setState((current) => ({ ...current, isEnding: true }));
     const isPractice = isPracticeRef.current;
 
@@ -340,6 +448,10 @@ export function useVoiceInterview(token: string) {
         await completeSessionViaApi();
       }
     } catch (error) {
+      logInterview.error("voice", "end_interview_failed", {
+        token: truncateId(token),
+        error: error instanceof Error ? error.message : String(error),
+      });
       setState((current) => ({
         ...current,
         status: "error",
@@ -360,42 +472,38 @@ export function useVoiceInterview(token: string) {
       isEnding: false,
       isPractice: false,
     }));
+    logInterview.success("voice", "end_interview_ok", {
+      token: truncateId(token),
+      isPractice,
+    });
     isPracticeRef.current = false;
   }, [cleanup, completeSessionViaApi, uploadRecording]);
 
   const handleWsMessage = useCallback(
     (event: MessageEvent) => {
-      const message = JSON.parse(String(event.data)) as Record<string, unknown>;
+      const message = parseWsMessageData(event.data);
+      if (!message) {
+        return;
+      }
       const type = typeof message.type === "string" ? message.type : "";
 
       if (
-        type === "TRANSCRIPT" ||
-        type === "TRANSCRIPT_DELTA" ||
         type === "CONNECTED" ||
         type === "INTRO_STARTED" ||
-        type === "QUESTION_CHANGED"
+        type === "QUESTION_CHANGED" ||
+        type === "ALL_QUESTIONS_ASKED" ||
+        type === "INTERVIEW_COMPLETED" ||
+        type === "PRACTICE_ENDED" ||
+        type === "ERROR"
       ) {
-        logVoiceTranscript("ws_message", {
+        logInterview.info("ws", "ws_message", {
           type,
           role: message.role,
+          questionIndex: message.index,
           textPreview:
             typeof message.text === "string"
               ? previewTranscriptText(message.text, 80)
               : undefined,
-          deltaPreview:
-            typeof message.delta === "string"
-              ? previewTranscriptText(message.delta, 40)
-              : undefined,
-          historyLength: Array.isArray(
-            (message.state as { conversationHistory?: unknown[] } | undefined)
-              ?.conversationHistory,
-          )
-            ? (
-                message.state as {
-                  conversationHistory: unknown[];
-                }
-              ).conversationHistory.length
-            : undefined,
         });
       }
 
@@ -493,11 +601,6 @@ export function useVoiceInterview(token: string) {
       ) {
         const role = message.role as "user" | "assistant";
         liveTranscriptBuffersRef.current[role] += message.delta;
-        logVoiceTranscript("transcript_delta_buffered", {
-          role,
-          deltaLength: message.delta.length,
-          bufferLength: liveTranscriptBuffersRef.current[role].length,
-        });
         return;
       }
 
@@ -514,7 +617,7 @@ export function useVoiceInterview(token: string) {
             ...current.transcripts,
             { role, text: message.text as string },
           ];
-          logVoiceTranscript("transcript_committed", {
+          logInterview.info("voice", "transcript_committed", {
             role,
             textPreview: previewTranscriptText(message.text as string),
             transcriptCount: nextTranscripts.length,
@@ -546,6 +649,9 @@ export function useVoiceInterview(token: string) {
       }
 
       if (type === "ERROR" && typeof message.message === "string") {
+        logInterview.error("ws", "ws_error_message", {
+          message: message.message,
+        });
         setState((current) => ({
           ...current,
           status: "error",
@@ -557,9 +663,22 @@ export function useVoiceInterview(token: string) {
   );
 
   const start = useCallback(async (options?: { practice?: boolean }) => {
+    if (startInFlightRef.current) {
+      logInterview.warn("voice", "start_already_in_flight", {
+        token: truncateId(token),
+      });
+      return;
+    }
+
     const isPractice = options?.practice === true;
+    startInFlightRef.current = true;
+    logInterview.info("voice", "start_interview", {
+      token: truncateId(token),
+      isPractice,
+    });
     isPracticeRef.current = isPractice;
     liveTranscriptBuffersRef.current = { user: "", assistant: "" };
+    cleanup();
     setState({
       status: "connecting",
       isEnding: false,
@@ -578,31 +697,10 @@ export function useVoiceInterview(token: string) {
     try {
       await document.documentElement.requestFullscreen().catch(() => undefined);
 
-      const startRes = await fetch(`/api/interview-token/${token}/start-voice`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ practice: isPractice }),
+      logInterview.info("voice", "requesting_display_media", {
+        token: truncateId(token),
       });
-
-      if (!startRes.ok) {
-        const body = (await startRes.json()) as { error?: string };
-        throw new Error(body.error || "Failed to start voice session");
-      }
-
-      const config = (await startRes.json()) as StartVoiceResponse;
-
-      const screenStream = await navigator.mediaDevices.getDisplayMedia({
-        video: {
-          displaySurface: "browser",
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-          frameRate: { ideal: 30 },
-        },
-        audio: true,
-        preferCurrentTab: true,
-        selfBrowserSurface: "include",
-        monitorTypeSurfaces: "exclude",
-      } as DisplayMediaStreamOptions);
+      const screenStream = await requestDisplayMedia();
       screenStreamRef.current = screenStream;
 
       const screenTrack = screenStream.getVideoTracks()[0];
@@ -635,7 +733,17 @@ export function useVoiceInterview(token: string) {
 
       const audioStream = new MediaStream(stream.getAudioTracks());
       chunksRef.current = [];
-      const recorder = new MediaRecorder(recordingStream, { mimeType });
+      let recorder: MediaRecorder;
+      try {
+        recorder = new MediaRecorder(recordingStream, { mimeType });
+      } catch (error) {
+        logInterview.warn("voice", "media_recorder_mime_fallback", {
+          mimeType,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        recorder = new MediaRecorder(recordingStream);
+        recordingMimeTypeRef.current = recorder.mimeType || "video/webm";
+      }
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           chunksRef.current.push(event.data);
@@ -644,12 +752,49 @@ export function useVoiceInterview(token: string) {
       recorder.start(1000);
       mediaRecorderRef.current = recorder;
 
+      logInterview.info("voice", "requesting_start_voice", {
+        token: truncateId(token),
+        isPractice,
+      });
+      const startRes = await fetch(`/api/interview-token/${token}/start-voice`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ practice: isPractice }),
+      });
+
+      if (!startRes.ok) {
+        let errorMessage = "Failed to start voice session";
+        try {
+          const bodyText = await startRes.text();
+          if (bodyText.trim()) {
+            const body = JSON.parse(bodyText) as { error?: string };
+            errorMessage = body.error || errorMessage;
+          }
+        } catch (parseError) {
+          logInterview.warn("voice", "start_voice_error_body_parse_failed", {
+            status: startRes.status,
+            error:
+              parseError instanceof Error
+                ? parseError.message
+                : String(parseError),
+          });
+        }
+        throw new Error(errorMessage);
+      }
+
+      const config = await parseStartVoiceResponse(startRes);
+      logInterview.success("voice", "start_voice_ok", {
+        sessionId: truncateId(config.sessionId),
+        questionCount: config.questions.length,
+        wsUrl: config.wsUrl,
+      });
+
       const ws = new WebSocket(config.wsUrl);
       wsRef.current = ws;
       ws.onmessage = handleWsMessage;
 
       ws.onopen = () => {
-        logVoiceTranscript("ws_open", { wsUrl: config.wsUrl });
+        logInterview.info("ws", "ws_open", { wsUrl: config.wsUrl });
         ws.send(JSON.stringify({ type: "PING" }));
         ws.send(
           JSON.stringify({
@@ -660,18 +805,18 @@ export function useVoiceInterview(token: string) {
       };
 
       ws.onerror = () => {
-        logVoiceTranscript("ws_error", { wsUrl: config.wsUrl });
+        logInterview.error("ws", "ws_error", { wsUrl: config.wsUrl });
       };
 
       ws.onclose = (closeEvent) => {
-        logVoiceTranscript("ws_close", {
+        logInterview.warn("ws", "ws_close", {
           code: closeEvent.code,
           reason: closeEvent.reason,
           wasClean: closeEvent.wasClean,
         });
       };
 
-      logVoiceTranscript("ws_connecting", {
+      logInterview.info("ws", "ws_connecting", {
         wsUrl: config.wsUrl,
         questionCount: config.questions.length,
       });
@@ -715,21 +860,36 @@ export function useVoiceInterview(token: string) {
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
+      await waitForIceGathering(pc);
+
+      const offerSdp = pc.localDescription?.sdp;
+      if (!offerSdp) {
+        throw new Error("Failed to create WebRTC offer");
+      }
+
+      logInterview.info("voice", "realtime_sdp_request", {
+        token: truncateId(token),
+        sdpLength: offerSdp.length,
+      });
 
       const sdpResponse = await fetch("https://api.openai.com/v1/realtime/calls", {
         method: "POST",
-        body: offer.sdp,
+        body: offerSdp,
         headers: {
           Authorization: `Bearer ${config.clientSecret}`,
           "Content-Type": "application/sdp",
         },
       });
 
+      const answerSdp = await sdpResponse.text();
       if (!sdpResponse.ok) {
-        throw new Error("Failed to establish realtime audio connection");
+        logInterview.error("voice", "realtime_sdp_failed", {
+          status: sdpResponse.status,
+          bodyPreview: answerSdp.slice(0, 400),
+        });
+        throw new Error(parseRealtimeSdpError(sdpResponse.status, answerSdp));
       }
 
-      const answerSdp = await sdpResponse.text();
       const location = sdpResponse.headers.get("Location");
       const callId =
         location?.split("/").pop()?.trim() ??
@@ -741,10 +901,9 @@ export function useVoiceInterview(token: string) {
       if (callId) {
         const sendCallStarted = () => {
           if (ws.readyState === WebSocket.OPEN) {
-            logVoiceTranscript("call_started_sent", {
-              callId,
+            logInterview.info("ws", "call_started_sent", {
+              callId: truncateId(callId),
               location,
-              clientSecretPrefix: config.clientSecret.slice(0, 8),
             });
             ws.send(
               JSON.stringify({
@@ -754,8 +913,8 @@ export function useVoiceInterview(token: string) {
               }),
             );
           } else {
-            logVoiceTranscript("call_started_not_sent_ws_not_open", {
-              callId,
+            logInterview.warn("ws", "call_started_not_sent_ws_not_open", {
+              callId: truncateId(callId),
               readyState: ws.readyState,
             });
           }
@@ -767,7 +926,7 @@ export function useVoiceInterview(token: string) {
           ws.addEventListener("open", sendCallStarted, { once: true });
         }
       } else {
-        logVoiceTranscript("call_started_missing_call_id", {
+        logInterview.warn("ws", "call_started_missing_call_id", {
           headerCallId: sdpResponse.headers.get("x-openai-call-id"),
           location: sdpResponse.headers.get("Location"),
         });
@@ -775,11 +934,14 @@ export function useVoiceInterview(token: string) {
 
       setState((current) => ({ ...current, status: "active" }));
     } catch (error) {
+      logInterview.error("voice", "start_failed", {
+        error: error instanceof Error ? error.message : String(error),
+      });
       cleanup();
       setState({
         status: "error",
         isEnding: false,
-        isPractice: false,
+        isPractice: isPracticeRef.current,
         currentQuestionIndex: 0,
         voicePhase: "intro",
         questions: [],
@@ -791,6 +953,8 @@ export function useVoiceInterview(token: string) {
         introActive: false,
         error: error instanceof Error ? error.message : "Voice interview failed",
       });
+    } finally {
+      startInFlightRef.current = false;
     }
   }, [cleanup, handleWsMessage, sendToDO, token]);
 

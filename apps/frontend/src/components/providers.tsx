@@ -1,5 +1,5 @@
 import * as React from "react";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { AuthProvider } from "./auth-provider";
 import { TooltipProvider } from "~/components/ui/tooltip";
 
@@ -10,7 +10,13 @@ const ReactQueryDevtools = lazy(() =>
 );
 
 function QueryDevtools() {
-  if (!import.meta.env.DEV) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!import.meta.env.DEV || !mounted) {
     return null;
   }
 

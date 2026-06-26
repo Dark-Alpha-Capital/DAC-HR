@@ -1,4 +1,8 @@
 export { openai, getOpenAIClient } from "./openai-client";
+export {
+  formatOpenAIApiError,
+  openAIKeyFingerprint,
+} from "./openai-api-error";
 export { getOpenAIProvider, getOpenAIModel } from "./ai-sdk-provider";
 export {
   createRealtimeEphemeralSession,

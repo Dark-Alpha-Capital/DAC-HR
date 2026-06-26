@@ -20,6 +20,7 @@
     "./types": "./types.ts",
     "./events": "./events.ts",
     "./prompts": "./prompts.ts",
-    "./answer-evaluation": "./answer-evaluation.ts"
+    "./answer-evaluation": "./answer-evaluation.ts",
+    "./debug-log": "./debug-log.ts"
   }
 }

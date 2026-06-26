@@ -4,6 +4,7 @@ import { Badge } from "~/components/ui/badge";
 import { Bot, Loader2, Mic, PhoneOff } from "lucide-react";
 import { cn } from "~/lib/utils";
 import type { VoiceInterviewState } from "~/hooks/useVoiceInterview";
+import { logInterview } from "~/lib/interview-debug-log";
 
 interface VoiceInterviewProps {
   candidateName: string;
@@ -99,34 +100,6 @@ export default function VoiceInterview({
     container.scrollTop = container.scrollHeight;
   }, [state.transcripts, state.liveUserTranscript, state.liveAssistantTranscript]);
 
-  useEffect(() => {
-    if (state.status !== "active" && state.status !== "connecting") {
-      return;
-    }
-
-    console.info(
-      "[voice-transcript] sidebar_state",
-      JSON.stringify({
-        transcriptCount: state.transcripts.length,
-        liveUserLength: state.liveUserTranscript.length,
-        liveAssistantLength: state.liveAssistantTranscript.length,
-        voicePhase: state.voicePhase,
-        lastTranscript: state.transcripts.at(-1)
-          ? {
-              role: state.transcripts.at(-1)?.role,
-              preview: state.transcripts.at(-1)?.text.slice(0, 80),
-            }
-          : null,
-      }),
-    );
-  }, [
-    state.status,
-    state.transcripts,
-    state.liveUserTranscript,
-    state.liveAssistantTranscript,
-    state.voicePhase,
-  ]);
-
   if (state.status === "idle" || state.status === "error") {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center bg-[#202124] px-4 text-white">
@@ -144,7 +117,10 @@ export default function VoiceInterview({
         ) : null}
         {state.status === "error" ? (
           <Button
-            onClick={onStart}
+            onClick={() => {
+              logInterview.info("voice", "ui_retry_clicked");
+              onStart();
+            }}
             className="mt-6 bg-[#1a73e8] hover:bg-[#1765cc]"
           >
             <Mic className="mr-2 size-4" />
@@ -336,7 +312,13 @@ export default function VoiceInterview({
           {isActive ? (
             <Button
               variant="destructive"
-              onClick={onEnd}
+              onClick={() => {
+                logInterview.info("voice", "ui_end_clicked", {
+                  allQuestionsAsked: state.allQuestionsAsked,
+                  isPractice: state.isPractice,
+                });
+                onEnd();
+              }}
               disabled={state.isEnding}
               className={cn(
                 "rounded-full px-5",
