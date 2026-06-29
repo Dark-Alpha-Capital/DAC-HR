@@ -15,7 +15,6 @@ export function DocsBreadcrumb() {
     if (pathname === "/docs") {
       return breadcrumbs;
     }
-
     // Find the current page in the nav items
     for (const item of docsNavItems) {
       if (item.href === pathname) {

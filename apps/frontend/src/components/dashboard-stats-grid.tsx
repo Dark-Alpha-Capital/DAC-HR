@@ -1,4 +1,4 @@
-import { getDashboardStats } from "@workspace/db/queries";
+import type { getDashboardStats } from "@workspace/db/queries";
 import {
   Card,
   CardContent,
@@ -15,6 +15,8 @@ import {
   Users,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
+
+type DashboardStats = Awaited<ReturnType<typeof getDashboardStats>>;
 
 function StatChange({
   value,
@@ -47,9 +49,7 @@ function StatChange({
   );
 }
 
-export default async function DashboardStatsGrid() {
-  const stats = await getDashboardStats();
-
+export default function DashboardStatsGrid({ stats }: { stats: DashboardStats }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <Card>

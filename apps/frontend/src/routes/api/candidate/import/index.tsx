@@ -3,7 +3,10 @@ import { env } from "cloudflare:workers";
 import { eq, desc } from "@workspace/db";
 import { db } from "@workspace/db/db";
 import { candidateImport } from "@workspace/db/schema";
-import { detectImportTypeFromFilename, importLog } from "@workspace/candidate-import";
+import {
+  detectBulkUploadTypeFromFilename,
+  importLog,
+} from "@workspace/candidate-import";
 import {
   buildImportFolderPath,
   uploadFile as uploadToNextcloud,
@@ -43,10 +46,10 @@ export const Route = createFileRoute("/api/candidate/import/")({
             );
           }
 
-          const importType = detectImportTypeFromFilename(file.name);
+          const importType = detectBulkUploadTypeFromFilename(file.name);
           if (!importType) {
             return Response.json(
-              { error: "Unsupported file type. Use CSV, ZIP, or PDF." },
+              { error: "Unsupported file type. Use CSV or ZIP." },
               { status: 400 },
             );
           }

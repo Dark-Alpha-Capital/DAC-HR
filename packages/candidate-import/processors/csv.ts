@@ -151,6 +151,7 @@ export function parseCsvContent(content: string): CsvRow[] {
   return rows;
 }
 
+/** All import types the pipeline can process (including Handshake PDF). */
 export function detectImportTypeFromFilename(
   filename: string,
 ): "csv" | "zip" | "pdf" | null {
@@ -158,5 +159,15 @@ export function detectImportTypeFromFilename(
   if (ext === "csv") return "csv";
   if (ext === "zip") return "zip";
   if (ext === "pdf") return "pdf";
+  return null;
+}
+
+/** Bulk-upload UI/API entry — PDF Handshake flow is unlinked but still in processors. */
+export function detectBulkUploadTypeFromFilename(
+  filename: string,
+): "csv" | "zip" | null {
+  const ext = filename.toLowerCase().split(".").pop();
+  if (ext === "csv") return "csv";
+  if (ext === "zip") return "zip";
   return null;
 }

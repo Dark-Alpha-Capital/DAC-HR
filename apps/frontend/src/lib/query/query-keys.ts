@@ -78,4 +78,8 @@ export const queryKeys = {
       ["interview-token", "validate", token] as const,
     schema: (token: string) => ["interview-token", "schema", token] as const,
   },
+  dashboard: {
+    all: ["dashboard"] as const,
+    stats: () => ["dashboard", "stats"] as const,
+  },
 };

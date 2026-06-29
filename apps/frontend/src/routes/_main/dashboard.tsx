@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Card,
@@ -10,6 +10,8 @@ import {
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import DashboardStatsGrid from "~/components/dashboard-stats-grid";
+import { loadDashboardStats } from "~/lib/loaders/dashboard";
+import { queryKeys } from "~/lib/query/query-keys";
 import {
   Briefcase,
   Building2,
@@ -24,10 +26,20 @@ import {
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 
+function dashboardStatsQueryOptions() {
+  return queryOptions({
+    queryKey: queryKeys.dashboard.stats(),
+    queryFn: () => loadDashboardStats(),
+  });
+}
+
 export const Route = createFileRoute("/_main/dashboard")({
   head: () => ({
     meta: [{ title: "Dashboard - DAC HR" }],
   }),
+  loader: async ({ context: { queryClient } }) => {
+    await queryClient.ensureQueryData(dashboardStatsQueryOptions());
+  },
   component: DashboardPage,
 });
 
@@ -111,6 +123,11 @@ const accessTiles = [
 ] as const;
 
 function DashboardPage() {
+  const { data: stats, isLoading } = useQuery({
+    ...dashboardStatsQueryOptions(),
+    placeholderData: keepPreviousData,
+  });
+
   return (
     <div className="space-y-8">
       <div className="space-y-1">
@@ -120,9 +137,11 @@ function DashboardPage() {
         </p>
       </div>
 
-      <Suspense fallback={<StatsGridSkeleton />}>
-        <DashboardStatsGrid />
-      </Suspense>
+      {isLoading && !stats ? (
+        <StatsGridSkeleton />
+      ) : stats ? (
+        <DashboardStatsGrid stats={stats} />
+      ) : null}
 
       <Card>
         <CardHeader>

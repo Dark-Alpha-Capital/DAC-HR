@@ -26,6 +26,7 @@ export { createCandidateFromImport } from "./unified/create-candidate-from-impor
 export {
   parseCsvContent,
   detectImportTypeFromFilename,
+  detectBulkUploadTypeFromFilename,
 } from "./processors/csv";
 export { processCsvImport } from "./processors/process-csv";
 export { processZipImport } from "./processors/zip";
