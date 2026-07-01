@@ -24,6 +24,9 @@ import {
   updateCandidateImportStatus,
 } from "@workspace/db/repositories/candidate-import-repository";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
+import { eq } from "@workspace/db";
+import { db } from "@workspace/db/db";
+import { candidateImport } from "@workspace/db/schema";
 
 /** Cloudflare Workflows non-stream step result limit */
 const MAX_STEP_RESULT_BYTES = 1024 * 1024;
@@ -154,6 +157,15 @@ function buildImportServices(env: Env): ImportServices {
           });
         }
       : undefined,
+    updateImportProgress: async ({ importId, totalCandidates, processedCandidates }) => {
+      await db
+        .update(candidateImport)
+        .set({
+          ...(totalCandidates !== undefined ? { totalCandidates } : {}),
+          ...(processedCandidates !== undefined ? { processedCandidates } : {}),
+        })
+        .where(eq(candidateImport.id, importId));
+    },
   };
 }
 

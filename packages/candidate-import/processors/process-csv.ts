@@ -30,6 +30,13 @@ export async function processCsvImport(args: {
     rowCount: rows.length,
   });
 
+  if (args.services.updateImportProgress) {
+    await args.services.updateImportProgress({
+      importId: args.importId,
+      totalCandidates: rows.length,
+    });
+  }
+
   let created = 0;
   let skipped = 0;
   let failed = 0;
@@ -75,6 +82,13 @@ export async function processCsvImport(args: {
     if (result.status === "created") created++;
     else if (result.status === "skipped") skipped++;
     else failed++;
+
+    if (args.services.updateImportProgress) {
+      await args.services.updateImportProgress({
+        importId: args.importId,
+        processedCandidates: created + skipped + failed,
+      });
+    }
 
     importLog("log", "CSV row finished", {
       step: "csv.row.done",

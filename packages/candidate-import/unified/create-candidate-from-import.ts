@@ -92,6 +92,13 @@ export async function createCandidateFromImport(
     return { status: "failed", error: "Email is required" };
   }
 
+  await upsertImportRow({
+    importId: input.importId,
+    rowIndex: input.rowIndex,
+    status: "pending",
+    metadata: input.metadata,
+  });
+
   importLog("log", "Checking for duplicate candidate", {
     step: "unified.dedup_check",
     importId: input.importId,

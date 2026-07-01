@@ -1,6 +1,6 @@
 import { asc, eq } from "drizzle-orm";
 import { db } from "@workspace/db/db";
-import { application, candidate, position } from "../schema";
+import { application, candidate, candidateProfile, position } from "../schema";
 import { getInterviewsByApplicationId } from "./interview-repository";
 
 export const getCandidateById = async (id: string) => {
@@ -75,8 +75,14 @@ export const getCandidateWithApplications = async (id: string) => {
       }),
     );
 
+    const [profile] = await db
+      .select()
+      .from(candidateProfile)
+      .where(eq(candidateProfile.candidateId, id));
+
     return {
       ...candidateResult,
+      profile: profile ?? null,
       applications: applicationsWithInterviews,
     };
   } catch (error) {

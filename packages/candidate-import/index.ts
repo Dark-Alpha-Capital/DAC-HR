@@ -18,6 +18,7 @@ export type {
   ResumeChunk,
   ResumeFields,
   TriggerDocumentIndexingFn,
+  UpdateImportProgressFn,
 } from "./types";
 
 export { normalizeName, splitFullName } from "./dedup/normalize-name";

@@ -1,9 +1,23 @@
-import { Briefcase, Link as LinkIcon, Mail, MapPin, Phone } from "lucide-react";
+import {
+  Briefcase,
+  GraduationCap,
+  Link as LinkIcon,
+  ExternalLink,
+  Mail,
+  MapPin,
+  Phone,
+  FileText,
+} from "lucide-react";
 import { getCachedCandidate } from "~/lib/cache/candidate";
 
 type Candidate = NonNullable<Awaited<ReturnType<typeof getCachedCandidate>>>;
 
 export function CandidateOverviewTab({ candidate }: { candidate: Candidate }) {
+  const profile = candidate.profile;
+  const hasEducation =
+    profile && (profile.school || profile.major || profile.graduationYear);
+  const hasLinkedIn = profile?.linkedinUrl;
+
   return (
     <div className="space-y-10">
       <section>
@@ -76,6 +90,58 @@ export function CandidateOverviewTab({ candidate }: { candidate: Candidate }) {
           </span>
         </div>
       </section>
+
+      {hasEducation ? (
+        <section>
+          <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">
+            Education
+          </h3>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <GraduationCap className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span className="text-sm">
+                {[profile.major, profile.school]
+                  .filter(Boolean)
+                  .join(" at ")}
+                {profile.graduationYear ? ` (${profile.graduationYear})` : ""}
+              </span>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {hasLinkedIn ? (
+        <section>
+          <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">
+            LinkedIn
+          </h3>
+          <div className="flex items-center gap-3">
+            <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <a
+              href={profile.linkedinUrl!}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors underline break-all"
+            >
+              {profile.linkedinUrl}
+            </a>
+          </div>
+        </section>
+      ) : null}
+
+      {profile?.resumeText ? (
+        <section>
+          <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">
+            Resume
+          </h3>
+          <div className="flex items-start gap-3">
+            <FileText className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto">
+              {profile.resumeText}
+            </p>
+          </div>
+        </section>
+      ) : null}
 
       <section>
         <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">

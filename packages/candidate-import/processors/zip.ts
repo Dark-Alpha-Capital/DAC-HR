@@ -40,6 +40,13 @@ export async function processZipImport(args: {
     pdfPaths: pdfEntries.map(([path]) => path),
   });
 
+  if (args.services.updateImportProgress) {
+    await args.services.updateImportProgress({
+      importId: args.importId,
+      totalCandidates: pdfEntries.length,
+    });
+  }
+
   let created = 0;
   let skipped = 0;
   let failed = 0;
@@ -114,9 +121,15 @@ export async function processZipImport(args: {
         );
 
         if (extracted) {
-          firstName = extracted.firstName;
-          lastName = extracted.lastName;
-          email = extracted.email;
+          if (extracted.firstName && extracted.firstName !== "Unknown") {
+            firstName = extracted.firstName;
+          }
+          if (extracted.lastName) {
+            lastName = extracted.lastName;
+          }
+          if (extracted.email) {
+            email = extracted.email;
+          }
           phone = extracted.phone ?? null;
           location = extracted.location ?? null;
           school = extracted.school ?? null;
@@ -199,6 +212,13 @@ export async function processZipImport(args: {
       if (result.status === "created") created++;
       else if (result.status === "skipped") skipped++;
       else failed++;
+
+      if (args.services.updateImportProgress) {
+        await args.services.updateImportProgress({
+          importId: args.importId,
+          processedCandidates: created + skipped + failed,
+        });
+      }
 
       importLog("log", "ZIP PDF entry finished", {
         step: "zip.pdf.done",

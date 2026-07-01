@@ -7,6 +7,8 @@ import {
   CheckCircle2,
   Loader2,
   X,
+  Clock,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
@@ -59,6 +61,8 @@ type ImportStatus = {
     rowIndex: number;
     status: string;
     error?: string | null;
+    candidateId?: string | null;
+    metadata?: Record<string, unknown> | null;
   }>;
 };
 
@@ -370,18 +374,78 @@ export default function BulkUploadCandidatesDialog({
           </div>
 
           {isProcessing ? (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
-                <span className="min-w-0">Processing import...</span>
-              </div>
-              <Progress value={progressPercent} className="w-full" />
-              {status ? (
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                  <span className="min-w-0">Processing import...</span>
+                </div>
+                <Progress value={progressPercent} className="w-full" />
                 <p className="text-xs text-muted-foreground">
-                  {status.import.processedCandidates} /{" "}
-                  {status.import.totalCandidates || "…"} processed
+                  {status ? (
+                    <>
+                      {status.import.processedCandidates} /{" "}
+                      {status.import.totalCandidates || "…"} processed
+                      {" — "}
+                      {status.summary.succeeded} created, {status.summary.skipped}{" "}
+                      skipped, {status.summary.failed} failed
+                    </>
+                  ) : (
+                    "Initializing..."
+                  )}
                 </p>
+              </div>
+
+              {status && status.rows.length > 0 ? (
+                <div className="max-h-48 overflow-y-auto rounded-md border text-xs">
+                  {status.rows.map((row) => {
+                    const sourceFile =
+                      row.metadata && typeof row.metadata.sourceFile === "string"
+                        ? row.metadata.sourceFile
+                        : row.metadata &&
+                            typeof row.metadata.matchedHeader === "string"
+                          ? row.metadata.matchedHeader
+                          : `Row ${row.rowIndex}`;
+
+                    return (
+                      <div
+                        key={row.rowIndex}
+                        className="flex items-center gap-2 border-b px-2 py-1.5 last:border-b-0"
+                      >
+                        {row.status === "pending" ? (
+                          <Clock className="h-3 w-3 shrink-0 text-muted-foreground" />
+                        ) : row.status === "success" ? (
+                          <CheckCircle2 className="h-3 w-3 shrink-0 text-green-600" />
+                        ) : row.status === "skipped" ? (
+                          <Clock className="h-3 w-3 shrink-0 text-amber-500" />
+                        ) : row.status === "failed" ? (
+                          <AlertCircle className="h-3 w-3 shrink-0 text-red-500" />
+                        ) : row.status === "processing" ? (
+                          <Loader2 className="h-3 w-3 shrink-0 animate-spin text-blue-500" />
+                        ) : (
+                          <Clock className="h-3 w-3 shrink-0 text-muted-foreground" />
+                        )}
+                        <FileText className="h-3 w-3 shrink-0 text-muted-foreground" />
+                        <span className="min-w-0 flex-1 truncate">
+                          {sourceFile}
+                        </span>
+                        <span className="shrink-0 text-muted-foreground">
+                          {row.status}
+                        </span>
+                        {row.error ? (
+                          <span
+                            className="shrink-0 cursor-help text-red-500"
+                            title={row.error}
+                          >
+                            <AlertCircle className="h-3 w-3" />
+                          </span>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
               ) : null}
+
               <Button
                 type="button"
                 variant="outline"
@@ -403,14 +467,42 @@ export default function BulkUploadCandidatesDialog({
           ) : null}
 
           {status?.import.status === "completed" ? (
-            <Alert>
-              <CheckCircle2 className="h-4 w-4" />
-              <AlertTitle>Import complete</AlertTitle>
-              <AlertDescription>
-                {status.summary.succeeded} created, {status.summary.skipped}{" "}
-                skipped, {status.summary.failed} failed.
-              </AlertDescription>
-            </Alert>
+            <div className="space-y-3">
+              <Alert>
+                <CheckCircle2 className="h-4 w-4" />
+                <AlertTitle>Import complete</AlertTitle>
+                <AlertDescription>
+                  {status.summary.succeeded} created, {status.summary.skipped}{" "}
+                  skipped, {status.summary.failed} failed.
+                </AlertDescription>
+              </Alert>
+              {status?.rows.length > 0 ? (
+                <div className="max-h-48 overflow-y-auto rounded-md border text-xs">
+                  {status.rows
+                    .filter((row) => row.status === "failed" || row.error)
+                    .slice(0, 10)
+                    .map((row) => {
+                      const sourceFile =
+                        row.metadata &&
+                        typeof row.metadata.sourceFile === "string"
+                          ? row.metadata.sourceFile
+                          : `Row ${row.rowIndex}`;
+                      return (
+                        <div
+                          key={row.rowIndex}
+                          className="flex items-center gap-2 border-b px-2 py-1.5 text-muted-foreground last:border-b-0"
+                        >
+                          <AlertCircle className="h-3 w-3 shrink-0 text-red-500" />
+                          <span className="min-w-0 flex-1 truncate">
+                            {sourceFile}
+                          </span>
+                          <span className="shrink-0">{row.error}</span>
+                        </div>
+                      );
+                    })}
+                </div>
+              ) : null}
+            </div>
           ) : null}
 
           {status?.import.status === "failed" ? (
@@ -432,19 +524,6 @@ export default function BulkUploadCandidatesDialog({
                 are still saved.
               </AlertDescription>
             </Alert>
-          ) : null}
-
-          {status && status.rows.some((row) => row.error) ? (
-            <div className="max-h-32 overflow-y-auto rounded-md border p-2 text-xs">
-              {status.rows
-                .filter((row) => row.error)
-                .slice(0, 10)
-                .map((row) => (
-                  <div key={row.rowIndex} className="text-muted-foreground">
-                    Row {row.rowIndex}: {row.error}
-                  </div>
-                ))}
-            </div>
           ) : null}
         </div>
 

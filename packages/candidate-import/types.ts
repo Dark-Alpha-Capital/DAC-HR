@@ -82,9 +82,16 @@ export type TriggerDocumentIndexingFn = (args: {
   };
 }) => Promise<void>;
 
+export type UpdateImportProgressFn = (args: {
+  importId: string;
+  totalCandidates?: number;
+  processedCandidates?: number;
+}) => Promise<void>;
+
 export type ImportServices = {
   uploadToNextcloud: NextcloudUploadFn;
   triggerDocumentIndexing?: TriggerDocumentIndexingFn;
+  updateImportProgress?: UpdateImportProgressFn;
 };
 
 export type MatchedResume = {

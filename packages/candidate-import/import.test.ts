@@ -12,6 +12,10 @@ import {
 import { matchRosterToChunks } from "./match/match-roster-to-chunk";
 import { parseHandshakeRosterFromText } from "./parsers/extract-handshake-roster";
 import { matchHandshakeExport } from "./pdf/handshake-chunks";
+import {
+  findEmailInText,
+  normalizeResumeFields,
+} from "./parsers/schemas";
 
 test("normalizeName matches variants", () => {
   expect(normalizeName("Alexander Barto")).toBe(normalizeName("ALEXANDER BARTO"));
@@ -126,6 +130,35 @@ Harry Felgran, harry@example.com, NYU`;
   const roster = parseHandshakeRosterFromText(text);
   expect(roster.length).toBeGreaterThanOrEqual(2);
   expect(roster[0]?.email).toContain("@");
+});
+
+test("findEmailInText extracts first email from resume text", () => {
+  expect(
+    findEmailInText("Contact: christopher.aji@university.edu | phone 555-0100"),
+  ).toBe("christopher.aji@university.edu");
+});
+
+test("normalizeResumeFields accepts null email and recovers from text", () => {
+  const result = normalizeResumeFields(
+    {
+      firstName: "Christopher",
+      lastName: "Aji",
+      email: null,
+      phone: null,
+      location: null,
+      school: null,
+      major: null,
+      graduationYear: null,
+      linkedinUrl: null,
+    },
+    "Christopher Aji\nchristopher.aji@university.edu",
+  );
+
+  expect(result).toMatchObject({
+    firstName: "Christopher",
+    lastName: "Aji",
+    email: "christopher.aji@university.edu",
+  });
 });
 
 test("matchHandshakeExport assigns one chunk per roster entry on multi-resume pages", () => {
