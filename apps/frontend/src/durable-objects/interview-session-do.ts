@@ -20,7 +20,7 @@ import {
   parseClientMessage,
   serializeDoMessage,
 } from "@workspace/interview-realtime/events";
-import { evaluateCandidateAnswer, evaluateIntroUtterance, PRACTICE_QUESTIONS } from "@workspace/interview-realtime";
+import { evaluateCandidateAnswer, evaluateIntroUtterance, looksLikeNoise, PRACTICE_QUESTIONS } from "@workspace/interview-realtime";
 import {
   buildAskCurrentQuestionEvent,
   buildAcknowledgeAnswerEvent,
@@ -727,6 +727,7 @@ export class InterviewSessionDO implements DurableObject {
       this.interviewState.agentConfig?.voice,
     );
     this.logTranscript("session_update_sending", {
+      questionCount: this.interviewState.questions.length,
       outputModalities: sessionUpdate.session.output_modalities,
       voice:
         sessionUpdate.session.audio &&
@@ -963,7 +964,24 @@ export class InterviewSessionDO implements DurableObject {
       return;
     }
 
-    await this.resendWelcomeIntro();
+    this.welcomeIntroCompleted = true;
+    this.interviewState.voicePhase = "awaiting_ready";
+    this.sendPhaseSessionUpdate("awaiting_ready");
+    await this.persistState();
+    this.dispatchResponseCreate(
+      {
+        type: "response.create",
+        response: {
+          max_output_tokens: 120,
+          instructions: [
+            "You were briefly interrupted during your welcome.",
+            "Give a one-sentence recap that you will ask interview questions one at a time.",
+            "Ask if they are ready to begin. Do not ask interview questions yet.",
+          ].join(" "),
+        },
+      },
+      "welcome_interrupted_recovery",
+    );
   }
 
   private async handleRealtimeEvent(
@@ -1475,6 +1493,7 @@ export class InterviewSessionDO implements DurableObject {
         this.interviewState.awaitingAnswerForIndex = null;
         this.dispatchResponseCreate(
           buildFollowUpAnswerEvent({
+            question,
             questionIndex,
             candidateUtterance: trimmed,
             followUpInstruction: evaluation.followUpInstruction,
@@ -1512,6 +1531,24 @@ export class InterviewSessionDO implements DurableObject {
     const trimmed = transcript.trim();
     if (!trimmed) {
       return;
+    }
+
+    if (phase === "intro" || phase === "awaiting_ready") {
+      if (!this.welcomeIntroCompleted) {
+        this.logTranscript("user_transcript_ignored_during_welcome", {
+          phase,
+          textPreview: previewText(trimmed),
+        });
+        return;
+      }
+
+      if (looksLikeNoise(trimmed)) {
+        this.logTranscript("user_transcript_ignored_as_noise", {
+          phase,
+          textPreview: previewText(trimmed),
+        });
+        return;
+      }
     }
 
     this.broadcastTranscript("user", trimmed);
@@ -1592,6 +1629,11 @@ export class InterviewSessionDO implements DurableObject {
           await this.persistState();
           await this.askCurrentQuestion();
         }
+        return;
+      }
+
+      if (evaluation.relevance === "noise") {
+        await this.persistState();
         return;
       }
 

@@ -81,6 +81,8 @@ import { Route as ApiInterviewTokenTokenStartVoiceRouteImport } from './routes/a
 import { Route as ApiInterviewTokenTokenSchemaRouteImport } from './routes/api/interview-token/$token/schema'
 import { Route as ApiInterviewTokenTokenResponsesRouteImport } from './routes/api/interview-token/$token/responses'
 import { Route as ApiInterviewTokenTokenCompleteRouteImport } from './routes/api/interview-token/$token/complete'
+import { Route as ApiInterviewSessionsSessionIdRecordingRouteImport } from './routes/api/interview-sessions/$sessionId/recording'
+import { Route as ApiInterviewBundleBundleIdAiAnalysisRouteImport } from './routes/api/interview-bundle/$bundleId/ai-analysis'
 import { Route as ApiCandidateImportIdRouteImport } from './routes/api/candidate/import/$id'
 import { Route as ApiCandidateIdDocumentsRouteImport } from './routes/api/candidate/$id/documents'
 import { Route as ApiCandidateIdAiScreeningRouteImport } from './routes/api/candidate/$id/ai-screening'
@@ -464,6 +466,18 @@ const ApiInterviewTokenTokenCompleteRoute =
     path: '/api/interview-token/$token/complete',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiInterviewSessionsSessionIdRecordingRoute =
+  ApiInterviewSessionsSessionIdRecordingRouteImport.update({
+    id: '/$sessionId/recording',
+    path: '/$sessionId/recording',
+    getParentRoute: () => ApiInterviewSessionsRoute,
+  } as any)
+const ApiInterviewBundleBundleIdAiAnalysisRoute =
+  ApiInterviewBundleBundleIdAiAnalysisRouteImport.update({
+    id: '/api/interview-bundle/$bundleId/ai-analysis',
+    path: '/api/interview-bundle/$bundleId/ai-analysis',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiCandidateImportIdRoute = ApiCandidateImportIdRouteImport.update({
   id: '/api/candidate/import/$id',
   path: '/api/candidate/import/$id',
@@ -555,7 +569,7 @@ export interface FileRoutesByFullPath {
   '/unauthorized': typeof AuthUnauthorizedRoute
   '/dashboard': typeof MainDashboardRoute
   '/api/health': typeof ApiHealthRoute
-  '/api/interview-sessions': typeof ApiInterviewSessionsRoute
+  '/api/interview-sessions': typeof ApiInterviewSessionsRouteWithChildren
   '/api/screeners': typeof ApiScreenersRoute
   '/admin/audit-logs': typeof MainAdminAuditLogsRoute
   '/candidates/new': typeof MainCandidatesNewRoute
@@ -612,6 +626,8 @@ export interface FileRoutesByFullPath {
   '/api/candidate/$id/ai-screening': typeof ApiCandidateIdAiScreeningRoute
   '/api/candidate/$id/documents': typeof ApiCandidateIdDocumentsRouteWithChildren
   '/api/candidate/import/$id': typeof ApiCandidateImportIdRoute
+  '/api/interview-bundle/$bundleId/ai-analysis': typeof ApiInterviewBundleBundleIdAiAnalysisRoute
+  '/api/interview-sessions/$sessionId/recording': typeof ApiInterviewSessionsSessionIdRecordingRoute
   '/api/interview-token/$token/complete': typeof ApiInterviewTokenTokenCompleteRoute
   '/api/interview-token/$token/responses': typeof ApiInterviewTokenTokenResponsesRoute
   '/api/interview-token/$token/schema': typeof ApiInterviewTokenTokenSchemaRoute
@@ -640,7 +656,7 @@ export interface FileRoutesByTo {
   '/unauthorized': typeof AuthUnauthorizedRoute
   '/dashboard': typeof MainDashboardRoute
   '/api/health': typeof ApiHealthRoute
-  '/api/interview-sessions': typeof ApiInterviewSessionsRoute
+  '/api/interview-sessions': typeof ApiInterviewSessionsRouteWithChildren
   '/api/screeners': typeof ApiScreenersRoute
   '/admin/audit-logs': typeof MainAdminAuditLogsRoute
   '/candidates/new': typeof MainCandidatesNewRoute
@@ -697,6 +713,8 @@ export interface FileRoutesByTo {
   '/api/candidate/$id/ai-screening': typeof ApiCandidateIdAiScreeningRoute
   '/api/candidate/$id/documents': typeof ApiCandidateIdDocumentsRouteWithChildren
   '/api/candidate/import/$id': typeof ApiCandidateImportIdRoute
+  '/api/interview-bundle/$bundleId/ai-analysis': typeof ApiInterviewBundleBundleIdAiAnalysisRoute
+  '/api/interview-sessions/$sessionId/recording': typeof ApiInterviewSessionsSessionIdRecordingRoute
   '/api/interview-token/$token/complete': typeof ApiInterviewTokenTokenCompleteRoute
   '/api/interview-token/$token/responses': typeof ApiInterviewTokenTokenResponsesRoute
   '/api/interview-token/$token/schema': typeof ApiInterviewTokenTokenSchemaRoute
@@ -729,7 +747,7 @@ export interface FileRoutesById {
   '/_auth/unauthorized': typeof AuthUnauthorizedRoute
   '/_main/dashboard': typeof MainDashboardRoute
   '/api/health': typeof ApiHealthRoute
-  '/api/interview-sessions': typeof ApiInterviewSessionsRoute
+  '/api/interview-sessions': typeof ApiInterviewSessionsRouteWithChildren
   '/api/screeners': typeof ApiScreenersRoute
   '/_main/': typeof MainIndexRoute
   '/_main/admin/audit-logs': typeof MainAdminAuditLogsRoute
@@ -787,6 +805,8 @@ export interface FileRoutesById {
   '/api/candidate/$id/ai-screening': typeof ApiCandidateIdAiScreeningRoute
   '/api/candidate/$id/documents': typeof ApiCandidateIdDocumentsRouteWithChildren
   '/api/candidate/import/$id': typeof ApiCandidateImportIdRoute
+  '/api/interview-bundle/$bundleId/ai-analysis': typeof ApiInterviewBundleBundleIdAiAnalysisRoute
+  '/api/interview-sessions/$sessionId/recording': typeof ApiInterviewSessionsSessionIdRecordingRoute
   '/api/interview-token/$token/complete': typeof ApiInterviewTokenTokenCompleteRoute
   '/api/interview-token/$token/responses': typeof ApiInterviewTokenTokenResponsesRoute
   '/api/interview-token/$token/schema': typeof ApiInterviewTokenTokenSchemaRoute
@@ -876,6 +896,8 @@ export interface FileRouteTypes {
     | '/api/candidate/$id/ai-screening'
     | '/api/candidate/$id/documents'
     | '/api/candidate/import/$id'
+    | '/api/interview-bundle/$bundleId/ai-analysis'
+    | '/api/interview-sessions/$sessionId/recording'
     | '/api/interview-token/$token/complete'
     | '/api/interview-token/$token/responses'
     | '/api/interview-token/$token/schema'
@@ -961,6 +983,8 @@ export interface FileRouteTypes {
     | '/api/candidate/$id/ai-screening'
     | '/api/candidate/$id/documents'
     | '/api/candidate/import/$id'
+    | '/api/interview-bundle/$bundleId/ai-analysis'
+    | '/api/interview-sessions/$sessionId/recording'
     | '/api/interview-token/$token/complete'
     | '/api/interview-token/$token/responses'
     | '/api/interview-token/$token/schema'
@@ -1050,6 +1074,8 @@ export interface FileRouteTypes {
     | '/api/candidate/$id/ai-screening'
     | '/api/candidate/$id/documents'
     | '/api/candidate/import/$id'
+    | '/api/interview-bundle/$bundleId/ai-analysis'
+    | '/api/interview-sessions/$sessionId/recording'
     | '/api/interview-token/$token/complete'
     | '/api/interview-token/$token/responses'
     | '/api/interview-token/$token/schema'
@@ -1076,7 +1102,7 @@ export interface RootRouteChildren {
   MainRouteRoute: typeof MainRouteRouteWithChildren
   CustomScriptDotjsRoute: typeof CustomScriptDotjsRoute
   ApiHealthRoute: typeof ApiHealthRoute
-  ApiInterviewSessionsRoute: typeof ApiInterviewSessionsRoute
+  ApiInterviewSessionsRoute: typeof ApiInterviewSessionsRouteWithChildren
   ApiScreenersRoute: typeof ApiScreenersRoute
   ApiAuditLogsGenerateReportRoute: typeof ApiAuditLogsGenerateReportRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -1092,6 +1118,7 @@ export interface RootRouteChildren {
   ApiCandidateIdAiScreeningRoute: typeof ApiCandidateIdAiScreeningRoute
   ApiCandidateIdDocumentsRoute: typeof ApiCandidateIdDocumentsRouteWithChildren
   ApiCandidateImportIdRoute: typeof ApiCandidateImportIdRoute
+  ApiInterviewBundleBundleIdAiAnalysisRoute: typeof ApiInterviewBundleBundleIdAiAnalysisRoute
   ApiInterviewTokenTokenCompleteRoute: typeof ApiInterviewTokenTokenCompleteRoute
   ApiInterviewTokenTokenResponsesRoute: typeof ApiInterviewTokenTokenResponsesRoute
   ApiInterviewTokenTokenSchemaRoute: typeof ApiInterviewTokenTokenSchemaRoute
@@ -1609,6 +1636,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiInterviewTokenTokenCompleteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/interview-sessions/$sessionId/recording': {
+      id: '/api/interview-sessions/$sessionId/recording'
+      path: '/$sessionId/recording'
+      fullPath: '/api/interview-sessions/$sessionId/recording'
+      preLoaderRoute: typeof ApiInterviewSessionsSessionIdRecordingRouteImport
+      parentRoute: typeof ApiInterviewSessionsRoute
+    }
+    '/api/interview-bundle/$bundleId/ai-analysis': {
+      id: '/api/interview-bundle/$bundleId/ai-analysis'
+      path: '/api/interview-bundle/$bundleId/ai-analysis'
+      fullPath: '/api/interview-bundle/$bundleId/ai-analysis'
+      preLoaderRoute: typeof ApiInterviewBundleBundleIdAiAnalysisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/candidate/import/$id': {
       id: '/api/candidate/import/$id'
       path: '/api/candidate/import/$id'
@@ -1873,6 +1914,18 @@ const MainRouteRouteWithChildren = MainRouteRoute._addFileChildren(
   MainRouteRouteChildren,
 )
 
+interface ApiInterviewSessionsRouteChildren {
+  ApiInterviewSessionsSessionIdRecordingRoute: typeof ApiInterviewSessionsSessionIdRecordingRoute
+}
+
+const ApiInterviewSessionsRouteChildren: ApiInterviewSessionsRouteChildren = {
+  ApiInterviewSessionsSessionIdRecordingRoute:
+    ApiInterviewSessionsSessionIdRecordingRoute,
+}
+
+const ApiInterviewSessionsRouteWithChildren =
+  ApiInterviewSessionsRoute._addFileChildren(ApiInterviewSessionsRouteChildren)
+
 interface ApiCandidateIdDocumentsRouteChildren {
   ApiCandidateIdDocumentsDocumentIdRoute: typeof ApiCandidateIdDocumentsDocumentIdRoute
 }
@@ -1893,7 +1946,7 @@ const rootRouteChildren: RootRouteChildren = {
   MainRouteRoute: MainRouteRouteWithChildren,
   CustomScriptDotjsRoute: CustomScriptDotjsRoute,
   ApiHealthRoute: ApiHealthRoute,
-  ApiInterviewSessionsRoute: ApiInterviewSessionsRoute,
+  ApiInterviewSessionsRoute: ApiInterviewSessionsRouteWithChildren,
   ApiScreenersRoute: ApiScreenersRoute,
   ApiAuditLogsGenerateReportRoute: ApiAuditLogsGenerateReportRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
@@ -1909,6 +1962,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCandidateIdAiScreeningRoute: ApiCandidateIdAiScreeningRoute,
   ApiCandidateIdDocumentsRoute: ApiCandidateIdDocumentsRouteWithChildren,
   ApiCandidateImportIdRoute: ApiCandidateImportIdRoute,
+  ApiInterviewBundleBundleIdAiAnalysisRoute:
+    ApiInterviewBundleBundleIdAiAnalysisRoute,
   ApiInterviewTokenTokenCompleteRoute: ApiInterviewTokenTokenCompleteRoute,
   ApiInterviewTokenTokenResponsesRoute: ApiInterviewTokenTokenResponsesRoute,
   ApiInterviewTokenTokenSchemaRoute: ApiInterviewTokenTokenSchemaRoute,

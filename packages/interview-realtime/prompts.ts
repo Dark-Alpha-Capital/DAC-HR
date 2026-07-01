@@ -1,7 +1,7 @@
 import type { AgentConfig } from "@workspace/db/enums";
 import type { InterviewQuestion, VoiceInterviewPhase } from "./types";
 
-function formatQuestion(question: InterviewQuestion, index: number): string {
+export function formatQuestion(question: InterviewQuestion, index: number): string {
   const prefix = `Question ${index + 1}`;
   if (question.questionType === "mcq" && question.options?.length) {
     const options = question.options
@@ -182,9 +182,9 @@ export function buildSessionUpdateEvent(instructions: string, voice?: string) {
           transcription: { model: "whisper-1" },
           turn_detection: {
             type: "server_vad",
-            threshold: 0.5,
-            prefix_padding_ms: 300,
-            silence_duration_ms: 700,
+            threshold: 0.6,
+            prefix_padding_ms: 400,
+            silence_duration_ms: 1100,
             create_response: false,
             interrupt_response: false,
           },
@@ -228,6 +228,7 @@ export function buildWelcomeIntroEvent(options: {
         `Greet ${name} warmly and welcome them to their Dark Alpha Capital interview for the ${position} position${round}.`,
         "Briefly explain that you will ask interview questions one at a time and they should answer out loud when prompted.",
         "Ask if they are ready to begin. Keep it concise and professional (under 30 seconds).",
+        "Finish your full welcome before stopping — do not cut yourself off mid-sentence.",
         "Do not ask any interview questions yet.",
       ].join(" "),
     },
@@ -239,16 +240,20 @@ export function buildAskCurrentQuestionEvent(
   index: number,
 ) {
   const questionNumber = index + 1;
+  const questionText = formatQuestion(question, index);
   const mcqNote =
     question.questionType === "mcq" && question.options?.length
-      ? " Read all MCQ options (A, B, C, D) clearly from the session Questions list."
+      ? " Read every MCQ option letter and text (A, B, C, D) clearly."
       : "";
 
   return {
     type: "response.create",
     response: {
+      max_output_tokens: 600,
       instructions: [
-        `Ask Question ${questionNumber} from the session Questions list now.${mcqNote}`,
+        `Read the following interview question (Question ${questionNumber}) out loud now.${mcqNote}`,
+        `Question text: "${questionText}"`,
+        "Read the entire question verbatim — no preamble, no 'let me ask', no summary.",
         "Read it clearly and completely, then stop and wait for the candidate to answer.",
         "Do not ask the next question or acknowledge yet — just ask this one question.",
       ].join(" "),
@@ -257,18 +262,21 @@ export function buildAskCurrentQuestionEvent(
 }
 
 export function buildFollowUpAnswerEvent(options: {
+  question: InterviewQuestion;
   questionIndex: number;
   candidateUtterance: string;
   followUpInstruction: string | null;
 }) {
   const questionNumber = options.questionIndex + 1;
+  const questionText = formatQuestion(options.question, options.questionIndex);
 
   return {
     type: "response.create",
     response: {
       max_output_tokens: 120,
       instructions: [
-        `You are still on Question ${questionNumber} from the session Questions list.`,
+        `You are still on Question ${questionNumber}.`,
+        `Question text: "${questionText}"`,
         `The candidate just said: "${options.candidateUtterance.trim()}".`,
         options.followUpInstruction ??
           "You did not hear a clear answer — only noise or gibberish. Politely ask the candidate to please ensure their surroundings are stable and silenced, then repeat the current question. Do not advance.",

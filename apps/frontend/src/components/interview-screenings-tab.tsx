@@ -36,9 +36,12 @@ import { cn } from "~/lib/utils";
 import { formatDate } from "~/lib/utils";
 import type { InterviewAiAnalysisData } from "~/lib/schemas/interview-ai-analysis-schema";
 
-interface InterviewScreeningsTabProps {
-  interviewId: string;
-}
+type InterviewScreeningsTabProps = {
+  onRefresh?: () => void;
+} & (
+  | { interviewId: string; bundleId?: never }
+  | { bundleId: string; interviewId?: never }
+);
 
 interface StoredAnalysis {
   id: string;
@@ -277,6 +280,7 @@ function AnalysisDisplay({ analysis }: { analysis: InterviewAiAnalysisData }) {
 
 export default function InterviewScreeningsTab({
   interviewId,
+  bundleId,
 }: InterviewScreeningsTabProps) {
   const [isFetching, setIsFetching] = useState(true);
   const [analyses, setAnalyses] = useState<StoredAnalysis[]>([]);
@@ -284,9 +288,13 @@ export default function InterviewScreeningsTab({
     useState<StoredAnalysis | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  const analysisEndpoint = bundleId
+    ? `/api/interview-bundle/${bundleId}/ai-analysis`
+    : `/api/interview/${interviewId}/ai-analysis`;
+
   const fetchAnalyses = useCallback(async () => {
     try {
-      const response = await fetch(`/api/interview/${interviewId}/ai-analysis`);
+      const response = await fetch(analysisEndpoint);
       if (response.ok) {
         const data = await response.json();
         setAnalyses(data.analyses || []);
@@ -296,7 +304,7 @@ export default function InterviewScreeningsTab({
     } finally {
       setIsFetching(false);
     }
-  }, [interviewId]);
+  }, [analysisEndpoint]);
 
   useEffect(() => {
     fetchAnalyses();
@@ -305,10 +313,11 @@ export default function InterviewScreeningsTab({
   const deleteAnalysis = async (analysisId: string) => {
     setDeletingId(analysisId);
     try {
-      const response = await fetch(
-        `/api/interview/${interviewId}/ai-analysis?analysisId=${analysisId}`,
-        { method: "DELETE" },
-      );
+      const response = await fetch(analysisEndpoint, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ analysisId }),
+      });
 
       if (!response.ok) {
         throw new Error("Failed to delete analysis");

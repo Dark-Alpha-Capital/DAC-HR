@@ -203,3 +203,46 @@ export const deleteInterviewAiAnalysisForInterview = async (
     return { deleted: false };
   }
 };
+
+export const deleteInterviewAiAnalysisForBundle = async (
+  bundleId: string,
+  analysisId: string,
+): Promise<{ deleted: boolean; reason?: "not_found" | "mismatch" }> => {
+  try {
+    const [analysisRecord] = await db
+      .select({
+        id: interviewAiAnalysis.id,
+        bundleId: interviewAiAnalysis.bundleId,
+      })
+      .from(interviewAiAnalysis)
+      .where(eq(interviewAiAnalysis.id, analysisId))
+      .limit(1);
+
+    if (!analysisRecord) {
+      return { deleted: false, reason: "not_found" };
+    }
+
+    if (analysisRecord.bundleId !== bundleId) {
+      return { deleted: false, reason: "mismatch" };
+    }
+
+    const deletedRows = await db
+      .delete(interviewAiAnalysis)
+      .where(
+        and(
+          eq(interviewAiAnalysis.id, analysisId),
+          eq(interviewAiAnalysis.bundleId, bundleId),
+        ),
+      )
+      .returning({ id: interviewAiAnalysis.id });
+
+    if (deletedRows.length === 0) {
+      return { deleted: false, reason: "not_found" };
+    }
+
+    return { deleted: true };
+  } catch (error) {
+    console.error("Error deleting scoped bundle AI analysis", error);
+    return { deleted: false };
+  }
+};

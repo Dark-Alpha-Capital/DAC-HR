@@ -1,32 +1,19 @@
-import {
-  buildNamedEntityFolderPath,
-  formatPersonName,
-} from "@workspace/nextcloud/paths";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { DetailPageSkeleton } from "~/components/route-skeletons/detail-page-skeleton";
 import {
   loadInterviewBundleById,
   type InterviewBundleDetailData,
-  type InterviewResponse,
 } from "~/lib/loaders/interviews";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
-import {
-  Bot,
-  Check,
-  Copy,
-  Mic,
-  ClipboardList,
-  ExternalLink,
-  Monitor,
-} from "lucide-react";
+import { Bot, Check, Copy, History, Sparkles } from "lucide-react";
 import { formatDate } from "~/lib/utils";
 import ApplicationBreadcrumb from "~/components/application-breadcrumb";
+import { BundleRoundPanel } from "~/components/bundle-round-panel";
+import InterviewAiAnalysisTab from "~/components/interview-ai-analysis-tab";
+import InterviewScreeningsTab from "~/components/interview-screenings-tab";
 import { useState } from "react";
-import { getOptionLabel } from "~/lib/question-options";
-import type { QuestionOption } from "@workspace/db/question-types";
 
 export const Route = createFileRoute("/_main/interviews/bundle/$bundleId/")({
   head: () => ({
@@ -41,21 +28,6 @@ export const Route = createFileRoute("/_main/interviews/bundle/$bundleId/")({
     <DetailPageSkeleton container tabs showBreadcrumb showActions />
   ),
 });
-
-function formatResponseAnswer(response: InterviewResponse): string {
-  if (response.transcript?.trim()) return response.transcript;
-  if (response.question?.questionType === "mcq") {
-    return (
-      getOptionLabel(
-        response.question.options as QuestionOption[],
-        response.selectedOptionId,
-      ) ??
-      response.selectedOptionId ??
-      "No answer"
-    );
-  }
-  return response.answerText || "No answer";
-}
 
 function InterviewBundleDetailPage() {
   const data = Route.useLoaderData();
@@ -120,12 +92,12 @@ function InterviewBundleDetailPage() {
                 AI Bundle
               </Badge>
             </div>
-            {candidate && (
+            {candidate ? (
               <p className="text-lg text-muted-foreground">
                 {candidate.firstName} {candidate.lastName}
                 {positionName ? ` · ${positionName}` : ""}
               </p>
-            )}
+            ) : null}
             <p className="text-sm text-muted-foreground">
               {completedRounds}/{roundDetails.length} rounds complete · Expires{" "}
               {formatDate(bundle.expiresAt)}
@@ -148,129 +120,52 @@ function InterviewBundleDetailPage() {
         </div>
       </header>
 
-      <Tabs defaultValue={roundDetails[0]?.round.round.id ?? "0"}>
+      <Tabs defaultValue="rounds">
         <TabsList className="flex-wrap h-auto">
-          {roundDetails.map(({ round }) => (
-            <TabsTrigger key={round.round.id} value={round.round.id}>
-              {round.round.name}
-              {round.bundleRound.status === "completed" ? " ✓" : ""}
-            </TabsTrigger>
-          ))}
+          <TabsTrigger value="rounds">Rounds</TabsTrigger>
+          <TabsTrigger value="ai-analysis" className="gap-2">
+            <Sparkles className="h-4 w-4" />
+            AI Analysis
+          </TabsTrigger>
+          <TabsTrigger value="screenings" className="gap-2">
+            <History className="h-4 w-4" />
+            Screenings
+          </TabsTrigger>
         </TabsList>
 
-        {roundDetails.map(({ round, responses, evaluation }) => {
-          const session = round.session;
-          const recordingUrl = session.sessionAudioUrl;
-          const recordingPath =
-            session.sessionAudioPath ??
-            `${buildNamedEntityFolderPath({
-              root: "/ATS/interviews",
-              name: candidate
-                ? formatPersonName(candidate.firstName, candidate.lastName)
-                : null,
-              id: session.id,
-            })}/screen-recording.webm`;
+        <TabsContent value="rounds" className="mt-4">
+          <Tabs defaultValue={roundDetails[0]?.round.round.id ?? "0"}>
+            <TabsList className="flex-wrap h-auto">
+              {roundDetails.map(({ round }) => (
+                <TabsTrigger key={round.round.id} value={round.round.id}>
+                  {round.round.name}
+                  {round.bundleRound.status === "completed" ? " ✓" : ""}
+                </TabsTrigger>
+              ))}
+            </TabsList>
 
-          return (
-            <TabsContent
-              key={round.round.id}
-              value={round.round.id}
-              className="space-y-4 mt-4"
-            >
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline">
-                  {round.bundleRound.deliveryMode === "voice" ? (
-                    <Mic className="h-3 w-3 mr-1" />
-                  ) : (
-                    <ClipboardList className="h-3 w-3 mr-1" />
-                  )}
-                  {round.bundleRound.deliveryMode}
-                </Badge>
-                <Badge variant="secondary">{round.bundleRound.status}</Badge>
-                <Badge variant="secondary">{session.status}</Badge>
-              </div>
+            {roundDetails.map((roundDetail) => (
+              <TabsContent
+                key={roundDetail.round.round.id}
+                value={roundDetail.round.round.id}
+                className="mt-4"
+              >
+                <BundleRoundPanel
+                  roundDetail={roundDetail}
+                  candidate={candidate}
+                />
+              </TabsContent>
+            ))}
+          </Tabs>
+        </TabsContent>
 
-              {recordingUrl && (
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Monitor className="h-4 w-4" />
-                      Screen Recording
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Button variant="secondary" size="sm" asChild>
-                      <a href={recordingUrl} target="_blank" rel="noreferrer">
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        View Recording
-                      </a>
-                    </Button>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Path: {recordingPath}
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
+        <TabsContent value="ai-analysis" className="mt-4">
+          <InterviewAiAnalysisTab bundleId={bundle.id} />
+        </TabsContent>
 
-              {session.cheatingSummary && (
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Anti-cheat Summary</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <pre className="text-xs bg-muted p-3 rounded-md overflow-auto">
-                      {JSON.stringify(session.cheatingSummary, null, 2)}
-                    </pre>
-                  </CardContent>
-                </Card>
-              )}
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">
-                    Responses ({responses.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {responses.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      No responses recorded yet.
-                    </p>
-                  ) : (
-                    responses.map((response) => (
-                      <div key={response.id} className="border-b pb-4 last:border-0">
-                        <p className="text-sm font-medium mb-1">
-                          {response.question?.questionText}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {formatResponseAnswer(response)}
-                        </p>
-                      </div>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
-
-              {evaluation && (
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">AI Evaluation</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {evaluation.summary && (
-                      <p className="text-sm">{evaluation.summary}</p>
-                    )}
-                    {evaluation.score != null && (
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Score: {evaluation.score}/10
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-          );
-        })}
+        <TabsContent value="screenings" className="mt-4">
+          <InterviewScreeningsTab bundleId={bundle.id} />
+        </TabsContent>
       </Tabs>
     </div>
   );

@@ -18,13 +18,16 @@ interface ScreenerOption {
   name: string;
 }
 
-interface InterviewAiAnalysisTabProps {
-  interviewId: string;
+type InterviewAiAnalysisTabProps = {
   onAnalysisComplete?: () => void;
-}
+} & (
+  | { interviewId: string; bundleId?: never }
+  | { bundleId: string; interviewId?: never }
+);
 
 export default function InterviewAiAnalysisTab({
   interviewId,
+  bundleId,
   onAnalysisComplete,
 }: InterviewAiAnalysisTabProps) {
   const [screeners, setScreeners] = useState<ScreenerOption[]>([]);
@@ -32,6 +35,10 @@ export default function InterviewAiAnalysisTab({
   const [screenerId, setScreenerId] = useState("");
   const [customPrompt, setCustomPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const analysisEndpoint = bundleId
+    ? `/api/interview-bundle/${bundleId}/ai-analysis`
+    : `/api/interview/${interviewId}/ai-analysis`;
 
   useEffect(() => {
     const fetchScreeners = async () => {
@@ -60,17 +67,14 @@ export default function InterviewAiAnalysisTab({
 
     setIsLoading(true);
     try {
-      const response = await fetch(
-        `/api/interview/${interviewId}/ai-analysis`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            screenerId,
-            customPrompt: customPrompt.trim() || undefined,
-          }),
-        },
-      );
+      const response = await fetch(analysisEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          screenerId,
+          customPrompt: customPrompt.trim() || undefined,
+        }),
+      });
 
       if (!response.ok) {
         const error = (await response.json()) as { error?: string };
@@ -96,8 +100,9 @@ export default function InterviewAiAnalysisTab({
         <Sparkles className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
         <h3 className="text-lg font-medium">AI Interview Analysis</h3>
         <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
-          Analyze candidate responses against a screener rubric. Works for both
-          manual interviews and AI session responses.
+          {bundleId
+            ? "Analyze candidate responses across every round in this position interview — voice and form — against a screener rubric."
+            : "Analyze candidate responses against a screener rubric. Works for both manual interviews and AI session responses."}
         </p>
       </div>
 

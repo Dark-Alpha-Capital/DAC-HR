@@ -1,7 +1,7 @@
 import type { InterviewQuestion } from "./types";
 import { interviewServerLog } from "./debug-log";
 
-export const MAX_NOISE_RETRIES = 3;
+export const MAX_NOISE_RETRIES = 5;
 
 /** @deprecated Use MAX_NOISE_RETRIES — kept for existing imports */
 export const MAX_ANSWER_FOLLOW_UPS = MAX_NOISE_RETRIES;
@@ -84,8 +84,14 @@ const NOISE_TRANSCRIPTION_MARKERS =
 const FILLER_ONLY =
   /^(?:um+|uh+|hmm+|ah+|er+|oh+|mm+|mhm+|uh-huh+|huh)\.?$/i;
 
+const SHORT_VALID_SPOKEN =
+  /^(?:yes|no|yeah|yep|nope|yup|ok|okay|[a-d])\.?$/i;
+
 const READY_PHRASES =
   /\b(?:yes|yeah|yep|yup|sure|ready|let'?s go|go ahead|start|begin|i am|i'm ready|absolutely|definitely|ok(?:ay)?|sounds good)\b/i;
+
+const READY_INTENT_PHRASES =
+  /\b(?:can we|can you|are you|shall we|could we|may we)\b.*\b(?:begin|start|go|ready|hear|proceed)\b/i;
 
 export type AnswerEvaluationResult = {
   sufficient: boolean;
@@ -130,8 +136,25 @@ export function looksLikeNoise(text: string): boolean {
   }
 
   const wordCount = trimmed.split(/\s+/).filter(Boolean).length;
-  if (wordCount <= 1 && trimmed.length <= 3) {
+  if (
+    wordCount <= 1 &&
+    trimmed.length <= 3 &&
+    !SHORT_VALID_SPOKEN.test(trimmed)
+  ) {
     return true;
+  }
+
+  // Single short words are often mis-transcribed background noise (e.g. "peace", "please").
+  if (wordCount === 1) {
+    const lettersOnly = trimmed.replace(/[^a-zA-Z]/g, "");
+    if (
+      lettersOnly.length > 0 &&
+      lettersOnly.length <= 6 &&
+      !looksLikeReadyConfirmation(trimmed) &&
+      !SHORT_VALID_SPOKEN.test(trimmed)
+    ) {
+      return true;
+    }
   }
 
   const alphaChars = trimmed.replace(/[^a-zA-Z]/g, "");
@@ -339,7 +362,8 @@ export async function evaluateCandidateAnswer(options: {
 }
 
 function looksLikeReadyConfirmation(text: string): boolean {
-  return READY_PHRASES.test(text.trim());
+  const trimmed = text.trim();
+  return READY_PHRASES.test(trimmed) || READY_INTENT_PHRASES.test(trimmed);
 }
 
 function fallbackIntroEvaluation(utterance: string): IntroEvaluationResult {
@@ -349,8 +373,7 @@ function fallbackIntroEvaluation(utterance: string): IntroEvaluationResult {
     return {
       ready: false,
       relevance: "noise",
-      followUpInstruction:
-        "You heard background noise instead of a clear response. Ask the candidate to please ensure their surroundings are stable and silenced, then ask if they are ready to begin.",
+      followUpInstruction: null,
     };
   }
 

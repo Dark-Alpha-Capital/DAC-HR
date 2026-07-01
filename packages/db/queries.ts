@@ -34,6 +34,7 @@ import {
   count,
   gte,
   lte,
+  isNull,
 } from "drizzle-orm";
 import type { ApplicationStatus } from "./application-status";
 import { getBundlesByApplicationId } from "./repositories/interview-bundle-repository";
@@ -2937,6 +2938,7 @@ export async function setDocumentCategories(
  */
 export const saveInterviewAiAnalysis = async (params: {
   interviewId: string;
+  bundleId?: string | null;
   applicationId?: string | null;
   positionId?: string | null;
   screenerId?: string | null;
@@ -2950,6 +2952,7 @@ export const saveInterviewAiAnalysis = async (params: {
       .insert(interviewAiAnalysis)
       .values({
         interviewId: params.interviewId,
+        bundleId: params.bundleId || null,
         applicationId: params.applicationId || null,
         positionId: params.positionId || null,
         screenerId: params.screenerId || null,
@@ -2972,14 +2975,13 @@ export const saveInterviewAiAnalysis = async (params: {
  * @param interviewId The ID of the interview
  * @returns Array of interview AI analysis records, ordered by most recent first
  */
-export const getInterviewAiAnalysesByInterviewId = async (
-  interviewId: string,
-) => {
+export const getInterviewAiAnalysesByBundleId = async (bundleId: string) => {
   try {
     const results = await db
       .select({
         id: interviewAiAnalysis.id,
         interviewId: interviewAiAnalysis.interviewId,
+        bundleId: interviewAiAnalysis.bundleId,
         applicationId: interviewAiAnalysis.applicationId,
         positionId: interviewAiAnalysis.positionId,
         screenerId: interviewAiAnalysis.screenerId,
@@ -2993,7 +2995,44 @@ export const getInterviewAiAnalysesByInterviewId = async (
       })
       .from(interviewAiAnalysis)
       .leftJoin(screener, eq(interviewAiAnalysis.screenerId, screener.id))
-      .where(eq(interviewAiAnalysis.interviewId, interviewId))
+      .where(eq(interviewAiAnalysis.bundleId, bundleId))
+      .orderBy(desc(interviewAiAnalysis.createdAt));
+
+    return results;
+  } catch (error) {
+    console.error("Error fetching bundle AI analyses", error);
+    return [];
+  }
+};
+
+export const getInterviewAiAnalysesByInterviewId = async (
+  interviewId: string,
+) => {
+  try {
+    const results = await db
+      .select({
+        id: interviewAiAnalysis.id,
+        interviewId: interviewAiAnalysis.interviewId,
+        bundleId: interviewAiAnalysis.bundleId,
+        applicationId: interviewAiAnalysis.applicationId,
+        positionId: interviewAiAnalysis.positionId,
+        screenerId: interviewAiAnalysis.screenerId,
+        analysis: interviewAiAnalysis.analysis,
+        structuredData: interviewAiAnalysis.structuredData,
+        customPrompt: interviewAiAnalysis.customPrompt,
+        model: interviewAiAnalysis.model,
+        createdAt: interviewAiAnalysis.createdAt,
+        updatedAt: interviewAiAnalysis.updatedAt,
+        screenerName: screener.name,
+      })
+      .from(interviewAiAnalysis)
+      .leftJoin(screener, eq(interviewAiAnalysis.screenerId, screener.id))
+      .where(
+        and(
+          eq(interviewAiAnalysis.interviewId, interviewId),
+          isNull(interviewAiAnalysis.bundleId),
+        ),
+      )
       .orderBy(desc(interviewAiAnalysis.createdAt));
 
     return results;

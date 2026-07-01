@@ -528,6 +528,9 @@ export const interviewAiAnalysis = sqliteTable("interview_ai_analysis", {
   interviewId: text("interview_id")
     .notNull()
     .references(() => interview.id, { onDelete: "cascade" }),
+  bundleId: text("bundle_id").references(() => interviewBundle.id, {
+    onDelete: "cascade",
+  }),
   applicationId: text("application_id").references(() => application.id, {
     onDelete: "set null",
   }),
