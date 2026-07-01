@@ -30,6 +30,7 @@ import {
 } from "~/components/ui/sidebar";
 
 import { SidebarUserNav } from "../sidebar-user-nav";
+import { ModeToggle } from "~/components/mode-toggle";
 
 // Recruiting links (available to all users)
 const recruitingLinks = [
@@ -174,6 +175,9 @@ export function AppSidebar({ session }: { session: AppSession }) {
         )}
       </SidebarContent>
       <SidebarFooter>
+        <div className="flex items-center justify-end px-2 pb-2">
+          <ModeToggle />
+        </div>
         <SidebarUserNav session={session} />
       </SidebarFooter>
     </Sidebar>

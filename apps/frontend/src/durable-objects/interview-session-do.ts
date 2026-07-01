@@ -102,6 +102,8 @@ export class InterviewSessionDO implements DurableObject {
     this.env = env;
   }
 
+
+
   private logTranscript(
     action: string,
     data: Record<string, unknown> = {},
@@ -560,12 +562,12 @@ export class InterviewSessionDO implements DurableObject {
       responseInstructions:
         payload.response && typeof payload.response === "object"
           ? previewText(
-              String(
-                (payload.response as Record<string, unknown>).instructions ??
-                  "",
-              ),
-              200,
-            )
+            String(
+              (payload.response as Record<string, unknown>).instructions ??
+              "",
+            ),
+            200,
+          )
           : undefined,
       ...extra,
     });
@@ -728,27 +730,27 @@ export class InterviewSessionDO implements DurableObject {
       outputModalities: sessionUpdate.session.output_modalities,
       voice:
         sessionUpdate.session.audio &&
-        typeof sessionUpdate.session.audio === "object" &&
-        "output" in sessionUpdate.session.audio
+          typeof sessionUpdate.session.audio === "object" &&
+          "output" in sessionUpdate.session.audio
           ? (
+            sessionUpdate.session.audio as Record<
+              string,
+              unknown
+            >
+          ).output
+          : undefined,
+      turnDetection:
+        sessionUpdate.session.audio &&
+          typeof sessionUpdate.session.audio === "object" &&
+          "input" in sessionUpdate.session.audio
+          ? (
+            (
               sessionUpdate.session.audio as Record<
                 string,
                 unknown
               >
-            ).output
-          : undefined,
-      turnDetection:
-        sessionUpdate.session.audio &&
-        typeof sessionUpdate.session.audio === "object" &&
-        "input" in sessionUpdate.session.audio
-          ? (
-              (
-                sessionUpdate.session.audio as Record<
-                  string,
-                  unknown
-                >
-              ).input as Record<string, unknown>
-            )?.turn_detection
+            ).input as Record<string, unknown>
+          )?.turn_detection
           : undefined,
       instructionsLength: instructions.length,
     });
@@ -795,64 +797,64 @@ export class InterviewSessionDO implements DurableObject {
     const isReconnect = options?.isReconnect ?? false;
 
     try {
-    this.logTranscript("sideband_connect_start", {
-      callId,
-      auth: "ephemeral_client_secret",
-      isReconnect,
-    });
-
-    this.sidebandCredentials = { callId, clientSecret };
-
-    if (!isReconnect) {
-      this.interviewState.callId = callId;
-      this.interviewState.realtimeSessionId = callId;
-      await updateSessionVoiceMetadata(this.interviewState.sessionId, {
-        realtimeSessionId: callId,
-      });
-    }
-
-    this.detachSideband();
-
-    const maxAttempts = isReconnect ? 1 : SIDEBAND_CONNECT_MAX_RETRIES + 1;
-    let lastError: string | undefined;
-
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      if (attempt > 0) {
-        const delay = Math.min(
-          SIDEBAND_BACKOFF_BASE_MS * 2 ** (attempt - 1),
-          SIDEBAND_BACKOFF_MAX_MS,
-        );
-        this.logTranscript("sideband_connect_retry", {
-          callId,
-          attempt,
-          delayMs: delay,
-        });
-        await sleep(delay);
-      }
-
-      const result = await this.tryOpenSideband(callId, clientSecret);
-      if (result.ok) {
-        this.sideband = result.sideband;
-        this.attachSidebandListeners(result.sideband, callId);
-        this.sidebandReconnectAttempt = 0;
-        await this.onSidebandConnected(callId, isReconnect);
-        return;
-      }
-
-      lastError = result.error;
-      this.logTranscript("sideband_connect_attempt_failed", {
+      this.logTranscript("sideband_connect_start", {
         callId,
-        attempt: attempt + 1,
-        error: result.error,
+        auth: "ephemeral_client_secret",
+        isReconnect,
       });
-    }
 
-    this.logTranscript("sideband_connect_failed", {
-      callId,
-      isReconnect,
-      lastError,
-    });
-    this.scheduleSidebandReconnect(undefined, lastError);
+      this.sidebandCredentials = { callId, clientSecret };
+
+      if (!isReconnect) {
+        this.interviewState.callId = callId;
+        this.interviewState.realtimeSessionId = callId;
+        await updateSessionVoiceMetadata(this.interviewState.sessionId, {
+          realtimeSessionId: callId,
+        });
+      }
+
+      this.detachSideband();
+
+      const maxAttempts = isReconnect ? 1 : SIDEBAND_CONNECT_MAX_RETRIES + 1;
+      let lastError: string | undefined;
+
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        if (attempt > 0) {
+          const delay = Math.min(
+            SIDEBAND_BACKOFF_BASE_MS * 2 ** (attempt - 1),
+            SIDEBAND_BACKOFF_MAX_MS,
+          );
+          this.logTranscript("sideband_connect_retry", {
+            callId,
+            attempt,
+            delayMs: delay,
+          });
+          await sleep(delay);
+        }
+
+        const result = await this.tryOpenSideband(callId, clientSecret);
+        if (result.ok) {
+          this.sideband = result.sideband;
+          this.attachSidebandListeners(result.sideband, callId);
+          this.sidebandReconnectAttempt = 0;
+          await this.onSidebandConnected(callId, isReconnect);
+          return;
+        }
+
+        lastError = result.error;
+        this.logTranscript("sideband_connect_attempt_failed", {
+          callId,
+          attempt: attempt + 1,
+          error: result.error,
+        });
+      }
+
+      this.logTranscript("sideband_connect_failed", {
+        callId,
+        isReconnect,
+        lastError,
+      });
+      this.scheduleSidebandReconnect(undefined, lastError);
     } catch (error) {
       this.logError("sideband_connect_unexpected", error, {
         callId,
@@ -988,106 +990,19 @@ export class InterviewSessionDO implements DurableObject {
         return;
       }
 
-    const type = typeof event.type === "string" ? event.type : "";
+      const type = typeof event.type === "string" ? event.type : "";
 
-    this.recordFirstAudioByte(type);
+      this.recordFirstAudioByte(type);
 
-    // DEBUG: Log ALL sideband events to trace the response lifecycle
-    this.logTranscript("sideband_event_raw", {
-      source,
-      eventType: type,
-      eventKeys: Object.keys(event),
-      responseStatus:
-        event.response && typeof event.response === "object"
-          ? (event.response as Record<string, unknown>).status
-          : undefined,
-      itemRole:
-        event.item && typeof event.item === "object"
-          ? (event.item as Record<string, unknown>).role
-          : undefined,
-      itemType:
-        event.item && typeof event.item === "object"
-          ? (event.item as Record<string, unknown>).type
-          : undefined,
-      deltaPreview:
-        typeof event.delta === "string" ? previewText(event.delta, 80) : undefined,
-      transcriptPreview:
-        typeof event.transcript === "string"
-          ? previewText(event.transcript, 120)
-          : undefined,
-    });
-
-    if (type === "session.updated") {
-      await this.sendWelcomeIntro();
-      return;
-    }
-
-    if (type === "conversation.item.input_audio_transcription.delta") {
-      const delta = typeof event.delta === "string" ? event.delta : "";
-      if (delta.trim()) {
-        this.broadcastTranscriptDelta("user", delta);
-      }
-      return;
-    }
-
-    if (type === "conversation.item.input_audio_transcription.completed") {
-      const transcript =
-        typeof event.transcript === "string" ? event.transcript : "";
-      if (transcript.trim()) {
-        await this.saveUserTranscript(
-          transcript,
-          typeof event.event_id === "string" ? event.event_id : undefined,
-        );
-      }
-      return;
-    }
-
-    if (
-      type === "response.output_audio_transcript.delta" ||
-      type === "response.audio_transcript.delta"
-    ) {
-      const delta = typeof event.delta === "string" ? event.delta : "";
-      if (delta.trim()) {
-        this.broadcastTranscriptDelta("assistant", delta);
-      }
-      return;
-    }
-
-    if (
-      type === "response.output_audio_transcript.done" ||
-      type === "response.audio_transcript.done"
-    ) {
-      const transcript =
-        typeof event.transcript === "string" ? event.transcript : "";
-      if (transcript.trim()) {
-        this.appendConversation("assistant", transcript);
-        this.broadcastTranscript("assistant", transcript);
-        this.syncQuestionFromAssistantTranscript(transcript);
-      }
-      return;
-    }
-
-    if (type === "response.created") {
-      this.logTranscript("response_created", {
-        responseId:
-          event.response && typeof event.response === "object"
-            ? (event.response as Record<string, unknown>).id
-            : undefined,
+      // DEBUG: Log ALL sideband events to trace the response lifecycle
+      this.logTranscript("sideband_event_raw", {
+        source,
+        eventType: type,
+        eventKeys: Object.keys(event),
         responseStatus:
           event.response && typeof event.response === "object"
             ? (event.response as Record<string, unknown>).status
             : undefined,
-        responseOutput:
-          event.response && typeof event.response === "object"
-            ? (event.response as Record<string, unknown>).output
-            : undefined,
-      });
-      return;
-    }
-
-    if (type === "response.output_item.added") {
-      this.logTranscript("response_output_item_added", {
-        outputIndex: event.output_index,
         itemRole:
           event.item && typeof event.item === "object"
             ? (event.item as Record<string, unknown>).role
@@ -1096,155 +1011,242 @@ export class InterviewSessionDO implements DurableObject {
           event.item && typeof event.item === "object"
             ? (event.item as Record<string, unknown>).type
             : undefined,
-        itemContent:
-          event.item && typeof event.item === "object"
-            ? (event.item as Record<string, unknown>).content
+        deltaPreview:
+          typeof event.delta === "string" ? previewText(event.delta, 80) : undefined,
+        transcriptPreview:
+          typeof event.transcript === "string"
+            ? previewText(event.transcript, 120)
             : undefined,
       });
-      return;
-    }
 
-    if (type === "response.output_item.done") {
-      this.logTranscript("response_output_item_done", {
-        outputIndex: event.output_index,
-        itemRole:
-          event.item && typeof event.item === "object"
-            ? (event.item as Record<string, unknown>).role
-            : undefined,
-        itemType:
-          event.item && typeof event.item === "object"
-            ? (event.item as Record<string, unknown>).type
-            : undefined,
-      });
-      return;
-    }
-
-    if (type === "response.content_part.added") {
-      this.logTranscript("response_content_part_added", {
-        outputIndex: event.output_index,
-        contentIndex: event.content_index,
-        partType:
-          event.part && typeof event.part === "object"
-            ? (event.part as Record<string, unknown>).type
-            : undefined,
-        partTranscript:
-          event.part && typeof event.part === "object"
-            ? (event.part as Record<string, unknown>).transcript
-            : undefined,
-      });
-      return;
-    }
-
-    if (type === "response.content_part.done") {
-      this.logTranscript("response_content_part_done", {
-        outputIndex: event.output_index,
-        contentIndex: event.content_index,
-        partType:
-          event.part && typeof event.part === "object"
-            ? (event.part as Record<string, unknown>).type
-            : undefined,
-      });
-      return;
-    }
-
-    if (type === "response.output_audio.delta") {
-      this.logTranscript("response_output_audio_delta", {
-        responseId: event.response_id,
-        outputIndex: event.output_index,
-        contentIndex: event.content_index,
-        deltaLength:
-          typeof event.delta === "string" ? event.delta.length : 0,
-      });
-      return;
-    }
-
-    if (type === "response.output_audio.done") {
-      this.logTranscript("response_output_audio_done", {
-        responseId: event.response_id,
-        outputIndex: event.output_index,
-        contentIndex: event.content_index,
-      });
-      return;
-    }
-
-    if (type === "response.cancelled" || type === "response.failed") {
-      this.logTranscript("response_cancelled_or_failed", {
-        eventType: type,
-        voicePhase: this.interviewState?.voicePhase,
-        responseStatus: this.extractResponseStatus(event),
-        errorCode:
-          event.error && typeof event.error === "object"
-            ? (event.error as Record<string, unknown>).code
-            : undefined,
-        errorMessage:
-          event.error && typeof event.error === "object"
-            ? (event.error as Record<string, unknown>).message
-            : undefined,
-      });
-      if (this.interviewState?.voicePhase === "intro") {
-        await this.handleWelcomeInterrupted(type);
+      if (type === "session.updated") {
+        await this.sendWelcomeIntro();
+        return;
       }
-      return;
-    }
 
-    if (type === "response.done") {
-      const usage = this.extractResponseUsage(event);
-      const tokenUsage = usage ? this.extractTokenUsage(usage) : null;
-      this.logResponseMetrics(usage);
-      const responseStatus = this.extractResponseStatus(event);
-      this.logTranscript("response_done", {
-        voicePhase: this.interviewState.voicePhase,
-        awaitingAnswerForIndex: this.interviewState.awaitingAnswerForIndex,
-        currentQuestionIndex: this.interviewState.currentQuestionIndex,
-        responseStatus,
-        ...(tokenUsage ?? {}),
-      });
+      if (type === "conversation.item.input_audio_transcription.delta") {
+        const delta = typeof event.delta === "string" ? event.delta : "";
+        if (delta.trim()) {
+          this.broadcastTranscriptDelta("user", delta);
+        }
+        return;
+      }
 
-      if (
-        this.interviewState.voicePhase === "intro" &&
-        responseStatus &&
-        responseStatus !== "completed"
-      ) {
-        await this.handleWelcomeInterrupted(responseStatus);
+      if (type === "conversation.item.input_audio_transcription.completed") {
+        const transcript =
+          typeof event.transcript === "string" ? event.transcript : "";
+        if (transcript.trim()) {
+          await this.saveUserTranscript(
+            transcript,
+            typeof event.event_id === "string" ? event.event_id : undefined,
+          );
+        }
         return;
       }
 
       if (
-        this.interviewState.voicePhase === "questions" &&
-        responseStatus &&
-        responseStatus !== "completed"
+        type === "response.output_audio_transcript.delta" ||
+        type === "response.audio_transcript.delta"
       ) {
-        if (this.pendingAdvanceAfterAck) {
-          this.pendingAdvanceAfterAck = false;
-          await this.advanceQuestion();
+        const delta = typeof event.delta === "string" ? event.delta : "";
+        if (delta.trim()) {
+          this.broadcastTranscriptDelta("assistant", delta);
+        }
+        return;
+      }
+
+      if (
+        type === "response.output_audio_transcript.done" ||
+        type === "response.audio_transcript.done"
+      ) {
+        const transcript =
+          typeof event.transcript === "string" ? event.transcript : "";
+        if (transcript.trim()) {
+          this.appendConversation("assistant", transcript);
+          this.broadcastTranscript("assistant", transcript);
+          this.syncQuestionFromAssistantTranscript(transcript);
+        }
+        return;
+      }
+
+      if (type === "response.created") {
+        this.logTranscript("response_created", {
+          responseId:
+            event.response && typeof event.response === "object"
+              ? (event.response as Record<string, unknown>).id
+              : undefined,
+          responseStatus:
+            event.response && typeof event.response === "object"
+              ? (event.response as Record<string, unknown>).status
+              : undefined,
+          responseOutput:
+            event.response && typeof event.response === "object"
+              ? (event.response as Record<string, unknown>).output
+              : undefined,
+        });
+        return;
+      }
+
+      if (type === "response.output_item.added") {
+        this.logTranscript("response_output_item_added", {
+          outputIndex: event.output_index,
+          itemRole:
+            event.item && typeof event.item === "object"
+              ? (event.item as Record<string, unknown>).role
+              : undefined,
+          itemType:
+            event.item && typeof event.item === "object"
+              ? (event.item as Record<string, unknown>).type
+              : undefined,
+          itemContent:
+            event.item && typeof event.item === "object"
+              ? (event.item as Record<string, unknown>).content
+              : undefined,
+        });
+        return;
+      }
+
+      if (type === "response.output_item.done") {
+        this.logTranscript("response_output_item_done", {
+          outputIndex: event.output_index,
+          itemRole:
+            event.item && typeof event.item === "object"
+              ? (event.item as Record<string, unknown>).role
+              : undefined,
+          itemType:
+            event.item && typeof event.item === "object"
+              ? (event.item as Record<string, unknown>).type
+              : undefined,
+        });
+        return;
+      }
+
+      if (type === "response.content_part.added") {
+        this.logTranscript("response_content_part_added", {
+          outputIndex: event.output_index,
+          contentIndex: event.content_index,
+          partType:
+            event.part && typeof event.part === "object"
+              ? (event.part as Record<string, unknown>).type
+              : undefined,
+          partTranscript:
+            event.part && typeof event.part === "object"
+              ? (event.part as Record<string, unknown>).transcript
+              : undefined,
+        });
+        return;
+      }
+
+      if (type === "response.content_part.done") {
+        this.logTranscript("response_content_part_done", {
+          outputIndex: event.output_index,
+          contentIndex: event.content_index,
+          partType:
+            event.part && typeof event.part === "object"
+              ? (event.part as Record<string, unknown>).type
+              : undefined,
+        });
+        return;
+      }
+
+      if (type === "response.output_audio.delta") {
+        this.logTranscript("response_output_audio_delta", {
+          responseId: event.response_id,
+          outputIndex: event.output_index,
+          contentIndex: event.content_index,
+          deltaLength:
+            typeof event.delta === "string" ? event.delta.length : 0,
+        });
+        return;
+      }
+
+      if (type === "response.output_audio.done") {
+        this.logTranscript("response_output_audio_done", {
+          responseId: event.response_id,
+          outputIndex: event.output_index,
+          contentIndex: event.content_index,
+        });
+        return;
+      }
+
+      if (type === "response.cancelled" || type === "response.failed") {
+        this.logTranscript("response_cancelled_or_failed", {
+          eventType: type,
+          voicePhase: this.interviewState?.voicePhase,
+          responseStatus: this.extractResponseStatus(event),
+          errorCode:
+            event.error && typeof event.error === "object"
+              ? (event.error as Record<string, unknown>).code
+              : undefined,
+          errorMessage:
+            event.error && typeof event.error === "object"
+              ? (event.error as Record<string, unknown>).message
+              : undefined,
+        });
+        if (this.interviewState?.voicePhase === "intro") {
+          await this.handleWelcomeInterrupted(type);
+        }
+        return;
+      }
+
+      if (type === "response.done") {
+        const usage = this.extractResponseUsage(event);
+        const tokenUsage = usage ? this.extractTokenUsage(usage) : null;
+        this.logResponseMetrics(usage);
+        const responseStatus = this.extractResponseStatus(event);
+        this.logTranscript("response_done", {
+          voicePhase: this.interviewState.voicePhase,
+          awaitingAnswerForIndex: this.interviewState.awaitingAnswerForIndex,
+          currentQuestionIndex: this.interviewState.currentQuestionIndex,
+          responseStatus,
+          ...(tokenUsage ?? {}),
+        });
+
+        if (
+          this.interviewState.voicePhase === "intro" &&
+          responseStatus &&
+          responseStatus !== "completed"
+        ) {
+          await this.handleWelcomeInterrupted(responseStatus);
           return;
         }
-        await this.askCurrentQuestion();
+
+        if (
+          this.interviewState.voicePhase === "questions" &&
+          responseStatus &&
+          responseStatus !== "completed"
+        ) {
+          if (this.pendingAdvanceAfterAck) {
+            this.pendingAdvanceAfterAck = false;
+            await this.advanceQuestion();
+            return;
+          }
+          await this.askCurrentQuestion();
+          return;
+        }
+
+        await this.handleResponseDone(responseStatus);
         return;
       }
 
-      await this.handleResponseDone(responseStatus);
-      return;
-    }
-
-    if (type === "error") {
-      this.logTranscript("sideband_error_event", {
-        eventType: type,
-        errorCode:
-          event.error && typeof event.error === "object"
-            ? (event.error as Record<string, unknown>).code
-            : undefined,
-        errorMessage:
-          event.error && typeof event.error === "object"
-            ? (event.error as Record<string, unknown>).message
-            : undefined,
-        errorType:
-          event.error && typeof event.error === "object"
-            ? (event.error as Record<string, unknown>).type
-            : undefined,
-      });
-      return;
-    }
+      if (type === "error") {
+        this.logTranscript("sideband_error_event", {
+          eventType: type,
+          errorCode:
+            event.error && typeof event.error === "object"
+              ? (event.error as Record<string, unknown>).code
+              : undefined,
+          errorMessage:
+            event.error && typeof event.error === "object"
+              ? (event.error as Record<string, unknown>).message
+              : undefined,
+          errorType:
+            event.error && typeof event.error === "object"
+              ? (event.error as Record<string, unknown>).type
+              : undefined,
+        });
+        return;
+      }
     } catch (error) {
       this.logError("handle_realtime_event_failed", error, {
         source,

@@ -148,16 +148,16 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
       },
       triggerDocumentIndexing: this.env.DOCUMENT_INDEXING_WORKFLOW
         ? async (args) => {
-            await this.env.DOCUMENT_INDEXING_WORKFLOW!.create({
-              id: `index-${args.documentId}`,
-              params: {
-                documentId: args.documentId,
-                candidateId: args.candidateId,
-                nextcloudFilePath: args.nextcloudFilePath,
-                metadata: args.metadata,
-              },
-            });
-          }
+          await this.env.DOCUMENT_INDEXING_WORKFLOW!.create({
+            id: `index-${args.documentId}`,
+            params: {
+              documentId: args.documentId,
+              candidateId: args.candidateId,
+              nextcloudFilePath: args.nextcloudFilePath,
+              metadata: args.metadata,
+            },
+          });
+        }
         : undefined,
     };
 

@@ -13,12 +13,12 @@ import {
   SidebarMenuItem,
 } from "~/components/ui/sidebar";
 import { useRouter } from "@tanstack/react-router";
-import { useTheme } from "next-themes";
+import { useTheme } from "~/components/theme-provider";
 import type { AppSession } from "~/lib/auth-session";
 
 export function SidebarUserNav({ session }: { session: AppSession | null }) {
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const user = session?.user ?? null;
 
   const handleLogout = async () => {
@@ -86,7 +86,9 @@ export function SidebarUserNav({ session }: { session: AppSession | null }) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="cursor-pointer"
-                  onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+                  onClick={() =>
+                    setTheme(resolvedTheme === "light" ? "dark" : "light")
+                  }
                 >
                   Toggle Theme
                 </DropdownMenuItem>

@@ -7,6 +7,10 @@ import {
 } from "@tanstack/react-router";
 import appCss from "~/styles/app.css?url";
 import type { RouterContext } from "~/router";
+import {
+  ThemeProvider,
+  THEME_STORAGE_KEY,
+} from "~/components/theme-provider";
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   head: () => ({
@@ -18,6 +22,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
+    scripts: [{ src: "/theme-init.js" }],
   }),
   notFoundComponent: NotFound,
   component: RootDocument,
@@ -41,7 +46,9 @@ function RootDocument() {
         <HeadContent />
       </head>
       <body className="antialiased">
-        <Outlet />
+        <ThemeProvider defaultTheme="system" storageKey={THEME_STORAGE_KEY}>
+          <Outlet />
+        </ThemeProvider>
         <Scripts />
       </body>
     </html>
