@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -35,6 +36,8 @@ import { toast } from "sonner";
 import { cn } from "~/lib/utils";
 import { formatDate } from "~/lib/utils";
 import type { InterviewAiAnalysisData } from "~/lib/schemas/interview-ai-analysis-schema";
+import { interviewBundleScreeningsQueryOptions } from "~/lib/query/interview-queries";
+import { queryKeys } from "~/lib/query/query-keys";
 
 type InterviewScreeningsTabProps = {
   onRefresh?: () => void;
@@ -282,33 +285,54 @@ export default function InterviewScreeningsTab({
   interviewId,
   bundleId,
 }: InterviewScreeningsTabProps) {
-  const [isFetching, setIsFetching] = useState(true);
-  const [analyses, setAnalyses] = useState<StoredAnalysis[]>([]);
+  const queryClient = useQueryClient();
+  const [isFetchingInterview, setIsFetchingInterview] = useState(!bundleId);
+  const [interviewAnalyses, setInterviewAnalyses] = useState<StoredAnalysis[]>(
+    [],
+  );
   const [selectedAnalysis, setSelectedAnalysis] =
     useState<StoredAnalysis | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { data: bundleScreeningsData, isLoading: isFetchingBundle } = useQuery(
+    {
+      ...interviewBundleScreeningsQueryOptions(bundleId ?? ""),
+      enabled: !!bundleId,
+    },
+  );
 
   const analysisEndpoint = bundleId
     ? `/api/interview-bundle/${bundleId}/ai-analysis`
     : `/api/interview/${interviewId}/ai-analysis`;
 
-  const fetchAnalyses = useCallback(async () => {
+  const fetchInterviewAnalyses = useCallback(async () => {
+    if (bundleId) return;
+
     try {
       const response = await fetch(analysisEndpoint);
       if (response.ok) {
-        const data = await response.json();
-        setAnalyses(data.analyses || []);
+        const data = (await response.json()) as {
+          analyses?: StoredAnalysis[];
+        };
+        setInterviewAnalyses(data.analyses ?? []);
       }
     } catch (error) {
       console.error("Error fetching analyses:", error);
     } finally {
-      setIsFetching(false);
+      setIsFetchingInterview(false);
     }
-  }, [analysisEndpoint]);
+  }, [analysisEndpoint, bundleId]);
 
   useEffect(() => {
-    fetchAnalyses();
-  }, [fetchAnalyses]);
+    void fetchInterviewAnalyses();
+  }, [fetchInterviewAnalyses]);
+
+  const analyses: StoredAnalysis[] = bundleId
+    ? ((
+        bundleScreeningsData as { analyses: StoredAnalysis[] } | undefined
+      )?.analyses ?? [])
+    : interviewAnalyses;
+  const isFetching = bundleId ? isFetchingBundle : isFetchingInterview;
 
   const deleteAnalysis = async (analysisId: string) => {
     setDeletingId(analysisId);
@@ -324,7 +348,13 @@ export default function InterviewScreeningsTab({
       }
 
       toast.success("Screening deleted");
-      setAnalyses((prev) => prev.filter((a) => a.id !== analysisId));
+      if (bundleId) {
+        await queryClient.invalidateQueries({
+          queryKey: queryKeys.interviews.bundleScreenings(bundleId),
+        });
+      } else {
+        setInterviewAnalyses((prev) => prev.filter((a) => a.id !== analysisId));
+      }
       if (selectedAnalysis?.id === analysisId) {
         setSelectedAnalysis(null);
       }

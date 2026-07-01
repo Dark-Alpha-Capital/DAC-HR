@@ -82,4 +82,15 @@ export const queryKeys = {
     all: ["dashboard"] as const,
     stats: () => ["dashboard", "stats"] as const,
   },
+  screeners: {
+    all: ["screeners"] as const,
+    list: () => ["screeners", "list"] as const,
+  },
+  interviews: {
+    all: ["interviews"] as const,
+    bundleDetail: (bundleId: string) =>
+      ["interviews", "bundle", bundleId] as const,
+    bundleScreenings: (bundleId: string) =>
+      ["interviews", "bundle", bundleId, "screenings"] as const,
+  },
 };

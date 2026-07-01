@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
+import { getInterviewAiAnalysesByBundleId } from "@workspace/db/queries";
 import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
 import { getInterviewById, getApplicationWithInterviews } from "@workspace/db/repositories/interview-repository";
 import {
@@ -127,4 +128,12 @@ export const loadInterviewBundleById = createServerFn({ method: "GET" })
       rounds,
       roundDetails,
     } satisfies InterviewBundleDetailData;
+  });
+
+export const loadBundleAiAnalyses = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
+  .validator((data: string) => data)
+  .handler(async ({ data: bundleId }) => {
+    const analyses = await getInterviewAiAnalysesByBundleId(bundleId);
+    return { analyses };
   });

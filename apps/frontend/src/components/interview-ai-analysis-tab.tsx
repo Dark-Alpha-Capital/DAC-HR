@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
@@ -12,6 +13,7 @@ import {
 } from "~/components/ui/select";
 import { Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { screenersListQueryOptions } from "~/lib/query/interview-queries";
 
 interface ScreenerOption {
   id: string;
@@ -20,6 +22,7 @@ interface ScreenerOption {
 
 type InterviewAiAnalysisTabProps = {
   onAnalysisComplete?: () => void;
+  screeners?: ScreenerOption[];
 } & (
   | { interviewId: string; bundleId?: never }
   | { bundleId: string; interviewId?: never }
@@ -28,10 +31,23 @@ type InterviewAiAnalysisTabProps = {
 export default function InterviewAiAnalysisTab({
   interviewId,
   bundleId,
+  screeners: screenersProp,
   onAnalysisComplete,
 }: InterviewAiAnalysisTabProps) {
-  const [screeners, setScreeners] = useState<ScreenerOption[]>([]);
-  const [screenersLoading, setScreenersLoading] = useState(true);
+  const { data: screenersData, isLoading: screenersQueryLoading } = useQuery({
+    ...screenersListQueryOptions(),
+    enabled: !screenersProp,
+  });
+
+  const screeners =
+    screenersProp ??
+    screenersData?.screeners.map((screener) => ({
+      id: screener.id,
+      name: screener.name,
+    })) ??
+    [];
+  const screenersLoading = !screenersProp && screenersQueryLoading;
+
   const [screenerId, setScreenerId] = useState("");
   const [customPrompt, setCustomPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -39,25 +55,6 @@ export default function InterviewAiAnalysisTab({
   const analysisEndpoint = bundleId
     ? `/api/interview-bundle/${bundleId}/ai-analysis`
     : `/api/interview/${interviewId}/ai-analysis`;
-
-  useEffect(() => {
-    const fetchScreeners = async () => {
-      try {
-        const response = await fetch("/api/screeners");
-        if (response.ok) {
-          const data = (await response.json()) as {
-            screeners?: ScreenerOption[];
-          };
-          setScreeners(data.screeners ?? []);
-        }
-      } catch (error) {
-        console.error("Error fetching screeners:", error);
-      } finally {
-        setScreenersLoading(false);
-      }
-    };
-    void fetchScreeners();
-  }, []);
 
   const runAnalysis = async () => {
     if (!screenerId) {

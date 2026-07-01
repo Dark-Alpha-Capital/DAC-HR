@@ -1,9 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DetailPageSkeleton } from "~/components/route-skeletons/detail-page-skeleton";
+import type { InterviewBundleDetailData } from "~/lib/loaders/interviews";
 import {
-  loadInterviewBundleById,
-  type InterviewBundleDetailData,
-} from "~/lib/loaders/interviews";
+  interviewBundleDetailQueryOptions,
+  interviewBundleScreeningsQueryOptions,
+  screenersListQueryOptions,
+} from "~/lib/query/interview-queries";
+import { queryKeys } from "~/lib/query/query-keys";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
@@ -19,9 +23,16 @@ export const Route = createFileRoute("/_main/interviews/bundle/$bundleId/")({
   head: () => ({
     meta: [{ title: "Position Interview" }],
   }),
-  loader: async ({ params }) => {
-    const result = await loadInterviewBundleById({ data: params.bundleId });
-    return result as InterviewBundleDetailData | null;
+  loader: async ({ context: { queryClient }, params }) => {
+    await Promise.all([
+      queryClient.ensureQueryData(
+        interviewBundleDetailQueryOptions(params.bundleId),
+      ),
+      queryClient.ensureQueryData(screenersListQueryOptions()),
+      queryClient.ensureQueryData(
+        interviewBundleScreeningsQueryOptions(params.bundleId),
+      ),
+    ]);
   },
   component: InterviewBundleDetailPage,
   pendingComponent: () => (
@@ -30,8 +41,20 @@ export const Route = createFileRoute("/_main/interviews/bundle/$bundleId/")({
 });
 
 function InterviewBundleDetailPage() {
-  const data = Route.useLoaderData();
+  const { bundleId } = Route.useParams();
+  const queryClient = useQueryClient();
   const [copied, setCopied] = useState(false);
+
+  const { data, isLoading } = useQuery(
+    interviewBundleDetailQueryOptions(bundleId),
+  );
+  const { data: screenersData } = useQuery(screenersListQueryOptions());
+
+  if (isLoading && !data) {
+    return (
+      <DetailPageSkeleton container tabs showBreadcrumb showActions />
+    );
+  }
 
   if (!data?.bundle) {
     return (
@@ -46,7 +69,8 @@ function InterviewBundleDetailPage() {
     );
   }
 
-  const { bundle, application, candidate, roundDetails } = data;
+  const { bundle, application, candidate, roundDetails } =
+    data as InterviewBundleDetailData;
   const candidateName = candidate
     ? `${candidate.firstName} ${candidate.lastName}`
     : undefined;
@@ -60,6 +84,12 @@ function InterviewBundleDetailPage() {
     (r) => r.round.bundleRound.status === "completed",
   ).length;
 
+  const screeners =
+    screenersData?.screeners.map((screener: { id: string; name: string }) => ({
+      id: screener.id,
+      name: screener.name,
+    })) ?? [];
+
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(interviewLink);
@@ -68,6 +98,12 @@ function InterviewBundleDetailPage() {
     } catch {
       /* ignore */
     }
+  };
+
+  const handleAnalysisComplete = () => {
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.interviews.bundleScreenings(bundleId),
+    });
   };
 
   return (
@@ -160,7 +196,11 @@ function InterviewBundleDetailPage() {
         </TabsContent>
 
         <TabsContent value="ai-analysis" className="mt-4">
-          <InterviewAiAnalysisTab bundleId={bundle.id} />
+          <InterviewAiAnalysisTab
+            bundleId={bundle.id}
+            screeners={screeners}
+            onAnalysisComplete={handleAnalysisComplete}
+          />
         </TabsContent>
 
         <TabsContent value="screenings" className="mt-4">
