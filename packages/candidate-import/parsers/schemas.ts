@@ -4,20 +4,20 @@ export const resumeFieldsSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   email: z.string().email(),
-  phone: z.string().nullable().optional(),
-  location: z.string().nullable().optional(),
-  school: z.string().nullable().optional(),
-  major: z.string().nullable().optional(),
-  graduationYear: z.number().int().nullable().optional(),
-  linkedinUrl: z.string().nullable().optional(),
+  phone: z.string().nullable(),
+  location: z.string().nullable(),
+  school: z.string().nullable(),
+  major: z.string().nullable(),
+  graduationYear: z.number().int().nullable(),
+  linkedinUrl: z.string().nullable(),
 });
 
 export const handshakeRosterSchema = z.array(
   z.object({
     name: z.string().min(1),
     email: z.string().email(),
-    school: z.string().nullable().optional(),
-    major: z.string().nullable().optional(),
+    school: z.string().nullable(),
+    major: z.string().nullable(),
   }),
 );
 

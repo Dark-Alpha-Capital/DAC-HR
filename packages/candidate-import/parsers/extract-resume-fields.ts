@@ -34,12 +34,12 @@ export async function extractResumeFieldsFromText(
       firstName: object.firstName,
       lastName: object.lastName,
       email: object.email,
-      phone: object.phone ?? null,
-      location: object.location ?? null,
-      school: object.school ?? null,
-      major: object.major ?? null,
-      graduationYear: object.graduationYear ?? null,
-      linkedinUrl: object.linkedinUrl ?? null,
+      phone: object.phone,
+      location: object.location,
+      school: object.school,
+      major: object.major,
+      graduationYear: object.graduationYear,
+      linkedinUrl: object.linkedinUrl,
     };
   } catch (error) {
     console.error(

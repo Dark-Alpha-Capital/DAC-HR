@@ -209,7 +209,7 @@ export async function createCandidateFromImport(
       });
 
       const uploadResult = await services.uploadToNextcloud({
-        buffer: input.document.buffer,
+        buffer: input.document.buffer.slice(),
         fileName: input.document.fileName,
         folderPath,
       });

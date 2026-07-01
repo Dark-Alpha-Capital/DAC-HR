@@ -60,12 +60,14 @@ export async function processZipImport(args: {
       importId,
       fileType,
       rowIndex,
+      totalPdfs: pdfEntries.length,
       path,
     });
 
     try {
       const fileBuffer = await file.async("uint8array");
       const fileName = path.split("/").pop() ?? `resume-${rowIndex}.pdf`;
+      const documentBuffer = fileBuffer.slice();
 
       importLog("log", "Extracting text from PDF", {
         step: "zip.pdf.text_extract",
@@ -181,7 +183,7 @@ export async function processZipImport(args: {
             resumeText: resumeText || null,
           },
           document: {
-            buffer: fileBuffer,
+            buffer: documentBuffer,
             fileName,
             category: "resume",
           },

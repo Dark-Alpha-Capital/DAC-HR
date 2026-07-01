@@ -20,6 +20,11 @@ const VERBOSE_STEPS = new Set([
   "pdf.match.start",
   "pdf.match.write_chunk",
   "pdf.roster_extract_start",
+  "workflow.download.start",
+  "workflow.process.start",
+  "workflow.download_and_process.start",
+  "workflow.load_import.start",
+  "workflow.finalize.start",
 ]);
 
 function shortId(id?: string): string {
@@ -82,6 +87,10 @@ function pickIcon(
 
   if (step.includes("upload") || step.includes("nextcloud")) return "☁️";
   if (step.includes("openai")) return "🤖";
+  if (step.includes("download")) return "📥";
+  if (step.includes("large_file")) return "📦";
+  if (step.includes("finalize")) return "🏁";
+  if (step.includes("process") || step.includes("dispatch")) return "⚙️";
   if (step.includes("dispatch") || step.includes("workflow")) return "🔀";
 
   return "•";
@@ -108,7 +117,11 @@ function buildDetailParts(
   }
 
   if (context.rowIndex != null) {
-    parts.push(`row ${context.rowIndex}`);
+    if (context.totalPdfs != null) {
+      parts.push(`PDF ${context.rowIndex}/${context.totalPdfs}`);
+    } else {
+      parts.push(`row ${context.rowIndex}`);
+    }
   }
 
   if (context.name) {
@@ -157,6 +170,22 @@ function buildDetailParts(
     parts.push(`${context.elapsedMs}ms`);
   }
 
+  if (typeof context.attempt === "number" && context.attempt > 1) {
+    parts.push(`retry #${context.attempt}`);
+  }
+
+  if (context.limitBytes != null && context.bufferBytes != null) {
+    parts.push(`limit ${formatBytes(context.limitBytes)}`);
+  }
+
+  if (
+    context.status &&
+    typeof context.step === "string" &&
+    context.step.startsWith("workflow.")
+  ) {
+    parts.push(`status=${String(context.status)}`);
+  }
+
   if (context.error) {
     parts.push(String(context.error));
   }
@@ -190,6 +219,8 @@ function formatLine(
 const PHASE_STARTS = new Set([
   "api.upload.received",
   "workflow.dispatch",
+  "workflow.download_and_process.start",
+  "zip.start",
 ]);
 
 export function importLog(

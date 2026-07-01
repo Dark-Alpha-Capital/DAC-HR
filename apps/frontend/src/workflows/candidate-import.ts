@@ -2,6 +2,7 @@ import {
   WorkflowEntrypoint,
   type WorkflowStep,
   type WorkflowEvent,
+  type WorkflowStepContext,
 } from "cloudflare:workers";
 import {
   createNextcloudClient,
@@ -16,12 +17,16 @@ import {
   processHandshakePdfImport,
   processZipImport,
   type ImportServices,
+  type ProcessImportResult,
 } from "@workspace/candidate-import";
 import {
   getCandidateImportById,
   updateCandidateImportStatus,
 } from "@workspace/db/repositories/candidate-import-repository";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
+
+/** Cloudflare Workflows non-stream step result limit */
+const MAX_STEP_RESULT_BYTES = 1024 * 1024;
 
 type Env = {
   NEXTCLOUD_URL: string;
@@ -41,6 +46,10 @@ type Params = {
   uploadedBy: string;
 };
 
+type ImportRecord = NonNullable<
+  Awaited<ReturnType<typeof getCandidateImportById>>
+>;
+
 function log(level: string, message: string, data?: Record<string, unknown>) {
   importLog(level as "log" | "warn" | "error", message, {
     step: String(data?.step ?? "workflow"),
@@ -56,6 +65,147 @@ function decodeCsvContent(buffer: Uint8Array): string {
   return new TextDecoder("utf-8", { fatal: false }).decode(buffer);
 }
 
+async function downloadImportFile(
+  env: Env,
+  importRecord: ImportRecord,
+): Promise<Uint8Array> {
+  const client = createNextcloudClient({
+    url: env.NEXTCLOUD_URL,
+    user: env.NEXTCLOUD_USER,
+    password: env.NEXTCLOUD_PASSWORD,
+  });
+
+  log("log", "Downloading from Nextcloud", {
+    step: "workflow.download.start",
+    importId: importRecord.id,
+    fileType: importRecord.type,
+    filename: importRecord.filename,
+    url: importRecord.originalFileUrl,
+  });
+
+  const downloadResult = await downloadFile({
+    client,
+    filePathOrUrl: importRecord.originalFileUrl,
+  });
+
+  if (!downloadResult.success || !downloadResult.buffer) {
+    log("error", "Nextcloud download failed", {
+      step: "workflow.download.failed",
+      importId: importRecord.id,
+      fileType: importRecord.type,
+      error: downloadResult.error ?? "Unknown error",
+      code: downloadResult.code ?? null,
+    });
+    throw new Error(downloadResult.error ?? "Failed to download import file");
+  }
+
+  const buffer = toUint8Array(downloadResult.buffer);
+
+  log("log", "Download complete", {
+    step: "workflow.download.done",
+    importId: importRecord.id,
+    fileType: importRecord.type,
+    bufferBytes: buffer.byteLength,
+  });
+
+  if (buffer.byteLength > MAX_STEP_RESULT_BYTES) {
+    log("log", "File exceeds 1 MiB step limit — processing in same step (not persisted between steps)", {
+      step: "workflow.large_file.inline",
+      importId: importRecord.id,
+      fileType: importRecord.type,
+      bufferBytes: buffer.byteLength,
+      limitBytes: MAX_STEP_RESULT_BYTES,
+    });
+  }
+
+  return buffer;
+}
+
+function buildImportServices(env: Env): ImportServices {
+  return {
+    uploadToNextcloud: async ({ buffer, fileName, folderPath }) => {
+      const client = createNextcloudClient({
+        url: env.NEXTCLOUD_URL,
+        user: env.NEXTCLOUD_USER,
+        password: env.NEXTCLOUD_PASSWORD,
+      });
+      const blob = new Blob([buffer.slice()]);
+      const result = await uploadFile({
+        client,
+        file: blob,
+        fileName,
+        folderPath,
+      });
+      if (!result.success || !result.downloadUrl || !result.filePath) {
+        return null;
+      }
+      return { url: result.downloadUrl, filePath: result.filePath };
+    },
+    triggerDocumentIndexing: env.DOCUMENT_INDEXING_WORKFLOW
+      ? async (args) => {
+          await env.DOCUMENT_INDEXING_WORKFLOW!.create({
+            id: `index-${args.documentId}`,
+            params: {
+              documentId: args.documentId,
+              candidateId: args.candidateId,
+              nextcloudFilePath: args.nextcloudFilePath,
+              metadata: args.metadata,
+            },
+          });
+        }
+      : undefined,
+  };
+}
+
+async function processImportBuffer(
+  env: Env,
+  importRecord: ImportRecord,
+  fileBuffer: Uint8Array,
+): Promise<ProcessImportResult> {
+  const type =
+    importRecord.type || detectImportTypeFromFilename(importRecord.filename);
+  if (!type) {
+    throw new Error(`Unsupported import file type: ${importRecord.filename}`);
+  }
+
+  log("log", "Dispatching to processor", {
+    step: "workflow.dispatch",
+    importId: importRecord.id,
+    fileType: type,
+    filename: importRecord.filename,
+    bufferBytes: fileBuffer.byteLength,
+  });
+
+  const commonArgs = {
+    importId: importRecord.id,
+    positionId: importRecord.positionId,
+    openaiApiKey: env.OPENAI_API_KEY,
+    services: buildImportServices(env),
+  };
+
+  switch (type) {
+    case "csv":
+      return processCsvImport({
+        ...commonArgs,
+        content: decodeCsvContent(fileBuffer),
+      });
+    case "zip":
+      return processZipImport({
+        ...commonArgs,
+        buffer: fileBuffer,
+      });
+    case "pdf":
+      return processHandshakePdfImport({
+        ...commonArgs,
+        buffer: fileBuffer,
+      });
+    default: {
+      const _exhaustive: never = type;
+      throw new Error(`Unhandled import type: ${_exhaustive}`);
+    }
+  }
+}
+
 export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
   async run(event: WorkflowEvent<Params>, step: WorkflowStep) {
     const { importId, uploadedBy } = event.payload;
@@ -67,7 +217,13 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
       importId,
     });
 
-    const importRecord = await step.do("load-import", async () => {
+    const importRecord = await step.do("load-import", async (ctx: WorkflowStepContext) => {
+      log("log", "Loading import record", {
+        step: "workflow.load_import.start",
+        importId,
+        attempt: ctx.attempt,
+      });
+
       const record = await getCandidateImportById(importId);
       if (!record) {
         throw new Error(`Import job not found: ${importId}`);
@@ -79,15 +235,22 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
         });
         return null;
       }
+
       log("log", "Import record loaded", {
         step: "workflow.load_import",
         importId,
         fileType: record.type,
         filename: record.filename,
         positionId: record.positionId,
+        status: record.status,
       });
+
       if (record.status === "pending") {
         await updateCandidateImportStatus(importId, "processing");
+        log("log", "Status → processing", {
+          step: "workflow.status_processing",
+          importId,
+        });
       }
       return record;
     });
@@ -96,122 +259,53 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
       return;
     }
 
-    const fileBuffer = await step.do(
-      "download-original",
-      {
-        retries: { limit: 3, delay: "5 seconds", backoff: "exponential" },
-      },
-      async () => {
-        const client = createNextcloudClient({
-          url: this.env.NEXTCLOUD_URL,
-          user: this.env.NEXTCLOUD_USER,
-          password: this.env.NEXTCLOUD_PASSWORD,
-        });
-
-        const downloadResult = await downloadFile({
-          client,
-          filePathOrUrl: importRecord.originalFileUrl,
-        });
-        if (!downloadResult.success || !downloadResult.buffer) {
-          throw new Error(downloadResult.error ?? "Failed to download import file");
-        }
-
-        const buffer = toUint8Array(downloadResult.buffer);
-        log("log", "Original file downloaded", {
-          step: "workflow.download_original",
-          importId,
-          fileType: importRecord.type,
-          bufferBytes: buffer.byteLength,
-        });
-        return buffer;
-      },
-    );
-
-    const services: ImportServices = {
-      uploadToNextcloud: async ({ buffer, fileName, folderPath }) => {
-        const client = createNextcloudClient({
-          url: this.env.NEXTCLOUD_URL,
-          user: this.env.NEXTCLOUD_USER,
-          password: this.env.NEXTCLOUD_PASSWORD,
-        });
-        const blob = new Blob([Uint8Array.from(buffer)]);
-        const result = await uploadFile({
-          client,
-          file: blob,
-          fileName,
-          folderPath,
-        });
-        if (!result.success || !result.downloadUrl || !result.filePath) {
-          return null;
-        }
-        return { url: result.downloadUrl, filePath: result.filePath };
-      },
-      triggerDocumentIndexing: this.env.DOCUMENT_INDEXING_WORKFLOW
-        ? async (args) => {
-          await this.env.DOCUMENT_INDEXING_WORKFLOW!.create({
-            id: `index-${args.documentId}`,
-            params: {
-              documentId: args.documentId,
-              candidateId: args.candidateId,
-              nextcloudFilePath: args.nextcloudFilePath,
-              metadata: args.metadata,
-            },
-          });
-        }
-        : undefined,
-    };
-
     const processResult = await step
       .do(
-        "detect-and-process",
+        "download-and-process",
         {
           retries: { limit: 2, delay: "10 seconds", backoff: "exponential" },
         },
-        async () => {
-          const type =
-            importRecord.type ||
-            detectImportTypeFromFilename(importRecord.filename);
-          if (!type) {
-            throw new Error(
-              `Unsupported import file type: ${importRecord.filename}`,
-            );
-          }
-
-          log("log", "Dispatching to processor", {
-            step: "workflow.dispatch",
+        async (ctx: WorkflowStepContext) => {
+          log("log", "Download + process step started", {
+            step: "workflow.download_and_process.start",
             importId,
-            fileType: type,
+            fileType: importRecord.type,
             filename: importRecord.filename,
+            attempt: ctx.attempt,
           });
 
-          const commonArgs = {
-            importId,
-            positionId: importRecord.positionId,
-            openaiApiKey: this.env.OPENAI_API_KEY,
-            services,
-          };
-
-          switch (type) {
-            case "csv":
-              return processCsvImport({
-                ...commonArgs,
-                content: decodeCsvContent(fileBuffer),
-              });
-            case "zip":
-              return processZipImport({
-                ...commonArgs,
-                buffer: fileBuffer,
-              });
-            case "pdf":
-              return processHandshakePdfImport({
-                ...commonArgs,
-                buffer: fileBuffer,
-              });
-            default: {
-              const _exhaustive: never = type;
-              throw new Error(`Unhandled import type: ${_exhaustive}`);
-            }
+          const cancelled = await getCandidateImportById(importId);
+          if (cancelled?.status === "cancelled") {
+            log("log", "Import cancelled before processing", {
+              step: "workflow.cancelled",
+              importId,
+            });
+            throw new ImportCancelledError(importId);
           }
+
+          const fileBuffer = await downloadImportFile(this.env, importRecord);
+
+          log("log", "Processor starting", {
+            step: "workflow.process.start",
+            importId,
+            fileType: importRecord.type,
+            bufferBytes: fileBuffer.byteLength,
+          });
+
+          const result = await processImportBuffer(
+            this.env,
+            importRecord,
+            fileBuffer,
+          );
+
+          log("log", "Processor returned", {
+            step: "workflow.process.returned",
+            importId,
+            fileType: importRecord.type,
+            ...result,
+          });
+
+          return result;
         },
       )
       .catch(async (error: unknown) => {
@@ -230,10 +324,14 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
 
         const message =
           error instanceof Error ? error.message : "Import processing failed";
-        log("error", "Processor failed", {
+        const stack = error instanceof Error ? error.stack : undefined;
+
+        log("error", "Download + process failed", {
           step: "workflow.process_failed",
           importId,
+          fileType: importRecord.type,
           error: message,
+          stack: stack?.split("\n").slice(0, 3).join(" | "),
         });
         await updateCandidateImportStatus(importId, "failed", { error: message });
         throw error;
@@ -249,9 +347,20 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
       ...processResult,
     });
 
-    await step.do("finalize-import", async () => {
+    await step.do("finalize-import", async (ctx: WorkflowStepContext) => {
+      log("log", "Finalizing import", {
+        step: "workflow.finalize.start",
+        importId,
+        attempt: ctx.attempt,
+        ...processResult,
+      });
+
       const current = await getCandidateImportById(importId);
       if (current?.status === "cancelled") {
+        log("log", "Skipped finalize — import cancelled", {
+          step: "workflow.cancelled",
+          importId,
+        });
         return;
       }
 
@@ -263,6 +372,15 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
         totalCandidates: processResult.total,
         processedCandidates: processedCount,
         failedCandidates: failedCount,
+      });
+
+      log("log", "Import marked completed", {
+        step: "workflow.finalize.done",
+        importId,
+        total: processResult.total,
+        created: processResult.created,
+        skipped: processResult.skipped,
+        failed: processResult.failed,
       });
     });
 
@@ -288,6 +406,7 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
         },
       }).catch((error) => {
         log("error", "Audit log failed", {
+          step: "workflow.audit_failed",
           importId,
           error: error instanceof Error ? error.message : String(error),
         });
