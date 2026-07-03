@@ -7,7 +7,8 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "vite build && wrangler deploy --env production",
+    "db:migrate:remote": "bun run --filter @workspace/db db:migrate:remote",
+    "deploy": "bun run db:migrate:remote && vite build && wrangler deploy --env production",
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
