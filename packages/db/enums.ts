@@ -206,3 +206,12 @@ export const candidateImportRowStatuses = [
 ] as const;
 export type CandidateImportRowStatus =
   (typeof candidateImportRowStatuses)[number];
+
+export const attendanceStatuses = [
+  "present",
+  "absent",
+  "half_day",
+  "leave",
+  "holiday",
+] as const;
+export type AttendanceStatus = (typeof attendanceStatuses)[number];

@@ -9,6 +9,7 @@ import {
 import { type InferSelectModel } from "drizzle-orm";
 import type {
   ApplicationStatus,
+  AttendanceStatus,
   CandidateDocumentCategory,
   CandidateImportDuplicatePolicy,
   CandidateImportRowStatus,
@@ -755,3 +756,46 @@ export const interviewEvaluation = sqliteTable("interview_evaluation", {
 });
 
 export type InterviewEvaluation = InferSelectModel<typeof interviewEvaluation>;
+
+export const attendance = sqliteTable(
+  "attendance",
+  {
+    id: uuidPk(),
+    prismicUid: text("prismic_uid").notNull(),
+    date: text("date").notNull(),
+    status: text("status")
+      .$type<AttendanceStatus>()
+      .default("present")
+      .notNull(),
+    checkInTime: text("check_in_time"),
+    checkOutTime: text("check_out_time"),
+    notes: text("notes"),
+    markedBy: text("marked_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: createdAtCol(),
+    updatedAt: updatedAtCol(),
+  },
+  (table) => ({
+    attendanceUnique: uniqueIndex("attendance_unique").on(
+      table.prismicUid,
+      table.date,
+    ),
+  }),
+);
+
+export type Attendance = InferSelectModel<typeof attendance>;
+
+export const holiday = sqliteTable("holiday", {
+  id: uuidPk(),
+  date: text("date").notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description"),
+  createdBy: text("created_by")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  createdAt: createdAtCol(),
+  updatedAt: updatedAtCol(),
+});
+
+export type Holiday = InferSelectModel<typeof holiday>;
