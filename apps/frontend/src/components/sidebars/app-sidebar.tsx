@@ -11,6 +11,7 @@ import {
   BookOpen,
   ShieldCheckIcon,
   ScanSearch,
+  CalendarCheck,
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import type { AppSession } from "~/lib/auth-session";
@@ -42,6 +43,7 @@ const recruitingLinks = [
 
 const peopleOpsLinks = [
   { href: "/employees", label: "Employees", icon: Building2 },
+  { href: "/employees/attendance", label: "Attendance", icon: CalendarCheck },
 ] as const;
 
 const configurationLinks = [

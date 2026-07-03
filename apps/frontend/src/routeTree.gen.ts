@@ -15,7 +15,9 @@ import { Route as AuthRouteRouteImport } from './routes/_auth/route'
 import { Route as MainIndexRouteImport } from './routes/_main/index'
 import { Route as ApiScreenersRouteImport } from './routes/api/screeners'
 import { Route as ApiInterviewSessionsRouteImport } from './routes/api/interview-sessions'
+import { Route as ApiHolidaysRouteImport } from './routes/api/holidays'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
+import { Route as ApiAttendanceRouteImport } from './routes/api/attendance'
 import { Route as MainDashboardRouteImport } from './routes/_main/dashboard'
 import { Route as AuthUnauthorizedRouteImport } from './routes/_auth/unauthorized'
 import { Route as AuthSignupRouteImport } from './routes/_auth/signup'
@@ -71,6 +73,7 @@ import { Route as MainRoundsIdIndexRouteImport } from './routes/_main/rounds/$id
 import { Route as MainQuestionsIdIndexRouteImport } from './routes/_main/questions/$id/index'
 import { Route as MainPositionsSlugIndexRouteImport } from './routes/_main/positions/$slug/index'
 import { Route as MainInterviewsIdIndexRouteImport } from './routes/_main/interviews/$id/index'
+import { Route as MainEmployeesAttendanceIndexRouteImport } from './routes/_main/employees/attendance/index'
 import { Route as MainEmployeesIdIndexRouteImport } from './routes/_main/employees/$id/index'
 import { Route as MainCandidatesUidIndexRouteImport } from './routes/_main/candidates/$uid/index'
 import { Route as MainApplicationsIdIndexRouteImport } from './routes/_main/applications/$id/index'
@@ -127,9 +130,19 @@ const ApiInterviewSessionsRoute = ApiInterviewSessionsRouteImport.update({
   path: '/api/interview-sessions',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHolidaysRoute = ApiHolidaysRouteImport.update({
+  id: '/api/holidays',
+  path: '/api/holidays',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHealthRoute = ApiHealthRouteImport.update({
   id: '/api/health',
   path: '/api/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAttendanceRoute = ApiAttendanceRouteImport.update({
+  id: '/api/attendance',
+  path: '/api/attendance',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MainDashboardRoute = MainDashboardRouteImport.update({
@@ -409,6 +422,12 @@ const MainInterviewsIdIndexRoute = MainInterviewsIdIndexRouteImport.update({
   path: '/interviews/$id/',
   getParentRoute: () => MainRouteRoute,
 } as any)
+const MainEmployeesAttendanceIndexRoute =
+  MainEmployeesAttendanceIndexRouteImport.update({
+    id: '/employees/attendance/',
+    path: '/employees/attendance/',
+    getParentRoute: () => MainRouteRoute,
+  } as any)
 const MainEmployeesIdIndexRoute = MainEmployeesIdIndexRouteImport.update({
   id: '/employees/$id/',
   path: '/employees/$id/',
@@ -568,7 +587,9 @@ export interface FileRoutesByFullPath {
   '/signup': typeof AuthSignupRoute
   '/unauthorized': typeof AuthUnauthorizedRoute
   '/dashboard': typeof MainDashboardRoute
+  '/api/attendance': typeof ApiAttendanceRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/holidays': typeof ApiHolidaysRoute
   '/api/interview-sessions': typeof ApiInterviewSessionsRouteWithChildren
   '/api/screeners': typeof ApiScreenersRoute
   '/admin/audit-logs': typeof MainAdminAuditLogsRoute
@@ -638,6 +659,7 @@ export interface FileRoutesByFullPath {
   '/applications/$id/': typeof MainApplicationsIdIndexRoute
   '/candidates/$uid/': typeof MainCandidatesUidIndexRoute
   '/employees/$id/': typeof MainEmployeesIdIndexRoute
+  '/employees/attendance/': typeof MainEmployeesAttendanceIndexRoute
   '/interviews/$id/': typeof MainInterviewsIdIndexRoute
   '/positions/$slug/': typeof MainPositionsSlugIndexRoute
   '/questions/$id/': typeof MainQuestionsIdIndexRoute
@@ -655,7 +677,9 @@ export interface FileRoutesByTo {
   '/signup': typeof AuthSignupRoute
   '/unauthorized': typeof AuthUnauthorizedRoute
   '/dashboard': typeof MainDashboardRoute
+  '/api/attendance': typeof ApiAttendanceRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/holidays': typeof ApiHolidaysRoute
   '/api/interview-sessions': typeof ApiInterviewSessionsRouteWithChildren
   '/api/screeners': typeof ApiScreenersRoute
   '/admin/audit-logs': typeof MainAdminAuditLogsRoute
@@ -725,6 +749,7 @@ export interface FileRoutesByTo {
   '/applications/$id': typeof MainApplicationsIdIndexRoute
   '/candidates/$uid': typeof MainCandidatesUidIndexRoute
   '/employees/$id': typeof MainEmployeesIdIndexRoute
+  '/employees/attendance': typeof MainEmployeesAttendanceIndexRoute
   '/interviews/$id': typeof MainInterviewsIdIndexRoute
   '/positions/$slug': typeof MainPositionsSlugIndexRoute
   '/questions/$id': typeof MainQuestionsIdIndexRoute
@@ -746,7 +771,9 @@ export interface FileRoutesById {
   '/_auth/signup': typeof AuthSignupRoute
   '/_auth/unauthorized': typeof AuthUnauthorizedRoute
   '/_main/dashboard': typeof MainDashboardRoute
+  '/api/attendance': typeof ApiAttendanceRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/holidays': typeof ApiHolidaysRoute
   '/api/interview-sessions': typeof ApiInterviewSessionsRouteWithChildren
   '/api/screeners': typeof ApiScreenersRoute
   '/_main/': typeof MainIndexRoute
@@ -817,6 +844,7 @@ export interface FileRoutesById {
   '/_main/applications/$id/': typeof MainApplicationsIdIndexRoute
   '/_main/candidates/$uid/': typeof MainCandidatesUidIndexRoute
   '/_main/employees/$id/': typeof MainEmployeesIdIndexRoute
+  '/_main/employees/attendance/': typeof MainEmployeesAttendanceIndexRoute
   '/_main/interviews/$id/': typeof MainInterviewsIdIndexRoute
   '/_main/positions/$slug/': typeof MainPositionsSlugIndexRoute
   '/_main/questions/$id/': typeof MainQuestionsIdIndexRoute
@@ -838,7 +866,9 @@ export interface FileRouteTypes {
     | '/signup'
     | '/unauthorized'
     | '/dashboard'
+    | '/api/attendance'
     | '/api/health'
+    | '/api/holidays'
     | '/api/interview-sessions'
     | '/api/screeners'
     | '/admin/audit-logs'
@@ -908,6 +938,7 @@ export interface FileRouteTypes {
     | '/applications/$id/'
     | '/candidates/$uid/'
     | '/employees/$id/'
+    | '/employees/attendance/'
     | '/interviews/$id/'
     | '/positions/$slug/'
     | '/questions/$id/'
@@ -925,7 +956,9 @@ export interface FileRouteTypes {
     | '/signup'
     | '/unauthorized'
     | '/dashboard'
+    | '/api/attendance'
     | '/api/health'
+    | '/api/holidays'
     | '/api/interview-sessions'
     | '/api/screeners'
     | '/admin/audit-logs'
@@ -995,6 +1028,7 @@ export interface FileRouteTypes {
     | '/applications/$id'
     | '/candidates/$uid'
     | '/employees/$id'
+    | '/employees/attendance'
     | '/interviews/$id'
     | '/positions/$slug'
     | '/questions/$id'
@@ -1015,7 +1049,9 @@ export interface FileRouteTypes {
     | '/_auth/signup'
     | '/_auth/unauthorized'
     | '/_main/dashboard'
+    | '/api/attendance'
     | '/api/health'
+    | '/api/holidays'
     | '/api/interview-sessions'
     | '/api/screeners'
     | '/_main/'
@@ -1086,6 +1122,7 @@ export interface FileRouteTypes {
     | '/_main/applications/$id/'
     | '/_main/candidates/$uid/'
     | '/_main/employees/$id/'
+    | '/_main/employees/attendance/'
     | '/_main/interviews/$id/'
     | '/_main/positions/$slug/'
     | '/_main/questions/$id/'
@@ -1101,7 +1138,9 @@ export interface RootRouteChildren {
   AuthRouteRoute: typeof AuthRouteRouteWithChildren
   MainRouteRoute: typeof MainRouteRouteWithChildren
   CustomScriptDotjsRoute: typeof CustomScriptDotjsRoute
+  ApiAttendanceRoute: typeof ApiAttendanceRoute
   ApiHealthRoute: typeof ApiHealthRoute
+  ApiHolidaysRoute: typeof ApiHolidaysRoute
   ApiInterviewSessionsRoute: typeof ApiInterviewSessionsRouteWithChildren
   ApiScreenersRoute: typeof ApiScreenersRoute
   ApiAuditLogsGenerateReportRoute: typeof ApiAuditLogsGenerateReportRoute
@@ -1174,11 +1213,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiInterviewSessionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/holidays': {
+      id: '/api/holidays'
+      path: '/api/holidays'
+      fullPath: '/api/holidays'
+      preLoaderRoute: typeof ApiHolidaysRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/health': {
       id: '/api/health'
       path: '/api/health'
       fullPath: '/api/health'
       preLoaderRoute: typeof ApiHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/attendance': {
+      id: '/api/attendance'
+      path: '/api/attendance'
+      fullPath: '/api/attendance'
+      preLoaderRoute: typeof ApiAttendanceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_main/dashboard': {
@@ -1566,6 +1619,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainInterviewsIdIndexRouteImport
       parentRoute: typeof MainRouteRoute
     }
+    '/_main/employees/attendance/': {
+      id: '/_main/employees/attendance/'
+      path: '/employees/attendance'
+      fullPath: '/employees/attendance/'
+      preLoaderRoute: typeof MainEmployeesAttendanceIndexRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
     '/_main/employees/$id/': {
       id: '/_main/employees/$id/'
       path: '/employees/$id'
@@ -1856,6 +1916,7 @@ interface MainRouteRouteChildren {
   MainApplicationsIdIndexRoute: typeof MainApplicationsIdIndexRoute
   MainCandidatesUidIndexRoute: typeof MainCandidatesUidIndexRoute
   MainEmployeesIdIndexRoute: typeof MainEmployeesIdIndexRoute
+  MainEmployeesAttendanceIndexRoute: typeof MainEmployeesAttendanceIndexRoute
   MainInterviewsIdIndexRoute: typeof MainInterviewsIdIndexRoute
   MainPositionsSlugIndexRoute: typeof MainPositionsSlugIndexRoute
   MainQuestionsIdIndexRoute: typeof MainQuestionsIdIndexRoute
@@ -1900,6 +1961,7 @@ const MainRouteRouteChildren: MainRouteRouteChildren = {
   MainApplicationsIdIndexRoute: MainApplicationsIdIndexRoute,
   MainCandidatesUidIndexRoute: MainCandidatesUidIndexRoute,
   MainEmployeesIdIndexRoute: MainEmployeesIdIndexRoute,
+  MainEmployeesAttendanceIndexRoute: MainEmployeesAttendanceIndexRoute,
   MainInterviewsIdIndexRoute: MainInterviewsIdIndexRoute,
   MainPositionsSlugIndexRoute: MainPositionsSlugIndexRoute,
   MainQuestionsIdIndexRoute: MainQuestionsIdIndexRoute,
@@ -1945,7 +2007,9 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRouteRoute: AuthRouteRouteWithChildren,
   MainRouteRoute: MainRouteRouteWithChildren,
   CustomScriptDotjsRoute: CustomScriptDotjsRoute,
+  ApiAttendanceRoute: ApiAttendanceRoute,
   ApiHealthRoute: ApiHealthRoute,
+  ApiHolidaysRoute: ApiHolidaysRoute,
   ApiInterviewSessionsRoute: ApiInterviewSessionsRouteWithChildren,
   ApiScreenersRoute: ApiScreenersRoute,
   ApiAuditLogsGenerateReportRoute: ApiAuditLogsGenerateReportRoute,
