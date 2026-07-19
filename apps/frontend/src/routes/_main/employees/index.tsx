@@ -149,7 +149,7 @@ function EmployeesPage() {
                   </div>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {member.designation ?? "—"}
+                  {member.title ?? "—"}
                 </TableCell>
                 {member.uid ? (
                   <Link

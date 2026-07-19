@@ -23,7 +23,7 @@ const postBodySchema = z.object({
   records: z.array(attendanceRecordSchema).min(1),
 });
 
-export const Route = createFileRoute("/api/attendance")({
+export const Route = createFileRoute("/api/attendance/")({
   server: {
     handlers: {
       GET: async ({ request }) => {

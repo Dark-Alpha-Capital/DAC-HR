@@ -84,6 +84,50 @@ export const upsertAttendanceRecords = async (
   }
 };
 
+/** Upsert a single attendance row without wiping other records for the date. */
+export const upsertAttendanceRecord = async (
+  record: {
+    prismicUid: string;
+    date: string;
+    status: string;
+    checkInTime?: string | null;
+    checkOutTime?: string | null;
+    notes?: string | null;
+  },
+  markedBy: string,
+) => {
+  try {
+    const [row] = await db
+      .insert(attendance)
+      .values({
+        prismicUid: record.prismicUid,
+        date: record.date,
+        status: record.status as AttendanceStatus,
+        checkInTime: record.checkInTime ?? null,
+        checkOutTime: record.checkOutTime ?? null,
+        notes: record.notes ?? null,
+        markedBy,
+      })
+      .onConflictDoUpdate({
+        target: [attendance.prismicUid, attendance.date],
+        set: {
+          status: record.status as AttendanceStatus,
+          checkInTime: record.checkInTime ?? null,
+          checkOutTime: record.checkOutTime ?? null,
+          notes: record.notes ?? null,
+          markedBy,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+
+    return row ?? null;
+  } catch (error) {
+    console.error("Error upserting attendance record", error);
+    throw error;
+  }
+};
+
 export const getAttendanceMetadata = async (date: string) => {
   try {
     const [record] = await db

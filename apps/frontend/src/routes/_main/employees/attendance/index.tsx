@@ -479,7 +479,7 @@ function AttendanceEditor({
   const designations = useMemo(() => {
     const set = new Set<string>();
     for (const m of data.members) {
-      if (m.designation) set.add(m.designation);
+      if (m.title) set.add(m.title);
     }
     return Array.from(set).sort();
   }, [data.members]);
@@ -494,7 +494,7 @@ function AttendanceEditor({
       if (!member.name.toLowerCase().includes(q)) return false;
     }
     if (search.designation !== "all") {
-      if (member.designation !== search.designation) return false;
+      if (member.title !== search.designation) return false;
     }
     return true;
   });
@@ -701,7 +701,7 @@ function AttendanceEditor({
                         </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground text-sm">
-                        {member.designation ?? "—"}
+                        {member.title ?? "—"}
                       </TableCell>
                       <TableCell>
                         <Select
