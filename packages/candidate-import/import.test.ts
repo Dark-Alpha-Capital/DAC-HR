@@ -16,6 +16,11 @@ import {
   findEmailInText,
   normalizeResumeFields,
 } from "./parsers/schemas";
+import {
+  duplicateActionLabel,
+  resolveDuplicateAction,
+} from "./unified/resolve-duplicate-action";
+import { tallyImportResult } from "./types";
 
 test("normalizeName matches variants", () => {
   expect(normalizeName("Alexander Barto")).toBe(normalizeName("ALEXANDER BARTO"));
@@ -192,4 +197,35 @@ test("matchHandshakeExport assigns one chunk per roster entry on multi-resume pa
     "michagonza91@gmail.com",
     "donjgunderson@hotmail.com",
   ]);
+});
+
+test("resolveDuplicateAction covers link and resume update combinations", () => {
+  expect(resolveDuplicateAction({ linked: false, resumeUpdated: false })).toBe(
+    null,
+  );
+  expect(resolveDuplicateAction({ linked: true, resumeUpdated: false })).toBe(
+    "linked",
+  );
+  expect(resolveDuplicateAction({ linked: false, resumeUpdated: true })).toBe(
+    "resume_updated",
+  );
+  expect(resolveDuplicateAction({ linked: true, resumeUpdated: true })).toBe(
+    "linked_and_resume_updated",
+  );
+  expect(duplicateActionLabel("linked")).toBe("Linked to position");
+});
+
+test("tallyImportResult counts updated separately from created and skipped", () => {
+  const counters = { created: 0, updated: 0, skipped: 0, failed: 0 };
+  tallyImportResult({ status: "created" }, counters);
+  tallyImportResult({ status: "updated" }, counters);
+  tallyImportResult({ status: "updated" }, counters);
+  tallyImportResult({ status: "skipped" }, counters);
+  tallyImportResult({ status: "failed", error: "boom" }, counters);
+  expect(counters).toEqual({
+    created: 1,
+    updated: 2,
+    skipped: 1,
+    failed: 1,
+  });
 });

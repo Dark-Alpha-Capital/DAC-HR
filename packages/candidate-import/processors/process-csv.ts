@@ -2,7 +2,11 @@ import { importLog } from "../logger";
 import { throwIfImportCancelled } from "../cancellation";
 import { createCandidateFromImport } from "../unified/create-candidate-from-import";
 import { parseCsvContent } from "./csv";
-import type { ImportServices, ProcessImportResult } from "../types";
+import {
+  tallyImportResult,
+  type ImportServices,
+  type ProcessImportResult,
+} from "../types";
 
 export async function processCsvImport(args: {
   importId: string;
@@ -37,16 +41,12 @@ export async function processCsvImport(args: {
     });
   }
 
-  let created = 0;
-  let skipped = 0;
-  let failed = 0;
+  const counters = { created: 0, updated: 0, skipped: 0, failed: 0 };
 
   for (const row of rows) {
     await throwIfImportCancelled(importId, {
       total: rows.length,
-      created,
-      skipped,
-      failed,
+      ...counters,
     });
 
     importLog("log", "Processing CSV row", {
@@ -79,14 +79,16 @@ export async function processCsvImport(args: {
       args.services,
     );
 
-    if (result.status === "created") created++;
-    else if (result.status === "skipped") skipped++;
-    else failed++;
+    tallyImportResult(result, counters);
 
     if (args.services.updateImportProgress) {
       await args.services.updateImportProgress({
         importId: args.importId,
-        processedCandidates: created + skipped + failed,
+        processedCandidates:
+          counters.created +
+          counters.updated +
+          counters.skipped +
+          counters.failed,
       });
     }
 
@@ -101,7 +103,7 @@ export async function processCsvImport(args: {
     });
   }
 
-  const summary = { total: rows.length, created, skipped, failed };
+  const summary = { total: rows.length, ...counters };
 
   importLog("log", "CSV import completed", {
     step: "csv.complete",

@@ -2,7 +2,6 @@ import {
   LayoutDashboard,
   Users,
   Briefcase,
-  FileText,
   Folders,
   CircleDot,
   Shield,
@@ -27,11 +26,10 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator,
+  SidebarRail,
 } from "~/components/ui/sidebar";
 
 import { SidebarUserNav } from "../sidebar-user-nav";
-import { ModeToggle } from "~/components/mode-toggle";
 
 // Recruiting links (available to all users)
 const recruitingLinks = [
@@ -67,23 +65,19 @@ export function AppSidebar({ session }: { session: AppSession }) {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="gap-1">
+      <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="DAC HR">
-              <Link to="/dashboard" className="gap-2">
-                <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-foreground">
-                  <ShieldCheckIcon className="size-4" />
-                </span>
+            <SidebarMenuButton asChild size="lg" tooltip="DAC HR">
+              <Link to="/dashboard">
+                <ShieldCheckIcon />
                 <span className="font-semibold tracking-tight">DAC HR</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarSeparator />
       <SidebarContent>
-        {/* Recruiting Section */}
         <SidebarGroup>
           <SidebarGroupLabel>Recruiting</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -128,7 +122,7 @@ export function AppSidebar({ session }: { session: AppSession }) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {isAdmin && (
+        {isAdmin ? (
           <SidebarGroup>
             <SidebarGroupLabel>People Ops</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -140,7 +134,7 @@ export function AppSidebar({ session }: { session: AppSession }) {
                       isActive={isActive(link.href)}
                       tooltip={link.label}
                     >
-                      <Link to={link.href}>
+                      <Link to={link.href} search={{} as never}>
                         <link.icon />
                         <span>{link.label}</span>
                       </Link>
@@ -150,9 +144,9 @@ export function AppSidebar({ session }: { session: AppSession }) {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        )}
+        ) : null}
 
-        {isAdmin && (
+        {isAdmin ? (
           <SidebarGroup>
             <SidebarGroupLabel>Admin</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -164,7 +158,7 @@ export function AppSidebar({ session }: { session: AppSession }) {
                       isActive={isActive(link.href)}
                       tooltip={link.label}
                     >
-                      <Link to={link.href}>
+                      <Link to={link.href} search={{} as never}>
                         <link.icon />
                         <span>{link.label}</span>
                       </Link>
@@ -174,14 +168,12 @@ export function AppSidebar({ session }: { session: AppSession }) {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        )}
+        ) : null}
       </SidebarContent>
       <SidebarFooter>
-        <div className="flex items-center justify-end px-2 pb-2">
-          <ModeToggle />
-        </div>
         <SidebarUserNav session={session} />
       </SidebarFooter>
+      <SidebarRail />
     </Sidebar>
   );
 }

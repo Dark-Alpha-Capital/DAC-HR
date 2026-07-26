@@ -24,6 +24,14 @@ export type {
 export { normalizeName, splitFullName } from "./dedup/normalize-name";
 export { findExistingCandidate } from "./dedup/find-existing-candidate";
 export { createCandidateFromImport } from "./unified/create-candidate-from-import";
+export { ensurePositionLink } from "./unified/ensure-position-link";
+export { attachImportResume } from "./unified/attach-import-resume";
+export {
+  duplicateActionLabel,
+  resolveDuplicateAction,
+} from "./unified/resolve-duplicate-action";
+export type { DuplicateAction } from "./unified/resolve-duplicate-action";
+export { tallyImportResult } from "./types";
 export {
   parseCsvContent,
   detectImportTypeFromFilename,

@@ -1,4 +1,4 @@
-import { eq } from "@workspace/db";
+import { eq, sql } from "@workspace/db";
 import { db } from "@workspace/db/db";
 import { candidate } from "@workspace/db/schema";
 import { normalizeName } from "./normalize-name";
@@ -11,12 +11,14 @@ export async function findExistingCandidate(input: {
 }): Promise<{ id: string; email: string } | null> {
   const normalizedEmail = input.email.trim().toLowerCase();
   if (normalizedEmail) {
-    const rows = await db.select().from(candidate);
-    const byEmail = rows.find(
-      (row) => row.email.trim().toLowerCase() === normalizedEmail,
-    );
+    const [byEmail] = await db
+      .select({ id: candidate.id, email: candidate.email })
+      .from(candidate)
+      .where(sql`lower(${candidate.email}) = ${normalizedEmail}`)
+      .limit(1);
+
     if (byEmail) {
-      return { id: byEmail.id, email: byEmail.email };
+      return byEmail;
     }
   }
 
@@ -32,7 +34,12 @@ export async function findExistingCandidate(input: {
   }
 
   const rowsWithPhone = await db
-    .select()
+    .select({
+      id: candidate.id,
+      email: candidate.email,
+      firstName: candidate.firstName,
+      lastName: candidate.lastName,
+    })
     .from(candidate)
     .where(eq(candidate.phone, phone));
 

@@ -132,7 +132,7 @@ export default function BulkUploadCandidatesDialog({
     if (status.import.status === "completed" && !hasNotifiedRef.current) {
       hasNotifiedRef.current = true;
       toast.success(
-        `Import complete: ${status.summary.succeeded} created, ${status.summary.skipped} skipped, ${status.summary.failed} failed`,
+        `Import complete: ${status.summary.succeeded} succeeded, ${status.summary.skipped} skipped, ${status.summary.failed} failed`,
       );
       void invalidate.candidateLists();
       void invalidate.applicationLists();
@@ -387,8 +387,9 @@ export default function BulkUploadCandidatesDialog({
                       {status.import.processedCandidates} /{" "}
                       {status.import.totalCandidates || "…"} processed
                       {" — "}
-                      {status.summary.succeeded} created, {status.summary.skipped}{" "}
-                      skipped, {status.summary.failed} failed
+                      {status.summary.succeeded} succeeded,{" "}
+                      {status.summary.skipped} skipped, {status.summary.failed}{" "}
+                      failed
                     </>
                   ) : (
                     "Initializing..."
@@ -406,6 +407,20 @@ export default function BulkUploadCandidatesDialog({
                             typeof row.metadata.matchedHeader === "string"
                           ? row.metadata.matchedHeader
                           : `Row ${row.rowIndex}`;
+                    const action =
+                      row.metadata && typeof row.metadata.action === "string"
+                        ? row.metadata.action
+                        : null;
+                    const actionLabel =
+                      action === "created"
+                        ? "created"
+                        : action === "linked"
+                          ? "linked"
+                          : action === "resume_updated"
+                            ? "resume updated"
+                            : action === "linked_and_resume_updated"
+                              ? "linked + resume"
+                              : null;
 
                     return (
                       <div
@@ -430,9 +445,9 @@ export default function BulkUploadCandidatesDialog({
                           {sourceFile}
                         </span>
                         <span className="shrink-0 text-muted-foreground">
-                          {row.status}
+                          {actionLabel ?? row.status}
                         </span>
-                        {row.error ? (
+                        {row.status === "failed" && row.error ? (
                           <span
                             className="shrink-0 cursor-help text-red-500"
                             title={row.error}
@@ -472,14 +487,15 @@ export default function BulkUploadCandidatesDialog({
                 <CheckCircle2 className="h-4 w-4" />
                 <AlertTitle>Import complete</AlertTitle>
                 <AlertDescription>
-                  {status.summary.succeeded} created, {status.summary.skipped}{" "}
-                  skipped, {status.summary.failed} failed.
+                  {status.summary.succeeded} succeeded,{" "}
+                  {status.summary.skipped} skipped, {status.summary.failed}{" "}
+                  failed.
                 </AlertDescription>
               </Alert>
               {status?.rows.length > 0 ? (
                 <div className="max-h-48 overflow-y-auto rounded-md border text-xs">
                   {status.rows
-                    .filter((row) => row.status === "failed" || row.error)
+                    .filter((row) => row.status === "failed")
                     .slice(0, 10)
                     .map((row) => {
                       const sourceFile =

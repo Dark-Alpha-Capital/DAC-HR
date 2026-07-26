@@ -331,7 +331,7 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
             error instanceof ImportCancelledError
               ? error.partialResult
               : undefined
-          ) ?? { total: 0, created: 0, skipped: 0, failed: 0 };
+          ) ?? { total: 0, created: 0, updated: 0, skipped: 0, failed: 0 };
         }
 
         const message =
@@ -378,7 +378,10 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
 
       const failedCount = processResult.failed;
       const processedCount =
-        processResult.created + processResult.skipped + processResult.failed;
+        processResult.created +
+        processResult.updated +
+        processResult.skipped +
+        processResult.failed;
 
       await updateCandidateImportStatus(importId, "completed", {
         totalCandidates: processResult.total,
@@ -391,6 +394,7 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
         importId,
         total: processResult.total,
         created: processResult.created,
+        updated: processResult.updated,
         skipped: processResult.skipped,
         failed: processResult.failed,
       });

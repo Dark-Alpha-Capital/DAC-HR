@@ -32,6 +32,22 @@ export async function getCandidateImportRows(
     .orderBy(asc(candidateImportRow.rowIndex));
 }
 
+function duplicatePolicyForImportType(
+  type: CandidateImportType,
+): "skip" | "update_resume" {
+  switch (type) {
+    case "csv":
+      return "skip";
+    case "zip":
+    case "pdf":
+      return "update_resume";
+    default: {
+      const _exhaustive: never = type;
+      return _exhaustive;
+    }
+  }
+}
+
 export async function createCandidateImportRecord(input: {
   filename: string;
   type: CandidateImportType;
@@ -48,7 +64,7 @@ export async function createCandidateImportRecord(input: {
       originalFileUrl: input.originalFileUrl,
       positionId: input.positionId ?? null,
       status: "pending",
-      duplicatePolicy: "skip",
+      duplicatePolicy: duplicatePolicyForImportType(input.type),
     })
     .returning();
   return row;

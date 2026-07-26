@@ -63,7 +63,9 @@ function pickIcon(
     step === "unified.candidate_created" ||
     step === "unified.done" ||
     status === "created" ||
-    status === "success"
+    status === "updated" ||
+    status === "success" ||
+    step.includes("duplicate_updated")
   ) {
     return "✅";
   }

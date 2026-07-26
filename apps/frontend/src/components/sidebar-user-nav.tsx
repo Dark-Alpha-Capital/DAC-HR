@@ -34,16 +34,17 @@ export function SidebarUserNav({ session }: { session: AppSession | null }) {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               data-testid="user-nav-button"
-              className="data-[state=open]:bg-sidebar-accent bg-background data-[state=open]:text-sidebar-accent-foreground h-10"
+              size="lg"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               {session && user ? (
                 <>
                   <img
                     src={user.image ?? `https://avatar.vercel.sh/${user.email}`}
                     alt={user.email ?? "User Avatar"}
-                    width={24}
-                    height={24}
-                    className="size-6 rounded-full"
+                    width={32}
+                    height={32}
+                    className="size-8 rounded-full"
                   />
                   <span data-testid="user-email" className="truncate">
                     {user.email ?? user.name ?? "User"}
@@ -51,7 +52,7 @@ export function SidebarUserNav({ session }: { session: AppSession | null }) {
                 </>
               ) : (
                 <>
-                  <div className="size-6 bg-muted rounded-full flex items-center justify-center">
+                  <div className="flex size-8 items-center justify-center rounded-full bg-muted">
                     <span className="text-xs text-muted-foreground">?</span>
                   </div>
                   <span data-testid="user-email" className="truncate">
@@ -59,7 +60,7 @@ export function SidebarUserNav({ session }: { session: AppSession | null }) {
                   </span>
                 </>
               )}
-              <ChevronUp className="ml-auto" />
+              <ChevronUp className="ml-auto group-data-[collapsible=icon]:hidden" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent

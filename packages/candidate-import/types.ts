@@ -1,3 +1,5 @@
+import type { CandidateImportDuplicatePolicy } from "@workspace/db/enums";
+
 export type ResumeFields = {
   firstName: string;
   lastName: string;
@@ -53,12 +55,12 @@ export type ImportCandidateInput = {
   positionId?: string | null;
   importId: string;
   rowIndex: number;
-  duplicatePolicy: "skip";
+  duplicatePolicy: CandidateImportDuplicatePolicy;
   metadata?: Record<string, unknown>;
 };
 
 export type ImportCandidateResult = {
-  status: "created" | "skipped" | "failed";
+  status: "created" | "updated" | "skipped" | "failed";
   candidateId?: string;
   documentId?: string;
   error?: string;
@@ -114,6 +116,38 @@ export type CsvRow = {
 export type ProcessImportResult = {
   total: number;
   created: number;
+  updated: number;
   skipped: number;
   failed: number;
 };
+
+/** Tally a single-row import result into process counters. */
+export function tallyImportResult(
+  result: ImportCandidateResult,
+  counters: {
+    created: number;
+    updated: number;
+    skipped: number;
+    failed: number;
+  },
+): void {
+  switch (result.status) {
+    case "created":
+      counters.created++;
+      break;
+    case "updated":
+      counters.updated++;
+      break;
+    case "skipped":
+      counters.skipped++;
+      break;
+    case "failed":
+      counters.failed++;
+      break;
+    default: {
+      const _exhaustive: never = result.status;
+      void _exhaustive;
+      counters.failed++;
+    }
+  }
+}

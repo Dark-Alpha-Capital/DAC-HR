@@ -13,7 +13,11 @@ import {
   matchHandshakeExport,
 } from "../pdf/handshake-chunks";
 import { writeChunkPdf } from "../pdf/write-chunk-pdf";
-import type { ImportServices, ProcessImportResult } from "../types";
+import {
+  tallyImportResult,
+  type ImportServices,
+  type ProcessImportResult,
+} from "../types";
 
 export async function processHandshakePdfImport(args: {
   importId: string;
@@ -97,16 +101,12 @@ export async function processHandshakePdfImport(args: {
     })),
   });
 
-  let created = 0;
-  let skipped = 0;
-  let failed = 0;
+  const counters = { created: 0, updated: 0, skipped: 0, failed: 0 };
 
   for (let i = 0; i < matched.length; i++) {
     await throwIfImportCancelled(importId, {
       total: roster.length || matched.length,
-      created,
-      skipped,
-      failed,
+      ...counters,
     });
 
     const { roster: entry, chunk } = matched[i]!;
@@ -161,7 +161,7 @@ export async function processHandshakePdfImport(args: {
           positionId: args.positionId,
           importId: args.importId,
           rowIndex,
-          duplicatePolicy: "skip",
+          duplicatePolicy: "update_resume",
           metadata: {
             matchedHeader: chunk.headerName,
             pages: `${chunk.startPage}-${chunk.endPage}`,
@@ -170,9 +170,7 @@ export async function processHandshakePdfImport(args: {
         args.services,
       );
 
-      if (result.status === "created") created++;
-      else if (result.status === "skipped") skipped++;
-      else failed++;
+      tallyImportResult(result, counters);
 
       importLog("log", "Matched Handshake entry finished", {
         step: "pdf.match.done",
@@ -188,7 +186,7 @@ export async function processHandshakePdfImport(args: {
       if (error instanceof ImportCancelledError) {
         throw error;
       }
-      failed++;
+      counters.failed++;
       importLog("error", "Matched Handshake entry failed", {
         step: "pdf.match.error",
         importId,
@@ -201,7 +199,7 @@ export async function processHandshakePdfImport(args: {
   }
 
   for (const entry of unmatchedRoster) {
-    failed++;
+    counters.failed++;
     importLog("warn", "Unmatched roster entry", {
       step: "pdf.unmatched_roster",
       importId,
@@ -212,7 +210,7 @@ export async function processHandshakePdfImport(args: {
   }
 
   for (const chunk of unmatchedChunks) {
-    failed++;
+    counters.failed++;
     importLog("warn", "Unmatched resume chunk", {
       step: "pdf.unmatched_chunk",
       importId,
@@ -224,9 +222,7 @@ export async function processHandshakePdfImport(args: {
 
   const summary = {
     total: roster.length || matched.length,
-    created,
-    skipped,
-    failed,
+    ...counters,
   };
 
   importLog("log", "Handshake PDF import completed", {

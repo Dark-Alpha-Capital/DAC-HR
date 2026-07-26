@@ -5,7 +5,11 @@ import { extractDocumentText } from "../pdf/extract-text";
 import { createCandidateFromImport } from "../unified/create-candidate-from-import";
 import { extractResumeFieldsFromText } from "../parsers/extract-resume-fields";
 import { splitFullName } from "../dedup/normalize-name";
-import type { ImportServices, ProcessImportResult } from "../types";
+import {
+  tallyImportResult,
+  type ImportServices,
+  type ProcessImportResult,
+} from "../types";
 
 export async function processZipImport(args: {
   importId: string;
@@ -47,16 +51,12 @@ export async function processZipImport(args: {
     });
   }
 
-  let created = 0;
-  let skipped = 0;
-  let failed = 0;
+  const counters = { created: 0, updated: 0, skipped: 0, failed: 0 };
 
   for (let i = 0; i < pdfEntries.length; i++) {
     await throwIfImportCancelled(importId, {
       total: pdfEntries.length,
-      created,
-      skipped,
-      failed,
+      ...counters,
     });
 
     const [path, file] = pdfEntries[i]!;
@@ -203,20 +203,22 @@ export async function processZipImport(args: {
           positionId: args.positionId,
           importId: args.importId,
           rowIndex,
-          duplicatePolicy: "skip",
+          duplicatePolicy: "update_resume",
           metadata: { sourceFile: path },
         },
         args.services,
       );
 
-      if (result.status === "created") created++;
-      else if (result.status === "skipped") skipped++;
-      else failed++;
+      tallyImportResult(result, counters);
 
       if (args.services.updateImportProgress) {
         await args.services.updateImportProgress({
           importId: args.importId,
-          processedCandidates: created + skipped + failed,
+          processedCandidates:
+            counters.created +
+            counters.updated +
+            counters.skipped +
+            counters.failed,
         });
       }
 
@@ -234,7 +236,7 @@ export async function processZipImport(args: {
       if (error instanceof ImportCancelledError) {
         throw error;
       }
-      failed++;
+      counters.failed++;
       importLog("error", "ZIP PDF entry failed", {
         step: "zip.pdf.error",
         importId,
@@ -248,9 +250,7 @@ export async function processZipImport(args: {
 
   const summary = {
     total: pdfEntries.length,
-    created,
-    skipped,
-    failed,
+    ...counters,
   };
 
   importLog("log", "ZIP import completed", {

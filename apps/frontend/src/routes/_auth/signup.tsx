@@ -1,4 +1,8 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  redirect,
+  type SearchSchemaInput,
+} from "@tanstack/react-router";
 import { fetchSession } from "~/lib/auth-session";
 import EmailSignUpForm from "~/components/email-signup-form";
 
@@ -6,7 +10,7 @@ export const Route = createFileRoute("/_auth/signup")({
   head: () => ({
     meta: [{ title: "Sign Up - DAC-HR" }],
   }),
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: { redirect?: string } & SearchSchemaInput) => ({
     redirect:
       typeof search.redirect === "string" && search.redirect.startsWith("/")
         ? search.redirect
