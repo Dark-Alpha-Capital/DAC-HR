@@ -12,10 +12,14 @@ export function MainLayout({
   children: React.ReactNode;
 }) {
   return (
-    <SidebarProvider>
+    <SidebarProvider
+      defaultOpen={false}
+      // Keep the layout gap at icon width so hover-expand overlays instead of shifting content.
+      className="[&_[data-slot=sidebar-gap]]:w-(--sidebar-width-icon)!"
+    >
       <AppSidebar session={session} />
       <SidebarInset className="min-w-0 overflow-x-hidden">
-        <MainSiteTopbar />
+        <MainSiteTopbar session={session} />
         <div
           id="main-content"
           className="mx-auto w-full min-w-0 max-w-7xl flex-1 px-4 py-6 md:px-6 md:py-8"

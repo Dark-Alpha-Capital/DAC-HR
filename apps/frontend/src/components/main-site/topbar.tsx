@@ -11,6 +11,8 @@ import {
 } from "~/components/ui/breadcrumb";
 import { Separator } from "~/components/ui/separator";
 import { SidebarTrigger } from "~/components/ui/sidebar";
+import { UserNav } from "~/components/user-nav";
+import type { AppSession } from "~/lib/auth-session";
 
 const ROUTE_LABELS: Record<string, string> = {
   dashboard: "Dashboard",
@@ -43,7 +45,7 @@ function labelForSegment(segment: string) {
     .join(" ");
 }
 
-export function MainSiteTopbar() {
+export function MainSiteTopbar({ session }: { session: AppSession }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const segments = React.useMemo(
     () => pathname.split("/").filter(Boolean),
@@ -59,10 +61,10 @@ export function MainSiteTopbar() {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/70">
       <div className="flex h-12 items-center gap-2 px-3 md:px-4">
-        <SidebarTrigger className="shrink-0" />
-        <Separator orientation="vertical" className="h-6" />
+        <SidebarTrigger className="shrink-0 md:hidden" />
+        <Separator orientation="vertical" className="h-6 md:hidden" />
 
-        <Breadcrumb className="min-w-0">
+        <Breadcrumb className="min-w-0 flex-1">
           <BreadcrumbList className="min-w-0">
             {!first ? (
               <BreadcrumbItem className="min-w-0">
@@ -101,6 +103,10 @@ export function MainSiteTopbar() {
             )}
           </BreadcrumbList>
         </Breadcrumb>
+
+        <div className="ml-auto shrink-0">
+          <UserNav session={session} />
+        </div>
       </div>
     </header>
   );
