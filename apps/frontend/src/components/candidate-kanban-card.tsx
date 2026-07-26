@@ -4,6 +4,7 @@ import { Button } from "~/components/ui/button";
 import { Eye, Pencil } from "lucide-react";
 import DeleteCandidateButton from "./delete-candidate-button";
 import { getApplicationStatusCardBorderClass } from "~/components/application-status-badge";
+import { formatDate } from "~/lib/utils";
 
 type CandidateKanbanCardProps = {
   candidate: {
@@ -11,23 +12,10 @@ type CandidateKanbanCardProps = {
     firstName: string;
     lastName: string;
     email: string;
-    updatedAt: Date;
+    createdAt: Date;
     position: { id: string; name: string } | null;
   };
   status: string;
-};
-
-const getTimeAgo = (date: Date): string => {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffHours / 24);
-  const diffWeeks = Math.floor(diffDays / 7);
-
-  if (diffWeeks > 0) return `- ${diffWeeks} week${diffWeeks > 1 ? "s" : ""}`;
-  if (diffDays > 0) return `- ${diffDays} day${diffDays > 1 ? "s" : ""}`;
-  if (diffHours > 0) return `- ${diffHours} hour${diffHours > 1 ? "s" : ""}`;
-  return "- just now";
 };
 
 function CandidateKanbanCard({
@@ -35,7 +23,6 @@ function CandidateKanbanCard({
   status,
 }: CandidateKanbanCardProps) {
   const borderColor = getApplicationStatusCardBorderClass(status);
-  const timeAgo = getTimeAgo(candidate.updatedAt);
   const title = candidate.position
     ? `${candidate.firstName} ${candidate.lastName} - ${candidate.position.name}`
     : `${candidate.firstName} ${candidate.lastName}`;
@@ -52,8 +39,8 @@ function CandidateKanbanCard({
       </div>
 
       <div className="mb-3">
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-          {timeAgo}
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+          {formatDate(candidate.createdAt)}
         </span>
       </div>
 

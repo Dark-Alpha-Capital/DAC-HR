@@ -162,7 +162,7 @@ function CandidateKanbanColumnInner({
               <CandidateKanbanCard
                 candidate={{
                   ...candidate,
-                  updatedAt: new Date(candidate.updatedAt),
+                  createdAt: new Date(candidate.createdAt),
                 }}
                 status={status}
               />
