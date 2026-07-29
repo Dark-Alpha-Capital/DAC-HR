@@ -1,4 +1,9 @@
-import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  queryOptions,
+  useQuery,
+  type UseQueryResult,
+} from "@tanstack/react-query";
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
@@ -21,11 +26,14 @@ function parseRoundsSearch(search: Record<string, unknown>) {
 }
 
 type RoundsIndexSearch = ReturnType<typeof parseRoundsSearch>;
+type RoundsIndexData = Awaited<ReturnType<typeof loadRoundsIndex>>;
 
 function roundsIndexQueryOptions(deps: RoundsIndexSearch) {
   return queryOptions({
     queryKey: queryKeys.rounds.list(deps),
-    queryFn: () => loadRoundsIndex({ data: deps }),
+    queryFn: async (): Promise<RoundsIndexData> =>
+      loadRoundsIndex({ data: deps }),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -43,10 +51,8 @@ export const Route = createFileRoute("/_main/rounds/")({
 
 function RoundsPage() {
   const search = Route.useSearch();
-  const { data, isLoading, isFetching } = useQuery({
-    ...roundsIndexQueryOptions(search),
-    placeholderData: keepPreviousData,
-  });
+  const { data, isLoading, isFetching }: UseQueryResult<RoundsIndexData> =
+    useQuery(roundsIndexQueryOptions(search));
 
   if (isLoading && !data) {
     return <ListPageSkeleton />;

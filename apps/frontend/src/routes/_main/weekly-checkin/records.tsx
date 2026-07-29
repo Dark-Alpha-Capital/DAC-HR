@@ -1,4 +1,9 @@
-import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  queryOptions,
+  useQuery,
+  type UseQueryResult,
+} from "@tanstack/react-query";
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { loadWeeklyCheckinRecords } from "~/lib/loaders/weekly-checkin";
@@ -41,11 +46,16 @@ function parseWeeklyCheckinRecordsSearch(search: Record<string, unknown>) {
 type WeeklyCheckinRecordsSearch = ReturnType<
   typeof parseWeeklyCheckinRecordsSearch
 >;
+type WeeklyCheckinRecordsData = Awaited<
+  ReturnType<typeof loadWeeklyCheckinRecords>
+>;
 
 function weeklyCheckinRecordsQueryOptions(deps: WeeklyCheckinRecordsSearch) {
   return queryOptions({
     queryKey: queryKeys.weeklyCheckin.records(deps),
-    queryFn: () => loadWeeklyCheckinRecords({ data: deps }),
+    queryFn: async (): Promise<WeeklyCheckinRecordsData> =>
+      loadWeeklyCheckinRecords({ data: deps }),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -77,10 +87,8 @@ function formatWeekRange(start: Date, end: Date) {
 
 function WeeklyCheckinRecordsPage() {
   const search = Route.useSearch();
-  const { data, isLoading } = useQuery({
-    ...weeklyCheckinRecordsQueryOptions(search),
-    placeholderData: keepPreviousData,
-  });
+  const { data, isLoading }: UseQueryResult<WeeklyCheckinRecordsData> =
+    useQuery(weeklyCheckinRecordsQueryOptions(search));
 
   if (isLoading && !data) {
     return <ListPageSkeleton rowCount={8} showActions={false} />;

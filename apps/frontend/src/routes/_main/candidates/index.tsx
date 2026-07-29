@@ -2,6 +2,7 @@ import {
   keepPreviousData,
   queryOptions,
   useQuery,
+  type UseQueryResult,
 } from "@tanstack/react-query";
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -9,7 +10,10 @@ import { Button } from "~/components/ui/button";
 import CandidateFilters from "~/components/candidate-filters";
 import BulkUploadCandidatesDialog from "~/components/bulk-upload-candidates-dialog";
 import CandidatesViewWrapper from "~/components/candidates-view-wrapper";
-import { loadCandidatesIndex } from "~/lib/loaders/candidates";
+import {
+  loadCandidatesIndex,
+  type CandidatesIndexData,
+} from "~/lib/loaders/candidates";
 import {
   toCandidateSort,
   toCandidateView,
@@ -41,7 +45,9 @@ type CandidatesIndexSearch = ReturnType<typeof parseCandidatesSearch>;
 function candidatesIndexQueryOptions(deps: CandidatesIndexSearch) {
   return queryOptions({
     queryKey: queryKeys.candidates.list(deps),
-    queryFn: () => loadCandidatesIndex({ data: deps }),
+    queryFn: async (): Promise<CandidatesIndexData> =>
+      loadCandidatesIndex({ data: deps }),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -63,10 +69,8 @@ function CandidatesPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
 
-  const { data, isLoading, isFetching } = useQuery({
-    ...candidatesIndexQueryOptions(search),
-    placeholderData: keepPreviousData,
-  });
+  const { data, isLoading, isFetching }: UseQueryResult<CandidatesIndexData> =
+    useQuery(candidatesIndexQueryOptions(search));
 
   const setViewMode = (view: CandidateViewMode) => {
     void navigate({
@@ -113,12 +117,7 @@ function CandidatesPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 min-w-0">
         <h1 className="text-2xl font-semibold tracking-tight">Candidates</h1>
         <div className="flex items-center gap-2">
-          <BulkUploadCandidatesDialog
-            positions={positions.map((p: { id: string; name: string }) => ({
-              id: p.id,
-              name: p.name,
-            }))}
-          />
+          <BulkUploadCandidatesDialog positions={positions} />
           <Button asChild>
             <Link to="/candidates/new" search="{}">
               New Candidate

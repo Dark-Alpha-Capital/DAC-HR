@@ -2,6 +2,7 @@ import {
   keepPreviousData,
   queryOptions,
   useQuery,
+  type UseQueryResult,
 } from "@tanstack/react-query";
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -36,6 +37,7 @@ function parseEmployeesSearch(search: Record<string, unknown>) {
 }
 
 type EmployeesIndexSearch = ReturnType<typeof parseEmployeesSearch>;
+type PrismicMembersData = Awaited<ReturnType<typeof loadPrismicMembers>>;
 
 function getMemberInitials(name: string) {
   return name
@@ -49,7 +51,9 @@ function getMemberInitials(name: string) {
 function prismicMembersQueryOptions(deps: EmployeesIndexSearch) {
   return queryOptions({
     queryKey: queryKeys.prismic.members(deps),
-    queryFn: () => loadPrismicMembers({ data: deps }),
+    queryFn: async (): Promise<PrismicMembersData> =>
+      loadPrismicMembers({ data: deps }),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -69,10 +73,14 @@ export const Route = createFileRoute("/_main/employees/")({
 
 function EmployeesPage() {
   const search = Route.useSearch();
-  const { data, isLoading, isFetching, error } = useQuery({
-    ...prismicMembersQueryOptions(search),
-    placeholderData: keepPreviousData,
-  });
+  const {
+    data,
+    isLoading,
+    isFetching,
+    error,
+  }: UseQueryResult<PrismicMembersData> = useQuery(
+    prismicMembersQueryOptions(search),
+  );
 
   if (isLoading && !data) {
     return <ListPageSkeleton />;

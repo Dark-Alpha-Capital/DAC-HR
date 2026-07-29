@@ -2,6 +2,7 @@ import {
   keepPreviousData,
   queryOptions,
   useQuery,
+  type UseQueryResult,
 } from "@tanstack/react-query";
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -29,11 +30,14 @@ function parsePositionsSearch(search: Record<string, unknown>) {
 }
 
 type PositionsIndexSearch = ReturnType<typeof parsePositionsSearch>;
+type PositionsIndexData = Awaited<ReturnType<typeof loadPositionsIndex>>;
 
 function positionsIndexQueryOptions(deps: PositionsIndexSearch) {
   return queryOptions({
     queryKey: queryKeys.positions.list(deps),
-    queryFn: () => loadPositionsIndex({ data: deps }),
+    queryFn: async (): Promise<PositionsIndexData> =>
+      loadPositionsIndex({ data: deps }),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -53,10 +57,8 @@ export const Route = createFileRoute("/_main/positions/")({
 
 function PositionsPage() {
   const search = Route.useSearch();
-  const { data, isLoading, isFetching } = useQuery({
-    ...positionsIndexQueryOptions(search),
-    placeholderData: keepPreviousData,
-  });
+  const { data, isLoading, isFetching }: UseQueryResult<PositionsIndexData> =
+    useQuery(positionsIndexQueryOptions(search));
 
   if (isLoading && !data) {
     return <ListPageSkeleton />;

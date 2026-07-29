@@ -1,4 +1,9 @@
-import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  queryOptions,
+  useQuery,
+  type UseQueryResult,
+} from "@tanstack/react-query";
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute } from "@tanstack/react-router";
 import { Briefcase } from "lucide-react";
@@ -10,7 +15,11 @@ import FilterCandidateEmail from "~/components/filter-candidate-email";
 import ClearApplicationFiltersButton from "~/components/clear-application-filters-button";
 import ApplicationsPaginationControls from "~/components/applications-pagination-controls";
 import { loadApplicationsIndex } from "~/lib/loaders/candidates";
-import { toOptionalString, toPageNumber, toStringArray } from "~/lib/parse-search";
+import {
+  toOptionalString,
+  toPageNumber,
+  toStringArray,
+} from "~/lib/parse-search";
 import { queryKeys } from "~/lib/query/query-keys";
 
 function parseApplicationsSearch(search: Record<string, unknown>) {
@@ -27,11 +36,14 @@ function parseApplicationsSearch(search: Record<string, unknown>) {
 }
 
 type ApplicationsIndexSearch = ReturnType<typeof parseApplicationsSearch>;
+type ApplicationsIndexData = Awaited<ReturnType<typeof loadApplicationsIndex>>;
 
 function applicationsIndexQueryOptions(deps: ApplicationsIndexSearch) {
   return queryOptions({
     queryKey: queryKeys.applications.list(deps),
-    queryFn: () => loadApplicationsIndex({ data: deps }),
+    queryFn: async (): Promise<ApplicationsIndexData> =>
+      loadApplicationsIndex({ data: deps }),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -51,10 +63,8 @@ export const Route = createFileRoute("/_main/applications/")({
 
 function ApplicationsPage() {
   const search = Route.useSearch();
-  const { data, isLoading, isFetching } = useQuery({
-    ...applicationsIndexQueryOptions(search),
-    placeholderData: keepPreviousData,
-  });
+  const { data, isLoading, isFetching }: UseQueryResult<ApplicationsIndexData> =
+    useQuery(applicationsIndexQueryOptions(search));
 
   if (isLoading && !data) {
     return (

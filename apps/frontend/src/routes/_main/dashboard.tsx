@@ -1,4 +1,9 @@
-import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  queryOptions,
+  useQuery,
+  type UseQueryResult,
+} from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Card,
@@ -26,10 +31,13 @@ import {
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 
+type DashboardStatsData = Awaited<ReturnType<typeof loadDashboardStats>>;
+
 function dashboardStatsQueryOptions() {
   return queryOptions({
     queryKey: queryKeys.dashboard.stats(),
-    queryFn: () => loadDashboardStats(),
+    queryFn: async (): Promise<DashboardStatsData> => loadDashboardStats(),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -123,10 +131,8 @@ const accessTiles = [
 ] as const;
 
 function DashboardPage() {
-  const { data: stats, isLoading } = useQuery({
-    ...dashboardStatsQueryOptions(),
-    placeholderData: keepPreviousData,
-  });
+  const { data: stats, isLoading }: UseQueryResult<DashboardStatsData> =
+    useQuery(dashboardStatsQueryOptions());
 
   return (
     <div className="space-y-8">

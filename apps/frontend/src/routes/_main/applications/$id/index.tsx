@@ -1,25 +1,19 @@
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useQuery,
+  type UseQueryResult,
+} from "@tanstack/react-query";
 import { DetailPageSkeleton } from "~/components/route-skeletons/detail-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   loadApplicationDetail,
+  type ApplicationDetailData,
 } from "~/lib/loaders/candidates";
-import { getSession } from "~/lib/get-session";
 import { queryKeys } from "~/lib/query/query-keys";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "~/components/ui/tabs";
-import {
-  Briefcase,
-  Calendar,
-  MessageSquare,
-  Star,
-} from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
+import { Briefcase, Calendar, MessageSquare, Star } from "lucide-react";
 import { formatDate } from "~/lib/utils";
 import InlineApplicationStatusEditor from "~/components/inline-application-status-editor";
 import ApplicationPersonalitySelector from "~/components/application-personality-selector";
@@ -29,21 +23,8 @@ import ApplicationBreadcrumb from "~/components/application-breadcrumb";
 function applicationDetailQueryOptions(id: string) {
   return queryOptions({
     queryKey: queryKeys.applications.detail(id),
-    queryFn: async () => {
-      const [detail, session] = await Promise.all([
-        loadApplicationDetail({ data: id }),
-        getSession(),
-      ]);
-      return {
-        application: (detail as { application: unknown }).application,
-        candidate: (detail as { candidate: unknown }).candidate,
-        sessions: (detail as { sessions: unknown }).sessions,
-        aiScreenings: (detail as { aiScreenings: unknown }).aiScreenings,
-        documents: (detail as { documents: unknown }).documents,
-        users: (detail as { users: unknown }).users,
-        currentUser: session?.user ?? null,
-      };
-    },
+    queryFn: async (): Promise<ApplicationDetailData> =>
+      (await loadApplicationDetail({ data: id })) as ApplicationDetailData,
   });
 }
 
@@ -52,29 +33,28 @@ export const Route = createFileRoute("/_main/applications/$id/")({
     meta: [{ title: "Application Detail" }],
   }),
   loader: async ({ context: { queryClient }, params }) => {
-    await queryClient.ensureQueryData(
-      applicationDetailQueryOptions(params.id),
-    );
+    await queryClient.ensureQueryData(applicationDetailQueryOptions(params.id));
   },
   component: ApplicationDetailPage,
 });
 
 function ApplicationDetailPage() {
   const { id } = Route.useParams();
-  const { data, isLoading } = useQuery(applicationDetailQueryOptions(id));
+  const { session } = Route.useRouteContext();
+  const { data, isLoading }: UseQueryResult<ApplicationDetailData> = useQuery(
+    applicationDetailQueryOptions(id),
+  );
 
   if (isLoading && !data) {
-    return (
-      <DetailPageSkeleton container tabs showBreadcrumb showActions />
-    );
+    return <DetailPageSkeleton container tabs showBreadcrumb showActions />;
   }
 
   if (!data) {
     return null;
   }
 
-  const { application, candidate, sessions, aiScreenings, users, currentUser } =
-    data;
+  const { application, candidate, sessions, aiScreenings, users } = data;
+  const currentUser = session.user;
 
   if (!application) {
     return (
@@ -84,7 +64,9 @@ function ApplicationDetailPage() {
           This application doesn&apos;t exist or has been removed.
         </p>
         <Button asChild variant="secondary" className="mt-4">
-          <Link to="/applications" search={{} as any}>View All Applications</Link>
+          <Link to="/applications" search={{} as any}>
+            View All Applications
+          </Link>
         </Button>
       </div>
     );
@@ -93,7 +75,8 @@ function ApplicationDetailPage() {
   const candidateName = candidate
     ? `${candidate.firstName} ${candidate.lastName}`
     : "Unknown Candidate";
-  const positionName = (application as any).position?.name ?? "Unknown Position";
+  const positionName =
+    (application as any).position?.name ?? "Unknown Position";
 
   const rounds = (application as any).rounds ?? [];
   const interviews = (application as any).interviews ?? [];
@@ -125,7 +108,8 @@ function ApplicationDetailPage() {
               </span>
               <span className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" />
-                {interviews.length} interview{interviews.length !== 1 ? "s" : ""}
+                {interviews.length} interview
+                {interviews.length !== 1 ? "s" : ""}
               </span>
             </div>
           </div>
@@ -170,7 +154,10 @@ function ApplicationDetailPage() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Status</span>
                   <InlineApplicationStatusEditor
-                    application={{ id: application.id, status: application.status }}
+                    application={{
+                      id: application.id,
+                      status: application.status,
+                    }}
                     candidateId={application.candidateId}
                   />
                 </div>
@@ -216,10 +203,17 @@ function ApplicationDetailPage() {
               </h3>
               <div className="space-y-2">
                 {aiScreenings.map((screening) => (
-                  <div key={screening.id} className="text-sm flex items-center gap-2">
+                  <div
+                    key={screening.id}
+                    className="text-sm flex items-center gap-2"
+                  >
                     <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
                     <span className="text-muted-foreground">
-                      {formatDate(screening.createdAt)} — {typeof screening.structuredData === "object" && screening.structuredData ? (screening.structuredData as any).score ?? "N/A" : "N/A"}
+                      {formatDate(screening.createdAt)} —{" "}
+                      {typeof screening.structuredData === "object" &&
+                      screening.structuredData
+                        ? ((screening.structuredData as any).score ?? "N/A")
+                        : "N/A"}
                     </span>
                   </div>
                 ))}

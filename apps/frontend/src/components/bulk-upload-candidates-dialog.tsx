@@ -30,11 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "~/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Progress } from "~/components/ui/progress";
 import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 import { queryKeys } from "~/lib/query/query-keys";
@@ -110,8 +106,8 @@ export default function BulkUploadCandidatesDialog({
     ...importStatusQueryOptions(importId ?? ""),
     enabled: Boolean(importId) && open,
     refetchInterval: (query) => {
-      const importStatus = (query.state.data as ImportStatus | undefined)?.import
-        .status;
+      const importStatus = (query.state.data as ImportStatus | undefined)
+        ?.import.status;
       if (!importStatus || TERMINAL_IMPORT_STATUSES.has(importStatus)) {
         return false;
       }
@@ -305,7 +301,10 @@ export default function BulkUploadCandidatesDialog({
                   setPositionId(value === "none" ? "" : value)
                 }
               >
-                <SelectTrigger id="bulk-upload-position" className="w-full min-w-0">
+                <SelectTrigger
+                  id="bulk-upload-position"
+                  className="w-full min-w-0"
+                >
                   <SelectValue placeholder="No position" />
                 </SelectTrigger>
                 <SelectContent>
@@ -401,7 +400,8 @@ export default function BulkUploadCandidatesDialog({
                 <div className="max-h-48 overflow-y-auto rounded-md border text-xs">
                   {status.rows.map((row) => {
                     const sourceFile =
-                      row.metadata && typeof row.metadata.sourceFile === "string"
+                      row.metadata &&
+                      typeof row.metadata.sourceFile === "string"
                         ? row.metadata.sourceFile
                         : row.metadata &&
                             typeof row.metadata.matchedHeader === "string"
@@ -487,9 +487,8 @@ export default function BulkUploadCandidatesDialog({
                 <CheckCircle2 className="h-4 w-4" />
                 <AlertTitle>Import complete</AlertTitle>
                 <AlertDescription>
-                  {status.summary.succeeded} succeeded,{" "}
-                  {status.summary.skipped} skipped, {status.summary.failed}{" "}
-                  failed.
+                  {status.summary.succeeded} succeeded, {status.summary.skipped}{" "}
+                  skipped, {status.summary.failed} failed.
                 </AlertDescription>
               </Alert>
               {status?.rows.length > 0 ? (
@@ -536,8 +535,8 @@ export default function BulkUploadCandidatesDialog({
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Import cancelled</AlertTitle>
               <AlertDescription>
-                Processing was stopped. Any candidates created before cancellation
-                are still saved.
+                Processing was stopped. Any candidates created before
+                cancellation are still saved.
               </AlertDescription>
             </Alert>
           ) : null}

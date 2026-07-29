@@ -65,10 +65,26 @@ type CandidatesIndexInput = {
   view?: "table" | "kanban";
 };
 
+type FilteredCandidatesResult = Awaited<
+  ReturnType<typeof getCachedCandidatesWithPositionsFiltered>
+>;
+
+export type CandidatesIndexData = {
+  positions: { id: string; name: string }[];
+  candidates: FilteredCandidatesResult["candidates"];
+  currentPage: number;
+  limit: number;
+  totalCount: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+  hasFilters: boolean;
+};
+
 export const loadCandidatesIndex = createServerFn({ method: "GET" })
   .middleware([serverFnAuthGuard])
   .validator((data: CandidatesIndexInput) => data)
-  .handler(async ({ data: deps }) => {
+  .handler(async ({ data: deps }): Promise<CandidatesIndexData> => {
     const limit = 50;
     const currentPage = deps.page ?? 1;
     const sort = parseCandidateSortOption(deps.sort);
@@ -303,17 +319,33 @@ export const loadApplicationsIndex = createServerFn({ method: "GET" })
     };
   });
 
+export type ApplicationDetailData = {
+  application: Awaited<ReturnType<typeof getApplicationWithInterviews>>;
+  candidate: Awaited<ReturnType<typeof getCandidateById>>;
+  sessions: Awaited<ReturnType<typeof getSessionsByApplicationId>>;
+  aiScreenings: Awaited<ReturnType<typeof getCandidateAiScreenings>>;
+  documents: Awaited<ReturnType<typeof getDocumentsByCandidateId>>;
+  users: Awaited<ReturnType<typeof getUsers>>;
+};
+
 export const loadApplicationDetail = createServerFn({ method: "GET" })
   .middleware([serverFnAuthGuard])
   .validator((data: string) => data)
-  .handler(async ({ data: applicationId }) => {
+  .handler(async ({ data: applicationId }): Promise<ApplicationDetailData> => {
     const [application, users] = await Promise.all([
       getApplicationWithInterviews(applicationId),
       getUsers(),
     ]);
 
     if (!application) {
-      return { application: null, candidate: null, sessions: [], users };
+      return {
+        application: null,
+        candidate: null,
+        sessions: [],
+        aiScreenings: [],
+        documents: [],
+        users,
+      };
     }
 
     const [candidate, sessions, aiScreenings, documents] = await Promise.all([

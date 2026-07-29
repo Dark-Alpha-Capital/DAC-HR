@@ -3,6 +3,7 @@ import {
   useMutation,
   useQuery,
   useQueryClient,
+  type UseQueryResult,
 } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
@@ -164,7 +165,8 @@ function buildRecordsFromData(data: AttendancePageData): Map<string, RecordForm>
 function attendancePageQueryOptions(date: string) {
   return queryOptions({
     queryKey: queryKeys.attendance.page(date),
-    queryFn: () => loadAttendancePage({ data: { date } }),
+    queryFn: async (): Promise<AttendancePageData> =>
+      loadAttendancePage({ data: { date } }),
   });
 }
 
@@ -187,9 +189,8 @@ function AttendancePage() {
   const navigate = Route.useNavigate();
   const { date } = search;
 
-  const { data, isLoading, isFetching } = useQuery({
-    ...attendancePageQueryOptions(date),
-  });
+  const { data, isLoading, isFetching }: UseQueryResult<AttendancePageData> =
+    useQuery(attendancePageQueryOptions(date));
 
   const navigateDate = useCallback(
     (direction: -1 | 1) => {

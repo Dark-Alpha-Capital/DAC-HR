@@ -1,4 +1,9 @@
-import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  queryOptions,
+  useQuery,
+  type UseQueryResult,
+} from "@tanstack/react-query";
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute } from "@tanstack/react-router";
 import { AuditLogsClient } from "~/components/admin/audit-logs-client";
@@ -26,7 +31,9 @@ type AuditLogsIndexSearch = ReturnType<typeof parseAuditLogsSearch>;
 function auditLogsIndexQueryOptions(deps: AuditLogsIndexSearch) {
   return queryOptions({
     queryKey: queryKeys.admin.auditLogs(deps),
-    queryFn: (): Promise<AuditLogsPageData> => loadAuditLogs({ data: deps }),
+    queryFn: async (): Promise<AuditLogsPageData> =>
+      loadAuditLogs({ data: deps }),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -46,10 +53,9 @@ export const Route = createFileRoute("/_main/admin/audit-logs")({
 
 function AuditLogsPage() {
   const search = Route.useSearch();
-  const { data, isLoading } = useQuery({
-    ...auditLogsIndexQueryOptions(search),
-    placeholderData: keepPreviousData,
-  });
+  const { data, isLoading }: UseQueryResult<AuditLogsPageData> = useQuery(
+    auditLogsIndexQueryOptions(search),
+  );
 
   if (isLoading && !data) {
     return <ListPageSkeleton rowCount={8} showActions={false} />;

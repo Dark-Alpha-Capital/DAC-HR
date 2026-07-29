@@ -2,6 +2,7 @@ import {
   keepPreviousData,
   queryOptions,
   useQuery,
+  type UseQueryResult,
 } from "@tanstack/react-query";
 import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -36,11 +37,14 @@ function parseDocumentsSearch(search: Record<string, unknown>) {
 }
 
 type DocumentsIndexSearch = ReturnType<typeof parseDocumentsSearch>;
+type DocumentsIndexData = Awaited<ReturnType<typeof loadDocumentsIndex>>;
 
 function documentsIndexQueryOptions(deps: DocumentsIndexSearch) {
   return queryOptions({
     queryKey: queryKeys.documents.list(deps),
-    queryFn: () => loadDocumentsIndex({ data: deps }),
+    queryFn: async (): Promise<DocumentsIndexData> =>
+      loadDocumentsIndex({ data: deps }),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -60,10 +64,8 @@ export const Route = createFileRoute("/_main/documents/")({
 
 function DocumentsPage() {
   const search = Route.useSearch();
-  const { data, isLoading, isFetching } = useQuery({
-    ...documentsIndexQueryOptions(search),
-    placeholderData: keepPreviousData,
-  });
+  const { data, isLoading, isFetching }: UseQueryResult<DocumentsIndexData> =
+    useQuery(documentsIndexQueryOptions(search));
 
   if (isLoading && !data) {
     return <ListPageSkeleton />;
