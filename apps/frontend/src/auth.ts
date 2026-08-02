@@ -70,10 +70,24 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  // OAuth state is stored in D1; skip the short-lived signed cookie check.
+  // Google consent (esp. Meet/Calendar scopes) can exceed the ~5m cookie TTL.
+  account: {
+    skipStateCookieCheck: true,
+  },
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      scope: [
+        "openid",
+        "email",
+        "profile",
+        "https://www.googleapis.com/auth/calendar.readonly",
+        "https://www.googleapis.com/auth/meetings.space.readonly",
+      ],
+      accessType: "offline",
+      prompt: "select_account consent",
     },
   },
   plugins: [

@@ -14,6 +14,7 @@ import {
   Building2,
   Calendar,
   PartyPopper,
+  Video,
 } from "lucide-react";
 import {
   useCallback,
@@ -26,6 +27,8 @@ import {
 import { toast } from "sonner";
 import type { AttendanceStatus } from "@workspace/db/enums";
 import { attendanceStatuses } from "@workspace/db/enums";
+import { syncMeetAttendanceForDate } from "~/lib/actions/sync-meet-attendance";
+import { localDayBounds } from "~/lib/attendance/meet-attendance";
 import { loadAttendancePage } from "~/lib/loaders/attendance";
 import { toOptionalString } from "~/lib/parse-search";
 import { queryKeys } from "~/lib/query/query-keys";
@@ -403,6 +406,61 @@ function AttendanceEditor({
     },
   });
 
+  const meetSyncMutation = useMutation({
+    mutationFn: async () => {
+      const bounds = localDayBounds(date);
+      return syncMeetAttendanceForDate({
+        data: {
+          date,
+          startIso: bounds.startIso,
+          endIso: bounds.endIso,
+        },
+      });
+    },
+    onSuccess: async (result) => {
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
+      if (result.meetings === 0) {
+        toast.message("No Google Meet conferences found for this day");
+        return;
+      }
+
+      const fresh = await queryClient.fetchQuery(
+        attendancePageQueryOptions(date),
+      );
+      setRecords(buildRecordsFromData(fresh));
+
+      const parts = [
+        `${result.marked} marked present`,
+        `${result.meetings} meeting${result.meetings === 1 ? "" : "s"}`,
+      ];
+      if (result.failed > 0) parts.push(`${result.failed} failed`);
+      toast.success(parts.join(" · "));
+
+      if (result.unmatched.length > 0) {
+        toast.message(
+          `Unmatched Meet names: ${result.unmatched.slice(0, 5).join(", ")}${
+            result.unmatched.length > 5 ? "…" : ""
+          }`,
+        );
+      }
+      if (result.ambiguous.length > 0) {
+        toast.message(
+          `Ambiguous names skipped: ${result.ambiguous
+            .slice(0, 3)
+            .map((a) => a.displayName)
+            .join(", ")}`,
+        );
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message ?? "Failed to sync Meet attendance");
+    },
+  });
+
   const setRecordField = useCallback(
     (uid: string, field: keyof RecordForm, value: string | null) => {
       setRecords((prev) => {
@@ -608,6 +666,20 @@ function AttendanceEditor({
           <Button variant="secondary" size="sm" onClick={() => markAll("present")}>
             <Check className="size-4 mr-1" />
             All Present
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => meetSyncMutation.mutate()}
+            disabled={meetSyncMutation.isPending || isHoliday}
+          >
+            {meetSyncMutation.isPending ? (
+              <Loader2 className="size-4 mr-1 animate-spin" />
+            ) : (
+              <Video className="size-4 mr-1" />
+            )}
+            Sync from Meet
           </Button>
 
           <Button
