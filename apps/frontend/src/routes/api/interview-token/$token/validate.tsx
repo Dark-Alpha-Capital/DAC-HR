@@ -58,6 +58,7 @@ export const Route = createFileRoute("/api/interview-token/$token/validate")({
               bundleId: validation.bundle.bundle.id,
               status: validation.bundle.bundle.status,
               candidateName: `${validation.bundle.candidate.firstName} ${validation.bundle.candidate.lastName}`,
+              candidateEmail: validation.bundle.candidate.email,
               positionName: validation.bundle.position.name,
               currentRoundIndex: validation.currentRoundIndex,
               totalRounds: validation.rounds.length,
@@ -104,6 +105,7 @@ export const Route = createFileRoute("/api/interview-token/$token/validate")({
             deliveryMode: session.deliveryMode,
             agentConfig: session.agentConfig,
             candidateName: `${candidate.firstName} ${candidate.lastName}`,
+            candidateEmail: candidate.email,
             positionName: position.name,
             roundName: round.name,
           });

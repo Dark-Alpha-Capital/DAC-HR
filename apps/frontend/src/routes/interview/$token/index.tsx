@@ -16,7 +16,11 @@ import { Label } from "~/components/ui/label";
 import BundleRoundsOverview from "~/components/interview/BundleRoundsOverview";
 import DeliveryModePicker from "~/components/interview/DeliveryModePicker";
 import VoiceInterview from "~/components/interview/VoiceInterview";
+import RoundTransitionSlide from "~/components/interview/RoundTransitionSlide";
+import CompletionScreen from "~/components/interview/CompletionScreen";
+import TabSwitchWarning from "~/components/interview/TabSwitchWarning";
 import { useVoiceInterview } from "~/hooks/useVoiceInterview";
+import { useTabSwitchDetection } from "~/hooks/useTabSwitchDetection";
 import {
   buildWelcomeFromValidation,
   completeInterview,
@@ -53,16 +57,17 @@ import {
 type Question = InterviewQuestion;
 type InterviewData = InterviewSchemaData;
 
+type RoundTransitionData = {
+  completedPart: number;
+  nextPart: number;
+  nextRoundName: string;
+  totalParts: number;
+  deliveryMode: "form" | "voice";
+};
+
 type AnswerValue =
   | { type: "text"; text: string }
   | { type: "mcq"; selectedOptionId: string };
-
-let tabSwitchCount = 0;
-if (typeof document !== "undefined") {
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) tabSwitchCount++;
-  });
-}
 
 export const Route = createFileRoute("/interview/$token/")({
   head: () => ({
@@ -566,12 +571,15 @@ function InterviewPage() {
   const [voiceWelcomeStep, setVoiceWelcomeStep] =
     useState<VoiceWelcomeStep>("welcome");
   const [sessionMode, setSessionMode] = useState<SessionMode | null>(null);
-  const [completionType, setCompletionType] = useState<"round" | "all">("all");
-  const [nextRoundName, setNextRoundName] = useState<string | null>(null);
+  const [roundTransition, setRoundTransition] =
+    useState<RoundTransitionData | null>(null);
+  const [tabSwitchCount, setTabSwitchCount] = useState(0);
+  const [tabSwitchWarningVisible, setTabSwitchWarningVisible] = useState(false);
   const answersRef = useRef(answers);
   const wasPracticeSessionRef = useRef(false);
   const hasInitializedRef = useRef(false);
   const prevPageStatusRef = useRef(status);
+  const tabSwitchCountRef = useRef(0);
   const voiceInterview = useVoiceInterview(token);
 
   const {
@@ -600,22 +608,27 @@ function InterviewPage() {
   });
 
   const completeMutation = useMutation({
-    mutationFn: () => completeInterview(token, tabSwitchCount),
+    mutationFn: () => completeInterview(token, tabSwitchCountRef.current),
     onSuccess: (body) => {
       logInterview.success("api", "complete_mutation_ok", {
         token: truncateId(token),
         hasMoreRounds: body.hasMoreRounds,
         nextRoundName: body.nextRoundName,
       });
-      if (body.hasMoreRounds) {
-        setCompletionType("round");
-        setNextRoundName(body.nextRoundName ?? null);
+      if (body.hasMoreRounds && body.nextRound) {
+        setRoundTransition({
+          completedPart: body.nextRound.roundOrder - 1,
+          nextPart: body.nextRound.roundOrder,
+          nextRoundName: body.nextRound.roundName,
+          totalParts: body.totalRounds ?? 1,
+          deliveryMode:
+            body.nextRound.deliveryMode === "voice" ? "voice" : "form",
+        });
         setData(null);
         setCurrentStep(0);
         setAnswers({});
         setStatus("round_complete");
       } else {
-        setCompletionType("all");
         setStatus("completed");
       }
     },
@@ -624,7 +637,6 @@ function InterviewPage() {
         token: truncateId(token),
         error: err instanceof Error ? err.message : String(err),
       });
-      setCompletionType("all");
       setStatus("completed");
     },
   });
@@ -702,15 +714,21 @@ function InterviewPage() {
           freshValidation?.type === "bundle" &&
           freshValidation.status !== "completed"
         ) {
-          setCompletionType("round");
-          setNextRoundName(
-            freshValidation.rounds?.find((round) => round.status === "pending")
-              ?.roundName ?? null,
+          const pendingRound = freshValidation.rounds?.find(
+            (round) => round.status === "pending",
           );
+          const nextPart = freshValidation.currentRoundIndex + 1;
+          setRoundTransition({
+            completedPart: nextPart - 1,
+            nextPart,
+            nextRoundName: pendingRound?.roundName ?? "the next round",
+            totalParts: freshValidation.totalRounds,
+            deliveryMode:
+              pendingRound?.deliveryMode === "voice" ? "voice" : "form",
+          });
           setStatus("round_complete");
           return;
         }
-        setCompletionType("all");
         setStatus("completed");
       });
     }
@@ -777,7 +795,6 @@ function InterviewPage() {
     }
 
     if (validation.status === "completed") {
-      setCompletionType("all");
       setStatus("completed");
       return;
     }
@@ -970,11 +987,22 @@ function InterviewPage() {
       const mode: SessionMode =
         isBundle && freshValidation.deliveryMode === "voice" ? "voice" : "form";
 
-      setWelcomeData(buildWelcomeFromValidation(freshValidation));
       sessionStorage.setItem(getModeStorageKey(token), mode);
       setSessionMode(mode);
-      setVoiceWelcomeStep("welcome");
-      setStatus("welcome");
+      setWelcomeData(buildWelcomeFromValidation(freshValidation));
+      setRoundTransition(null);
+
+      if (mode === "voice") {
+        setStatus("voice");
+        await voiceInterview.start({ practice: false });
+      } else {
+        const interviewData = await queryClient.fetchQuery(
+          interviewSchemaOptions(token),
+        );
+        setData(interviewData);
+        setStatus("in_progress");
+      }
+
       logInterview.success("bundle", "next_round_ready", {
         token: truncateId(token),
         mode,
@@ -997,7 +1025,7 @@ function InterviewPage() {
     } finally {
       setStarting(false);
     }
-  }, [queryClient, token]);
+  }, [queryClient, token, voiceInterview]);
 
   const handleSelectForm = useCallback(() => {
     logInterview.info("state", "mode_selected", { mode: "form" });
@@ -1044,6 +1072,38 @@ function InterviewPage() {
     }
   }, [token, voiceInterview]);
 
+  const handleTabSwitch = useCallback(() => {
+    tabSwitchCountRef.current += 1;
+    setTabSwitchCount(tabSwitchCountRef.current);
+    setTabSwitchWarningVisible(true);
+  }, []);
+
+  useTabSwitchDetection(
+    status === "in_progress" ||
+      (status === "voice" && voiceInterview.state.status === "active"),
+    handleTabSwitch,
+  );
+
+  useEffect(() => {
+    if (status !== "in_progress") {
+      return;
+    }
+
+    const onCopy = (event: ClipboardEvent) => event.preventDefault();
+    const onPaste = (event: ClipboardEvent) => event.preventDefault();
+    const onContextMenu = (event: MouseEvent) => event.preventDefault();
+
+    document.addEventListener("copy", onCopy);
+    document.addEventListener("paste", onPaste);
+    document.addEventListener("contextmenu", onContextMenu);
+
+    return () => {
+      document.removeEventListener("copy", onCopy);
+      document.removeEventListener("paste", onPaste);
+      document.removeEventListener("contextmenu", onContextMenu);
+    };
+  }, [status]);
+
   if (
     status === "loading" &&
     (isValidating || (needsInitSchema && isSchemaLoading))
@@ -1075,62 +1135,39 @@ function InterviewPage() {
   }
 
   if (status === "round_complete") {
+    if (!roundTransition) {
+      return (
+        <div className="flex min-h-svh items-center justify-center bg-background">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="size-8 animate-spin text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              Preparing next round...
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    const transitionInstructions =
+      roundTransition.deliveryMode === "voice"
+        ? [...VOICE_INSTRUCTIONS]
+        : [...INSTRUCTIONS];
+
     return (
-      <div className="flex min-h-svh items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-primary/10">
-              <CheckCircle2 className="size-5 text-primary" />
-            </div>
-            <CardTitle className="mt-3">Round Complete</CardTitle>
-            <CardDescription>
-              Great work! You&apos;ve finished this round.
-              {nextRoundName
-                ? ` Next up: ${nextRoundName}.`
-                : " Continue to the next round when you're ready."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-center">
-            <Button onClick={handleContinueToNextRound} disabled={starting}>
-              {starting ? (
-                <>
-                  <Loader2 className="mr-2 size-4 animate-spin" />
-                  Loading...
-                </>
-              ) : (
-                <>
-                  Continue to Next Round
-                  <ArrowRight className="ml-2 size-4" />
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <RoundTransitionSlide
+        completedPart={roundTransition.completedPart}
+        nextPart={roundTransition.nextPart}
+        nextRoundName={roundTransition.nextRoundName}
+        totalParts={roundTransition.totalParts}
+        instructions={transitionInstructions}
+        onContinue={handleContinueToNextRound}
+        starting={starting}
+      />
     );
   }
 
   if (status === "completed") {
-    return (
-      <div className="flex min-h-svh items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-primary/10">
-              <CheckCircle2 className="size-5 text-primary" />
-            </div>
-            <CardTitle className="mt-3">
-              {completionType === "all"
-                ? "All Rounds Complete"
-                : "Interview Completed"}
-            </CardTitle>
-            <CardDescription>
-              Thank you for completing the interview. Your responses have been
-              recorded.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
+    return <CompletionScreen candidateEmail={welcomeData?.candidateEmail} />;
   }
 
   if (status === "mode_picker") {
@@ -1150,17 +1187,25 @@ function InterviewPage() {
     voiceInterview.state.status !== "idle"
   ) {
     return (
-      <VoiceInterview
-        candidateName={welcomeData.candidateName}
-        positionName={welcomeData.positionName}
-        roundName={welcomeData.roundName}
-        state={voiceInterview.state}
-        videoStreamRef={voiceInterview.videoStreamRef}
-        onStart={() =>
-          voiceInterview.start({ practice: voiceInterview.state.isPractice })
-        }
-        onEnd={voiceInterview.endInterview}
-      />
+      <>
+        {tabSwitchWarningVisible ? (
+          <TabSwitchWarning
+            count={tabSwitchCount}
+            onDismiss={() => setTabSwitchWarningVisible(false)}
+          />
+        ) : null}
+        <VoiceInterview
+          candidateName={welcomeData.candidateName}
+          positionName={welcomeData.positionName}
+          roundName={welcomeData.roundName}
+          state={voiceInterview.state}
+          videoStreamRef={voiceInterview.videoStreamRef}
+          onStart={() =>
+            voiceInterview.start({ practice: voiceInterview.state.isPractice })
+          }
+          onEnd={voiceInterview.endInterview}
+        />
+      </>
     );
   }
 
@@ -1223,6 +1268,12 @@ function InterviewPage() {
 
   return (
     <div className="flex min-h-svh flex-col bg-background">
+      {tabSwitchWarningVisible ? (
+        <TabSwitchWarning
+          count={tabSwitchCount}
+          onDismiss={() => setTabSwitchWarningVisible(false)}
+        />
+      ) : null}
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto flex max-w-3xl items-center gap-4 px-4 py-3">
           <div className="flex-1 min-w-0">
@@ -1247,7 +1298,7 @@ function InterviewPage() {
       </header>
 
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-6">
-        <div className="mb-6">
+        <div className="mb-6 select-none">
           <Badge variant="secondary" className="mb-2">
             {question.category || "General"}
           </Badge>
@@ -1280,10 +1331,13 @@ function InterviewPage() {
               {(question.options ?? []).map((option) => (
                 <div
                   key={option.id}
-                  className="flex items-center gap-3 rounded-lg border p-4"
+                  className="flex items-center gap-3 rounded-lg border p-4 select-none"
                 >
                   <RadioGroupItem value={option.id} id={option.id} />
-                  <Label htmlFor={option.id} className="flex-1 cursor-pointer">
+                  <Label
+                    htmlFor={option.id}
+                    className="flex-1 cursor-pointer select-none"
+                  >
                     {option.text}
                   </Label>
                 </div>

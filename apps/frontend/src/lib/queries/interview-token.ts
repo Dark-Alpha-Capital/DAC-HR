@@ -37,6 +37,7 @@ export interface BundleValidationResponse {
   type: "bundle";
   status: string;
   candidateName: string;
+  candidateEmail?: string;
   positionName: string;
   roundName?: string;
   deliveryMode: DeliveryMode;
@@ -50,6 +51,7 @@ export interface LegacyValidationResponse {
   type: "legacy";
   status: string;
   candidateName: string;
+  candidateEmail?: string;
   positionName: string;
   roundName: string;
   deliveryMode: DeliveryMode;
@@ -61,7 +63,14 @@ export type ValidationResponse =
 
 export interface CompleteInterviewResponse {
   hasMoreRounds?: boolean;
-  nextRoundName?: string;
+  allCompleted?: boolean;
+  totalRounds?: number;
+  nextRoundName?: string | null;
+  nextRound?: {
+    roundName: string;
+    roundOrder: number;
+    deliveryMode: DeliveryMode;
+  } | null;
   error?: string;
 }
 
@@ -198,6 +207,7 @@ export function resolveSessionMode(
 
 export interface WelcomeData {
   candidateName: string;
+  candidateEmail?: string;
   positionName: string;
   roundName: string;
   deliveryMode: DeliveryMode;
@@ -213,6 +223,7 @@ export function buildWelcomeFromValidation(
   const isBundle = validation.type === "bundle";
   return {
     candidateName: validation.candidateName,
+    candidateEmail: validation.candidateEmail,
     positionName: validation.positionName,
     roundName: validation.roundName ?? "Interview",
     deliveryMode: validation.deliveryMode,

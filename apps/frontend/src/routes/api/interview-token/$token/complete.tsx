@@ -115,11 +115,21 @@ export const Route = createFileRoute("/api/interview-token/$token/complete")({
             allCompleted: advanceResult?.allCompleted ?? true,
           });
 
+          const nextRound = advanceResult?.nextRound ?? null;
+
           return Response.json({
             session: { ...session, status: "completed" as const },
             hasMoreRounds,
             allCompleted: advanceResult?.allCompleted ?? true,
-            nextRoundName: advanceResult?.nextRound?.round.name,
+            totalRounds: resolved.type === "bundle" ? resolved.totalRounds : 1,
+            nextRoundName: nextRound?.round.name ?? null,
+            nextRound: nextRound
+              ? {
+                  roundName: nextRound.round.name,
+                  roundOrder: nextRound.bundleRound.roundOrder,
+                  deliveryMode: nextRound.bundleRound.deliveryMode,
+                }
+              : null,
           });
         } catch (error) {
           interviewServerLog.error("api", COMPONENT, "complete_failed", {
