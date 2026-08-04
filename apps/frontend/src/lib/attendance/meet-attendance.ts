@@ -3,10 +3,6 @@
  * Ported from dac-googlemeet (fetch core only — no Meet-only D1 schema).
  */
 
-import { getRequest } from "@tanstack/react-start/server";
-import { auth } from "~/auth";
-
-const MEET_SCOPE = "https://www.googleapis.com/auth/meetings.space.readonly";
 const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
 const MEET_API = "https://meet.googleapis.com/v2";
 const CALENDAR_API = "https://www.googleapis.com/calendar/v3";
@@ -120,14 +116,6 @@ type CalendarMeetIndex = {
   all: CalendarTitleEntry[];
 };
 
-export type GoogleAccessOk = {
-  session: { user: { id: string; email: string; name: string } };
-  accessToken: string;
-  scope: string;
-};
-
-export type GoogleAccessErr = { error: string };
-
 /** `conferenceRecords/{id}` → `{id}` for URL params. */
 export function conferenceRecordId(name: string): string {
   const prefix = "conferenceRecords/";
@@ -225,51 +213,6 @@ export function resolveTimeWindow(filter: MeetConferenceFilter): {
 
 function buildConferenceListFilter(startIso: string, endIso: string): string {
   return `start_time>="${startIso}" AND start_time<"${endIso}"`;
-}
-
-export async function getGoogleAccessToken(): Promise<
-  GoogleAccessOk | GoogleAccessErr
-> {
-  const headers = getRequest().headers;
-  const session = await auth.api.getSession({ headers });
-  if (!session) {
-    return { error: "Not signed in" };
-  }
-
-  const tokenResult = await auth.api.getAccessToken({
-    body: { providerId: "google" },
-    headers,
-  });
-
-  if (!tokenResult.accessToken) {
-    return {
-      error:
-        "No Google access token. Sign out and sign in with Google again.",
-    };
-  }
-
-  const grantedScopes = Array.isArray(tokenResult.scopes)
-    ? tokenResult.scopes
-    : [];
-  const grantedScope = grantedScopes.join(" ");
-  if (grantedScope && !grantedScope.includes(MEET_SCOPE)) {
-    return {
-      error:
-        "Meet access not granted. Sign out and sign in again to grant Meet attendance permission.",
-    };
-  }
-
-  return {
-    session: {
-      user: {
-        id: session.user.id,
-        email: session.user.email,
-        name: session.user.name,
-      },
-    },
-    accessToken: tokenResult.accessToken,
-    scope: grantedScope,
-  };
 }
 
 function mapParticipantBase(p: ParticipantRecord) {

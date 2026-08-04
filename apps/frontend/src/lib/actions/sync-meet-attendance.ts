@@ -4,11 +4,11 @@ import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { persistAggregatedMeetAttendance } from "~/lib/attendance/apply-meet-attendance";
 import { aggregateMeetAttendance } from "~/lib/attendance/meet-attendance-aggregate";
 import { loadAllPrismicMembers } from "~/lib/attendance/resolve-member-by-name";
+import { getGoogleAccessToken } from "~/lib/attendance/meet-auth";
 import {
   ATTENDANCE_SYNC_CHUNK_SIZE,
   fetchConferenceWithParticipants,
   fetchMeetConferenceSummaries,
-  getGoogleAccessToken,
   parseConferenceFilter,
   prepareMeetAttendanceSeeds,
   type AttendanceSyncSeed,
