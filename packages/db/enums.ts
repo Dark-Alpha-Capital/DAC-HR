@@ -116,8 +116,7 @@ export const interviewSessionStatuses = [
   "completed",
   "reviewed",
 ] as const;
-export type InterviewSessionStatus =
-  (typeof interviewSessionStatuses)[number];
+export type InterviewSessionStatus = (typeof interviewSessionStatuses)[number];
 
 export const interviewEvaluationRecommendations = [
   "strong_hire",
@@ -141,8 +140,7 @@ export const interviewBundleStatuses = [
   "completed",
   "reviewed",
 ] as const;
-export type InterviewBundleStatus =
-  (typeof interviewBundleStatuses)[number];
+export type InterviewBundleStatus = (typeof interviewBundleStatuses)[number];
 
 export const interviewBundleRoundStatuses = [
   "pending",
@@ -206,12 +204,3 @@ export const candidateImportRowStatuses = [
 ] as const;
 export type CandidateImportRowStatus =
   (typeof candidateImportRowStatuses)[number];
-
-export const attendanceStatuses = [
-  "present",
-  "absent",
-  "half_day",
-  "leave",
-  "holiday",
-] as const;
-export type AttendanceStatus = (typeof attendanceStatuses)[number];

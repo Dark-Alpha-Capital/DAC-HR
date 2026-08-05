@@ -58,9 +58,9 @@ export default function BundleRoundsOverview({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm">Interview Rounds</CardTitle>
+        <CardTitle className="text-sm">Interview Parts</CardTitle>
         <CardDescription className="text-xs">
-          {rounds.length} round{rounds.length !== 1 ? "s" : ""} in this
+          {rounds.length} part{rounds.length !== 1 ? "s" : ""} in this
           interview
           {modeSummary ? ` · ${modeSummary}` : null}
         </CardDescription>
@@ -81,7 +81,7 @@ export default function BundleRoundsOverview({
             >
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">
-                  Round {round.roundOrder}
+                  Part {round.roundOrder}
                 </p>
                 <p className="font-medium leading-snug">{round.roundName}</p>
               </div>

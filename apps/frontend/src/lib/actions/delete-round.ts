@@ -5,7 +5,7 @@ import { roundTemplate } from "@workspace/db/schema";
 
 import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import { getRoundById } from "@workspace/db/queries";
+import { getRoundById } from "@workspace/db/modules/positions";
 
 export const deleteRound = createServerFn({ method: "POST" })
   .middleware([serverFnAuthGuard])

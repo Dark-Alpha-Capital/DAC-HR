@@ -4,7 +4,7 @@ import { db } from "@workspace/db/db";
 import { questionBank } from "@workspace/db/schema";
 import { inArray } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import { getQuestionById } from "@workspace/db/queries";
+import { getQuestionById } from "@workspace/db/modules/positions";
 
 export const bulkDeleteQuestions = createServerFn({ method: "POST" })
   .middleware([serverFnAuthGuard])

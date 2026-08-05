@@ -71,7 +71,7 @@ export default defineConfig({
     environmentAlias(),
     cloudflare({
       viteEnvironment: { name: "ssr" },
-      remoteBindings: true,
+      remoteBindings: false,
       configPath: "./wrangler.jsonc",
     }),
     tailwindcss(),

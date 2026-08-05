@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createRealtimeEphemeralSession, openAIKeyFingerprint } from "@workspace/ai-config";
 import { getServerOpenAIApiKey } from "~/lib/server/openai-api-key";
-import { getQuestionsForInterviewSession } from "@workspace/db/queries";
+import { getQuestionsForInterviewSession } from "@workspace/db/modules/positions";
 import {
   updateSessionStatus,
 } from "@workspace/db/repositories/interview-session-repository";

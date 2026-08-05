@@ -18,6 +18,7 @@ export const Route = createFileRoute("/api/screeners")({
               screeners: screeners.map((s) => ({
                 id: s.id,
                 name: s.name,
+                positionId: s.positionId,
               })),
             },
             { status: 200 },

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
-import { getPositions, getWeeklyCheckins } from "@workspace/db/queries";
+import { getPositions } from "@workspace/db/modules/positions";
+import { getWeeklyCheckins } from "@workspace/db/modules/dashboard";
 import { hasWeeklyCheckinViewerAccess } from "~/lib/config/weekly-checkin-access";
 
 export const loadWeeklyCheckinForm = createServerFn({ method: "GET" })

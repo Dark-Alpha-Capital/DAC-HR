@@ -1,21 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getSession } from "~/lib/get-session";
-import {
-  getApplicationById,
-  saveInterviewAiAnalysis,
-  getInterviewAiAnalysesByBundleId,
-} from "@workspace/db/queries";
+import { getInterviewAiAnalysesByBundleId } from "@workspace/db/repositories/interview-repository";
 import { deleteInterviewAiAnalysisForBundle } from "@workspace/db/repositories/interview-repository";
-import {
-  getBundleById,
-  getBundleRounds,
-} from "@workspace/db/repositories/interview-bundle-repository";
-import { getScreenerById } from "@workspace/db/repositories/screener-repository";
-import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
-import { getAiModel } from "~/lib/ai/models";
-import { generateText, Output } from "ai";
-import { interviewAiAnalysisSchema } from "~/lib/schemas/interview-ai-analysis-schema";
-import { buildBundleInterviewAnalysisPrompt } from "~/lib/interview-analysis-prompt";
+import { runBundleAiAnalysisWithScreener } from "~/lib/interview/run-bundle-ai-analysis";
 
 export const Route = createFileRoute(
   "/api/interview-bundle/$bundleId/ai-analysis",
@@ -77,77 +64,21 @@ export const Route = createFileRoute(
             );
           }
 
-          const screener = await getScreenerById(screenerId);
-          if (!screener) {
-            return Response.json(
-              { error: "Screener not found" },
-              { status: 404 },
-            );
-          }
-
-          const bundle = await getBundleById(bundleId);
-          if (!bundle) {
-            return Response.json({ error: "Bundle not found" }, { status: 404 });
-          }
-
-          const rounds = await getBundleRounds(bundleId);
-          if (rounds.length === 0) {
-            return Response.json(
-              { error: "Bundle has no rounds configured" },
-              { status: 400 },
-            );
-          }
-
-          const application = await getApplicationById(bundle.applicationId);
-          if (!application) {
-            return Response.json(
-              { error: "Application not found" },
-              { status: 404 },
-            );
-          }
-
-          const candidate = await getCandidateById(application.candidateId);
-          const anchorInterviewId = rounds[0]!.bundleRound.interviewId;
-
-          const prompt = await buildBundleInterviewAnalysisPrompt({
-            screener,
+          const result = await runBundleAiAnalysisWithScreener({
             bundleId,
-            roundCount: rounds.length,
-            application: {
-              position: application.position,
-              candidate: candidate
-                ? {
-                    firstName: candidate.firstName,
-                    lastName: candidate.lastName,
-                  }
-                : null,
-            },
+            screenerId,
             customPrompt,
           });
 
-          const { output: structuredData } = await generateText({
-            model: getAiModel("gpt-4o-mini"),
-            output: Output.object({ schema: interviewAiAnalysisSchema }),
-            prompt,
-          });
-
-          const savedAnalysis = await saveInterviewAiAnalysis({
-            interviewId: anchorInterviewId,
-            bundleId,
-            applicationId: application.id,
-            positionId: application.position.id,
-            screenerId: screener.id,
-            analysis: structuredData.overallSummary,
-            customPrompt: customPrompt || null,
-            model: "gpt-4o-mini",
-            structuredData,
-          });
+          if (result.error) {
+            return Response.json({ error: result.error }, { status: 400 });
+          }
 
           return Response.json(
             {
-              analysis: structuredData,
-              analysisId: savedAnalysis?.id || null,
-              screenerName: screener.name,
+              analysis: result.analysis,
+              analysisId: result.analysisId,
+              screenerName: result.screenerName,
             },
             { status: 200 },
           );

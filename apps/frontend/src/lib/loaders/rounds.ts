@@ -8,7 +8,7 @@ import {
   getRoundById,
   getRoundsByPositionId,
   getRoundsWithPositions,
-} from "@workspace/db/queries";
+} from "@workspace/db/modules/positions";
 
 type RoundsIndexInput = {
   type?: string[];

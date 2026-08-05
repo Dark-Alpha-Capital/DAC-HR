@@ -11,12 +11,25 @@ import {
   FieldLabel,
 } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { MarkdownEditor } from "~/components/markdown-editor";
 import { screenerFormSchema } from "~/lib/schemas/screener-form-schema";
 import { createScreenerAction } from "~/lib/actions/create-screener";
 
-export default function ScreenerUploadForm() {
+interface ScreenerUploadFormProps {
+  positions: Array<{ id: string; name: string }>;
+}
+
+export default function ScreenerUploadForm({
+  positions,
+}: ScreenerUploadFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -24,6 +37,7 @@ export default function ScreenerUploadForm() {
     defaultValues: {
       name: "",
       content: "",
+      positionId: "",
     },
     validators: {
       onSubmit: screenerFormSchema,
@@ -58,6 +72,36 @@ export default function ScreenerUploadForm() {
       className="max-w-4xl space-y-6"
     >
       <FieldGroup>
+        <form.Field
+          name="positionId"
+          children={(field) => (
+            <Field>
+              <FieldLabel htmlFor="screener-position">Position</FieldLabel>
+              <FieldDescription>
+                Attach this screener to a specific position. A position can have
+                only one screener, and it is used automatically when that
+                position&apos;s interview completes.
+              </FieldDescription>
+              <Select
+                value={field.state.value}
+                onValueChange={(value) => field.handleChange(value)}
+              >
+                <SelectTrigger id="screener-position">
+                  <SelectValue placeholder="Select a position" />
+                </SelectTrigger>
+                <SelectContent>
+                  {positions.map((position) => (
+                    <SelectItem key={position.id} value={position.id}>
+                      {position.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FieldError errors={field.state.meta.errors} />
+            </Field>
+          )}
+        />
+
         <form.Field
           name="name"
           children={(field) => (

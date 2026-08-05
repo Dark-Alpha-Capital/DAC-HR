@@ -12,10 +12,6 @@ import {
   Folders,
   Building2,
   Sparkles,
-  Route,
-  UserCheck,
-  Search,
-  MessageSquare,
   RefreshCcw,
 } from "lucide-react";
 
@@ -85,28 +81,6 @@ export const docsNavItems: NavItem[] = [
         title: "What's New",
         href: "/docs/whats-new",
         icon: RefreshCcw,
-      },
-    ],
-  },
-  {
-    title: "Workflows",
-    href: "/docs/workflows",
-    icon: Route,
-    items: [
-      {
-        title: "Hiring Workflow",
-        href: "/docs/workflows/hiring",
-        icon: UserCheck,
-      },
-      {
-        title: "Screening Workflow",
-        href: "/docs/workflows/screening",
-        icon: Search,
-      },
-      {
-        title: "Interview Workflow",
-        href: "/docs/workflows/interviews",
-        icon: MessageSquare,
       },
     ],
   },

@@ -1,6 +1,5 @@
 import {
   keepPreviousData,
-  queryOptions,
   useQuery,
   type UseQueryResult,
 } from "@tanstack/react-query";
@@ -23,6 +22,7 @@ import {
   toStringArray,
 } from "~/lib/parse-search";
 import { queryKeys } from "~/lib/query/query-keys";
+import { defineEntityQueries } from "~/lib/query/options";
 
 function parseCandidatesSearch(search: Record<string, unknown>) {
   return {
@@ -42,14 +42,12 @@ function parseCandidatesSearch(search: Record<string, unknown>) {
 
 type CandidatesIndexSearch = ReturnType<typeof parseCandidatesSearch>;
 
-function candidatesIndexQueryOptions(deps: CandidatesIndexSearch) {
-  return queryOptions({
-    queryKey: queryKeys.candidates.list(deps),
-    queryFn: async (): Promise<CandidatesIndexData> =>
-      loadCandidatesIndex({ data: deps }),
-    placeholderData: keepPreviousData,
-  });
-}
+const candidatesIndexQueries = defineEntityQueries(
+  queryKeys.candidates.list,
+  (deps: CandidatesIndexSearch): Promise<CandidatesIndexData> =>
+    loadCandidatesIndex({ data: deps }),
+  { placeholderData: keepPreviousData },
+);
 
 export const Route = createFileRoute("/_main/candidates/")({
   head: () => ({
@@ -60,7 +58,7 @@ export const Route = createFileRoute("/_main/candidates/")({
     const search = parseCandidatesSearch(
       location.search as Record<string, unknown>,
     );
-    await queryClient.ensureQueryData(candidatesIndexQueryOptions(search));
+    await queryClient.ensureQueryData(candidatesIndexQueries.options(search));
   },
   component: CandidatesPage,
 });
@@ -70,7 +68,7 @@ function CandidatesPage() {
   const navigate = Route.useNavigate();
 
   const { data, isLoading, isFetching }: UseQueryResult<CandidatesIndexData> =
-    useQuery(candidatesIndexQueryOptions(search));
+    useQuery(candidatesIndexQueries.options(search));
 
   const setViewMode = (view: CandidateViewMode) => {
     void navigate({

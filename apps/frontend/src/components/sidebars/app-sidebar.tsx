@@ -12,6 +12,7 @@ import {
   ShieldCheckIcon,
   ScanSearch,
   CalendarCheck,
+  Video,
   ChevronDown,
   type LucideIcon,
 } from "lucide-react";
@@ -46,6 +47,7 @@ type NavLink = {
 type NavSectionId =
   | "recruiting"
   | "configuration"
+  | "tutorial"
   | "people-ops"
   | "admin";
 
@@ -55,7 +57,10 @@ const recruitingLinks: readonly NavLink[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/candidates", label: "Candidates", icon: Users },
   { href: "/documents", label: "Documents", icon: Folders },
-  { href: "/docs", label: "Documentation", icon: BookOpen },
+];
+
+const tutorialLinks: readonly NavLink[] = [
+  { href: "/docs", label: "Tutorial", icon: BookOpen },
 ];
 
 const peopleOpsLinks: readonly NavLink[] = [
@@ -67,7 +72,13 @@ const peopleOpsLinks: readonly NavLink[] = [
   },
   {
     href: "/employees/attendance",
-    label: "Attendance",
+    label: "Meetings",
+    icon: Video,
+    withEmptySearch: true,
+  },
+  {
+    href: "/employees/attendance/meeting-attendance",
+    label: "Meeting Attendance",
     icon: CalendarCheck,
     withEmptySearch: true,
   },
@@ -80,6 +91,7 @@ const configurationLinks: readonly NavLink[] = [
 ];
 
 const adminLinks: readonly NavLink[] = [
+  ...peopleOpsLinks,
   { href: "/admin", label: "Admin", icon: Shield, withEmptySearch: true },
   {
     href: "/admin/audit-logs",
@@ -102,14 +114,9 @@ function readOpenSections(): Partial<Record<NavSectionId, boolean>> {
   }
 }
 
-function writeOpenSections(
-  sections: Partial<Record<NavSectionId, boolean>>,
-) {
+function writeOpenSections(sections: Partial<Record<NavSectionId, boolean>>) {
   try {
-    sessionStorage.setItem(
-      OPEN_SECTIONS_STORAGE_KEY,
-      JSON.stringify(sections),
-    );
+    sessionStorage.setItem(OPEN_SECTIONS_STORAGE_KEY, JSON.stringify(sections));
   } catch {
     // Ignore quota / private-mode failures.
   }
@@ -250,16 +257,14 @@ export function AppSidebar({ session }: { session: AppSession }) {
           open={openSections.configuration ?? false}
           onOpenChange={(open) => setSectionOpen("configuration", open)}
         />
-        {isAdmin ? (
-          <NavGroup
-            id="people-ops"
-            label="People Ops"
-            links={peopleOpsLinks}
-            isActive={isActive}
-            open={openSections["people-ops"] ?? false}
-            onOpenChange={(open) => setSectionOpen("people-ops", open)}
-          />
-        ) : null}
+        <NavGroup
+          id="tutorial"
+          label="Tutorial"
+          links={tutorialLinks}
+          isActive={isActive}
+          open={openSections.tutorial ?? false}
+          onOpenChange={(open) => setSectionOpen("tutorial", open)}
+        />
         {isAdmin ? (
           <NavGroup
             id="admin"

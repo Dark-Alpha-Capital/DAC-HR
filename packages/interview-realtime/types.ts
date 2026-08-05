@@ -82,5 +82,7 @@ export type DoToClientMessage =
   | { type: "ANSWER_SAVED"; questionId: string; transcript: string }
   | { type: "INTERVIEW_COMPLETED" }
   | { type: "PRACTICE_ENDED" }
+  | { type: "SESSION_TIME_LIMIT" }
+  | { type: "QUESTION_TIMED_OUT"; questionId: string }
   | { type: "ERROR"; message: string }
   | { type: "PONG" };

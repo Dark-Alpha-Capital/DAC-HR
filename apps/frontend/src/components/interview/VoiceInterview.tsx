@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Bot, Loader2, Mic, PhoneOff } from "lucide-react";
+import { Bot, Loader2, Mic, PhoneOff, Timer } from "lucide-react";
 import { cn } from "~/lib/utils";
 import type { VoiceInterviewState } from "~/hooks/useVoiceInterview";
 import { logInterview } from "~/lib/interview-debug-log";
@@ -31,6 +31,12 @@ function formatClockTime(date: Date) {
   return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
+function formatCountdown(seconds: number) {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${String(secs).padStart(2, "0")}`;
+}
+
 export default function VoiceInterview({
   candidateName,
   positionName,
@@ -44,6 +50,7 @@ export default function VoiceInterview({
   const transcriptRef = useRef<HTMLDivElement>(null);
   const [elapsed, setElapsed] = useState(0);
   const [clock, setClock] = useState(() => formatClockTime(new Date()));
+  const [countdown, setCountdown] = useState(0);
 
   const isActive =
     state.status === "active" ||
@@ -65,6 +72,31 @@ export default function VoiceInterview({
   const isMcq =
     activeQuestion?.questionType === "mcq" &&
     Boolean(activeQuestion.options?.length);
+
+  const questionLimitSeconds =
+    activeQuestion?.timeLimitSeconds ?? 180;
+
+  useEffect(() => {
+    setCountdown(questionLimitSeconds);
+  }, [state.currentQuestionIndex, activeQuestion?.id, questionLimitSeconds]);
+
+  useEffect(() => {
+    if (state.status !== "active" || countdown <= 0 || !activeQuestion) {
+      return;
+    }
+    const id = window.setTimeout(() => {
+      setCountdown((current) => Math.max(0, current - 1));
+    }, 1000);
+    return () => window.clearTimeout(id);
+  }, [state.status, countdown, activeQuestion]);
+
+  const progress =
+    questionCount > 0
+      ? Math.min(
+          100,
+          ((state.currentQuestionIndex + 1) / questionCount) * 100,
+        )
+      : 0;
 
   useEffect(() => {
     const video = videoRef.current;
@@ -137,6 +169,47 @@ export default function VoiceInterview({
 
   return (
     <div className="flex h-svh flex-col bg-[#202124] text-white">
+      {/* Sticky session progress bar */}
+      <div className="shrink-0 border-b border-white/10 bg-[#292929] px-4 py-2 sm:px-6">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-3 text-xs text-[#9aa0a6]">
+            <span className="truncate">{sessionTitle}</span>
+            {questionCount > 0 ? (
+              <span className="shrink-0 text-[#e8eaed]">
+                Q {state.currentQuestionIndex + 1} / {questionCount}
+              </span>
+            ) : null}
+          </div>
+          <div className="flex shrink-0 items-center gap-3 text-xs">
+            {activeQuestion ? (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium",
+                  countdown <= 30
+                    ? "bg-red-500/20 text-red-400"
+                    : "bg-[#3c4043] text-[#e8eaed]",
+                )}
+              >
+                <Timer className="size-3.5" />
+                {formatCountdown(countdown)}
+              </span>
+            ) : null}
+            <span className="text-[#9aa0a6]">{formatElapsed(elapsed)}</span>
+          </div>
+        </div>
+        <div className="mt-2 h-0.5 w-full rounded-full bg-white/10">
+          <div
+            className="h-full rounded-full bg-[#8ab4f8] transition-all duration-500"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        {state.timeLimitReached ? (
+          <p className="mt-2 text-xs text-amber-300">
+            You&apos;ve reached the time limit. The interview will end shortly.
+          </p>
+        ) : null}
+      </div>
+
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
         {/* Main video area */}
         <div className="relative flex min-h-[45vh] flex-1 flex-col lg:min-h-0">

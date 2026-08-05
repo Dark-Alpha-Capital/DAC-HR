@@ -5,7 +5,7 @@ import {
   getQuestionById,
   getQuestionsWithRounds,
   getRounds,
-} from "@workspace/db/queries";
+} from "@workspace/db/modules/positions";
 
 type QuestionsIndexInput = {
   search?: string;

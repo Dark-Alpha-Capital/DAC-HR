@@ -1,8 +1,9 @@
-import React, { useTransition } from "react";
+import React from "react";
 import { Button } from "~/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
 import { deletePosition } from "~/lib/actions/delete-position";
-import { toast } from "sonner";
+import { useServerMutation } from "~/hooks/use-server-mutation";
+import { queryKeys } from "~/lib/query/query-keys";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,20 +22,14 @@ import {
 } from "~/components/ui/tooltip";
 
 const DeletePositionButton = ({ positionId }: { positionId: string }) => {
-  const [isPending, startTransition] = useTransition();
+  const mutation = useServerMutation(deletePosition, {
+    successMessage: "Position deleted successfully",
+    invalidate: [queryKeys.positions.all],
+  });
+  const isPending = mutation.isPending;
 
   const handleDelete = () => {
-    startTransition(async () => {
-      const response = await deletePosition({ data: positionId });
-
-      if (response?.error) {
-        toast.error(response.error);
-      }
-
-      if (response?.success) {
-        toast.success("Position deleted successfully");
-      }
-    });
+    mutation.mutate({ data: positionId });
   };
 
   return (

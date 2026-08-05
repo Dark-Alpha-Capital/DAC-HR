@@ -10,22 +10,38 @@ import {
   FieldLabel,
 } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { MarkdownEditor } from "~/components/markdown-editor";
-import { screenerFormSchema } from "~/lib/schemas/screener-form-schema";
+import { screenerEditSchema } from "~/lib/schemas/screener-form-schema";
 import { updateScreenerAction } from "~/lib/actions/update-screener";
 import type { Screener } from "@workspace/db/schema";
 
-export default function ScreenerEditForm({ screener }: { screener: Screener }) {
+interface ScreenerEditFormProps {
+  screener: Screener & { position?: { id: string; name: string } | null };
+  positions: Array<{ id: string; name: string }>;
+}
+
+export default function ScreenerEditForm({
+  screener,
+  positions,
+}: ScreenerEditFormProps) {
   const [isPending, startTransition] = useTransition();
 
   const form = useForm({
     defaultValues: {
       name: screener.name,
       content: screener.content,
+      positionId: screener.positionId ?? "",
     },
     validators: {
-      onSubmit: screenerFormSchema,
+      onSubmit: screenerEditSchema,
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
@@ -54,6 +70,36 @@ export default function ScreenerEditForm({ screener }: { screener: Screener }) {
       className="max-w-4xl space-y-6"
     >
       <FieldGroup>
+        <form.Field
+          name="positionId"
+          children={(field) => (
+            <Field>
+              <FieldLabel htmlFor="screener-position">Position</FieldLabel>
+              <FieldDescription>
+                Attach this screener to a specific position. A position can have
+                only one screener, and it is used automatically when that
+                position&apos;s interview completes.
+              </FieldDescription>
+              <Select
+                value={field.state.value}
+                onValueChange={(value) => field.handleChange(value)}
+              >
+                <SelectTrigger id="screener-position">
+                  <SelectValue placeholder="No position (manual selection only)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {positions.map((position) => (
+                    <SelectItem key={position.id} value={position.id}>
+                      {position.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FieldError errors={field.state.meta.errors} />
+            </Field>
+          )}
+        />
+
         <form.Field
           name="name"
           children={(field) => (

@@ -2,19 +2,28 @@ import { FormPageSkeleton } from "~/components/route-skeletons/form-page-skeleto
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
 import ScreenerEditForm from "~/components/forms/screener-edit-form";
-import { loadScreenerEdit } from "~/lib/loaders/screeners";
+import {
+  loadScreenerEdit,
+  loadScreenerFormOptions,
+} from "~/lib/loaders/screeners";
 
 export const Route = createFileRoute("/_main/screeners/$id/edit")({
   head: () => ({
     meta: [{ title: "Edit Screener" }],
   }),
-  loader: async ({ params }) => loadScreenerEdit({ data: params.id }),
+  loader: async ({ params }) => {
+    const [screenerData, options] = await Promise.all([
+      loadScreenerEdit({ data: params.id }),
+      loadScreenerFormOptions(),
+    ]);
+    return { ...screenerData, ...options };
+  },
   component: EditScreenerPage,
   pendingComponent: () => <FormPageSkeleton />,
 });
 
 function EditScreenerPage() {
-  const { screener } = Route.useLoaderData();
+  const { screener, positions } = Route.useLoaderData();
 
   if (!screener) {
     return (
@@ -36,7 +45,7 @@ function EditScreenerPage() {
         <h1 className="text-2xl font-semibold tracking-tight">Edit Screener</h1>
         <p className="text-muted-foreground mt-1">{screener.name}</p>
       </div>
-      <ScreenerEditForm screener={screener} />
+      <ScreenerEditForm screener={screener} positions={positions} />
     </div>
   );
 }

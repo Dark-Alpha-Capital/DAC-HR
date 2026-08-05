@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
-import { getInterviewAiAnalysesByBundleId } from "@workspace/db/queries";
+import { getInterviewAiAnalysesByBundleId } from "@workspace/db/repositories/interview-repository";
 import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
 import { getInterviewById, getApplicationWithInterviews } from "@workspace/db/repositories/interview-repository";
 import {

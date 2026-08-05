@@ -1,17 +1,39 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
+import { env } from "cloudflare:workers";
 import {
   updateSessionStatus,
   updateSessionVoiceMetadata,
 } from "@workspace/db/repositories/interview-session-repository";
 import { advanceBundleRound } from "@workspace/db/repositories/interview-bundle-repository";
 import { resolveInterviewToken } from "~/lib/interview-token";
+import { autoRunBundleAiAnalysis } from "~/lib/interview/run-bundle-ai-analysis";
 import {
   interviewServerLog,
   truncateId,
 } from "@workspace/interview-realtime/debug-log";
 
 const COMPONENT = "complete-api";
+
+function triggerEvaluationWorkflow(sessionId: string) {
+  const workflow = (env as Record<string, unknown>)
+    .INTERVIEW_EVALUATION_WORKFLOW as
+    | { create: (input: { params: Record<string, unknown> }) => Promise<unknown> }
+    | undefined;
+
+  if (!workflow) {
+    return;
+  }
+
+  workflow
+    .create({ params: { sessionId } })
+    .catch((error) =>
+      interviewServerLog.error("api", COMPONENT, "evaluation_workflow_create_failed", {
+        sessionId: truncateId(sessionId),
+        error: error instanceof Error ? error.message : String(error),
+      }),
+    );
+}
 
 const completeSchema = z.object({
   tabSwitches: z.number().int().min(0).default(0),
@@ -61,6 +83,7 @@ export const Route = createFileRoute("/api/interview-token/$token/complete")({
             interviewServerLog.info("api", COMPONENT, "already_completed", {
               sessionId: truncateId(session.id),
             });
+            triggerEvaluationWorkflow(session.id);
             return Response.json({
               session,
               hasMoreRounds:
@@ -100,6 +123,22 @@ export const Route = createFileRoute("/api/interview-token/$token/complete")({
               tabSwitches: parsed.data.tabSwitches,
             });
           }
+
+          if (
+            resolved.type === "bundle" &&
+            advanceResult?.allCompleted &&
+            session.bundleId
+          ) {
+            const autoResult = await autoRunBundleAiAnalysis(session.bundleId);
+            interviewServerLog.info(
+              "api",
+              COMPONENT,
+              "auto_ai_analysis",
+              autoResult,
+            );
+          }
+
+          triggerEvaluationWorkflow(session.id);
 
           const hasMoreRounds =
             resolved.type === "bundle" &&

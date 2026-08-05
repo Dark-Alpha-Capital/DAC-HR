@@ -1,25 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { VoiceInterviewPhase } from "@workspace/interview-realtime/types";
+import type {
+  InterviewQuestion,
+  VoiceInterviewPhase,
+} from "@workspace/interview-realtime/types";
+import { parseDoMessage, sendDoMessage } from "@workspace/interview-realtime/events";
 import { formatRealtimeCallsError } from "@workspace/ai-config";
 import type { CheatingEventType } from "@workspace/db/enums";
 import { useCheatingPrevention } from "./useCheatingPrevention";
 import { logInterview, truncateId } from "~/lib/interview-debug-log";
-
-export interface VoiceQuestion {
-  id: string;
-  questionText: string;
-  questionType: string;
-  category: string | null;
-  timeLimitSeconds?: number | null;
-  options?: Array<{ id: string; text: string }> | null;
-}
 
 interface StartVoiceResponse {
   clientSecret: string;
   sessionId: string;
   wsUrl: string;
   model: string;
-  questions: VoiceQuestion[];
+  questions: InterviewQuestion[];
   isPractice?: boolean;
 }
 
@@ -29,13 +24,14 @@ export interface VoiceInterviewState {
   isPractice: boolean;
   currentQuestionIndex: number;
   voicePhase: VoiceInterviewPhase;
-  questions: VoiceQuestion[];
-  displayQuestion: VoiceQuestion | null;
+  questions: InterviewQuestion[];
+  displayQuestion: InterviewQuestion | null;
   transcripts: Array<{ role: "user" | "assistant"; text: string }>;
   liveUserTranscript: string;
   liveAssistantTranscript: string;
   allQuestionsAsked: boolean;
   introActive: boolean;
+  timeLimitReached?: boolean;
   error?: string;
 }
 
@@ -60,20 +56,6 @@ function mapConversationHistory(
     role: entry.role,
     text: entry.content,
   }));
-}
-
-function parseWsMessageData(
-  data: unknown,
-): Record<string, unknown> | null {
-  try {
-    return JSON.parse(String(data)) as Record<string, unknown>;
-  } catch (error) {
-    logInterview.error("voice", "ws_message_parse_failed", {
-      dataPreview: previewTranscriptText(String(data), 80),
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return null;
-  }
 }
 
 async function parseStartVoiceResponse(
@@ -101,10 +83,10 @@ async function parseStartVoiceResponse(
 }
 
 function resolveQuestionForIndex(
-  questions: VoiceQuestion[],
+  questions: InterviewQuestion[],
   index: number,
-  fallback?: VoiceQuestion | null,
-): VoiceQuestion | null {
+  fallback?: InterviewQuestion | null,
+): InterviewQuestion | null {
   return questions[index] ?? fallback ?? null;
 }
 
@@ -115,9 +97,9 @@ function isQuestionPhase(phase: VoiceInterviewPhase) {
 }
 
 function mergeQuestion(
-  questions: VoiceQuestion[],
-  question: VoiceQuestion,
-): VoiceQuestion[] {
+  questions: InterviewQuestion[],
+  question: InterviewQuestion,
+): InterviewQuestion[] {
   const existingIndex = questions.findIndex((item) => item.id === question.id);
   if (existingIndex >= 0) {
     const next = [...questions];
@@ -320,10 +302,10 @@ export function useVoiceInterview(token: string) {
   const sendToDO = useCallback(
     (eventType: CheatingEventType, metadata?: Record<string, unknown>) => {
       const ws = wsRef.current;
-      if (!ws || ws.readyState !== WebSocket.OPEN) {
+      if (!ws) {
         return;
       }
-      ws.send(JSON.stringify({ type: "CHEATING_EVENT", eventType, metadata }));
+      sendDoMessage(ws, { type: "CHEATING_EVENT", eventType, metadata });
     },
     [],
   );
@@ -440,7 +422,7 @@ export function useVoiceInterview(token: string) {
           window.setTimeout(resolve, 12000);
         });
 
-        ws.send(JSON.stringify({ type: "END_INTERVIEW" }));
+        sendDoMessage(ws, { type: "END_INTERVIEW" });
         await completedPromise;
       }
 
@@ -481,182 +463,171 @@ export function useVoiceInterview(token: string) {
 
   const handleWsMessage = useCallback(
     (event: MessageEvent) => {
-      const message = parseWsMessageData(event.data);
+      const message = parseDoMessage(event.data);
       if (!message) {
         return;
       }
-      const type = typeof message.type === "string" ? message.type : "";
 
-      if (
-        type === "CONNECTED" ||
-        type === "INTRO_STARTED" ||
-        type === "QUESTION_CHANGED" ||
-        type === "ALL_QUESTIONS_ASKED" ||
-        type === "INTERVIEW_COMPLETED" ||
-        type === "PRACTICE_ENDED" ||
-        type === "ERROR"
-      ) {
+      if (message.type !== "PONG") {
         logInterview.info("ws", "ws_message", {
-          type,
-          role: message.role,
-          questionIndex: message.index,
+          type: message.type,
+          role: "role" in message ? message.role : undefined,
+          questionIndex: "index" in message ? message.index : undefined,
           textPreview:
-            typeof message.text === "string"
+            "text" in message
               ? previewTranscriptText(message.text, 80)
               : undefined,
         });
       }
 
-      if (type === "CONNECTED") {
-        const connectedState = message.state as
-          | {
-              currentQuestionIndex?: number;
-              voicePhase?: VoiceInterviewPhase;
-              questions?: VoiceQuestion[];
-              conversationHistory?: Array<{
-                role: "user" | "assistant";
-                content: string;
-              }>;
-            }
-          | undefined;
+      switch (message.type) {
+        case "CONNECTED": {
+          const { currentQuestionIndex, voicePhase, questions, conversationHistory } =
+            message.state;
+          const index = currentQuestionIndex ?? 0;
+          const phase = voicePhase ?? "intro";
+          const incomingQuestions = questions?.length ? questions : undefined;
+          const transcripts = mapConversationHistory(conversationHistory);
 
-        const index = connectedState?.currentQuestionIndex ?? 0;
-        const voicePhase = connectedState?.voicePhase ?? "intro";
-        const questions = connectedState?.questions?.length
-          ? connectedState.questions
-          : undefined;
-        const transcripts = mapConversationHistory(
-          connectedState?.conversationHistory,
-        );
+          setState((current) => {
+            const mergedQuestions = incomingQuestions ?? current.questions;
+            const displayQuestion = isQuestionPhase(phase)
+              ? resolveQuestionForIndex(mergedQuestions, index)
+              : null;
 
-        setState((current) => {
-          const mergedQuestions = questions ?? current.questions;
-          const displayQuestion = isQuestionPhase(voicePhase)
-            ? resolveQuestionForIndex(mergedQuestions, index)
-            : null;
-
-          return {
-            ...current,
-            status: "active",
-            currentQuestionIndex: index,
-            voicePhase,
-            introActive: voicePhase === "intro" || voicePhase === "awaiting_ready",
-            questions: mergedQuestions,
-            displayQuestion,
-            transcripts,
-            liveUserTranscript: "",
-            liveAssistantTranscript: "",
-          };
-        });
-        liveTranscriptBuffersRef.current = { user: "", assistant: "" };
-      }
-
-      if (type === "INTRO_STARTED") {
-        setState((current) => ({
-          ...current,
-          voicePhase: "intro",
-          introActive: true,
-          displayQuestion: null,
-        }));
-      }
-
-      if (type === "QUESTION_CHANGED" && typeof message.index === "number") {
-        const question = message.question as VoiceQuestion | undefined;
-        const index = message.index as number;
-
-        setState((current) => {
-          const mergedQuestions = question
-            ? mergeQuestion(current.questions, question)
-            : current.questions;
-          const resolvedQuestion = resolveQuestionForIndex(
-            mergedQuestions,
-            index,
-            question ?? current.displayQuestion,
-          );
-
-          return {
-            ...current,
-            voicePhase: current.allQuestionsAsked ? current.voicePhase : "questions",
-            introActive: false,
-            currentQuestionIndex: index,
-            displayQuestion: resolvedQuestion,
-            questions: mergedQuestions,
-          };
-        });
-      }
-
-      if (type === "ALL_QUESTIONS_ASKED") {
-        setState((current) => ({
-          ...current,
-          voicePhase: "awaiting_end",
-          allQuestionsAsked: true,
-          introActive: false,
-        }));
-      }
-
-      if (
-        type === "TRANSCRIPT_DELTA" &&
-        (message.role === "user" || message.role === "assistant") &&
-        typeof message.delta === "string"
-      ) {
-        const role = message.role as "user" | "assistant";
-        liveTranscriptBuffersRef.current[role] += message.delta;
-        return;
-      }
-
-      if (
-        type === "TRANSCRIPT" &&
-        (message.role === "user" || message.role === "assistant") &&
-        typeof message.text === "string"
-      ) {
-        const role = message.role as "user" | "assistant";
-        liveTranscriptBuffersRef.current[role] = "";
-
-        setState((current) => {
-          const nextTranscripts = [
-            ...current.transcripts,
-            { role, text: message.text as string },
-          ];
-          logInterview.info("voice", "transcript_committed", {
-            role,
-            textPreview: previewTranscriptText(message.text as string),
-            transcriptCount: nextTranscripts.length,
+            return {
+              ...current,
+              status: "active",
+              currentQuestionIndex: index,
+              voicePhase: phase,
+              introActive: phase === "intro" || phase === "awaiting_ready",
+              questions: mergedQuestions,
+              displayQuestion,
+              transcripts,
+              liveUserTranscript: "",
+              liveAssistantTranscript: "",
+            };
           });
-          return {
+          liveTranscriptBuffersRef.current = { user: "", assistant: "" };
+          break;
+        }
+
+        case "INTRO_STARTED":
+          setState((current) => ({
             ...current,
-            liveUserTranscript: role === "user" ? "" : current.liveUserTranscript,
-            liveAssistantTranscript:
-              role === "assistant" ? "" : current.liveAssistantTranscript,
-            transcripts: nextTranscripts,
-          };
-        });
-        return;
-      }
+            voicePhase: "intro",
+            introActive: true,
+            displayQuestion: null,
+          }));
+          break;
 
-      if (type === "INTERVIEW_COMPLETED") {
-        endInterviewResolveRef.current?.();
-        setState((current) => ({ ...current, status: "completed" }));
-      }
+        case "QUESTION_CHANGED": {
+          const { index, question } = message;
+          setState((current) => {
+            const mergedQuestions = question
+              ? mergeQuestion(current.questions, question)
+              : current.questions;
+            const resolvedQuestion = resolveQuestionForIndex(
+              mergedQuestions,
+              index,
+              question ?? current.displayQuestion,
+            );
 
-      if (type === "PRACTICE_ENDED") {
-        practiceEndResolveRef.current?.();
-        setState((current) => ({
-          ...current,
-          status: "idle",
-          isPractice: false,
-        }));
-        isPracticeRef.current = false;
-      }
+            return {
+              ...current,
+              voicePhase: current.allQuestionsAsked ? current.voicePhase : "questions",
+              introActive: false,
+              currentQuestionIndex: index,
+              displayQuestion: resolvedQuestion,
+              questions: mergedQuestions,
+            };
+          });
+          break;
+        }
 
-      if (type === "ERROR" && typeof message.message === "string") {
-        logInterview.error("ws", "ws_error_message", {
-          message: message.message,
-        });
-        setState((current) => ({
-          ...current,
-          status: "error",
-          error: message.message as string,
-        }));
+        case "ALL_QUESTIONS_ASKED":
+          setState((current) => ({
+            ...current,
+            voicePhase: "awaiting_end",
+            allQuestionsAsked: true,
+            introActive: false,
+          }));
+          break;
+
+        case "TRANSCRIPT_DELTA":
+          liveTranscriptBuffersRef.current[message.role] += message.delta;
+          break;
+
+        case "TRANSCRIPT": {
+          const role = message.role;
+          liveTranscriptBuffersRef.current[role] = "";
+
+          setState((current) => {
+            const nextTranscripts = [
+              ...current.transcripts,
+              { role, text: message.text },
+            ];
+            logInterview.info("voice", "transcript_committed", {
+              role,
+              textPreview: previewTranscriptText(message.text),
+              transcriptCount: nextTranscripts.length,
+            });
+            return {
+              ...current,
+              liveUserTranscript: role === "user" ? "" : current.liveUserTranscript,
+              liveAssistantTranscript:
+                role === "assistant" ? "" : current.liveAssistantTranscript,
+              transcripts: nextTranscripts,
+            };
+          });
+          break;
+        }
+
+        case "ANSWER_SAVED":
+          logInterview.info("voice", "answer_saved", {
+            questionId: message.questionId,
+          });
+          break;
+
+        case "INTERVIEW_COMPLETED":
+          endInterviewResolveRef.current?.();
+          setState((current) => ({ ...current, status: "completed" }));
+          break;
+
+        case "SESSION_TIME_LIMIT":
+          logInterview.info("voice", "session_time_limit_reached", {});
+          setState((current) => ({ ...current, timeLimitReached: true }));
+          break;
+
+        case "QUESTION_TIMED_OUT":
+          logInterview.info("voice", "question_timed_out", {
+            questionId: message.questionId,
+          });
+          break;
+
+        case "PRACTICE_ENDED":
+          practiceEndResolveRef.current?.();
+          setState((current) => ({
+            ...current,
+            status: "idle",
+            isPractice: false,
+          }));
+          isPracticeRef.current = false;
+          break;
+
+        case "ERROR":
+          logInterview.error("ws", "ws_error_message", {
+            message: message.message,
+          });
+          setState((current) => ({
+            ...current,
+            status: "error",
+            error: message.message,
+          }));
+          break;
+
+        case "PONG":
+          break;
       }
     },
     [],
@@ -795,13 +766,11 @@ export function useVoiceInterview(token: string) {
 
       ws.onopen = () => {
         logInterview.info("ws", "ws_open", { wsUrl: config.wsUrl });
-        ws.send(JSON.stringify({ type: "PING" }));
-        ws.send(
-          JSON.stringify({
-            type: "FULLSCREEN_STATE",
-            isFullscreen: Boolean(document.fullscreenElement),
-          }),
-        );
+        sendDoMessage(ws, { type: "PING" });
+        sendDoMessage(ws, {
+          type: "FULLSCREEN_STATE",
+          isFullscreen: Boolean(document.fullscreenElement),
+        });
       };
 
       ws.onerror = () => {
@@ -850,12 +819,10 @@ export function useVoiceInterview(token: string) {
         if (ws?.readyState !== WebSocket.OPEN) {
           return;
         }
-        ws.send(
-          JSON.stringify({
-            type: "REALTIME_EVENT",
-            event: event.data,
-          }),
-        );
+        sendDoMessage(ws, {
+          type: "REALTIME_EVENT",
+          event: event.data,
+        });
       });
 
       const offer = await pc.createOffer();
@@ -905,13 +872,11 @@ export function useVoiceInterview(token: string) {
               callId: truncateId(callId),
               location,
             });
-            ws.send(
-              JSON.stringify({
-                type: "CALL_STARTED",
-                callId,
-                clientSecret: config.clientSecret,
-              }),
-            );
+            sendDoMessage(ws, {
+              type: "CALL_STARTED",
+              callId,
+              clientSecret: config.clientSecret,
+            });
           } else {
             logInterview.warn("ws", "call_started_not_sent_ws_not_open", {
               callId: truncateId(callId),

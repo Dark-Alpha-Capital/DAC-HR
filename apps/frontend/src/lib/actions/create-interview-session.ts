@@ -9,7 +9,7 @@ import {
   validatePositionRounds,
   type RoundConfig,
 } from "@workspace/db/repositories/interview-bundle-repository";
-import { getRoundsByPositionId } from "@workspace/db/queries";
+import { getRoundsByPositionId } from "@workspace/db/modules/positions";
 
 import type { AgentConfig, RoundDeliveryMode } from "@workspace/db/enums";
 

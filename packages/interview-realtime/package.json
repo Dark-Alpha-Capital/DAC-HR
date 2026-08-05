@@ -21,6 +21,7 @@
     "./events": "./events.ts",
     "./prompts": "./prompts.ts",
     "./answer-evaluation": "./answer-evaluation.ts",
+    "./session-logic": "./session-logic.ts",
     "./debug-log": "./debug-log.ts"
   }
 }

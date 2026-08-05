@@ -28,37 +28,32 @@ export default function ApplicationBreadcrumb({
   return (
     <Breadcrumb>
       <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink asChild>
-            <Link to="/applications" search={{} as any}>Applications</Link>
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        {applicationId && candidateName && positionName ? (
+        {candidateId && candidateName ? (
           <>
-            {candidateId ? (
-              <>
-                <BreadcrumbItem>
-                  <BreadcrumbLink asChild>
-                    <Link
-                      to="/candidates/$uid"
-                      params={{ uid: candidateId }}
-                      search={{} as any}
-                    >
-                      {candidateName}
-                    </Link>
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-              </>
-            ) : null}
             <BreadcrumbItem>
-              {interviewId ? (
+              <BreadcrumbLink asChild>
+                <Link
+                  to="/candidates/$uid"
+                  params={{ uid: candidateId }}
+                  search={{} as any}
+                >
+                  {candidateName}
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            {positionName ? <BreadcrumbSeparator /> : null}
+          </>
+        ) : (
+          <BreadcrumbItem>
+            <BreadcrumbPage>Application</BreadcrumbPage>
+          </BreadcrumbItem>
+        )}
+        {candidateId && candidateName && positionName ? (
+          <>
+            <BreadcrumbItem>
+              {applicationId ? (
                 <BreadcrumbLink asChild>
-                  <Link
-                    to="/applications/$id"
-                    params={{ id: applicationId }}
-                  >
+                  <Link to="/applications/$id" params={{ id: applicationId }}>
                     {positionName}
                   </Link>
                 </BreadcrumbLink>
@@ -75,11 +70,7 @@ export default function ApplicationBreadcrumb({
               </>
             ) : null}
           </>
-        ) : (
-          <BreadcrumbItem>
-            <BreadcrumbPage>Application</BreadcrumbPage>
-          </BreadcrumbItem>
-        )}
+        ) : null}
       </BreadcrumbList>
     </Breadcrumb>
   );

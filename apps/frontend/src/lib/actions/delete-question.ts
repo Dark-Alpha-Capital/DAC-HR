@@ -5,7 +5,7 @@ import { questionBank } from "@workspace/db/schema";
 
 import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import { getQuestionById } from "@workspace/db/queries";
+import { getQuestionById } from "@workspace/db/modules/positions";
 
 export const deleteQuestion = createServerFn({ method: "POST" })
   .middleware([serverFnAuthGuard])

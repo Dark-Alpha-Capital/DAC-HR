@@ -32,8 +32,7 @@ export async function getGoogleAccessToken(): Promise<
 
   if (!tokenResult.accessToken) {
     return {
-      error:
-        "No Google access token. Sign out and sign in with Google again.",
+      error: "No Google access token. Sign out and sign in with Google again.",
     };
   }
 

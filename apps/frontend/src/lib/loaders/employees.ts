@@ -1,11 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
-import {
-  getCandidateWithApplications,
-  getEmployeeById,
-  getEmployees,
-  getPositions,
-} from "@workspace/db/queries";
+import { getCandidateWithApplications } from "@workspace/db/repositories/candidate-repository";
+import { getEmployeeById, getEmployees } from "@workspace/db/modules/dashboard";
+import { getPositions } from "@workspace/db/modules/positions";
 
 type EmployeesIndexInput = {
   position?: string[];

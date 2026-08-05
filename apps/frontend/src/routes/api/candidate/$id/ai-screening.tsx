@@ -3,7 +3,7 @@ import { getSession } from "~/lib/get-session";
 import {
   getCandidateAiScreenings,
   getLatestCandidateAiScreening,
-} from "@workspace/db/queries";
+} from "@workspace/db/repositories/candidate-repository";
 
 export const Route = createFileRoute("/api/candidate/$id/ai-screening")({
   server: {

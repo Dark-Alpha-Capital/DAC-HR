@@ -4,7 +4,7 @@ import {
   getApplicationById,
   saveInterviewAiAnalysis,
   getInterviewAiAnalysesByInterviewId,
-} from "@workspace/db/queries";
+} from "@workspace/db/repositories/interview-repository";
 import {
   getInterviewById,
   deleteInterviewAiAnalysisForInterview,

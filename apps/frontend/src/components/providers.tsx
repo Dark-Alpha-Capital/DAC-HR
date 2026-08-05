@@ -1,6 +1,5 @@
 import * as React from "react";
 import { lazy, Suspense, useEffect, useState } from "react";
-import { AuthProvider } from "./auth-provider";
 import { TooltipProvider } from "~/components/ui/tooltip";
 
 const ReactQueryDevtools = lazy(() =>
@@ -30,7 +29,7 @@ function QueryDevtools() {
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <TooltipProvider>
-      <AuthProvider>{children}</AuthProvider>
+      {children}
       <QueryDevtools />
     </TooltipProvider>
   );

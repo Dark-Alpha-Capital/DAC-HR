@@ -13,7 +13,9 @@
   // Non-secret config only. Secrets (OPENAI_API_KEY, NEXTCLOUD_*, BETTER_AUTH_SECRET,
   // GOOGLE_CLIENT_*, etc.) are set in the Cloudflare dashboard or via `wrangler secret put`.
   // Do NOT add secrets here — deploying empty vars would overwrite dashboard values.
-  // Local dev uses the top-level vars (localhost). Production deploy uses --env production.
+  // Local dev uses the top-level vars (localhost) + LOCAL D1 (remote: false) via the
+  // @cloudflare/vite-plugin `remoteBindings: false` in vite.config.ts.
+  // Production deploy uses --env production.
   "vars": {
     "BETTER_AUTH_URL": "http://localhost:3000",
     "PRISMIC_REPOSITORY_NAME": "darkalpha",
@@ -35,7 +37,7 @@
       "database_name": "hr-automation-db",
       "database_id": "d86703d9-2aa7-42b5-91a6-995fcf0afde0",
       "migrations_dir": "../../packages/db/drizzle",
-      "remote": true
+      "remote": false
     }
   ],
 

@@ -3,7 +3,7 @@ export default function InterviewBrandHeader() {
     <header className="shrink-0 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex max-w-6xl items-center justify-center gap-2.5 px-4 py-3">
         <img
-          src="/logo.png"
+          src="/dac-logo-wide.jpg"
           alt="Dark Alpha Capital logo"
           className="h-6 w-auto"
           onError={(e) => {

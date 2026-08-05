@@ -95,6 +95,10 @@ export const queryKeys = {
   },
   attendance: {
     all: ["attendance"] as const,
-    page: (date: string) => ["attendance", "page", date] as const,
+    meetings: (deps: Record<string, unknown>) =>
+      ["attendance", "meetings", normalizeListDeps(deps)] as const,
+    detail: (conferenceId: string) =>
+      ["attendance", "detail", conferenceId] as const,
+    stored: () => ["attendance", "stored"] as const,
   },
 };

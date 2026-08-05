@@ -59,7 +59,7 @@ export function MainSiteTopbar({ session }: { session: AppSession }) {
   const secondaryLabel = second ? labelForSegment(second) : undefined;
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+    <header className="sticky top-0 z-40 border-b bg-secondary/80 backdrop-blur supports-[backdrop-filter]:bg-secondary/70">
       <div className="flex h-12 items-center gap-2 px-3 md:px-4">
         <SidebarTrigger className="shrink-0 md:hidden" />
         <Separator orientation="vertical" className="h-6 md:hidden" />

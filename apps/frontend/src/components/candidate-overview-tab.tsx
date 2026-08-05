@@ -8,9 +8,9 @@ import {
   Phone,
   FileText,
 } from "lucide-react";
-import { getCachedCandidate } from "~/lib/cache/candidate";
+import { getCandidateWithApplications } from "@workspace/db/repositories/candidate-repository";
 
-type Candidate = NonNullable<Awaited<ReturnType<typeof getCachedCandidate>>>;
+type Candidate = NonNullable<Awaited<ReturnType<typeof getCandidateWithApplications>>>;
 
 export function CandidateOverviewTab({ candidate }: { candidate: Candidate }) {
   const profile = candidate.profile;

@@ -13,6 +13,7 @@ import {
 } from "~/components/ui/table";
 import type { CandidateDocument } from "@workspace/db/schema";
 import DeleteCandidateDocumentButton from "./delete-candidate-document-button";
+import { resolveDocumentAccessUrl } from "~/lib/documents/access";
 
 interface CandidateDocumentTableProps {
   documents: CandidateDocument[];
@@ -62,27 +63,8 @@ const CandidateDocumentTableRow = ({
   const handleViewDocument = async () => {
     setIsLoadingViewUrl(true);
     try {
-      const isPublicUrl =
-        !document.url.includes("storage.googleapis.com") &&
-        !document.url.startsWith("gs://");
-
-      if (isPublicUrl) {
-        window.open(document.url, "_blank", "noopener,noreferrer");
-        setIsLoadingViewUrl(false);
-        return;
-      }
-
-      const response = await fetch(
-        `/api/documents/view?url=${encodeURIComponent(document.url)}`,
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to generate access URL");
-      }
-
-      const { url: signedUrl } = await response.json();
-      window.open(signedUrl, "_blank", "noopener,noreferrer");
+      const accessUrl = await resolveDocumentAccessUrl(document.url);
+      window.open(accessUrl, "_blank", "noopener,noreferrer");
     } catch (error) {
       console.error("Error viewing document:", error);
       toast.error(
@@ -101,25 +83,7 @@ const CandidateDocumentTableRow = ({
   const handleDownloadDocument = async () => {
     setIsDownloading(true);
     try {
-      const isPublicUrl =
-        !document.url.includes("storage.googleapis.com") &&
-        !document.url.startsWith("gs://");
-
-      let accessUrl = document.url;
-
-      if (!isPublicUrl) {
-        const response = await fetch(
-          `/api/documents/view?url=${encodeURIComponent(document.url)}`,
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to generate access URL");
-        }
-
-        const { url: signedUrl } = await response.json();
-        accessUrl = signedUrl;
-      }
+      const accessUrl = await resolveDocumentAccessUrl(document.url);
 
       const response = await fetch(accessUrl);
       if (!response.ok) {

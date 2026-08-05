@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Button } from "~/components/ui/button";
@@ -23,6 +23,7 @@ interface ScreenerOption {
 type InterviewAiAnalysisTabProps = {
   onAnalysisComplete?: () => void;
   screeners?: ScreenerOption[];
+  defaultScreenerId?: string;
 } & (
   | { interviewId: string; bundleId?: never }
   | { bundleId: string; interviewId?: never }
@@ -32,6 +33,7 @@ export default function InterviewAiAnalysisTab({
   interviewId,
   bundleId,
   screeners: screenersProp,
+  defaultScreenerId,
   onAnalysisComplete,
 }: InterviewAiAnalysisTabProps) {
   const { data: screenersData, isLoading: screenersQueryLoading } = useQuery({
@@ -51,6 +53,15 @@ export default function InterviewAiAnalysisTab({
   const [screenerId, setScreenerId] = useState("");
   const [customPrompt, setCustomPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (defaultScreenerId && !screenerId) {
+      setScreenerId(defaultScreenerId);
+    }
+  }, [defaultScreenerId, screenerId]);
+
+  const positionScreenerPreselected =
+    defaultScreenerId && screenerId === defaultScreenerId;
 
   const analysisEndpoint = bundleId
     ? `/api/interview-bundle/${bundleId}/ai-analysis`
@@ -130,6 +141,9 @@ export default function InterviewAiAnalysisTab({
             </Select>
           )}
           <p className="text-xs text-muted-foreground">
+            {positionScreenerPreselected
+              ? "This position's screener is preselected — analysis will use it automatically when the interview completes."
+              : "Attach a screener to a position to have analysis run automatically on completion."}{" "}
             <Link to="/screeners" className="underline underline-offset-2">
               Manage screeners
             </Link>

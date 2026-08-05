@@ -13,7 +13,6 @@ import {
 } from "~/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { Label } from "~/components/ui/label";
-import BundleRoundsOverview from "~/components/interview/BundleRoundsOverview";
 import DeliveryModePicker from "~/components/interview/DeliveryModePicker";
 import VoiceInterview from "~/components/interview/VoiceInterview";
 import RoundTransitionSlide from "~/components/interview/RoundTransitionSlide";
@@ -34,6 +33,7 @@ import {
   type WelcomeData,
 } from "~/lib/queries/interview-token";
 import { logInterview, truncateId } from "~/lib/interview-debug-log";
+import { cn } from "~/lib/utils";
 
 import {
   Clock,
@@ -52,6 +52,8 @@ import {
   Monitor,
   GraduationCap,
   BookOpen,
+  Video,
+  Timer,
 } from "lucide-react";
 
 type Question = InterviewQuestion;
@@ -87,6 +89,14 @@ function hasAnswer(answer: AnswerValue | undefined): boolean {
 
   return answer.selectedOptionId.length > 0;
 }
+
+function formatCountdown(seconds: number) {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${String(secs).padStart(2, "0")}`;
+}
+
+const SESSION_CAP_SECONDS = 60 * 60;
 
 const INSTRUCTIONS = [
   {
@@ -183,7 +193,7 @@ function VoiceWelcomeSlide({
     return (
       <div className="flex h-svh flex-col overflow-hidden bg-background">
         <VoiceWelcomeHeader />
-        <main className="mx-auto flex w-full max-w-lg flex-1 min-h-0 flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-8">
+        <main className="mx-auto flex w-full max-w-lg flex-1 min-h-0 flex-col gap-5 overflow-y-auto px-4 py-8">
           <div className="text-center">
             <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
               Welcome to Your Voice Interview
@@ -198,47 +208,40 @@ function VoiceWelcomeSlide({
             </Badge>
           </div>
 
-          <Card className="w-full">
-            <CardHeader className="pb-3 text-center">
-              <CardTitle className="text-sm">Interview Details</CardTitle>
-              <CardDescription className="text-xs">
-                Confirm the information below before you begin.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-2 text-sm">
-              <div className="rounded-lg border bg-muted/40 px-3 py-2.5">
-                <p className="text-xs text-muted-foreground">Position</p>
-                <p className="mt-0.5 font-medium leading-snug">
-                  {data.positionName}
-                </p>
-              </div>
-              <div className="rounded-lg border bg-muted/40 px-3 py-2.5">
-                <p className="text-xs text-muted-foreground">Round</p>
-                <p className="mt-0.5 font-medium leading-snug">
-                  {data.roundName}
-                </p>
-              </div>
-              <div className="rounded-lg border bg-muted/40 px-3 py-2.5">
-                <p className="text-xs text-muted-foreground">Candidate</p>
-                <p className="mt-0.5 font-medium leading-snug">
-                  {data.candidateName}
-                </p>
-              </div>
-              <div className="rounded-lg border bg-muted/40 px-3 py-2.5">
-                <p className="text-xs text-muted-foreground">Format</p>
-                <p className="mt-0.5 font-medium leading-snug">
-                  AI voice interview
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {data.interviewType === "bundle" && data.rounds ? (
-            <BundleRoundsOverview
-              rounds={data.rounds}
-              currentRoundIndex={data.currentRoundIndex}
-            />
-          ) : null}
+          <div className="space-y-1.5 text-sm">
+            <p className="text-muted-foreground">
+              Position:{" "}
+              <span className="font-medium text-foreground">
+                {data.positionName}
+              </span>
+            </p>
+            <p className="text-muted-foreground">
+              Interview:{" "}
+              <span className="font-medium text-foreground">
+                {data.roundName}
+              </span>
+            </p>
+            {data.interviewType === "bundle" && data.rounds ? (
+              <p className="text-muted-foreground">
+                Parts:{" "}
+                <span className="font-medium text-foreground">
+                  {data.rounds.length} ({data.rounds
+                    .map((round) =>
+                      round.deliveryMode === "voice"
+                        ? "voice"
+                        : "multiple choice",
+                    )
+                    .join(" + ")})
+                </span>
+              </p>
+            ) : null}
+            <p className="text-muted-foreground">
+              Format:{" "}
+              <span className="font-medium text-foreground">
+                AI video interview
+              </span>
+            </p>
+          </div>
 
           <Button className="w-full sm:w-auto" size="lg" onClick={onContinue}>
             Continue
@@ -330,9 +333,9 @@ function VoiceLandingScreen({
             onClick={onStartInterview}
             disabled={starting || practiceStarting}
           >
-            <Mic className="mr-3 size-5 shrink-0" />
+            <Video className="mr-3 size-5 shrink-0" />
             <span className="text-left">
-              <span className="block font-medium">Start Voice Interview</span>
+              <span className="block font-medium">Start Video Interview</span>
               <span className="block text-xs font-normal opacity-80">
                 Begin your recorded interview session
               </span>
@@ -383,7 +386,7 @@ function VoiceLandingScreen({
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
-          Starting the voice interview allows microphone access, tab recording,
+          Starting the video interview allows microphone access, tab recording,
           and fullscreen mode.
         </p>
       </main>
@@ -415,118 +418,104 @@ function WelcomeScreen({
         </div>
       </header>
 
-      <main className="mx-auto grid w-full max-w-6xl flex-1 min-h-0 grid-cols-1 gap-6 overflow-y-auto px-4 py-5 lg:grid-cols-[minmax(0,22rem)_1fr] lg:gap-8 lg:overflow-hidden lg:py-6 xl:grid-cols-[minmax(0,24rem)_1fr]">
-        <div className="flex flex-col justify-center gap-5 lg:gap-6">
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-              {isVoice
-                ? "Welcome to Your Voice Interview"
-                : "Welcome to Your Interview"}
-            </h1>
-            <p className="mt-1.5 text-sm text-muted-foreground">
-              Hi {data.candidateName}, thank you for taking the time to
-              interview with us.
-            </p>
-            {isVoice ? (
-              <Badge variant="secondary" className="mt-2">
-                <Mic className="mr-1 size-3" />
-                Voice interview
-              </Badge>
-            ) : null}
-          </div>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Interview Details</CardTitle>
-              <CardDescription className="text-xs">
-                Confirm the information below before you begin.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-2 text-sm">
-              <div className="rounded-lg border bg-muted/40 px-3 py-2.5">
-                <p className="text-xs text-muted-foreground">Position</p>
-                <p className="mt-0.5 font-medium leading-snug">
-                  {data.positionName}
-                </p>
-              </div>
-              <div className="rounded-lg border bg-muted/40 px-3 py-2.5">
-                <p className="text-xs text-muted-foreground">Round</p>
-                <p className="mt-0.5 font-medium leading-snug">
-                  {data.roundName}
-                </p>
-              </div>
-              <div className="rounded-lg border bg-muted/40 px-3 py-2.5">
-                <p className="text-xs text-muted-foreground">Candidate</p>
-                <p className="mt-0.5 font-medium leading-snug">
-                  {data.candidateName}
-                </p>
-              </div>
-              <div className="rounded-lg border bg-muted/40 px-3 py-2.5">
-                <p className="text-xs text-muted-foreground">Format</p>
-                <p className="mt-0.5 font-medium leading-snug">
-                  {isVoice ? "AI voice interview" : "Written responses"}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {data.interviewType === "bundle" && data.rounds ? (
-            <BundleRoundsOverview
-              rounds={data.rounds}
-              currentRoundIndex={data.currentRoundIndex}
-            />
+      <main className="mx-auto flex w-full max-w-lg flex-1 min-h-0 flex-col gap-5 overflow-y-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+            {isVoice
+              ? "Welcome to Your Video Interview"
+              : "Welcome to Your Interview"}
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Hi {data.candidateName}, thank you for taking the time to interview
+            with us.
+          </p>
+          {isVoice ? (
+            <Badge variant="secondary" className="mt-3">
+              <Mic className="mr-1 size-3" />
+              Video interview
+            </Badge>
           ) : null}
-
-          <div>
-            <Button
-              className="w-full sm:w-auto"
-              size="lg"
-              onClick={onStart}
-              disabled={starting}
-            >
-              {starting ? (
-                <>
-                  <Loader2 className="mr-2 size-4 animate-spin" />
-                  {isVoice ? "Connecting..." : "Preparing interview..."}
-                </>
-              ) : isVoice ? (
-                <>
-                  <Mic className="mr-2 size-4" />
-                  Start Voice Interview
-                  <ArrowRight className="ml-2 size-4" />
-                </>
-              ) : (
-                <>
-                  Start Interview
-                  <ArrowRight className="ml-2 size-4" />
-                </>
-              )}
-            </Button>
-            <p className="mt-2 text-xs text-muted-foreground">
-              {isVoice
-                ? "By clicking Start Voice Interview, you allow microphone access, this tab to be recorded, and fullscreen mode."
-                : "By clicking Start Interview, you confirm you are ready to begin and your session will be recorded."}
-            </p>
-          </div>
         </div>
 
-        <div className="flex min-h-0 flex-col lg:justify-center">
-          <div className="shrink-0">
-            <h2 className="text-base font-medium sm:text-lg">
-              Before You Begin
-            </h2>
-            <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
-              {isVoice
-                ? "Review these voice interview instructions to ensure a smooth experience."
-                : "Review these instructions to ensure a smooth interview experience."}
+        <div className="space-y-1.5 text-sm">
+          <p className="text-muted-foreground">
+            Position:{" "}
+            <span className="font-medium text-foreground">
+              {data.positionName}
+            </span>
+          </p>
+          <p className="text-muted-foreground">
+            Interview:{" "}
+            <span className="font-medium text-foreground">
+              {data.roundName}
+            </span>
+          </p>
+          {data.interviewType === "bundle" && data.rounds ? (
+            <p className="text-muted-foreground">
+              Parts:{" "}
+              <span className="font-medium text-foreground">
+                {data.rounds.length} ({data.rounds
+                  .map((round) =>
+                    round.deliveryMode === "voice"
+                      ? "voice"
+                      : "multiple choice",
+                  )
+                  .join(" + ")})
+              </span>
             </p>
-          </div>
-          <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:mt-4 lg:gap-3">
+          ) : null}
+          <p className="text-muted-foreground">
+            Format:{" "}
+            <span className="font-medium text-foreground">
+              {isVoice ? "AI video interview" : "Written responses"}
+            </span>
+          </p>
+        </div>
+
+        <div>
+          <Button
+            className="w-full sm:w-auto"
+            size="lg"
+            onClick={onStart}
+            disabled={starting}
+          >
+            {starting ? (
+              <>
+                <Loader2 className="mr-2 size-4 animate-spin" />
+                {isVoice ? "Connecting..." : "Preparing interview..."}
+              </>
+            ) : isVoice ? (
+              <>
+                <Video className="mr-2 size-4" />
+                Start Video Interview
+                <ArrowRight className="ml-2 size-4" />
+              </>
+            ) : (
+              <>
+                Start Interview
+                <ArrowRight className="ml-2 size-4" />
+              </>
+            )}
+          </Button>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {isVoice
+              ? "By clicking Start Video Interview, you allow microphone access, this tab to be recorded, and fullscreen mode."
+              : "By clicking Start Interview, you confirm you are ready to begin and your session will be recorded."}
+          </p>
+        </div>
+
+        <div>
+          <h2 className="text-base font-medium sm:text-lg">
+            Before You Begin
+          </h2>
+          <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
+            {isVoice
+              ? "Review these voice interview instructions to ensure a smooth experience."
+              : "Review these instructions to ensure a smooth interview experience."}
+          </p>
+          <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
             {instructions.map((item) => (
-              <li
-                key={item.title}
-                className="flex gap-2.5 rounded-lg border p-3"
-              >
+              <li key={item.title} className="flex gap-2.5 rounded-lg border p-3">
                 <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
                   <item.icon className="size-3.5 text-primary" />
                 </div>
@@ -575,6 +564,8 @@ function InterviewPage() {
     useState<RoundTransitionData | null>(null);
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
   const [tabSwitchWarningVisible, setTabSwitchWarningVisible] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [totalElapsed, setTotalElapsed] = useState(0);
   const answersRef = useRef(answers);
   const wasPracticeSessionRef = useRef(false);
   const hasInitializedRef = useRef(false);
@@ -973,6 +964,47 @@ function InterviewPage() {
     completeMutation.mutate();
   }, [data, currentStep, answers, saveAnswer, completeMutation]);
 
+  const handleAutoAdvance = useCallback(async () => {
+    if (status !== "in_progress" || !data) return;
+    logInterview.info("api", "question_timer_elapsed", {
+      token: truncateId(token),
+      currentStep,
+      questionCount: data.questions.length,
+    });
+    const question = data.questions[currentStep];
+    const answer = answers[question.id];
+    if (answer && hasAnswer(answer)) {
+      await saveAnswer(question, answer);
+    }
+    if (currentStep >= data.questions.length - 1) {
+      handleComplete();
+    } else {
+      handleNext();
+    }
+  }, [
+    status,
+    data,
+    currentStep,
+    answers,
+    saveAnswer,
+    handleNext,
+    handleComplete,
+    token,
+  ]);
+
+  const handleSessionTimeLimit = useCallback(async () => {
+    if (status !== "in_progress" || !data) return;
+    logInterview.info("api", "session_timer_elapsed", {
+      token: truncateId(token),
+    });
+    const question = data.questions[currentStep];
+    const answer = answers[question.id];
+    if (answer && hasAnswer(answer)) {
+      await saveAnswer(question, answer);
+    }
+    handleComplete();
+  }, [status, data, currentStep, answers, saveAnswer, handleComplete, token]);
+
   const handleContinueToNextRound = useCallback(async () => {
     logInterview.info("bundle", "continue_next_round", {
       token: truncateId(token),
@@ -1103,6 +1135,53 @@ function InterviewPage() {
       document.removeEventListener("contextmenu", onContextMenu);
     };
   }, [status]);
+
+  const currentFormQuestion = data?.questions[currentStep];
+  const currentQuestionLimit =
+    currentFormQuestion?.timeLimitSeconds ??
+    (currentFormQuestion?.questionType === "mcq" ? 60 : 180);
+
+  useEffect(() => {
+    if (status !== "in_progress" || !data) {
+      return;
+    }
+    setCountdown(currentQuestionLimit);
+  }, [status, data, currentStep, currentQuestionLimit]);
+
+  useEffect(() => {
+    if (status !== "in_progress" || countdown <= 0) {
+      return;
+    }
+    const id = window.setTimeout(() => {
+      setCountdown((current) => Math.max(0, current - 1));
+    }, 1000);
+    return () => window.clearTimeout(id);
+  }, [status, countdown]);
+
+  useEffect(() => {
+    if (status === "in_progress" && countdown === 0 && data) {
+      void handleAutoAdvance();
+    }
+  }, [status, countdown, data, handleAutoAdvance]);
+
+  useEffect(() => {
+    if (status !== "in_progress") {
+      setTotalElapsed(0);
+      return;
+    }
+    const startedAt = Date.now();
+    setTotalElapsed(0);
+    const id = window.setInterval(() => {
+      setTotalElapsed(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [status]);
+
+  useEffect(() => {
+    if (status === "in_progress" && totalElapsed >= SESSION_CAP_SECONDS) {
+      void handleSessionTimeLimit();
+    }
+  }, [status, totalElapsed, handleSessionTimeLimit]);
 
   if (
     status === "loading" &&
@@ -1282,10 +1361,24 @@ function InterviewPage() {
               {data.positionName} — {data.candidateName}
             </p>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
-            <Clock className="size-3.5" />
-            <span>
+          <div className="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-medium",
+                countdown <= 30
+                  ? "border-red-300 text-red-600"
+                  : "border-border",
+              )}
+            >
+              <Timer className="size-3.5" />
+              {formatCountdown(countdown)}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Clock className="size-3.5" />
               {currentStep + 1} / {data.questions.length}
+            </span>
+            <span className="inline-flex items-center gap-1 tabular-nums">
+              {formatCountdown(totalElapsed)}
             </span>
           </div>
         </div>

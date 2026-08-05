@@ -78,10 +78,14 @@ export async function invalidateAuditLogs(queryClient: QueryClient) {
   });
 }
 
-export async function invalidateWeeklyCheckinRecords(
-  queryClient: QueryClient,
-) {
+export async function invalidateWeeklyCheckinRecords(queryClient: QueryClient) {
   await queryClient.invalidateQueries({
     queryKey: queryKeys.weeklyCheckin.all,
   });
+}
+
+export async function invalidateMeetingAttendance(queryClient: QueryClient) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.attendance.all }),
+  ]);
 }

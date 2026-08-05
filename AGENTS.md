@@ -13,6 +13,7 @@ bun run format       # prettier --write "**/*.{ts,tsx,md}" (no config file)
 
 **Typecheck:** `tsc --noEmit` from `apps/frontend/` (no root-level typecheck script; `tsconfig.json` sets `noEmit: true`).
 **Deploy:** `bun run deploy` from `apps/frontend/` = `db:migrate:remote && vite build && wrangler deploy --env production`. Migrations run before the deploy — don't skip that step.
+**Cloudflare dashboard (Workers Builds):** set the build command to `cd apps/frontend && bun install && bun run build:prod` (`build:prod` = `db:migrate:remote && vite build`) so remote D1 migrations apply before every build/deploy. It must run from `apps/frontend/` so `wrangler.jsonc` + the `db:migrate:remote` script resolve.
 
 ## Architecture overview
 
@@ -51,8 +52,8 @@ Shadcn/ui components live in `apps/frontend/src/components/ui/` (no separate `pa
 - Driver: `drizzle-orm/d1` via `cloudflare:workers` environment binding.
 - D1 database: `hr-automation-db` (binding `DB` in `apps/frontend/wrangler.jsonc`).
 - Schema: `packages/db/schema.ts` (SQLite dialect, ~36 tables).
-- Migrations: `packages/db/drizzle/` (16 SQL files) — applied via `wrangler d1 migrations apply` / scripts below.
-- Repositories: `packages/db/repositories/` (10 files: attendance, audit, candidate, candidate-import, document, holiday, interview, interview-bundle, interview-session, screener).
+- Migrations: `packages/db/drizzle/` (17 SQL files, `0000`–`0016`) — applied via `wrangler d1 migrations apply` / scripts below. `drizzle/meta/_journal.json` + snapshots are kept in sync (last snapshot `0016_snapshot.json` reflects the current schema); `db:generate` should print "No schema changes, nothing to migrate" when the schema hasn't changed. If it ever proposes re-creating existing tables, the journal/snapshot drifted — re-sync it (see git history) rather than applying that migration.
+- Repositories: `packages/db/repositories/` (9 files: audit, candidate, candidate-import, document, interview, interview-bundle, interview-session, meet-attendance, screener).
 
 ```bash
 cd packages/db
@@ -101,7 +102,8 @@ import { eq, and, or, sql, asc, desc, inArray, count, gte, lte } from "@workspac
 - Template: `apps/frontend/.env.example`.
 - No `DATABASE_URL` — D1 is bound via `wrangler.jsonc`.
 - `apps/frontend/.dev.vars` duplicates secrets for **wrangler dev** (Cloudflare Workers runtime can't read `.env`).
-- **Local dev uses remote D1/Vectorize bindings** (`remote: true` in `wrangler.jsonc`). Run `bunx wrangler login` once before `bun run dev`.
+- **Local dev uses a LOCAL D1 database** (`vite.config.ts` sets `remoteBindings: false`; `wrangler.jsonc` D1 binding has `remote: false`). No `wrangler login` needed for dev. Run `bun run db:migrate` after pulling schema changes so the local D1 stays in sync. Vectorize stays remote-only (used only by the document-indexing workflow).
+- To temporarily run dev against remote/production bindings, set `remoteBindings: true` in `vite.config.ts` (or set `CLOUDFLARE_VITE_FORCE_LOCAL=true` to force local regardless).
 - Secrets (OPENAI_API_KEY, NEXTCLOUD_*, BETTER_AUTH_SECRET, GOOGLE_CLIENT_*) live in the Cloudflare dashboard or `wrangler secret put` for production — never in `wrangler.jsonc` (deploy would overwrite dashboard values).
 - Non-secret config lives in `wrangler.jsonc` vars: `BETTER_AUTH_URL`, `PRISMIC_REPOSITORY_NAME` (`darkalpha`), `PRISMIC_TEAM_MEMBER_TYPE` (`teammember`), `PRISMIC_OPERATING_MEMBER_TYPE` (`operatingmember`).
 - `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` in `.env` are required only for `db:studio`.
@@ -151,8 +153,11 @@ import { eq, and, or, sql, asc, desc, inArray, count, gte, lte } from "@workspac
 
 ## Attendance (Google Calendar/Meet)
 
-- `src/lib/attendance/` syncs Google Meet attendance → D1 (relies on the Google Calendar/Meet OAuth scopes above).
-- Actions: `sync-meet-attendance.ts` (aggregate, persist, resolve members by name against Prismic). API routes: `routes/api/attendance/*`.
+- Ported from `dac-googlemeet`. D1 tables `meet_conference` + `meet_attendee` hold persisted firm-wide Meet attendance (relies on the Google Calendar/Meet OAuth scopes above).
+- Routes under `_main/employees/attendance/`: `index.tsx` (Meetings list), `$conferenceId.tsx` (per-meeting attendance), `meeting-attendance.tsx` (firm-wide data table + Sync button).
+- `src/lib/attendance/meet-auth.ts` resolves the Google access token; `meet-attendance.ts` is the client-safe Meet API + Calendar-title-matching core (fetch only).
+- Server functions in `lib/actions/sync-meet-attendance.ts`: `getMeetConferences`, `getMeetConferenceDetail`, `getStoredAttendance`, `prepareAttendanceSync`, `syncAttendanceChunk`.
+- Persistence: `packages/db/repositories/meet-attendance-repository.ts` (`persistConferenceAttendance`, `listStoredAttendanceRows`).
 
 ## Prismic (headless CMS)
 

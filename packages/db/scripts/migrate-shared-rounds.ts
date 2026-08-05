@@ -2,8 +2,7 @@
  * Data migration: deduplicate shared round templates so each position owns its rounds.
  * Run after 0011_position_owned_rounds.sql (adds nullable position_id / round_id columns).
  */
-import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Database } from "bun:sqlite";
@@ -27,26 +26,19 @@ const webDir = path.resolve(__dirname, "../../../apps/frontend");
 const remote = process.argv.includes("--remote");
 
 function getLocalD1SqlitePath(): string {
-  const result = spawnSync(
-    "bunx",
-    ["wrangler", "d1", "info", "hr-automation-db", "--local", "--json"],
-    { cwd: webDir, encoding: "utf-8" },
-  );
-  if (result.status !== 0) {
-    throw new Error("Failed to resolve local D1 path");
-  }
-  const info = JSON.parse(result.stdout) as Array<{
-    database: { database_id: string };
-  }>;
-  const dbId = info[0]?.database.database_id;
-  if (!dbId) {
-    throw new Error("Local D1 database id not found");
-  }
-  return path.join(
+  const d1Dir = path.join(
     webDir,
     ".wrangler/state/v3/d1/miniflare-D1DatabaseObject",
-    `${dbId}.sqlite`,
   );
+  const files = readdirSync(d1Dir).filter(
+    (f) => f.endsWith(".sqlite") && f !== "metadata.sqlite",
+  );
+  if (files.length === 0) {
+    throw new Error(
+      "No local D1 database found. Run `wrangler d1 migrations apply hr-automation-db --local` once first.",
+    );
+  }
+  return path.join(d1Dir, files[0]!);
 }
 
 function runSqlBatch(sqlite: Database, sql: string) {

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
+    "build:prod": "bun run db:migrate:remote && vite build",
     "preview": "vite preview",
     "db:migrate:remote": "bun run --filter @workspace/db db:migrate:remote",
     "deploy": "bun run db:migrate:remote && vite build && wrangler deploy --env production",

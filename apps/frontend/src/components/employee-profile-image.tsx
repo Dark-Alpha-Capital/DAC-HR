@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { resolveDocumentAccessUrl } from "~/lib/documents/access";
 
 interface EmployeeProfileImageProps {
   imageUrl: string;
@@ -17,30 +18,9 @@ const EmployeeProfileImage = ({
 
   useEffect(() => {
     const loadImage = async () => {
-      // Check if URL is already a public URL (not GCS)
-      const isPublicUrl =
-        !imageUrl.includes("storage.googleapis.com") &&
-        !imageUrl.startsWith("gs://");
-
-      if (isPublicUrl) {
-        // If it's already a public URL, use it directly
-        setDisplayUrl(imageUrl);
-        setIsLoading(false);
-        return;
-      }
-
-      // For GCS URLs, get a signed URL
       try {
-        const response = await fetch(
-          `/api/documents/view?url=${encodeURIComponent(imageUrl)}`,
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to generate access URL");
-        }
-
-        const { url: signedUrl } = await response.json();
-        setDisplayUrl(signedUrl);
+        const accessUrl = await resolveDocumentAccessUrl(imageUrl);
+        setDisplayUrl(accessUrl);
       } catch (err) {
         console.error("Error loading image:", err);
         setError(true);

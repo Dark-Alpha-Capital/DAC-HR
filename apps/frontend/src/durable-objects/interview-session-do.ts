@@ -1,7 +1,7 @@
 /// <reference types="@cloudflare/workers-types" />
 
 import { getRealtimeSidebandHttpUrl } from "@workspace/ai-config";
-import { getQuestionsForInterviewSession } from "@workspace/db/queries";
+import { getQuestionsForInterviewSession } from "@workspace/db/modules/positions";
 import type { CheatingEventType, CheatingSummary } from "@workspace/db/enums";
 import {
   getSessionById,
@@ -21,6 +21,11 @@ import {
   serializeDoMessage,
 } from "@workspace/interview-realtime/events";
 import { evaluateCandidateAnswer, evaluateIntroUtterance, looksLikeNoise, PRACTICE_QUESTIONS } from "@workspace/interview-realtime";
+import {
+  matchMcqOption,
+  detectQuestionIndexFromTranscript,
+  buildCheatingSummary,
+} from "@workspace/interview-realtime/session-logic";
 import {
   buildAskCurrentQuestionEvent,
   buildAcknowledgeAnswerEvent,
@@ -59,6 +64,9 @@ const SIDEBAND_CONNECT_MAX_RETRIES = 3;
 const SIDEBAND_RECONNECT_MAX_ATTEMPTS = 5;
 const SIDEBAND_BACKOFF_BASE_MS = 1000;
 const SIDEBAND_BACKOFF_MAX_MS = 30000;
+const SESSION_TIMEOUT_MS = 60 * 60 * 1000;
+const SESSION_TIMEOUT_GRACE_MS = 60 * 1000;
+const QUESTION_TIMEOUT_DEFAULT_SECONDS = 180;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -96,6 +104,8 @@ export class InterviewSessionDO implements DurableObject {
   private pendingAdvanceAfterAck = false;
   private evaluatingAnswer = false;
   private cachedBaseInstructions: string | null = null;
+  private sessionTimeLimitSent = false;
+  private questionTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(state: DurableObjectState, env: InterviewSessionEnv) {
     this.durableState = state;
@@ -358,6 +368,7 @@ export class InterviewSessionDO implements DurableObject {
       });
     }
 
+    await this.durableState.storage.setAlarm(Date.now() + SESSION_TIMEOUT_MS);
     await this.persistState();
   }
 
@@ -378,6 +389,8 @@ export class InterviewSessionDO implements DurableObject {
     this.interviewState.questionFollowUpCounts = {};
     this.welcomeIntroCompleted = false;
     this.pendingWelcomeIntro = false;
+    this.clearQuestionTimer();
+    this.durableState.storage.deleteAlarm().catch(() => undefined);
   }
 
   private resetVoiceSessionForNewCall() {
@@ -400,10 +413,101 @@ export class InterviewSessionDO implements DurableObject {
     this.evaluatingAnswer = false;
     this.welcomeIntroCompleted = false;
     this.pendingWelcomeIntro = false;
+    this.sessionTimeLimitSent = false;
+    this.clearQuestionTimer();
 
     this.logTranscript("voice_session_reset", {
       questionCount: this.interviewState.questions.length,
     });
+  }
+
+  async alarm() {
+    if (!this.interviewState || this.interviewState.status === "completed") {
+      return;
+    }
+    if (this.interviewState.isPracticeMode) {
+      return;
+    }
+
+    this.logTranscript("session_time_limit_alarm", {
+      grace: this.sessionTimeLimitSent,
+    });
+
+    if (!this.sessionTimeLimitSent) {
+      this.sessionTimeLimitSent = true;
+      this.broadcast({ type: "SESSION_TIME_LIMIT" });
+      await this.durableState.storage.setAlarm(
+        Date.now() + SESSION_TIMEOUT_GRACE_MS,
+      );
+      return;
+    }
+
+    await this.completeInterview();
+  }
+
+  private startQuestionTimer() {
+    this.clearQuestionTimer();
+    const question = this.getCurrentQuestion();
+    if (!question || !this.interviewState) {
+      return;
+    }
+    const limitSeconds =
+      question.timeLimitSeconds ?? QUESTION_TIMEOUT_DEFAULT_SECONDS;
+    this.questionTimer = setTimeout(() => {
+      void this.handleQuestionTimeout();
+    }, limitSeconds * 1000);
+  }
+
+  private clearQuestionTimer() {
+    if (this.questionTimer) {
+      clearTimeout(this.questionTimer);
+      this.questionTimer = null;
+    }
+  }
+
+  private async handleQuestionTimeout() {
+    if (!this.interviewState || this.interviewState.status === "completed") {
+      return;
+    }
+    if (this.interviewState.isPracticeMode) {
+      return;
+    }
+    if (this.interviewState.voicePhase !== "questions") {
+      return;
+    }
+    if (this.pendingAdvanceAfterAck) {
+      return;
+    }
+
+    const question = this.getCurrentQuestion();
+    if (!question) {
+      return;
+    }
+
+    this.logTranscript("question_timed_out", {
+      questionIndex: this.interviewState.currentQuestionIndex,
+      questionId: question.id,
+    });
+
+    const partial =
+      this.interviewState.questionPartialAnswers?.[question.id] ?? [];
+    const combined = partial.join(" ").trim();
+    if (combined) {
+      await this.persistQuestionAnswer(question, combined);
+    }
+    this.clearQuestionAttemptState(question.id);
+    this.interviewState.awaitingAnswerForIndex = null;
+    this.pendingAdvanceAfterAck = true;
+    await this.persistState();
+    this.broadcast({ type: "QUESTION_TIMED_OUT", questionId: question.id });
+    this.dispatchResponseCreate(
+      buildAcknowledgeAnswerEvent(this.interviewState.currentQuestionIndex),
+      "question_timeout",
+      {
+        questionId: question.id,
+        questionIndex: this.interviewState.currentQuestionIndex,
+      },
+    );
   }
 
   private getActiveQuestionIndex(): number {
@@ -1661,24 +1765,7 @@ export class InterviewSessionDO implements DurableObject {
     question: InterviewQuestion,
     transcript: string,
   ): string | null {
-    if (question.questionType !== "mcq" || !question.options?.length) {
-      return null;
-    }
-
-    const normalized = transcript.toLowerCase();
-    for (let index = 0; index < question.options.length; index++) {
-      const option = question.options[index]!;
-      const letter = String.fromCharCode(65 + index).toLowerCase();
-      if (
-        normalized.includes(`option ${letter}`) ||
-        normalized.startsWith(`${letter} `) ||
-        normalized.includes(option.text.toLowerCase())
-      ) {
-        return option.id;
-      }
-    }
-
-    return null;
+    return matchMcqOption(question, transcript);
   }
 
   private getCurrentQuestion(): InterviewQuestion | null {
@@ -1692,47 +1779,10 @@ export class InterviewSessionDO implements DurableObject {
     if (!this.interviewState) {
       return null;
     }
-
-    const normalized = transcript.toLowerCase().replace(/\s+/g, " ");
-    let bestIndex: number | null = null;
-    let bestScore = 0;
-
-    for (let index = 0; index < this.interviewState.questions.length; index++) {
-      const question = this.interviewState.questions[index]!;
-      const questionText = question.questionText.toLowerCase().trim();
-      if (!questionText) {
-        continue;
-      }
-
-      const snippet = questionText.slice(0, Math.min(80, questionText.length));
-      let score = 0;
-
-      if (normalized.includes(snippet)) {
-        score = snippet.length;
-      } else {
-        const words = snippet.split(/\s+/).filter((word) => word.length > 4);
-        const matched = words.filter((word) => normalized.includes(word)).length;
-        if (words.length > 0 && matched / words.length >= 0.5) {
-          score = matched * 10;
-        }
-      }
-
-      if (question.questionType === "mcq" && question.options?.length) {
-        for (const option of question.options) {
-          const optionText = option.text.toLowerCase().trim();
-          if (optionText.length > 8 && normalized.includes(optionText.slice(0, 40))) {
-            score += 20;
-          }
-        }
-      }
-
-      if (score > bestScore) {
-        bestScore = score;
-        bestIndex = index;
-      }
-    }
-
-    return bestScore >= 20 ? bestIndex : null;
+    return detectQuestionIndexFromTranscript(
+      this.interviewState.questions,
+      transcript,
+    );
   }
 
   private sendQuestionToClient(ws: WebSocket, index: number) {
@@ -1828,6 +1878,7 @@ export class InterviewSessionDO implements DurableObject {
       questionIndex: this.interviewState.currentQuestionIndex,
       questionId: question.id,
     });
+    this.startQuestionTimer();
   }
 
   private async startClosingPhase() {
@@ -1838,6 +1889,7 @@ export class InterviewSessionDO implements DurableObject {
     this.interviewState.voicePhase = "closing";
     this.sendPhaseSessionUpdate("closing");
     await this.persistState();
+    this.clearQuestionTimer();
     this.dispatchResponseCreate(
       buildClosingEvent({
         isPractice: this.interviewState.isPracticeMode,
@@ -1861,6 +1913,7 @@ export class InterviewSessionDO implements DurableObject {
 
     this.interviewState.currentQuestionIndex += 1;
     await this.persistState();
+    this.clearQuestionTimer();
 
     await this.askCurrentQuestion();
   }
@@ -1873,6 +1926,8 @@ export class InterviewSessionDO implements DurableObject {
     this.interviewState.isPracticeMode = false;
     this.closeSideband({ intentional: true });
     this.broadcast({ type: "PRACTICE_ENDED" });
+    this.clearQuestionTimer();
+    this.durableState.storage.deleteAlarm().catch(() => undefined);
     await this.persistState();
   }
 
@@ -1907,6 +1962,16 @@ export class InterviewSessionDO implements DurableObject {
         });
       }
 
+      if (this.env.INTERVIEW_EVALUATION_WORKFLOW) {
+        this.env.INTERVIEW_EVALUATION_WORKFLOW.create({
+          params: { sessionId: this.interviewState.sessionId },
+        }).catch((error) =>
+          this.logError("evaluation_workflow_create_failed", error),
+        );
+      }
+
+      this.clearQuestionTimer();
+      this.durableState.storage.deleteAlarm().catch(() => undefined);
       await this.persistState();
       this.closeSideband({ intentional: true });
       this.broadcast({ type: "INTERVIEW_COMPLETED" });
@@ -1935,19 +2000,15 @@ export class InterviewSessionDO implements DurableObject {
       interruptedAt: new Date(),
       realtimeSessionId: this.interviewState.realtimeSessionId,
     });
+    this.clearQuestionTimer();
+    this.durableState.storage.deleteAlarm().catch(() => undefined);
     await this.persistState();
     this.closeSideband({ intentional: true });
   }
 
   private buildCheatingSummary(): CheatingSummary {
     const counters = this.interviewState?.cheatingCounters ?? {};
-    return {
-      tabSwitches: counters.TAB_SWITCHED ?? 0,
-      focusLostSeconds: counters.focusLostSeconds ?? 0,
-      fullscreenExits: counters.FULLSCREEN_EXITED ?? 0,
-      copyAttempts: counters.COPY_ATTEMPT ?? 0,
-      pasteAttempts: counters.PASTE_ATTEMPT ?? 0,
-    };
+    return buildCheatingSummary(counters);
   }
 
   private async recordCheatingEvent(

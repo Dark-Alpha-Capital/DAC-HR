@@ -15,6 +15,13 @@ export type MeetParticipantKind =
   | "phone"
   | "unknown";
 
+export type MeetParticipantSession = {
+  name: string;
+  startTime: string | null;
+  endTime: string | null;
+  durationMs: number | null;
+};
+
 export type MeetAttendanceParticipant = {
   name: string;
   displayName: string;
@@ -24,6 +31,7 @@ export type MeetAttendanceParticipant = {
   latestEndTime: string | null;
   sessionCount: number;
   totalDurationMs: number | null;
+  sessions: MeetParticipantSession[];
 };
 
 export type MeetConferenceSummary = {
@@ -264,6 +272,7 @@ export function buildParticipantFromRecord(
     ...base,
     sessionCount: 1,
     totalDurationMs: durationMs(base.earliestStartTime, base.latestEndTime),
+    sessions: [],
   };
 }
 
@@ -273,8 +282,7 @@ export async function listConferenceRecords(
   endIso: string,
   options?: { pageToken?: string; pageSize?: number },
 ): Promise<
-  | { records: ConferenceRecord[]; nextPageToken?: string }
-  | { error: string }
+  { records: ConferenceRecord[]; nextPageToken?: string } | { error: string }
 > {
   const params = new URLSearchParams({
     pageSize: String(options?.pageSize ?? 50),
@@ -288,7 +296,8 @@ export async function listConferenceRecords(
   const data: ConferenceRecordsResponse = await response.json();
 
   if (!response.ok) {
-    const message = data.error?.message ?? `Meet API error (${response.status})`;
+    const message =
+      data.error?.message ?? `Meet API error (${response.status})`;
     if (
       response.status === 403 ||
       data.error?.status === "PERMISSION_DENIED" ||
@@ -339,10 +348,9 @@ export async function listParticipants(
   parent: string,
 ): Promise<{ participants: ParticipantRecord[] } | { error: string }> {
   const params = new URLSearchParams({ pageSize: "100" });
-  const response = await fetch(
-    `${MEET_API}/${parent}/participants?${params}`,
-    { headers: { Authorization: `Bearer ${accessToken}` } },
-  );
+  const response = await fetch(`${MEET_API}/${parent}/participants?${params}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
   const data: ParticipantsResponse = await response.json();
 
   if (!response.ok) {
@@ -356,11 +364,28 @@ export async function listParticipants(
   return { participants: data.participants ?? [] };
 }
 
+async function getConferenceRecord(
+  accessToken: string,
+  name: string,
+): Promise<{ record: ConferenceRecord } | { error: string }> {
+  const response = await fetch(`${MEET_API}/${name}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const data: ConferenceRecord & GoogleApiError = await response.json();
+
+  if (!response.ok) {
+    return {
+      error:
+        data.error?.message ?? `Meet conference API error (${response.status})`,
+    };
+  }
+
+  return { record: data };
+}
+
 function meetingCodeFromText(value: string | null | undefined): string | null {
   if (!value) return null;
-  const match = value.match(
-    /(?:https?:\/\/)?meet\.google\.com\/([a-z0-9-]+)/i,
-  );
+  const match = value.match(/(?:https?:\/\/)?meet\.google\.com\/([a-z0-9-]+)/i);
   return normalizeMeetingCode(match?.[1] ?? null);
 }
 
@@ -658,4 +683,64 @@ export async function fetchConferenceWithParticipants(
     participantCount: participants.length,
     participants,
   };
+}
+
+/** Full attendance for one conference (record + participants + titles). */
+export async function buildConferenceDetail(
+  accessToken: string,
+  scope: string,
+  conferenceId: string,
+): Promise<{
+  conference: MeetAttendanceConference | null;
+  error?: string;
+  calendarScopeMissing?: boolean;
+}> {
+  const name = conferenceRecordName(conferenceId);
+  const recordResult = await getConferenceRecord(accessToken, name);
+  if ("error" in recordResult) {
+    return { conference: null, error: recordResult.error };
+  }
+
+  const record = recordResult.record;
+  if (!record.name) {
+    return { conference: null, error: "Conference not found" };
+  }
+
+  const startTime = record.startTime ?? null;
+  const endTime = record.endTime ?? null;
+  const windowStart = startTime
+    ? new Date(Date.parse(startTime) - 12 * 60 * 60 * 1000).toISOString()
+    : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const windowEnd = endTime
+    ? new Date(Date.parse(endTime) + 12 * 60 * 60 * 1000).toISOString()
+    : new Date().toISOString();
+
+  // Detail page: 3 fetches max (conference + participants + calendar).
+  const { index, calendarScopeMissing } = await loadCalendarIndex(
+    accessToken,
+    scope,
+    windowStart,
+    windowEnd,
+  );
+
+  const participantsResult = await listParticipants(accessToken, record.name);
+  const rawParticipants =
+    "error" in participantsResult ? [] : participantsResult.participants;
+
+  const participants = rawParticipants.map(buildParticipantFromRecord);
+  const resolved = resolveTitle(startTime, endTime, index);
+
+  const conference: MeetAttendanceConference = {
+    id: conferenceRecordId(record.name),
+    name: record.name,
+    title: resolved.title,
+    startTime,
+    endTime,
+    space: record.space ?? null,
+    meetingCode: resolved.meetingCode,
+    participantCount: participants.length,
+    participants,
+  };
+
+  return { conference, calendarScopeMissing };
 }

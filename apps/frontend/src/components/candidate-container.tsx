@@ -7,14 +7,12 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
-import { Link } from "@tanstack/react-router";
-import { Eye, Pencil } from "lucide-react";
-import DeleteCandidateButton from "~/components/delete-candidate-button";
+import { useNavigate } from "@tanstack/react-router";
 import BulkDeleteCandidatesButton from "~/components/bulk-delete-candidates-button";
 import type { Candidate } from "@workspace/db/schema";
 import { ApplicationStatusBadge } from "~/components/application-status-badge";
+import CopyButton from "~/components/copy-button";
 
 type CandidateWithPosition = Candidate & {
   position: { id: string; name: string } | null;
@@ -32,7 +30,7 @@ const CandidateContainer = ({
   currentPage = 1,
   limit = 50,
 }: CandidateContainerProps) => {
-  const startIndex = (currentPage - 1) * limit;
+  const navigate = useNavigate();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const allCandidateIds = useMemo(
@@ -67,6 +65,10 @@ const CandidateContainer = ({
     setSelectedIds(new Set());
   };
 
+  const handleRowClick = (candidateId: string) => {
+    navigate({ to: "/candidates/$uid", params: { uid: candidateId } });
+  };
+
   return (
     <div className="space-y-4">
       {/* Bulk Actions Bar */}
@@ -95,38 +97,44 @@ const CandidateContainer = ({
                 aria-label="Select all candidates"
               />
             </TableHead>
-            <TableHead className="py-1.5 px-2 text-xs w-16">#</TableHead>
+            <TableHead className="py-1.5 px-2 text-xs">Status</TableHead>
             <TableHead className="py-1.5 px-2 text-xs">Name</TableHead>
             <TableHead className="py-1.5 px-2 text-xs">Email</TableHead>
+            <TableHead className="py-1.5 px-2 text-xs">Position</TableHead>
             <TableHead className="py-1.5 px-2 text-xs">Phone</TableHead>
             <TableHead className="py-1.5 px-2 text-xs">Location</TableHead>
-            <TableHead className="py-1.5 px-2 text-xs">Position</TableHead>
-            <TableHead className="py-1.5 px-2 text-xs">Status</TableHead>
-            <TableHead className="text-right py-1.5 px-2 text-xs">
-              Actions
-            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {candidates.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={9}
+                colSpan={7}
                 className="py-10 text-center text-sm text-muted-foreground"
               >
                 No candidates on this page.
               </TableCell>
             </TableRow>
           ) : (
-            candidates.map((candidate, index) => {
+            candidates.map((candidate) => {
             const fullName = `${candidate.firstName} ${candidate.lastName}`;
             const isSelected = selectedIds.has(candidate.id);
             return (
               <TableRow
                 key={candidate.id}
-                className={isSelected ? "bg-muted/50" : ""}
+                className={`cursor-pointer ${isSelected ? "bg-muted/50" : ""}`}
+                onClick={() => handleRowClick(candidate.id)}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleRowClick(candidate.id);
+                  }
+                }}
               >
-                <TableCell className="py-1.5 px-2">
+                <TableCell
+                  className="py-1.5 px-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Checkbox
                     checked={isSelected}
                     onCheckedChange={(checked) =>
@@ -135,24 +143,6 @@ const CandidateContainer = ({
                     aria-label={`Select ${fullName}`}
                   />
                 </TableCell>
-                <TableCell className="py-1.5 px-2 text-sm text-muted-foreground">
-                  {startIndex + index + 1}
-                </TableCell>
-                <TableCell className="py-1.5 px-2 font-medium text-sm">
-                  {fullName}
-                </TableCell>
-                <TableCell className="py-1.5 px-2 text-sm">
-                  {candidate.email}
-                </TableCell>
-                <TableCell className="py-1.5 px-2 text-sm">
-                  {candidate.phone || "-"}
-                </TableCell>
-                <TableCell className="py-1.5 px-2 text-sm">
-                  {candidate.location || "-"}
-                </TableCell>
-                <TableCell className="py-1.5 px-2 text-sm">
-                  {candidate.position?.name || "-"}
-                </TableCell>
                 <TableCell className="py-1.5 px-2 text-sm">
                   {candidate.applicationStatus ? (
                     <ApplicationStatusBadge status={candidate.applicationStatus} />
@@ -160,33 +150,23 @@ const CandidateContainer = ({
                     "-"
                   )}
                 </TableCell>
-                <TableCell className="text-right py-1.5 px-2">
-                  <div className="flex items-center justify-end gap-1">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="h-7 w-7 p-0"
-                      asChild
-                    >
-                      <Link to="/candidates/$uid" search={{} as any} params={{ uid: candidate.id }}>
-                        <Eye className="h-3.5 w-3.5" />
-                      </Link>
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="h-7 w-7 p-0"
-                      asChild
-                    >
-                      <Link
-                        to="/candidates/$uid/edit"
-                        params={{ uid: candidate.id }}
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Link>
-                    </Button>
-                    <DeleteCandidateButton candidateId={candidate.id} />
+                <TableCell className="py-1.5 px-2 font-medium text-sm">
+                  {fullName}
+                </TableCell>
+                <TableCell className="py-1.5 px-2 text-sm max-w-[200px]">
+                  <div className="flex items-center gap-1 min-w-0">
+                    <span className="truncate">{candidate.email}</span>
+                    <CopyButton value={candidate.email} label="email" />
                   </div>
+                </TableCell>
+                <TableCell className="py-1.5 px-2 text-sm">
+                  {candidate.position?.name || "-"}
+                </TableCell>
+                <TableCell className="py-1.5 px-2 text-sm">
+                  {candidate.phone || "-"}
+                </TableCell>
+                <TableCell className="py-1.5 px-2 text-sm">
+                  {candidate.location || "-"}
                 </TableCell>
               </TableRow>
             );

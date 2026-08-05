@@ -1,14 +1,20 @@
-import { and, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, or } from "drizzle-orm";
 import { db } from "@workspace/db/db";
 import {
+  application,
   interview,
   interviewAiAnalysis,
   interviewFeedback,
+  position,
   questionBank,
   roundTemplate,
+  screener,
   user,
 } from "../schema";
-import { getApplicationById, getQuestionsByRoundId } from "../queries";
+import {
+  getQuestionsByRoundId,
+  getRoundsByPositionId,
+} from "../modules/positions";
 import { getBundlesByApplicationId } from "./interview-bundle-repository";
 
 export const getInterviewsByApplicationId = async (applicationId: string) => {
@@ -246,3 +252,211 @@ export const deleteInterviewAiAnalysisForBundle = async (
     return { deleted: false };
   }
 };
+
+export const getApplicationById = async (applicationId: string) => {
+  try {
+    const [appResult] = await db
+      .select({
+        application: {
+          id: application.id,
+          candidateId: application.candidateId,
+          positionId: application.positionId,
+          status: application.status,
+          personality: application.personality,
+          createdAt: application.createdAt,
+          updatedAt: application.updatedAt,
+        },
+        position: {
+          id: position.id,
+          name: position.name,
+          slug: position.slug,
+          description: position.description,
+        },
+      })
+      .from(application)
+      .innerJoin(position, eq(application.positionId, position.id))
+      .where(eq(application.id, applicationId));
+
+    if (!appResult) {
+      return null;
+    }
+
+    // Get all rounds for this position
+    const rounds = await getRoundsByPositionId(
+      appResult.application.positionId,
+    );
+
+    return {
+      ...appResult.application,
+      position: appResult.position,
+      rounds,
+    };
+  } catch (error) {
+    console.error("Error fetching application by id", error);
+    return null;
+  }
+};
+
+/**
+ * Fetches all interviews for an application
+ * @param applicationId The ID of the application
+ * @returns An array of interviews with round and interviewer details
+ */
+
+export const saveInterviewAiAnalysis = async (params: {
+  interviewId: string;
+  bundleId?: string | null;
+  applicationId?: string | null;
+  positionId?: string | null;
+  screenerId?: string | null;
+  analysis: string;
+  customPrompt?: string | null;
+  model?: string;
+  structuredData?: unknown;
+}) => {
+  try {
+    const [result] = await db
+      .insert(interviewAiAnalysis)
+      .values({
+        interviewId: params.interviewId,
+        bundleId: params.bundleId || null,
+        applicationId: params.applicationId || null,
+        positionId: params.positionId || null,
+        screenerId: params.screenerId || null,
+        analysis: params.analysis,
+        customPrompt: params.customPrompt || null,
+        model: params.model || "gpt-4o-mini",
+        structuredData: (params.structuredData ?? null) as Record<
+          string,
+          unknown
+        > | null,
+      })
+      .returning();
+
+    return result;
+  } catch (error) {
+    console.error("Error saving interview AI analysis", error);
+    return null;
+  }
+};
+
+/**
+ * Fetches all AI analysis results for an interview
+ * @param interviewId The ID of the interview
+ * @returns Array of interview AI analysis records, ordered by most recent first
+ */
+
+export const getInterviewAiAnalysesByBundleId = async (bundleId: string) => {
+  try {
+    const results = await db
+      .select({
+        id: interviewAiAnalysis.id,
+        interviewId: interviewAiAnalysis.interviewId,
+        bundleId: interviewAiAnalysis.bundleId,
+        applicationId: interviewAiAnalysis.applicationId,
+        positionId: interviewAiAnalysis.positionId,
+        screenerId: interviewAiAnalysis.screenerId,
+        analysis: interviewAiAnalysis.analysis,
+        structuredData: interviewAiAnalysis.structuredData,
+        customPrompt: interviewAiAnalysis.customPrompt,
+        model: interviewAiAnalysis.model,
+        createdAt: interviewAiAnalysis.createdAt,
+        updatedAt: interviewAiAnalysis.updatedAt,
+        screenerName: screener.name,
+      })
+      .from(interviewAiAnalysis)
+      .leftJoin(screener, eq(interviewAiAnalysis.screenerId, screener.id))
+      .where(eq(interviewAiAnalysis.bundleId, bundleId))
+      .orderBy(desc(interviewAiAnalysis.createdAt));
+
+    return results;
+  } catch (error) {
+    console.error("Error fetching bundle AI analyses", error);
+    return [];
+  }
+};
+
+export const getInterviewAiAnalysesByInterviewId = async (
+  interviewId: string,
+) => {
+  try {
+    const results = await db
+      .select({
+        id: interviewAiAnalysis.id,
+        interviewId: interviewAiAnalysis.interviewId,
+        bundleId: interviewAiAnalysis.bundleId,
+        applicationId: interviewAiAnalysis.applicationId,
+        positionId: interviewAiAnalysis.positionId,
+        screenerId: interviewAiAnalysis.screenerId,
+        analysis: interviewAiAnalysis.analysis,
+        structuredData: interviewAiAnalysis.structuredData,
+        customPrompt: interviewAiAnalysis.customPrompt,
+        model: interviewAiAnalysis.model,
+        createdAt: interviewAiAnalysis.createdAt,
+        updatedAt: interviewAiAnalysis.updatedAt,
+        screenerName: screener.name,
+      })
+      .from(interviewAiAnalysis)
+      .leftJoin(screener, eq(interviewAiAnalysis.screenerId, screener.id))
+      .where(
+        and(
+          eq(interviewAiAnalysis.interviewId, interviewId),
+          isNull(interviewAiAnalysis.bundleId),
+        ),
+      )
+      .orderBy(desc(interviewAiAnalysis.createdAt));
+
+    return results;
+  } catch (error) {
+    console.error("Error fetching interview AI analyses", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches the most recent AI analysis result for an interview
+ * @param interviewId The ID of the interview
+ * @returns The most recent interview AI analysis record or null if not found
+ */
+
+export const getLatestInterviewAiAnalysis = async (interviewId: string) => {
+  try {
+    const [result] = await db
+      .select()
+      .from(interviewAiAnalysis)
+      .where(eq(interviewAiAnalysis.interviewId, interviewId))
+      .orderBy(desc(interviewAiAnalysis.createdAt))
+      .limit(1);
+
+    return result || null;
+  } catch (error) {
+    console.error("Error fetching latest interview AI analysis", error);
+    return null;
+  }
+};
+
+/**
+ * Deletes an interview AI analysis by ID
+ * @param analysisId The ID of the analysis to delete
+ * @returns True if deleted successfully, false otherwise
+ */
+
+export const deleteInterviewAiAnalysis = async (analysisId: string) => {
+  try {
+    const deletedRows = await db
+      .delete(interviewAiAnalysis)
+      .where(eq(interviewAiAnalysis.id, analysisId))
+      .returning({ id: interviewAiAnalysis.id });
+    return deletedRows.length > 0;
+  } catch (error) {
+    console.error("Error deleting interview AI analysis", error);
+    return false;
+  }
+};
+
+/**
+ * Deletes an interview AI analysis by analysis ID scoped to interview ID
+ * @param interviewId The interview ID from route context
+ * @param analysisId The analysis ID to delete
+ * @returns Deletion result with reason for non-delete cases
+ */

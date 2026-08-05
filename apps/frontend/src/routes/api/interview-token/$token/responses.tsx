@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { upsertResponse } from "@workspace/db/repositories/interview-session-repository";
-import { getQuestionById } from "@workspace/db/queries";
+import { getQuestionById } from "@workspace/db/modules/positions";
 import { resolveInterviewToken } from "~/lib/interview-token";
 import {
   interviewServerLog,

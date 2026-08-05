@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
+import { getPositions } from "@workspace/db/modules/positions";
 import {
   getAllScreeners,
   getScreenerById,
@@ -10,6 +11,15 @@ export const loadScreenersIndex = createServerFn({ method: "GET" })
   .handler(async () => {
     const screeners = await getAllScreeners();
     return { screeners };
+  });
+
+export const loadScreenerFormOptions = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
+  .handler(async () => {
+    const { positions } = await getPositions();
+    return {
+      positions: positions.map((p) => ({ id: p.id, name: p.name })),
+    };
   });
 
 export const loadScreenerEdit = createServerFn({ method: "GET" })

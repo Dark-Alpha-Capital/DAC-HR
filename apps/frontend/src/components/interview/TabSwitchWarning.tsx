@@ -11,22 +11,33 @@ export default function TabSwitchWarning({
   onDismiss,
 }: TabSwitchWarningProps) {
   return (
-    <div className="fixed inset-x-0 top-0 z-50 p-3 sm:p-4">
-      <div className="mx-auto flex w-full max-w-3xl items-start gap-3 rounded-lg border border-amber-400/50 bg-amber-50 p-3 shadow-lg sm:items-center">
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-amber-100">
-          <AlertTriangle className="size-4 text-amber-600" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Tab switch warning"
+        className="w-full max-w-md rounded-xl border bg-background p-6 shadow-2xl"
+      >
+        <div className="flex flex-col items-center gap-3 text-center">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
+            <AlertTriangle className="size-5 text-amber-600" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-base font-semibold">
+              Heads up — you left the interview tab
+            </p>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Leaving the tab was recorded ({count} time
+              {count !== 1 ? "s" : ""}) and may be reviewed as part of your
+              interview. Please stay on this tab for the rest of the session.
+            </p>
+          </div>
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-amber-900">
-            Heads up — you left the interview tab
-          </p>
-          <p className="mt-0.5 text-xs leading-snug text-amber-800">
-            Leaving the tab was recorded ({count} time
-            {count !== 1 ? "s" : ""}) and may be reviewed as part of your
-            interview. Please stay on this tab for the rest of the session.
-          </p>
-        </div>
-        <Button size="sm" variant="outline" onClick={onDismiss}>
+        <Button
+          size="lg"
+          className="mt-6 w-full"
+          onClick={onDismiss}
+        >
           Got it
         </Button>
       </div>

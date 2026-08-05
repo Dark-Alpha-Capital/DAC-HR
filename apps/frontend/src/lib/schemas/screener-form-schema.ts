@@ -9,6 +9,20 @@ export const screenerFormSchema = z.object({
     .string()
     .min(1, "Screener content is required.")
     .max(100_000, "Content must be at most 100,000 characters."),
+  positionId: z.string().min(1, "Please select a position."),
+});
+
+export const screenerEditSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Screener name is required.")
+    .max(200, "Screener name must be at most 200 characters."),
+  content: z
+    .string()
+    .min(1, "Screener content is required.")
+    .max(100_000, "Content must be at most 100,000 characters."),
+  positionId: z.string(),
 });
 
 export type ScreenerFormSchema = z.infer<typeof screenerFormSchema>;
+export type ScreenerEditSchema = z.infer<typeof screenerEditSchema>;

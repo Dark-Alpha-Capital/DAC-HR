@@ -6,10 +6,10 @@ import {
   getApplicationStatusLabel,
   applicationStatusBadgeVariants,
 } from "@workspace/db/application-status";
-import { getCachedCandidate } from "~/lib/cache/candidate";
+import { getCandidateWithApplications } from "@workspace/db/repositories/candidate-repository";
 import { CreateApplicationDialog } from "~/components/dialogs/create-application-dialog";
 
-type Candidate = NonNullable<Awaited<ReturnType<typeof getCachedCandidate>>>;
+type Candidate = NonNullable<Awaited<ReturnType<typeof getCandidateWithApplications>>>;
 
 export function CandidateApplicationsTab({
   candidate,

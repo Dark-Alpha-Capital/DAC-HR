@@ -10,7 +10,7 @@ import {
   createPositionInterviewBundle,
   validatePositionRounds,
 } from "@workspace/db/repositories/interview-bundle-repository";
-import { getRoundsByPositionId } from "@workspace/db/queries";
+import { getRoundsByPositionId } from "@workspace/db/modules/positions";
 
 const agentConfigSchema = z.object({
   provider: z.literal("openai"),

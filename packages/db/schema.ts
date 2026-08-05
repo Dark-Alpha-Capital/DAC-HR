@@ -9,7 +9,6 @@ import {
 import { type InferSelectModel } from "drizzle-orm";
 import type {
   ApplicationStatus,
-  AttendanceStatus,
   CandidateDocumentCategory,
   CandidateImportDuplicatePolicy,
   CandidateImportRowStatus,
@@ -164,23 +163,20 @@ export const candidateDocument = sqliteTable("candidate_document", {
 });
 export type CandidateDocument = InferSelectModel<typeof candidateDocument>;
 
-export const candidateProfile = sqliteTable(
-  "candidate_profile",
-  {
-    id: uuidPk(),
-    candidateId: text("candidate_id")
-      .notNull()
-      .unique()
-      .references(() => candidate.id, { onDelete: "cascade" }),
-    school: text("school"),
-    major: text("major"),
-    graduationYear: integer("graduation_year"),
-    linkedinUrl: text("linkedin_url"),
-    resumeText: text("resume_text"),
-    createdAt: createdAtCol(),
-    updatedAt: updatedAtCol(),
-  },
-);
+export const candidateProfile = sqliteTable("candidate_profile", {
+  id: uuidPk(),
+  candidateId: text("candidate_id")
+    .notNull()
+    .unique()
+    .references(() => candidate.id, { onDelete: "cascade" }),
+  school: text("school"),
+  major: text("major"),
+  graduationYear: integer("graduation_year"),
+  linkedinUrl: text("linkedin_url"),
+  resumeText: text("resume_text"),
+  createdAt: createdAtCol(),
+  updatedAt: updatedAtCol(),
+});
 
 export type CandidateProfile = InferSelectModel<typeof candidateProfile>;
 
@@ -326,35 +322,31 @@ export const application = sqliteTable(
     updatedAt: updatedAtCol(),
   },
   (table) => ({
-    appCandidatePositionUnique: uniqueIndex(
-      "app_candidate_position_unique",
-    ).on(table.candidateId, table.positionId),
+    appCandidatePositionUnique: uniqueIndex("app_candidate_position_unique").on(
+      table.candidateId,
+      table.positionId,
+    ),
   }),
 );
 
-export const interview = sqliteTable(
-  "interview",
-  {
-    id: uuidPk(),
-    applicationId: text("application_id")
-      .notNull()
-      .references(() => application.id, { onDelete: "cascade" }),
-    roundId: text("round_id")
-      .notNull()
-      .references(() => roundTemplate.id, { onDelete: "cascade" }),
-    interviewerId: text("interviewer_id")
-      .references(() => user.id, { onDelete: "set null" }),
-    mode: text("mode").$type<InterviewMode>().default("manual").notNull(),
-    status: text("status")
-      .$type<InterviewStatus>()
-      .default("pending")
-      .notNull(),
-    rating: integer("rating"),
-    scheduledAt: integer("scheduled_at", { mode: "timestamp_ms" }),
-    overallFeedback: text("overall_feedback"),
-    createdAt: createdAtCol(),
-  },
-);
+export const interview = sqliteTable("interview", {
+  id: uuidPk(),
+  applicationId: text("application_id")
+    .notNull()
+    .references(() => application.id, { onDelete: "cascade" }),
+  roundId: text("round_id")
+    .notNull()
+    .references(() => roundTemplate.id, { onDelete: "cascade" }),
+  interviewerId: text("interviewer_id").references(() => user.id, {
+    onDelete: "set null",
+  }),
+  mode: text("mode").$type<InterviewMode>().default("manual").notNull(),
+  status: text("status").$type<InterviewStatus>().default("pending").notNull(),
+  rating: integer("rating"),
+  scheduledAt: integer("scheduled_at", { mode: "timestamp_ms" }),
+  overallFeedback: text("overall_feedback"),
+  createdAt: createdAtCol(),
+});
 
 export const interviewFeedback = sqliteTable(
   "interview_feedback",
@@ -512,17 +504,40 @@ export type CandidateAiScreening = InferSelectModel<
   typeof candidateAiScreening
 >;
 
-export const screener = sqliteTable("screener", {
-  id: uuidPk(),
-  name: text("name").notNull(),
-  content: text("content").notNull(),
-  createdBy: text("created_by").references(() => user.id, {
-    onDelete: "set null",
+export const screener = sqliteTable(
+  "screener",
+  {
+    id: uuidPk(),
+    name: text("name").notNull(),
+    content: text("content").notNull(),
+    positionId: text("position_id").references(() => position.id, {
+      onDelete: "set null",
+    }),
+    createdBy: text("created_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: createdAtCol(),
+    updatedAt: updatedAtCol(),
+  },
+  (table) => ({
+    positionUnique: uniqueIndex("screener_position_unique").on(table.positionId),
   }),
+);
+export type Screener = InferSelectModel<typeof screener>;
+
+export const candidateChecklistItem = sqliteTable("candidate_checklist_item", {
+  id: uuidPk(),
+  candidateId: text("candidate_id")
+    .notNull()
+    .references(() => candidate.id, { onDelete: "cascade" }),
+  label: text("label").notNull(),
+  checked: integer("checked", { mode: "boolean" }).default(false).notNull(),
   createdAt: createdAtCol(),
   updatedAt: updatedAtCol(),
 });
-export type Screener = InferSelectModel<typeof screener>;
+export type CandidateChecklistItem = InferSelectModel<
+  typeof candidateChecklistItem
+>;
 
 export const interviewAiAnalysis = sqliteTable("interview_ai_analysis", {
   id: uuidPk(),
@@ -633,9 +648,9 @@ export const interviewSession = sqliteTable("interview_session", {
     .notNull(),
   agentConfig: text("agent_config", { mode: "json" }).$type<AgentConfig>(),
   realtimeSessionId: text("realtime_session_id"),
-  cheatingSummary: text("cheating_summary", { mode: "json" }).$type<
-    CheatingSummary
-  >(),
+  cheatingSummary: text("cheating_summary", {
+    mode: "json",
+  }).$type<CheatingSummary>(),
   sessionAudioUrl: text("session_audio_url"),
   sessionAudioPath: text("session_audio_path"),
   interruptedAt: integer("interrupted_at", { mode: "timestamp_ms" }),
@@ -656,9 +671,7 @@ export const interviewBundleRound = sqliteTable(
       .notNull()
       .references(() => roundTemplate.id, { onDelete: "cascade" }),
     roundOrder: integer("round_order").notNull(),
-    deliveryMode: text("delivery_mode")
-      .$type<RoundDeliveryMode>()
-      .notNull(),
+    deliveryMode: text("delivery_mode").$type<RoundDeliveryMode>().notNull(),
     interviewId: text("interview_id")
       .notNull()
       .references(() => interview.id, { onDelete: "cascade" }),
@@ -680,7 +693,9 @@ export const interviewBundleRound = sqliteTable(
   }),
 );
 
-export type InterviewBundleRound = InferSelectModel<typeof interviewBundleRound>;
+export type InterviewBundleRound = InferSelectModel<
+  typeof interviewBundleRound
+>;
 
 export const interviewResponse = sqliteTable(
   "interview_response",
@@ -723,7 +738,9 @@ export const cheatingEvent = sqliteTable(
     timestamp: integer("timestamp", { mode: "timestamp_ms" })
       .notNull()
       .$defaultFn(() => new Date()),
-    metadata: text("metadata", { mode: "json" }).$type<Record<string, unknown>>(),
+    metadata: text("metadata", { mode: "json" }).$type<
+      Record<string, unknown>
+    >(),
   },
   (table) => ({
     cheatingEventSessionTimestampIdx: index(
@@ -741,9 +758,8 @@ export const interviewEvaluation = sqliteTable("interview_evaluation", {
     .unique()
     .references(() => interviewSession.id, { onDelete: "cascade" }),
   score: integer("score"),
-  recommendation: text("recommendation").$type<
-    InterviewEvaluationRecommendation
-  >(),
+  recommendation:
+    text("recommendation").$type<InterviewEvaluationRecommendation>(),
   summary: text("summary"),
   strengths: text("strengths", { mode: "json" }).$type<unknown>(),
   risks: text("risks", { mode: "json" }).$type<unknown>(),
@@ -757,45 +773,59 @@ export const interviewEvaluation = sqliteTable("interview_evaluation", {
 
 export type InterviewEvaluation = InferSelectModel<typeof interviewEvaluation>;
 
-export const attendance = sqliteTable(
-  "attendance",
+/** One Google Meet conference instance (persisted firm attendance). */
+export const meetConference = sqliteTable(
+  "meet_conference",
   {
-    id: uuidPk(),
-    prismicUid: text("prismic_uid").notNull(),
-    date: text("date").notNull(),
-    status: text("status")
-      .$type<AttendanceStatus>()
-      .default("present")
-      .notNull(),
-    checkInTime: text("check_in_time"),
-    checkOutTime: text("check_out_time"),
-    notes: text("notes"),
-    markedBy: text("marked_by")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
+    id: text("id").primaryKey(),
+    googleResourceName: text("google_resource_name").notNull(),
+    title: text("title").notNull(),
+    meetingCode: text("meeting_code"),
+    spaceName: text("space_name"),
+    startsAt: integer("starts_at", { mode: "timestamp_ms" }),
+    endsAt: integer("ends_at", { mode: "timestamp_ms" }),
+    /** UTC calendar day `YYYY-MM-DD` derived from starts_at */
+    attendanceDate: text("attendance_date").notNull(),
+    syncedByUserId: text("synced_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
     createdAt: createdAtCol(),
     updatedAt: updatedAtCol(),
   },
-  (table) => ({
-    attendanceUnique: uniqueIndex("attendance_unique").on(
-      table.prismicUid,
-      table.date,
-    ),
-  }),
+  (table) => [
+    index("meet_conference_attendance_date_idx").on(table.attendanceDate),
+  ],
 );
 
-export type Attendance = InferSelectModel<typeof attendance>;
+export type MeetConference = InferSelectModel<typeof meetConference>;
 
-export const holiday = sqliteTable("holiday", {
-  id: uuidPk(),
-  date: text("date").notNull().unique(),
-  name: text("name").notNull(),
-  description: text("description"),
-  createdBy: text("created_by")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  createdAt: createdAtCol(),
-  updatedAt: updatedAtCol(),
-});
+/** One person observed on a Meet conference. */
+export const meetAttendee = sqliteTable(
+  "meet_attendee",
+  {
+    id: text("id").primaryKey(),
+    conferenceId: text("conference_id")
+      .notNull()
+      .references(() => meetConference.id, { onDelete: "cascade" }),
+    displayName: text("display_name").notNull(),
+    googleUserId: text("google_user_id"),
+    /** signedin | anonymous | phone | unknown */
+    kind: text("kind").notNull().default("unknown"),
+    joinedAt: integer("joined_at", { mode: "timestamp_ms" }),
+    leftAt: integer("left_at", { mode: "timestamp_ms" }),
+    durationMs: integer("duration_ms"),
+    /**
+     * Stable dedupe key: `user:{googleUserId}` or `name:{kind}:{displayName}`.
+     */
+    dedupeKey: text("dedupe_key").notNull(),
+    createdAt: createdAtCol(),
+  },
+  (table) => [
+    uniqueIndex("meet_attendee_conference_dedupe_uidx").on(
+      table.conferenceId,
+      table.dedupeKey,
+    ),
+  ],
+);
 
-export type Holiday = InferSelectModel<typeof holiday>;
+export type MeetAttendee = InferSelectModel<typeof meetAttendee>;

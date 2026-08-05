@@ -12,6 +12,7 @@ import { Badge } from "~/components/ui/badge";
 import { Eye, Pencil, FileText, Loader2 } from "lucide-react";
 import type { CandidateDocument } from "@workspace/db/schema";
 import DeleteCandidateDocumentButton from "./delete-candidate-document-button";
+import { resolveDocumentAccessUrl } from "~/lib/documents/access";
 import { toast } from "sonner";
 
 interface CandidateDocumentCardProps {
@@ -55,30 +56,8 @@ const CandidateDocumentCard = ({
   const handleViewDocument = async () => {
     setIsLoadingViewUrl(true);
     try {
-      // Check if URL is already a public URL (not GCS)
-      const isPublicUrl =
-        !document.url.includes("storage.googleapis.com") &&
-        !document.url.startsWith("gs://");
-
-      if (isPublicUrl) {
-        // If it's already a public URL, open it directly
-        window.open(document.url, "_blank", "noopener,noreferrer");
-        setIsLoadingViewUrl(false);
-        return;
-      }
-
-      // For GCS URLs, get a signed URL
-      const response = await fetch(
-        `/api/documents/view?url=${encodeURIComponent(document.url)}`,
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to generate access URL");
-      }
-
-      const { url: signedUrl } = await response.json();
-      window.open(signedUrl, "_blank", "noopener,noreferrer");
+      const accessUrl = await resolveDocumentAccessUrl(document.url);
+      window.open(accessUrl, "_blank", "noopener,noreferrer");
     } catch (error) {
       console.error("Error viewing document:", error);
       toast.error(

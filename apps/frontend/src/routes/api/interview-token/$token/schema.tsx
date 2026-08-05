@@ -5,7 +5,7 @@ import {
 import {
   startBundleRound,
 } from "@workspace/db/repositories/interview-bundle-repository";
-import { getQuestionsForInterviewSession } from "@workspace/db/queries";
+import { getQuestionsForInterviewSession } from "@workspace/db/modules/positions";
 import { resolveInterviewToken } from "~/lib/interview-token";
 import {
   interviewServerLog,

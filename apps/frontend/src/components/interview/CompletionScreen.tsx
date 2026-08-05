@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { CheckCircle2, Mail, X } from "lucide-react";
+import { Mail, X } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import InterviewBrandHeader from "~/components/interview/InterviewBrandHeader";
 
@@ -29,11 +29,13 @@ export default function CompletionScreen({
       <InterviewBrandHeader />
       <main className="mx-auto flex w-full max-w-lg flex-1 min-h-0 flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-8">
         <div className="text-center">
-          <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-primary/10">
-            <CheckCircle2 className="size-6 text-primary" />
-          </div>
+          <img
+            src="/dac-logo.jpg"
+            alt="Dark Alpha Capital"
+            className="mx-auto h-16 w-auto"
+          />
           <h1 className="mt-4 text-xl font-semibold tracking-tight sm:text-2xl">
-            You&apos;ve completed the interview
+            You&apos;ve Completed the Interview
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             Thank you for taking the time to interview with{" "}

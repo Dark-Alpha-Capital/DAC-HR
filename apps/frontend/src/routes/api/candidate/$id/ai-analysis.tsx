@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { env } from "cloudflare:workers";
 import { getSession } from "~/lib/get-session";
-import { saveCandidateAiScreening } from "@workspace/db/queries";
+import { saveCandidateAiScreening } from "@workspace/db/repositories/candidate-repository";
 import { getCandidateWithApplications } from "@workspace/db/repositories/candidate-repository";
 import { getOpenAIProvider, generateEmbedding } from "@workspace/ai-config";
 import { generateText, Output } from "ai";

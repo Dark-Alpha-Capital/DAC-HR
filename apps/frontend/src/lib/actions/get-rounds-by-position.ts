@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
-import { getRoundsByPositionId } from "@workspace/db/queries";
+import { getRoundsByPositionId } from "@workspace/db/modules/positions";
 
 export const getRoundsByPosition = createServerFn({ method: "GET" })
   .middleware([serverFnAuthGuard])

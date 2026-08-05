@@ -16,12 +16,13 @@ export const createScreenerAction = createServerFn({ method: "POST" })
       return { error: result.error.flatten().fieldErrors };
     }
 
-    const { name, content } = result.data;
+    const { name, content, positionId } = result.data;
 
     try {
       const newScreener = await createScreener({
         name,
         content,
+        positionId,
         createdBy: session.user.id,
       });
 

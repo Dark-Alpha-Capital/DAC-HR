@@ -13,7 +13,9 @@ import DeleteScreenerButton from "~/components/delete-screener-button";
 import type { Screener } from "@workspace/db/schema";
 
 interface ScreenerContainerProps {
-  screeners: Screener[];
+  screeners: Array<
+    Screener & { position?: { id: string; name: string } | null }
+  >;
 }
 
 export default function ScreenerContainer({ screeners }: ScreenerContainerProps) {
@@ -36,6 +38,7 @@ export default function ScreenerContainer({ screeners }: ScreenerContainerProps)
         <TableRow>
           <TableHead className="py-1.5 px-2 text-xs w-16">#</TableHead>
           <TableHead className="py-1.5 px-2 text-xs">Name</TableHead>
+          <TableHead className="py-1.5 px-2 text-xs">Position</TableHead>
           <TableHead className="py-1.5 px-2 text-xs">Updated</TableHead>
           <TableHead className="py-1.5 px-2 text-xs">Preview</TableHead>
           <TableHead className="text-right py-1.5 px-2 text-xs">Actions</TableHead>
@@ -49,6 +52,11 @@ export default function ScreenerContainer({ screeners }: ScreenerContainerProps)
             </TableCell>
             <TableCell className="py-1.5 px-2 font-medium text-sm">
               {screener.name}
+            </TableCell>
+            <TableCell className="py-1.5 px-2 text-sm">
+              {screener.position?.name ?? (
+                <span className="text-muted-foreground italic">Unassigned</span>
+              )}
             </TableCell>
             <TableCell className="py-1.5 px-2 text-sm">
               {formatDate(screener.updatedAt)}

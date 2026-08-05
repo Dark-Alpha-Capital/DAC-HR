@@ -4,7 +4,7 @@ import { db } from "@workspace/db/db";
 import { employee } from "@workspace/db/schema";
 import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import { getEmployeeById } from "@workspace/db/queries";
+import { getEmployeeById } from "@workspace/db/modules/dashboard";
 
 export const deleteEmployee = createServerFn({ method: "POST" })
   .middleware([serverFnAuthGuard])

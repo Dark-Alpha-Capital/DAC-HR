@@ -10,6 +10,7 @@ import { Button } from "~/components/ui/button";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Loader2, FileText, Download, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { resolveDocumentAccessUrl } from "~/lib/documents/access";
 import type { Document } from "@workspace/db/schema";
 
 interface DocumentPreviewDialogProps {
@@ -38,32 +39,7 @@ function getFileType(url: string): FileType {
 }
 
 // Helper function to get signed URL
-async function getSignedUrl(
-  url: string,
-  signal?: AbortSignal,
-): Promise<string> {
-  // Check if URL is already a public URL (not GCS)
-  const isPublicUrl =
-    !url.includes("storage.googleapis.com") && !url.startsWith("gs://");
-
-  if (isPublicUrl) {
-    return url;
-  }
-
-  // For GCS URLs, get a signed URL
-  const response = await fetch(
-    `/api/documents/view?url=${encodeURIComponent(url)}`,
-    { signal },
-  );
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Failed to generate access URL");
-  }
-
-  const { url: signedUrl } = await response.json();
-  return signedUrl;
-}
+const getSignedUrl = resolveDocumentAccessUrl;
 
 export default function DocumentPreviewDialog({
   document,

@@ -90,6 +90,12 @@ function InterviewBundleDetailPage() {
       name: screener.name,
     })) ?? [];
 
+  const positionScreener =
+    screenersData?.screeners.find(
+      (screener: { positionId?: string | null }) =>
+        screener.positionId === application?.position?.id,
+    ) ?? null;
+
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(interviewLink);
@@ -199,6 +205,7 @@ function InterviewBundleDetailPage() {
           <InterviewAiAnalysisTab
             bundleId={bundle.id}
             screeners={screeners}
+            defaultScreenerId={positionScreener?.id ?? undefined}
             onAnalysisComplete={handleAnalysisComplete}
           />
         </TabsContent>

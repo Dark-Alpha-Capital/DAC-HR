@@ -5,7 +5,8 @@ import {
   getPositionBySlug,
   getPositions,
   getRoundsByPositionId,
-} from "@workspace/db/queries";
+} from "@workspace/db/modules/positions";
+import { getScreenerByPositionId } from "@workspace/db/repositories/screener-repository";
 
 type PositionsIndexInput = {
   search?: string;
@@ -49,15 +50,16 @@ export const loadPositionBySlug = createServerFn({ method: "GET" })
     const position = await getPositionBySlug(slug);
 
     if (!position) {
-      return { position: null, rounds: [], candidates: [] };
+      return { position: null, rounds: [], candidates: [], screener: null };
     }
 
-    const [rounds, candidates] = await Promise.all([
+    const [rounds, candidates, screener] = await Promise.all([
       getRoundsByPositionId(position.id),
       getCandidatesByPositionId(position.id),
+      getScreenerByPositionId(position.id),
     ]);
 
-    return { position, rounds, candidates };
+    return { position, rounds, candidates, screener };
   });
 
 export const loadPositionEdit = createServerFn({ method: "GET" })

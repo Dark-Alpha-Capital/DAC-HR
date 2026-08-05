@@ -58,7 +58,7 @@ function CandidateDetailPage() {
     return null;
   }
 
-  const { candidate, documents, onboardingData } = data;
+  const { candidate, documents, onboardingData, checklistItems } = data;
 
   if (!candidate) {
     return (
@@ -172,6 +172,7 @@ function CandidateDetailPage() {
               <OnboardingCard
                 candidateId={candidate.id}
                 onboardingData={onboardingData}
+                checklistItems={checklistItems}
               />
             </div>
           )}

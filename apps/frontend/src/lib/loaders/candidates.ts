@@ -4,28 +4,23 @@ import {
   getApplicationsFiltered,
   getCandidateAiScreenings,
   getOrCreateCandidateOnboarding,
-  getPositions,
-  getRoundsByPositionId,
   getUsers,
-} from "@workspace/db/queries";
+} from "@workspace/db/repositories/candidate-repository";
+import { getPositions, getRoundsByPositionId } from "@workspace/db/modules/positions";
 import {
   parseCandidateSortOption,
   type CandidateSortOption,
 } from "@workspace/db/candidate-list-filters";
 import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
+import { getChecklistItemsByCandidateId } from "@workspace/db/repositories/candidate-checklist-repository";
 import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
 import { getApplicationWithInterviews } from "@workspace/db/repositories/interview-repository";
 import { getSessionsByApplicationId } from "@workspace/db/repositories/interview-session-repository";
-import {
-  getCachedCandidate,
-  getCachedCandidatesWithPositionsFiltered,
-  getCachedDocuments,
-  getCachedPositions,
-} from "~/lib/cache/candidate";
+import { getCandidateWithApplications, getCandidatesWithPositionsFiltered } from "@workspace/db/repositories/candidate-repository";
 import { getKanbanFilteredTotalCount } from "@workspace/db/kanban-queries";
 import type { Session } from "better-auth";
 
-type CachedCandidate = Awaited<ReturnType<typeof getCachedCandidate>>;
+type CachedCandidate = Awaited<ReturnType<typeof getCandidateWithApplications>>;
 type CandidateDocuments = Awaited<ReturnType<typeof getDocumentsByCandidateId>>;
 type CandidateScreenings = Awaited<ReturnType<typeof getCandidateAiScreenings>>;
 
@@ -48,6 +43,11 @@ export type CandidateDetailData = {
     packetSent: boolean;
     companyEmailActivate: boolean;
   } | null;
+  checklistItems: Array<{
+    id: string;
+    label: string;
+    checked: boolean;
+  }>;
   applicationDetails: Awaited<
     ReturnType<typeof getApplicationWithInterviews>
   >[];
@@ -66,7 +66,7 @@ type CandidatesIndexInput = {
 };
 
 type FilteredCandidatesResult = Awaited<
-  ReturnType<typeof getCachedCandidatesWithPositionsFiltered>
+  ReturnType<typeof getCandidatesWithPositionsFiltered>
 >;
 
 export type CandidatesIndexData = {
@@ -101,7 +101,7 @@ export const loadCandidatesIndex = createServerFn({ method: "GET" })
 
     if (isKanbanView) {
       const [{ positions }, totalCount] = await Promise.all([
-        getCachedPositions(),
+        getPositions(),
         getKanbanFilteredTotalCount({
           name: deps.name,
           email: deps.email,
@@ -126,8 +126,8 @@ export const loadCandidatesIndex = createServerFn({ method: "GET" })
     }
 
     const [{ positions }, candidatesResult] = await Promise.all([
-      getCachedPositions(),
-      getCachedCandidatesWithPositionsFiltered(
+      getPositions(),
+      getCandidatesWithPositionsFiltered(
         deps.name,
         deps.email,
         deps.position,
@@ -194,8 +194,8 @@ export const loadCandidateDetail = createServerFn({ method: "GET" })
 
     const [users, candidate, documents, screenings] = await Promise.all([
       getUsers(),
-      getCachedCandidate(data.uid),
-      getCachedDocuments(data.uid),
+      getCandidateWithApplications(data.uid),
+      getDocumentsByCandidateId(data.uid),
       getCandidateAiScreenings(data.uid),
     ]);
 
@@ -208,19 +208,22 @@ export const loadCandidateDetail = createServerFn({ method: "GET" })
         documents: [],
         screenings: [],
         onboardingData: null,
+        checklistItems: [],
         applicationDetails: [],
         initialApplicationId: data.application,
       };
     }
 
-    const [applicationDetails, rawOnboarding] = await Promise.all([
-      Promise.all(
-        candidate.applications.map((app) =>
-          getApplicationWithInterviews(app.id),
+    const [applicationDetails, rawOnboarding, checklistItems] =
+      await Promise.all([
+        Promise.all(
+          candidate.applications.map((app) =>
+            getApplicationWithInterviews(app.id),
+          ),
         ),
-      ),
-      getOrCreateCandidateOnboarding(candidate.id),
-    ]);
+        getOrCreateCandidateOnboarding(candidate.id),
+        getChecklistItemsByCandidateId(candidate.id),
+      ]);
 
     const onboardingData = rawOnboarding
       ? {
@@ -239,6 +242,7 @@ export const loadCandidateDetail = createServerFn({ method: "GET" })
       documents,
       screenings,
       onboardingData,
+      checklistItems,
       applicationDetails,
       initialApplicationId: data.application,
     };

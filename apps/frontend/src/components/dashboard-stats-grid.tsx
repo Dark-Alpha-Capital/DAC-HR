@@ -1,4 +1,4 @@
-import type { getDashboardStats } from "@workspace/db/queries";
+import type { getDashboardStats } from "@workspace/db/modules/dashboard";
 import {
   Card,
   CardContent,

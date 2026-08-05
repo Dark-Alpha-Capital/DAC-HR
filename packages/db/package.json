@@ -12,8 +12,9 @@
   "exports": {
     ".": "./index.ts",
     "./db": "./db.ts",
-    "./queries": "./queries.ts",
     "./repositories/*": "./repositories/*.ts",
+    "./modules/*": "./modules/*.ts",
+    "./testing": "./testing.ts",
     "./schema": "./schema.ts",
     "./question-types": "./question-types.ts",
     "./enums": "./enums.ts",

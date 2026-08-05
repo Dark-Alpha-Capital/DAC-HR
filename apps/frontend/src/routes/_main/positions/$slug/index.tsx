@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_main/positions/$slug/")({
 });
 
 function PositionDetailPage() {
-  const { position, rounds, candidates } = Route.useLoaderData();
+  const { position, rounds, candidates, screener } = Route.useLoaderData();
 
   if (!position) {
     return (
@@ -175,6 +175,42 @@ function PositionDetailPage() {
                     </p>
                   )}
                 </div>
+              </div>
+
+              <div className="space-y-3">
+                <h2 className="text-sm font-medium text-muted-foreground">
+                  Screener
+                </h2>
+                {screener ? (
+                  <div className="flex items-center justify-between gap-4 rounded-lg border p-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">{screener.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Used automatically for AI screening when this
+                        position&apos;s interview completes.
+                      </p>
+                    </div>
+                    <Button variant="secondary" size="sm" asChild>
+                      <Link
+                        to="/screeners/$id/edit"
+                        params={{ id: screener.id }}
+                      >
+                        <Pencil className="h-3 w-3 mr-1" />
+                        Edit
+                      </Link>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-4 rounded-lg border border-dashed p-3">
+                    <p className="text-xs text-muted-foreground">
+                      No screener attached. Attach one so AI screening runs
+                      automatically when interviews complete.
+                    </p>
+                    <Button variant="secondary" size="sm" asChild>
+                      <Link to="/screeners/new">Attach screener</Link>
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </TabsContent>

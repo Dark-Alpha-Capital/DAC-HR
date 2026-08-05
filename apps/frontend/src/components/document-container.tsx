@@ -15,6 +15,7 @@ import { Download, Loader2, Eye } from "lucide-react";
 import DeleteDocumentButton from "~/components/delete-document-button";
 import DeleteCandidateDocumentButton from "~/components/delete-candidate-document-button";
 import DocumentPreviewDialog from "~/components/document-preview-dialog";
+import { resolveDocumentAccessUrl } from "~/lib/documents/access";
 import {
   Tooltip,
   TooltipContent,
@@ -54,25 +55,7 @@ const DocumentContainer = ({
   const handleDownloadDocument = async (document: UnifiedDocumentListItem) => {
     setDownloadingDocId(document.id);
     try {
-      const isPublicUrl =
-        !document.url.includes("storage.googleapis.com") &&
-        !document.url.startsWith("gs://");
-
-      let accessUrl = document.url;
-
-      if (!isPublicUrl) {
-        const response = await fetch(
-          `/api/documents/view?url=${encodeURIComponent(document.url)}`,
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to generate access URL");
-        }
-
-        const { url: signedUrl } = await response.json();
-        accessUrl = signedUrl;
-      }
+      const accessUrl = await resolveDocumentAccessUrl(document.url);
 
       const response = await fetch(accessUrl);
       if (!response.ok) {

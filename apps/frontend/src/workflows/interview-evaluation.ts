@@ -11,6 +11,7 @@ import {
   getSessionById,
   upsertEvaluation,
   updateSessionStatus,
+  getEvaluationBySessionId,
 } from "@workspace/db/repositories/interview-session-repository";
 
 type Env = {
@@ -43,6 +44,14 @@ export class InterviewEvaluationWorkflow extends WorkflowEntrypoint<
 > {
   async run(event: WorkflowEvent<Params>, step: WorkflowStep) {
     const { sessionId } = event.payload;
+
+    const alreadyEvaluated = await step.do("check-existing-evaluation", async () => {
+      return Boolean(await getEvaluationBySessionId(sessionId));
+    });
+
+    if (alreadyEvaluated) {
+      return;
+    }
 
     const context = await step.do("load-session-context", async () => {
       const row = await getSessionById(sessionId);

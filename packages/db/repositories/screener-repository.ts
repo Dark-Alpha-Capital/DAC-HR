@@ -1,12 +1,31 @@
 import { desc, eq } from "drizzle-orm";
 import { db } from "@workspace/db/db";
-import { screener } from "../schema";
+import { screener, position } from "../schema";
+
+const screenerWithPosition = {
+  id: screener.id,
+  name: screener.name,
+  content: screener.content,
+  positionId: screener.positionId,
+  createdBy: screener.createdBy,
+  createdAt: screener.createdAt,
+  updatedAt: screener.updatedAt,
+};
+
+const withPositionJoin = () => ({
+  ...screenerWithPosition,
+  position: {
+    id: position.id,
+    name: position.name,
+  },
+});
 
 export const getAllScreeners = async () => {
   try {
     return await db
-      .select()
+      .select(withPositionJoin())
       .from(screener)
+      .leftJoin(position, eq(screener.positionId, position.id))
       .orderBy(desc(screener.updatedAt));
   } catch (error) {
     console.error("Error fetching screeners", error);
@@ -17,8 +36,9 @@ export const getAllScreeners = async () => {
 export const getScreenerById = async (id: string) => {
   try {
     const [row] = await db
-      .select()
+      .select(withPositionJoin())
       .from(screener)
+      .leftJoin(position, eq(screener.positionId, position.id))
       .where(eq(screener.id, id))
       .limit(1);
     return row ?? null;
@@ -28,9 +48,25 @@ export const getScreenerById = async (id: string) => {
   }
 };
 
+export const getScreenerByPositionId = async (positionId: string) => {
+  try {
+    const [row] = await db
+      .select(withPositionJoin())
+      .from(screener)
+      .leftJoin(position, eq(screener.positionId, position.id))
+      .where(eq(screener.positionId, positionId))
+      .limit(1);
+    return row ?? null;
+  } catch (error) {
+    console.error("Error fetching screener by position id", error);
+    return null;
+  }
+};
+
 export const createScreener = async (data: {
   name: string;
   content: string;
+  positionId?: string | null;
   createdBy?: string | null;
 }) => {
   const [row] = await db
@@ -38,6 +74,7 @@ export const createScreener = async (data: {
     .values({
       name: data.name,
       content: data.content,
+      positionId: data.positionId ?? null,
       createdBy: data.createdBy ?? null,
     })
     .returning();
@@ -46,13 +83,14 @@ export const createScreener = async (data: {
 
 export const updateScreener = async (
   id: string,
-  data: { name: string; content: string },
+  data: { name: string; content: string; positionId?: string | null },
 ) => {
   const [row] = await db
     .update(screener)
     .set({
       name: data.name,
       content: data.content,
+      positionId: data.positionId ?? null,
       updatedAt: new Date(),
     })
     .where(eq(screener.id, id))
