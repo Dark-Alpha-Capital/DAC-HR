@@ -231,6 +231,9 @@ function ApplicationDetailPage() {
             currentUser={currentUser}
             users={users}
             application={application as any}
+            positionSlug={(application as any).position?.slug as
+              | string
+              | undefined}
           />
         </TabsContent>
       </Tabs>

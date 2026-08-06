@@ -124,6 +124,7 @@ interface ApplicationProgressTimelineProps {
     positionId: string;
     rounds: Round[];
   };
+  positionSlug?: string;
 }
 
 const getBundleStatusBadge = (status: InterviewBundleStatus) => {
@@ -301,6 +302,7 @@ export default function ApplicationProgressTimeline({
   currentUser,
   users = [],
   application,
+  positionSlug,
 }: ApplicationProgressTimelineProps) {
   const invalidate = useQueryInvalidation();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -420,6 +422,7 @@ export default function ApplicationProgressTimeline({
             application={application}
             users={users}
             currentUserId={currentUser.id}
+            positionSlug={positionSlug}
             trigger={
               <Button size="sm">
                 <Plus className="h-4 w-4 mr-2" />

@@ -24,6 +24,7 @@ import { createInterviewSession } from "~/lib/actions/create-interview-session";
 import type { RoundDeliveryMode } from "@workspace/db/enums";
 import { toast } from "sonner";
 import { Bot, Calendar, Check, Copy, Link2, Mic, Plus } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 type DialogMode = "ai_link" | "manual";
 
@@ -44,6 +45,7 @@ interface RecordInterviewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialRoundId?: string;
+  positionSlug?: string;
 }
 
 export default function RecordInterviewDialog({
@@ -54,6 +56,7 @@ export default function RecordInterviewDialog({
   open,
   onOpenChange,
   initialRoundId,
+  positionSlug,
 }: RecordInterviewDialogProps) {
   const invalidate = useQueryInvalidation();
   const [loading, setLoading] = useState(false);
@@ -305,9 +308,27 @@ export default function RecordInterviewDialog({
                     ))}
                   </div>
                   {application.rounds.length === 0 ? (
-                    <p className="text-sm text-destructive">
-                      No interview rounds configured for this position.
-                    </p>
+                    <div className="rounded-md border border-dashed p-3">
+                      <p className="text-sm text-destructive">
+                        No interview rounds configured for this position.
+                      </p>
+                      {positionSlug ? (
+                        <Button
+                          asChild
+                          size="sm"
+                          variant="secondary"
+                          className="mt-2"
+                        >
+                          <Link
+                            to="/positions/$slug"
+                            params={{ slug: positionSlug }}
+                          >
+                            <Plus className="h-3.5 w-3.5 mr-1" />
+                            Add rounds
+                          </Link>
+                        </Button>
+                      ) : null}
+                    </div>
                   ) : null}
                 </div>
                 <DialogFooter>
