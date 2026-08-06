@@ -7,7 +7,7 @@
 
   "observability": {
     "enabled": true,
-    "head_sampling_rate": 1
+    "head_sampling_rate": 1,
   },
 
   // Non-secret config only. Secrets (OPENAI_API_KEY, NEXTCLOUD_*, BETTER_AUTH_SECRET,
@@ -20,15 +20,15 @@
     "BETTER_AUTH_URL": "http://localhost:3000",
     "PRISMIC_REPOSITORY_NAME": "darkalpha",
     "PRISMIC_TEAM_MEMBER_TYPE": "teammember",
-    "PRISMIC_OPERATING_MEMBER_TYPE": "operatingmember"
+    "PRISMIC_OPERATING_MEMBER_TYPE": "operatingmember",
   },
 
   "env": {
     "production": {
       "vars": {
-        "BETTER_AUTH_URL": "https://recruiting.darkalphacapital.com"
-      }
-    }
+        "BETTER_AUTH_URL": "https://recruiting.darkalphacapital.com",
+      },
+    },
   },
 
   "d1_databases": [
@@ -37,53 +37,53 @@
       "database_name": "hr-automation-db",
       "database_id": "d86703d9-2aa7-42b5-91a6-995fcf0afde0",
       "migrations_dir": "../../packages/db/drizzle",
-      "remote": false
-    }
+      "remote": false,
+    },
   ],
 
   "vectorize": [
     {
       "binding": "VECTORIZE",
       "index_name": "hr-documents-index",
-      "remote": true
-    }
+      "remote": true,
+    },
   ],
 
   "workflows": [
     {
       "name": "document-indexing",
       "binding": "DOCUMENT_INDEXING_WORKFLOW",
-      "class_name": "DocumentIndexingWorkflow"
+      "class_name": "DocumentIndexingWorkflow",
     },
     {
       "name": "interview-evaluation",
       "binding": "INTERVIEW_EVALUATION_WORKFLOW",
-      "class_name": "InterviewEvaluationWorkflow"
+      "class_name": "InterviewEvaluationWorkflow",
     },
     {
       "name": "candidate-import",
       "binding": "CANDIDATE_IMPORT_WORKFLOW",
-      "class_name": "CandidateImportWorkflow"
-    }
+      "class_name": "CandidateImportWorkflow",
+    },
   ],
 
   "durable_objects": {
     "bindings": [
       {
         "name": "INTERVIEW_SESSION_DO",
-        "class_name": "InterviewSessionDO"
-      }
-    ]
+        "class_name": "InterviewSessionDO",
+      },
+    ],
   },
 
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["InterviewSessionDO"]
-    }
+      "new_sqlite_classes": ["InterviewSessionDO"],
+    },
   ],
 
   "assets": {
-    "directory": "./public"
-  }
+    "directory": "./public",
+  },
 }

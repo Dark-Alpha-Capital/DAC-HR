@@ -111,13 +111,26 @@ export const getStoredAttendance = createServerFn({ method: "GET" })
   .middleware([serverFnAuthGuard])
   .validator((data: unknown) => {
     if (!data || typeof data !== "object") {
-      return { date: undefined as string | undefined };
+      return { date: undefined as string | undefined, page: undefined as number | undefined };
     }
-    const date = (data as { date?: unknown }).date;
-    if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      return { date };
-    }
-    return { date: undefined };
+    const raw = data as { date?: unknown; page?: unknown };
+    const date =
+      typeof raw.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw.date)
+        ? raw.date
+        : undefined;
+    const page =
+      typeof raw.page === "string"
+        ? Number.parseInt(raw.page, 10)
+        : typeof raw.page === "number"
+          ? raw.page
+          : undefined;
+    return {
+      date,
+      page:
+        typeof page === "number" && Number.isFinite(page) && page >= 1
+          ? Math.floor(page)
+          : undefined,
+    };
   })
   .handler(
     async ({
@@ -125,17 +138,37 @@ export const getStoredAttendance = createServerFn({ method: "GET" })
     }): Promise<{
       date: string | null;
       rows: StoredAttendanceRow[];
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
       error?: string;
     }> => {
       try {
-        const rows = await listStoredAttendanceRows(
-          data.date ? { date: data.date } : undefined,
-        );
-        return { date: data.date ?? null, rows };
+        const result = await listStoredAttendanceRows({
+          ...(data.date ? { date: data.date } : {}),
+          ...(data.page ? { page: data.page } : {}),
+        });
+        return {
+          date: data.date ?? null,
+          rows: result.rows,
+          total: result.total,
+          page: result.page,
+          limit: result.limit,
+          totalPages: result.totalPages,
+        };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         console.error("[stored-attendance] list failed:", message);
-        return { date: data.date ?? null, rows: [], error: message };
+        return {
+          date: data.date ?? null,
+          rows: [],
+          total: 0,
+          page: data.page ?? 1,
+          limit: 50,
+          totalPages: 1,
+          error: message,
+        };
       }
     },
   );

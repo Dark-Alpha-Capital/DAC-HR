@@ -2,18 +2,13 @@ import { Link } from "@tanstack/react-router";
 import {
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
   getSortedRowModel,
   useReactTable,
   type ColumnDef,
-  type ColumnFiltersState,
   type SortingState,
 } from "@tanstack/react-table";
 import { useState } from "react";
 
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
 import {
   Table,
   TableBody,
@@ -70,10 +65,6 @@ const columns: ColumnDef<StoredAttendanceRow>[] = [
     cell: ({ row }) => (
       <span className="font-mono text-xs">{row.original.attendanceDate}</span>
     ),
-    filterFn: (row, _id, value: string) => {
-      if (!value) return true;
-      return row.original.attendanceDate === value;
-    },
   },
   {
     accessorKey: "displayName",
@@ -140,111 +131,62 @@ export function AttendanceDataTable({ data }: { data: StoredAttendanceRow[] }) {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "attendanceDate", desc: true },
   ]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
   const table = useReactTable({
     data,
     columns,
-    state: { sorting, columnFilters },
+    state: { sorting },
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
   });
 
-  const dateFilter =
-    (table.getColumn("attendanceDate")?.getFilterValue() as
-      | string
-      | undefined) ?? "";
-
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 border border-border bg-muted/20 p-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-4 sm:p-4">
-        <div className="flex flex-col gap-1.5">
-          <Label
-            htmlFor="attendance-date-filter"
-            className="text-xs text-muted-foreground"
-          >
-            Filter by date
-          </Label>
-          <Input
-            id="attendance-date-filter"
-            type="date"
-            className="w-auto bg-background"
-            value={dateFilter}
-            onChange={(event) => {
-              const next = event.target.value;
-              table
-                .getColumn("attendanceDate")
-                ?.setFilterValue(next || undefined);
-            }}
-          />
-        </div>
-        {dateFilter ? (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() =>
-              table.getColumn("attendanceDate")?.setFilterValue(undefined)
-            }
-          >
-            Show all dates
-          </Button>
-        ) : null}
-        <p className="text-xs text-muted-foreground sm:ml-auto">
-          {table.getFilteredRowModel().rows.length} attendee
-          {table.getFilteredRowModel().rows.length === 1 ? "" : "s"}
-        </p>
-      </div>
-
-      <div className="border border-border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="hover:bg-transparent">
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                  </TableHead>
+    <div className="border border-border">
+      <Table>
+        <TableHeader>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id} className="hover:bg-transparent">
+              {headerGroup.headers.map((header) => (
+                <TableHead key={header.id}>
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )}
+                </TableHead>
+              ))}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {table.getRowModel().rows.length ? (
+            table.getRowModel().rows.map((row) => (
+              <TableRow key={row.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id}>
+                    {flexRender(
+                      cell.column.columnDef.cell,
+                      cell.getContext(),
+                    )}
+                  </TableCell>
                 ))}
               </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center text-muted-foreground"
-                >
-                  No stored attendance yet. Open a meeting from Meetings to sync
-                  who joined.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell
+                colSpan={columns.length}
+                className="h-24 text-center text-muted-foreground"
+              >
+                No stored attendance yet. Open a meeting from Meetings to sync
+                who joined.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
     </div>
   );
 }

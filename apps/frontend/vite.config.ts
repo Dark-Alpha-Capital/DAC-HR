@@ -66,6 +66,7 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ["@workspace/db"],
+    include: ["@tanstack/react-table"],
   },
   plugins: [
     environmentAlias(),

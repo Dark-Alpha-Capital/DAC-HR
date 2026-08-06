@@ -1,4 +1,4 @@
-import { asc, desc, eq } from "drizzle-orm";
+import { asc, count, desc, eq } from "drizzle-orm";
 import { db } from "@workspace/db/db";
 import { meetAttendee, meetConference } from "../schema";
 
@@ -139,46 +139,76 @@ export async function persistConferenceAttendance(input: {
   );
 }
 
-/** Flat attendee rows for the Meeting Attendance data table. */
+/** Flat attendee rows for the Meeting Attendance data table, paginated. */
 export async function listStoredAttendanceRows(options?: {
   date?: string;
-}): Promise<StoredAttendanceRow[]> {
-  const rows = await db
-    .select({
-      attendeeId: meetAttendee.id,
-      attendanceDate: meetConference.attendanceDate,
-      conferenceId: meetConference.id,
-      meetingTitle: meetConference.title,
-      meetingCode: meetConference.meetingCode,
-      displayName: meetAttendee.displayName,
-      kind: meetAttendee.kind,
-      joinedAt: meetAttendee.joinedAt,
-      leftAt: meetAttendee.leftAt,
-      durationMs: meetAttendee.durationMs,
-    })
-    .from(meetConference)
-    .innerJoin(meetAttendee, eq(meetAttendee.conferenceId, meetConference.id))
-    .where(
-      options?.date
-        ? eq(meetConference.attendanceDate, options.date)
-        : undefined,
-    )
-    .orderBy(
-      desc(meetConference.attendanceDate),
-      asc(meetConference.startsAt),
-      asc(meetAttendee.displayName),
-    );
+  page?: number;
+  limit?: number;
+}): Promise<{
+  rows: StoredAttendanceRow[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}> {
+  const limit = Math.min(Math.max(options?.limit ?? 50, 1), 200);
+  const page = Math.max(options?.page ?? 1, 1);
+  const offset = (page - 1) * limit;
 
-  return rows.map((row) => ({
-    id: row.attendeeId,
-    attendanceDate: row.attendanceDate,
-    conferenceId: row.conferenceId,
-    meetingTitle: row.meetingTitle,
-    meetingCode: row.meetingCode,
-    displayName: row.displayName,
-    kind: asKind(row.kind),
-    joinedAt: toIso(row.joinedAt),
-    leftAt: toIso(row.leftAt),
-    durationMs: row.durationMs,
-  }));
+  const whereClause = options?.date
+    ? eq(meetConference.attendanceDate, options.date)
+    : undefined;
+
+  const [totalResult, rows] = await Promise.all([
+    db
+      .select({ total: count() })
+      .from(meetConference)
+      .innerJoin(meetAttendee, eq(meetAttendee.conferenceId, meetConference.id))
+      .where(whereClause),
+    db
+      .select({
+        attendeeId: meetAttendee.id,
+        attendanceDate: meetConference.attendanceDate,
+        conferenceId: meetConference.id,
+        meetingTitle: meetConference.title,
+        meetingCode: meetConference.meetingCode,
+        displayName: meetAttendee.displayName,
+        kind: meetAttendee.kind,
+        joinedAt: meetAttendee.joinedAt,
+        leftAt: meetAttendee.leftAt,
+        durationMs: meetAttendee.durationMs,
+      })
+      .from(meetConference)
+      .innerJoin(meetAttendee, eq(meetAttendee.conferenceId, meetConference.id))
+      .where(whereClause)
+      .orderBy(
+        desc(meetConference.attendanceDate),
+        asc(meetConference.startsAt),
+        asc(meetAttendee.displayName),
+      )
+      .limit(limit)
+      .offset(offset),
+  ]);
+
+  const total = totalResult[0]?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+
+  return {
+    rows: rows.map((row) => ({
+      id: row.attendeeId,
+      attendanceDate: row.attendanceDate,
+      conferenceId: row.conferenceId,
+      meetingTitle: row.meetingTitle,
+      meetingCode: row.meetingCode,
+      displayName: row.displayName,
+      kind: asKind(row.kind),
+      joinedAt: toIso(row.joinedAt),
+      leftAt: toIso(row.leftAt),
+      durationMs: row.durationMs,
+    })),
+    total,
+    page,
+    limit,
+    totalPages,
+  };
 }

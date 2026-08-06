@@ -99,6 +99,7 @@ export const queryKeys = {
       ["attendance", "meetings", normalizeListDeps(deps)] as const,
     detail: (conferenceId: string) =>
       ["attendance", "detail", conferenceId] as const,
-    stored: () => ["attendance", "stored"] as const,
+    stored: (deps: Record<string, unknown>) =>
+      ["attendance", "stored", normalizeListDeps(deps)] as const,
   },
 };

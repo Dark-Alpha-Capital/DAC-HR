@@ -83,7 +83,10 @@ function MeetingsPage() {
           </p>
         </div>
         <Button asChild variant="secondary" size="sm">
-          <Link to="/employees/attendance/meeting-attendance">
+          <Link
+            to="/employees/attendance/meeting-attendance"
+            search={{} as any}
+          >
             <CalendarCheck className="size-4 mr-2" />
             Meeting Attendance
           </Link>
