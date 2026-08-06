@@ -9,6 +9,7 @@ export {
   createRealtimeEphemeralSession,
   getRealtimeSidebandUrl,
   getRealtimeSidebandHttpUrl,
+  sha256Hex,
   REALTIME_MODEL,
   DEFAULT_REALTIME_VOICE,
   type CreateRealtimeSessionOptions,

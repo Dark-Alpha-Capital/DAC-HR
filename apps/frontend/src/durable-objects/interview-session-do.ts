@@ -1,6 +1,6 @@
 /// <reference types="@cloudflare/workers-types" />
 
-import { getRealtimeSidebandHttpUrl } from "@workspace/ai-config";
+import { getRealtimeSidebandHttpUrl, sha256Hex } from "@workspace/ai-config";
 import { getQuestionsForInterviewSession } from "@workspace/db/modules/positions";
 import type { CheatingEventType, CheatingSummary } from "@workspace/db/enums";
 import {
@@ -38,6 +38,17 @@ import {
   buildSessionUpdateEvent,
   buildWelcomeIntroEvent,
 } from "@workspace/interview-realtime/prompts";
+import {
+  nextBackoffDelayMs,
+  QUESTION_TIMEOUT_DEFAULT_SECONDS,
+  RECONNECT_GRACE_MS,
+  SESSION_TIMEOUT_GRACE_MS,
+  SESSION_TIMEOUT_MS,
+  shouldMarkInterrupted,
+  SIDEBAND_CONNECT_MAX_RETRIES,
+  SIDEBAND_RECONNECT_MAX_ATTEMPTS,
+  WS_CLOSE_NORMAL,
+} from "@workspace/interview-realtime/session-rules";
 import type {
   ConversationEntry,
   InterviewQuestion,
@@ -60,13 +71,12 @@ declare const WebSocketPair: {
 
 const CHEATING_RATE_LIMIT_MS = 1000;
 const DO_COMPONENT = "InterviewSessionDO";
-const SIDEBAND_CONNECT_MAX_RETRIES = 3;
-const SIDEBAND_RECONNECT_MAX_ATTEMPTS = 5;
-const SIDEBAND_BACKOFF_BASE_MS = 1000;
-const SIDEBAND_BACKOFF_MAX_MS = 30000;
-const SESSION_TIMEOUT_MS = 60 * 60 * 1000;
-const SESSION_TIMEOUT_GRACE_MS = 60 * 1000;
-const QUESTION_TIMEOUT_DEFAULT_SECONDS = 180;
+const WS_CLOSE_SUPERSEDED = 4001;
+const MAX_RECONNECTS_PER_WINDOW = 8;
+const RECONNECT_WINDOW_MS = 60 * 1000;
+/** Alarm purposes multiplexed onto the single Durable Object alarm slot. */
+const ALARM_SESSION_LIMIT = "session_limit";
+const ALARM_INTERRUPT_GRACE = "interrupt_grace";
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -102,10 +112,13 @@ export class InterviewSessionDO implements DurableObject {
   private lastCheatingEventAt = new Map<string, number>();
   private focusLostStartedAt: number | null = null;
   private pendingAdvanceAfterAck = false;
+  private pendingAdvanceReason: string | null = null;
   private evaluatingAnswer = false;
   private cachedBaseInstructions: string | null = null;
   private sessionTimeLimitSent = false;
   private questionTimer: ReturnType<typeof setTimeout> | null = null;
+  /** The currently accepted client WebSocket (new connections supersede it). */
+  private clientSocket: WebSocket | null = null;
 
   constructor(state: DurableObjectState, env: InterviewSessionEnv) {
     this.durableState = state;
@@ -153,7 +166,44 @@ export class InterviewSessionDO implements DurableObject {
       return new Response("Missing session parameters", { status: 400 });
     }
 
-    await this.ensureState(sessionId, token);
+    // Guard first-time init (DB reads/writes + alarm) against interleaving with
+    // concurrent fetches on a cold DO.
+    await this.durableState.blockConcurrencyWhile(async () => {
+      await this.ensureState(sessionId, token);
+    });
+
+    // A new connection cancels a pending interrupt-grace alarm: the candidate
+    // reattached (transient drop / reload), so the session lives on.
+    await this.durableState.storage.delete("alarmPurpose").catch(() => undefined);
+    await this.durableState.storage.setAlarm(Date.now() + SESSION_TIMEOUT_MS);
+
+    // Abuse guard: reject rapid reconnect storms.
+    const now = Date.now();
+    const reconnects = (this.interviewState!.reconnectAttempts ?? []).filter(
+      (t) => now - t < RECONNECT_WINDOW_MS,
+    );
+    reconnects.push(now);
+    this.interviewState!.reconnectAttempts = reconnects;
+    if (reconnects.length > MAX_RECONNECTS_PER_WINDOW) {
+      this.logTranscript("reconnect_rate_limited", {
+        attemptsInWindow: reconnects.length,
+        windowMs: RECONNECT_WINDOW_MS,
+      });
+      return new Response("Too many connection attempts", { status: 429 });
+    }
+
+    // Multi-tab: a new connection supersedes the previous one.
+    if (this.clientSocket) {
+      try {
+        this.clientSocket.close(WS_CLOSE_SUPERSEDED, "replaced by another tab");
+      } catch {
+        // ignore close errors
+      }
+    }
+
+    this.interviewState!.connectionGeneration =
+      (this.interviewState!.connectionGeneration ?? 0) + 1;
+    await this.persistState();
 
     const isPractice = url.searchParams.get("practice") === "1";
     if (isPractice) {
@@ -163,11 +213,13 @@ export class InterviewSessionDO implements DurableObject {
     this.logTranscript("client_websocket_connected", {
       conversationHistoryLength: this.interviewState!.conversationHistory.length,
       currentQuestionIndex: this.interviewState!.currentQuestionIndex,
+      connectionGeneration: this.interviewState!.connectionGeneration,
     });
 
     const pair = new WebSocketPair();
     const client = pair[0];
     const server = pair[1];
+    this.clientSocket = server;
     this.durableState.acceptWebSocket(server);
 
     this.sendToClient(server, {
@@ -193,21 +245,34 @@ export class InterviewSessionDO implements DurableObject {
       );
     }
 
+    // After a reconnect the in-memory question timer is gone (hibernation).
+    // Re-arm it so a silent candidate still auto-expires out of the question.
+    if (phase === "questions") {
+      this.startQuestionTimer();
+    }
+
     return new Response(null, { status: 101, webSocket: client });
   }
 
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer) {
     try {
       const parsed = parseClientMessage(message);
-      if (!parsed || !this.interviewState) {
-        if (!parsed) {
-          this.logTranscript("websocket_message_unparsed", {
-            messagePreview:
-              typeof message === "string"
-                ? previewText(message, 80)
-                : `ArrayBuffer(${message.byteLength})`,
-          });
-        }
+      if (!parsed) {
+        this.logTranscript("websocket_message_unparsed", {
+          messagePreview:
+            typeof message === "string"
+              ? previewText(message, 80)
+              : `ArrayBuffer(${message.byteLength})`,
+        });
+        return;
+      }
+
+      // After hibernation the instance fields are cold; rehydrate from storage
+      // so in-flight messages (e.g. END_INTERVIEW) still apply.
+      if (!this.interviewState) {
+        await this.restoreStateFromStorage();
+      }
+      if (!this.interviewState) {
         return;
       }
 
@@ -270,23 +335,71 @@ export class InterviewSessionDO implements DurableObject {
 
   async webSocketClose(
     ws: WebSocket,
-    _code: number,
-    _reason: string,
-    _wasClean: boolean,
+    code: number,
+    reason: string,
+    wasClean: boolean,
   ) {
     void ws;
+    if (!this.interviewState) {
+      await this.restoreStateFromStorage();
+    }
+
+    this.logTranscript("client_websocket_closed", {
+      code,
+      reason: reason || undefined,
+      wasClean,
+      status: this.interviewState?.status,
+      voicePhase: this.interviewState?.voicePhase,
+    });
+
     if (
-      this.interviewState?.status !== "completed" &&
-      !this.interviewState?.isPracticeMode
+      this.interviewState &&
+      shouldMarkInterrupted(
+        code,
+        this.interviewState.status ?? "active",
+        Boolean(this.interviewState.isPracticeMode),
+      )
     ) {
-      await this.markInterrupted();
+      // Give the candidate a reconnect window before treating the drop as an
+      // interruption. A new connection cancels this via the fetch handler.
+      await this.durableState.storage
+        .put("alarmPurpose", ALARM_INTERRUPT_GRACE)
+        .catch(() => undefined);
+      await this.durableState.storage
+        .setAlarm(Date.now() + RECONNECT_GRACE_MS)
+        .catch(() => undefined);
     }
     this.closeSideband({ intentional: true });
   }
 
   async webSocketError(ws: WebSocket, error: unknown) {
     this.logError("client_websocket_error", error);
-    void ws;
+    try {
+      ws.close(1011, "websocket error");
+    } catch {
+      // ignore close errors
+    }
+  }
+
+  /** Rehydrate interviewState from durable storage (used after hibernation). */
+  private async restoreStateFromStorage(): Promise<void> {
+    if (this.interviewState) {
+      return;
+    }
+    const stored = await this.durableState.storage.get<InterviewState>(
+      "interviewState",
+    );
+    if (stored) {
+      this.interviewState = {
+        ...stored,
+        voicePhase: stored.voicePhase ?? "questions",
+        candidateReady: stored.candidateReady ?? false,
+        awaitingAnswerForIndex: stored.awaitingAnswerForIndex ?? null,
+        questionAnswers: stored.questionAnswers ?? {},
+        questionPartialAnswers: stored.questionPartialAnswers ?? {},
+        questionFollowUpCounts: stored.questionFollowUpCounts ?? {},
+      };
+    }
   }
 
   private async ensureState(sessionId: string, token: string) {
@@ -322,16 +435,19 @@ export class InterviewSessionDO implements DurableObject {
       throw new Error("Invalid interview session");
     }
 
-    this.logTranscript("ensure_state_initialized", {
-      sessionId,
-      bundleId: row.session.bundleId ?? null,
-      deliveryMode: row.session.deliveryMode,
-    });
-
     const questions = await getQuestionsForInterviewSession(
       row.session.roundId,
       row.session.id,
     );
+
+    this.logTranscript("ensure_state_initialized", {
+      sessionId,
+      bundleId: row.session.bundleId ?? null,
+      deliveryMode: row.session.deliveryMode,
+      roundId: truncateId(row.session.roundId),
+      roundName: row.round.name,
+      questionCount: questions.length,
+    });
 
     this.interviewState = {
       sessionId,
@@ -410,6 +526,7 @@ export class InterviewSessionDO implements DurableObject {
       this.interviewState.questions = PRACTICE_QUESTIONS;
     }
     this.pendingAdvanceAfterAck = false;
+    this.pendingAdvanceReason = null;
     this.evaluatingAnswer = false;
     this.welcomeIntroCompleted = false;
     this.pendingWelcomeIntro = false;
@@ -422,10 +539,25 @@ export class InterviewSessionDO implements DurableObject {
   }
 
   async alarm() {
+    if (!this.interviewState) {
+      await this.restoreStateFromStorage();
+    }
     if (!this.interviewState || this.interviewState.status === "completed") {
       return;
     }
     if (this.interviewState.isPracticeMode) {
+      return;
+    }
+
+    const purpose =
+      ((await this.durableState.storage.get("alarmPurpose")) as
+        | string
+        | undefined) ?? ALARM_SESSION_LIMIT;
+
+    if (purpose === ALARM_INTERRUPT_GRACE) {
+      await this.durableState.storage.delete("alarmPurpose").catch(() => undefined);
+      this.logTranscript("interrupt_grace_elapsed", {});
+      await this.markInterrupted();
       return;
     }
 
@@ -498,6 +630,7 @@ export class InterviewSessionDO implements DurableObject {
     this.clearQuestionAttemptState(question.id);
     this.interviewState.awaitingAnswerForIndex = null;
     this.pendingAdvanceAfterAck = true;
+    this.pendingAdvanceReason = "question_timeout";
     await this.persistState();
     this.broadcast({ type: "QUESTION_TIMED_OUT", questionId: question.id });
     this.dispatchResponseCreate(
@@ -552,10 +685,7 @@ export class InterviewSessionDO implements DurableObject {
       return;
     }
 
-    const delay = Math.min(
-      SIDEBAND_BACKOFF_BASE_MS * 2 ** this.sidebandReconnectAttempt,
-      SIDEBAND_BACKOFF_MAX_MS,
-    );
+    const delay = nextBackoffDelayMs(this.sidebandReconnectAttempt);
     const attempt = this.sidebandReconnectAttempt + 1;
 
     this.logTranscript("sideband_reconnect_scheduled", {
@@ -594,10 +724,14 @@ export class InterviewSessionDO implements DurableObject {
   ): Promise<{ ok: true; sideband: WebSocket } | { ok: false; error: string }> {
     let response: Response;
     try {
+      const safetyIdentifier = await sha256Hex(
+        `dac:interview-session:${this.interviewState?.sessionId ?? "unknown"}`,
+      );
       response = await fetch(getRealtimeSidebandHttpUrl(callId), {
         headers: {
           Authorization: `Bearer ${clientSecret}`,
           Upgrade: "websocket",
+          "OpenAI-Safety-Identifier": safetyIdentifier,
         },
       });
     } catch (error) {
@@ -675,6 +809,37 @@ export class InterviewSessionDO implements DurableObject {
           : undefined,
       ...extra,
     });
+  }
+
+  /**
+   * Auto-answer the `wait_for_user` no-op tool so the interviewer can end a turn
+   * on silence/background noise without speaking. Completes the function call
+   * with empty output and does NOT create a spoken response.
+   */
+  private maybeAutoReplyWaitForUser(item: Record<string, unknown>): void {
+    if (item.type !== "function_call") {
+      return;
+    }
+    if (item.name !== "wait_for_user") {
+      return;
+    }
+    const callId = typeof item.call_id === "string" ? item.call_id : "";
+    if (!callId) {
+      return;
+    }
+    this.logTranscript("wait_for_user_called", {
+      callId: truncateId(callId),
+    });
+    this.sideband?.send(
+      JSON.stringify({
+        type: "conversation.item.create",
+        item: {
+          type: "function_call_output",
+          call_id: callId,
+          output: "{}",
+        },
+      }),
+    );
   }
 
   private recordFirstAudioByte(eventType: string) {
@@ -925,10 +1090,7 @@ export class InterviewSessionDO implements DurableObject {
 
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
         if (attempt > 0) {
-          const delay = Math.min(
-            SIDEBAND_BACKOFF_BASE_MS * 2 ** (attempt - 1),
-            SIDEBAND_BACKOFF_MAX_MS,
-          );
+          const delay = nextBackoffDelayMs(attempt - 1);
           this.logTranscript("sideband_connect_retry", {
             callId,
             attempt,
@@ -1240,6 +1402,11 @@ export class InterviewSessionDO implements DurableObject {
               ? (event.item as Record<string, unknown>).type
               : undefined,
         });
+        if (event.item && typeof event.item === "object") {
+          this.maybeAutoReplyWaitForUser(
+            event.item as Record<string, unknown>,
+          );
+        }
         return;
       }
 
@@ -1343,7 +1510,10 @@ export class InterviewSessionDO implements DurableObject {
             await this.advanceQuestion();
             return;
           }
-          await this.askCurrentQuestion();
+          // A cancelled/interrupted response mid-question: do NOT re-ask the same
+          // question. Stay quiet and wait for the candidate; the per-question
+          // timer auto-expires into the next question if they never answer.
+          await this.handleResponseDone(responseStatus);
           return;
         }
 
@@ -1420,6 +1590,8 @@ export class InterviewSessionDO implements DurableObject {
       this.sendPhaseSessionUpdate("awaiting_end");
       await this.persistState();
       this.broadcast({ type: "ALL_QUESTIONS_ASKED" });
+      // The candidate ends the round manually: the closing statement tells them
+      // to click End Interview. No auto-complete — progression is explicit.
       return;
     }
 
@@ -1586,6 +1758,7 @@ export class InterviewSessionDO implements DurableObject {
         this.clearQuestionAttemptState(question.id);
         this.interviewState.awaitingAnswerForIndex = null;
         this.pendingAdvanceAfterAck = true;
+        this.pendingAdvanceReason = "answer_sufficient";
         this.dispatchResponseCreate(
           buildAcknowledgeAnswerEvent(questionIndex),
           "acknowledge_answer",
@@ -1887,6 +2060,7 @@ export class InterviewSessionDO implements DurableObject {
     }
 
     this.interviewState.voicePhase = "closing";
+    this.interviewState.closingStartedAtMs = Date.now();
     this.sendPhaseSessionUpdate("closing");
     await this.persistState();
     this.clearQuestionTimer();
@@ -1902,6 +2076,13 @@ export class InterviewSessionDO implements DurableObject {
     if (!this.interviewState) {
       return;
     }
+
+    const advanceReason = this.pendingAdvanceReason ?? "question_done";
+    this.pendingAdvanceReason = null;
+    this.logTranscript("question_advanced", {
+      fromIndex: this.interviewState.currentQuestionIndex,
+      advanceReason,
+    });
 
     if (
       this.interviewState.currentQuestionIndex >=
@@ -1972,8 +2153,12 @@ export class InterviewSessionDO implements DurableObject {
 
       this.clearQuestionTimer();
       this.durableState.storage.deleteAlarm().catch(() => undefined);
+      this.durableState.storage
+        .delete("alarmPurpose")
+        .catch(() => undefined);
       await this.persistState();
       this.closeSideband({ intentional: true });
+      this.closeClientSocket();
       this.broadcast({ type: "INTERVIEW_COMPLETED" });
       this.logTranscript("complete_interview_success", {
         bundleAdvanced: Boolean(bundleAdvance),
@@ -2002,8 +2187,21 @@ export class InterviewSessionDO implements DurableObject {
     });
     this.clearQuestionTimer();
     this.durableState.storage.deleteAlarm().catch(() => undefined);
+    this.durableState.storage.delete("alarmPurpose").catch(() => undefined);
     await this.persistState();
     this.closeSideband({ intentional: true });
+    this.closeClientSocket();
+  }
+
+  private closeClientSocket() {
+    if (this.clientSocket) {
+      try {
+        this.clientSocket.close(WS_CLOSE_NORMAL, "interview ended");
+      } catch {
+        // ignore close errors
+      }
+      this.clientSocket = null;
+    }
   }
 
   private buildCheatingSummary(): CheatingSummary {

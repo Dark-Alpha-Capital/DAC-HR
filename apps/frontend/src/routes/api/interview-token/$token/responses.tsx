@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { upsertResponse } from "@workspace/db/repositories/interview-session-repository";
-import { getQuestionById } from "@workspace/db/modules/positions";
+import {
+  getQuestionById,
+  getQuestionsForInterviewSession,
+} from "@workspace/db/modules/positions";
 import { resolveInterviewToken } from "~/lib/interview-token";
 import {
   interviewServerLog,
@@ -75,6 +78,32 @@ export const Route = createFileRoute("/api/interview-token/$token/responses")({
 
           if (!question) {
             return Response.json({ error: "Question not found" }, { status: 404 });
+          }
+
+          if (resolved.type === "bundle") {
+            const roundQuestions = await getQuestionsForInterviewSession(
+              session.roundId,
+              session.id,
+            );
+            const belongsToRound = roundQuestions.some(
+              (q) => q.id === questionId,
+            );
+            if (!belongsToRound) {
+              interviewServerLog.warn(
+                "form",
+                COMPONENT,
+                "cross_round_answer_rejected",
+                {
+                  sessionId: truncateId(session.id),
+                  roundId: truncateId(session.roundId),
+                  questionId: truncateId(questionId),
+                },
+              );
+              return Response.json(
+                { error: "Question does not belong to this round" },
+                { status: 400 },
+              );
+            }
           }
 
           if (question.questionType === "mcq") {

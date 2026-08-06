@@ -9,6 +9,12 @@ export interface CreateRealtimeSessionOptions {
   instructions?: string;
   /** Worker route handlers should pass getServerOpenAIApiKey() when env binding differs from .dev.vars */
   apiKey?: string;
+  /**
+   * Stable, privacy-preserving per-user identifier sent via the
+   * `OpenAI-Safety-Identifier` header (recommended by OpenAI for abuse
+   * enforcement scoping). Use a hashed session id, never a raw PII value.
+   */
+  safetyIdentifier?: string;
 }
 
 export interface RealtimeEphemeralSession {
@@ -45,6 +51,9 @@ export async function createRealtimeEphemeralSession(
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
+      ...(options.safetyIdentifier
+        ? { "OpenAI-Safety-Identifier": options.safetyIdentifier }
+        : {}),
     },
     body: JSON.stringify({
       session: {
@@ -102,4 +111,15 @@ export function getRealtimeSidebandUrl(callId: string): string {
 
 export function getRealtimeSidebandHttpUrl(callId: string): string {
   return `https://api.openai.com/v1/realtime?call_id=${encodeURIComponent(callId)}`;
+}
+
+/** Stable SHA-256 hex digest used for the OpenAI-Safety-Identifier header. */
+export async function sha256Hex(input: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(input),
+  );
+  return [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
 }

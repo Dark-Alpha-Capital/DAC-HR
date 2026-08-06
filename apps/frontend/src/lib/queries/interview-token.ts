@@ -1,7 +1,11 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { BundleRoundSummary } from "~/components/interview/BundleRoundsOverview";
-import type { DeliveryMode } from "@workspace/db/enums";
+import type { DeliveryMode, RoundDeliveryMode } from "@workspace/db/enums";
 import { queryKeys } from "~/lib/query/query-keys";
+import {
+  toSessionMode,
+  type SessionMode,
+} from "~/lib/interview-flow";
 
 export interface InterviewQuestion {
   id: string;
@@ -22,9 +26,10 @@ export interface InterviewSchemaData {
 
 interface ValidationRound {
   roundName: string;
-  deliveryMode: DeliveryMode;
+  deliveryMode: RoundDeliveryMode;
   status: string;
   roundOrder: number;
+  sessionId?: string | null;
 }
 
 interface ValidationErrorResponse {
@@ -43,6 +48,7 @@ export interface BundleValidationResponse {
   deliveryMode: DeliveryMode;
   currentRoundIndex: number;
   totalRounds: number;
+  sessionId?: string | null;
   rounds: ValidationRound[];
 }
 
@@ -55,6 +61,7 @@ export interface LegacyValidationResponse {
   positionName: string;
   roundName: string;
   deliveryMode: DeliveryMode;
+  sessionId?: string | null;
 }
 
 export type ValidationResponse =
@@ -69,7 +76,8 @@ export interface CompleteInterviewResponse {
   nextRound?: {
     roundName: string;
     roundOrder: number;
-    deliveryMode: DeliveryMode;
+    deliveryMode: RoundDeliveryMode;
+    sessionId?: string | null;
   } | null;
   error?: string;
 }
@@ -168,15 +176,13 @@ export function interviewTokenValidateOptions(token: string) {
   });
 }
 
-export function interviewSchemaOptions(token: string) {
+export function interviewSchemaOptions(token: string, sessionId?: string) {
   return queryOptions({
-    queryKey: queryKeys.interviewToken.schema(token),
+    queryKey: queryKeys.interviewToken.schema(token, sessionId),
     queryFn: () => fetchInterviewSchema(token),
     retry: false,
   });
 }
-
-export type SessionMode = "form" | "voice";
 
 export function getModeStorageKey(token: string) {
   return `interview-mode:${token}`;
@@ -191,18 +197,12 @@ export function resolveSessionMode(
   ) as SessionMode | null;
 
   if (validation.type === "bundle") {
-    return validation.deliveryMode === "voice" ? "voice" : "form";
+    return toSessionMode(validation.deliveryMode);
   }
   if (storedMode) {
     return storedMode;
   }
-  if (validation.deliveryMode === "voice") {
-    return "voice";
-  }
-  if (validation.deliveryMode === "form") {
-    return "form";
-  }
-  return "form";
+  return toSessionMode(validation.deliveryMode);
 }
 
 export interface WelcomeData {

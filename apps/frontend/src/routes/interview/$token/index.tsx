@@ -29,9 +29,14 @@ import {
   resolveSessionMode,
   type InterviewQuestion,
   type InterviewSchemaData,
-  type SessionMode,
   type WelcomeData,
 } from "~/lib/queries/interview-token";
+import {
+  planNextRoundFromValidation,
+  planRoundTransition,
+  type RoundTransitionData,
+  type SessionMode,
+} from "~/lib/interview-flow";
 import { logInterview, truncateId } from "~/lib/interview-debug-log";
 import { cn } from "~/lib/utils";
 
@@ -58,14 +63,6 @@ import {
 
 type Question = InterviewQuestion;
 type InterviewData = InterviewSchemaData;
-
-type RoundTransitionData = {
-  completedPart: number;
-  nextPart: number;
-  nextRoundName: string;
-  totalParts: number;
-  deliveryMode: "form" | "voice";
-};
 
 type AnswerValue =
   | { type: "text"; text: string }
@@ -594,8 +591,11 @@ function InterviewPage() {
     isError: isSchemaError,
     error: schemaError,
   } = useQuery({
-    ...interviewSchemaOptions(token),
-    enabled: needsInitSchema,
+    ...interviewSchemaOptions(token, validation?.sessionId ?? undefined),
+    // Only auto-load the schema when genuinely resuming (page at initial
+    // "loading" state). NEVER auto-fetch during a round transition — that
+    // auto-started the next round and derailed round progression.
+    enabled: needsInitSchema && status === "loading",
   });
 
   const completeMutation = useMutation({
@@ -607,14 +607,9 @@ function InterviewPage() {
         nextRoundName: body.nextRoundName,
       });
       if (body.hasMoreRounds && body.nextRound) {
-        setRoundTransition({
-          completedPart: body.nextRound.roundOrder - 1,
-          nextPart: body.nextRound.roundOrder,
-          nextRoundName: body.nextRound.roundName,
-          totalParts: body.totalRounds ?? 1,
-          deliveryMode:
-            body.nextRound.deliveryMode === "voice" ? "voice" : "form",
-        });
+        setRoundTransition(
+          planRoundTransition(body.nextRound, body.totalRounds ?? 1),
+        );
         setData(null);
         setCurrentStep(0);
         setAnswers({});
@@ -633,7 +628,22 @@ function InterviewPage() {
   });
 
   useEffect(() => {
+    // The component instance is reused when the token param changes (same tab,
+    // different link). Reset ALL page state so a previous interview's form
+    // position (currentStep/answers) can't leak into the next one.
     hasInitializedRef.current = false;
+    wasPracticeSessionRef.current = false;
+    setData(null);
+    setAnswers({});
+    setCurrentStep(0);
+    setStatus("loading");
+    setRoundTransition(null);
+    setSessionMode(null);
+    setWelcomeData(null);
+    setError("");
+    setVoiceWelcomeStep("welcome");
+    setTabSwitchCount(0);
+    tabSwitchCountRef.current = 0;
     logInterview.info("validate", "page_token_changed", {
       token: truncateId(token),
     });
@@ -705,20 +715,22 @@ function InterviewPage() {
           freshValidation?.type === "bundle" &&
           freshValidation.status !== "completed"
         ) {
-          const pendingRound = freshValidation.rounds?.find(
-            (round) => round.status === "pending",
-          );
-          const nextPart = freshValidation.currentRoundIndex + 1;
-          setRoundTransition({
-            completedPart: nextPart - 1,
-            nextPart,
-            nextRoundName: pendingRound?.roundName ?? "the next round",
-            totalParts: freshValidation.totalRounds,
-            deliveryMode:
-              pendingRound?.deliveryMode === "voice" ? "voice" : "form",
-          });
-          setStatus("round_complete");
-          return;
+          // The next round is the ACTIVE round (currentRoundIndex), picked by
+          // position — never "first pending", which skips a round if the next
+          // round was already started.
+          const nextRound =
+            freshValidation.rounds?.[freshValidation.currentRoundIndex];
+          if (nextRound) {
+            setRoundTransition(
+              planNextRoundFromValidation(
+                nextRound,
+                freshValidation.totalRounds,
+                freshValidation.currentRoundIndex,
+              ),
+            );
+            setStatus("round_complete");
+            return;
+          }
         }
         setStatus("completed");
       });
@@ -857,9 +869,11 @@ function InterviewPage() {
     setStarting(true);
     try {
       const interviewData = await queryClient.fetchQuery(
-        interviewSchemaOptions(token),
+        interviewSchemaOptions(token, validation?.sessionId ?? undefined),
       );
       setData(interviewData);
+      setCurrentStep(0);
+      setAnswers({});
       logInterview.success("form", "start_interview_ok", {
         token: truncateId(token),
         questionCount: interviewData.questions.length,
@@ -879,7 +893,7 @@ function InterviewPage() {
     } finally {
       setStarting(false);
     }
-  }, [queryClient, token]);
+  }, [queryClient, token, validation?.sessionId]);
 
   const saveAnswer = useCallback(
     async (question: Question, answer: AnswerValue) => {
@@ -1009,19 +1023,34 @@ function InterviewPage() {
     logInterview.info("bundle", "continue_next_round", {
       token: truncateId(token),
     });
+    const transition = roundTransition;
+    if (!transition) {
+      logInterview.error("bundle", "continue_next_round_missing_transition", {
+        token: truncateId(token),
+      });
+      setStatus("invalid");
+      setError("Invalid interview link");
+      return;
+    }
+
     setStarting(true);
     try {
+      const mode = transition.sessionMode;
+      const sessionId = transition.sessionId;
       sessionStorage.removeItem(getModeStorageKey(token));
+      sessionStorage.setItem(getModeStorageKey(token), mode);
+
+      // The mode decision comes from the authoritative transition (the server's
+      // complete response), never from a re-fetched validation. The validation
+      // refetch below is display-only (welcome data) and can never flip the mode.
       const freshValidation = await queryClient.fetchQuery(
         interviewTokenValidateOptions(token),
       );
-      const isBundle = freshValidation.type === "bundle";
-      const mode: SessionMode =
-        isBundle && freshValidation.deliveryMode === "voice" ? "voice" : "form";
+      if (freshValidation) {
+        setWelcomeData(buildWelcomeFromValidation(freshValidation));
+      }
 
-      sessionStorage.setItem(getModeStorageKey(token), mode);
       setSessionMode(mode);
-      setWelcomeData(buildWelcomeFromValidation(freshValidation));
       setRoundTransition(null);
 
       if (mode === "voice") {
@@ -1029,18 +1058,20 @@ function InterviewPage() {
         await voiceInterview.start({ practice: false });
       } else {
         const interviewData = await queryClient.fetchQuery(
-          interviewSchemaOptions(token),
+          interviewSchemaOptions(token, sessionId ?? undefined),
         );
         setData(interviewData);
+        setCurrentStep(0);
+        setAnswers({});
         setStatus("in_progress");
       }
 
       logInterview.success("bundle", "next_round_ready", {
         token: truncateId(token),
         mode,
-        deliveryMode: freshValidation.deliveryMode,
+        sessionId: truncateId(sessionId ?? undefined),
         currentRoundIndex:
-          freshValidation.type === "bundle"
+          freshValidation?.type === "bundle"
             ? freshValidation.currentRoundIndex
             : undefined,
       });
@@ -1057,7 +1088,7 @@ function InterviewPage() {
     } finally {
       setStarting(false);
     }
-  }, [queryClient, token, voiceInterview]);
+  }, [queryClient, token, voiceInterview, roundTransition]);
 
   const handleSelectForm = useCallback(() => {
     logInterview.info("state", "mode_selected", { mode: "form" });
@@ -1228,7 +1259,7 @@ function InterviewPage() {
     }
 
     const transitionInstructions =
-      roundTransition.deliveryMode === "voice"
+      roundTransition.sessionMode === "voice"
         ? [...VOICE_INSTRUCTIONS]
         : [...INSTRUCTIONS];
 

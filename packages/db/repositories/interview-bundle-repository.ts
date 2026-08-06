@@ -1,5 +1,14 @@
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "@workspace/db/db";
+import {
+  allRoundsCompleted,
+  coerceDeliveryMode,
+  currentRoundIndex,
+  pickActiveRound,
+  pickNextRound,
+  toRoundProgress,
+  type RoundProgress,
+} from "../round-progression";
 import type {
   AgentConfig,
   InterviewBundleRoundStatus,
@@ -152,8 +161,7 @@ export const createPositionInterviewBundle = async (data: {
       }
       createdInterviewIds.push(interviewId);
 
-      const deliveryMode =
-        config.deliveryMode === "voice" ? "voice" : "form";
+      const deliveryMode = coerceDeliveryMode(config.deliveryMode);
 
       const [newSession] = await db
         .insert(interviewSession)
@@ -303,32 +311,22 @@ export const getBundlesByApplicationId = async (applicationId: string) => {
 export const getActiveBundleRound = async (bundleId: string) => {
   const rounds = await getBundleRounds(bundleId);
 
-  const inProgress = rounds.find((r) => r.bundleRound.status === "in_progress");
-  if (inProgress) {
-    return inProgress;
+  const active = pickActiveRound(rounds.map(roundProgressOf));
+  if (!active) {
+    return null;
   }
 
-  const pending = rounds.find((r) => r.bundleRound.status === "pending");
-  return pending ?? null;
+  return (
+    rounds.find((r) => r.bundleRound.roundOrder === active.roundOrder) ?? null
+  );
 };
+
+const roundProgressOf = (row: { bundleRound: RoundProgress }): RoundProgress =>
+  toRoundProgress(row.bundleRound);
 
 export const getCurrentRoundIndex = async (bundleId: string) => {
   const rounds = await getBundleRounds(bundleId);
-  const inProgressIdx = rounds.findIndex(
-    (r) => r.bundleRound.status === "in_progress",
-  );
-  if (inProgressIdx >= 0) {
-    return inProgressIdx;
-  }
-
-  const pendingIdx = rounds.findIndex(
-    (r) => r.bundleRound.status === "pending",
-  );
-  if (pendingIdx >= 0) {
-    return pendingIdx;
-  }
-
-  return rounds.length > 0 ? rounds.length - 1 : 0;
+  return currentRoundIndex(rounds.map(roundProgressOf));
 };
 
 export const startBundleRound = async (bundleRoundId: string) => {
@@ -364,6 +362,24 @@ export const advanceBundleRound = async (sessionId: string) => {
     return null;
   }
 
+  // Idempotent: never advance a round twice. If this session's bundle round
+  // is already completed (DO auto-advance + fallback POST race), just return
+  // the current state so callers can read the next round without side effects.
+  if (bundleRound.status === "completed") {
+    const allRounds = await getBundleRounds(bundleRound.bundleId);
+    const allCompleted = allRoundsCompleted(allRounds.map(roundProgressOf));
+    const nextProgress = pickNextRound(
+      allRounds.map(roundProgressOf),
+      bundleRound.roundOrder,
+    );
+    const nextRound = nextProgress
+      ? (allRounds.find(
+          (r) => r.bundleRound.roundOrder === nextProgress.roundOrder,
+        ) ?? null)
+      : null;
+    return { bundleRound, nextRound, allCompleted };
+  }
+
   await db
     .update(interviewBundleRound)
     .set({ status: "completed", updatedAt: new Date() })
@@ -380,9 +396,7 @@ export const advanceBundleRound = async (sessionId: string) => {
     .where(eq(interview.id, bundleRound.interviewId));
 
   const allRounds = await getBundleRounds(bundleRound.bundleId);
-  const allCompleted = allRounds.every(
-    (r) => r.bundleRound.status === "completed",
-  );
+  const allCompleted = allRoundsCompleted(allRounds.map(roundProgressOf));
 
   if (allCompleted) {
     await db
@@ -391,13 +405,17 @@ export const advanceBundleRound = async (sessionId: string) => {
       .where(eq(interviewBundle.id, bundleRound.bundleId));
   }
 
-  const nextRound = allRounds.find(
-    (r) =>
-      r.bundleRound.roundOrder > bundleRound.roundOrder &&
-      r.bundleRound.status === "pending",
+  const nextProgress = pickNextRound(
+    allRounds.map(roundProgressOf),
+    bundleRound.roundOrder,
   );
+  const nextRound = nextProgress
+    ? (allRounds.find(
+        (r) => r.bundleRound.roundOrder === nextProgress.roundOrder,
+      ) ?? null)
+    : null;
 
-  return { bundleRound, nextRound: nextRound ?? null, allCompleted };
+  return { bundleRound, nextRound, allCompleted };
 };
 
 export const updateBundleStatus = async (
@@ -566,6 +584,7 @@ export const resolveSessionFromToken = async (token: string) => {
 
 export const assertInterviewTokenValidForRecordingUpload = async (
   token: string,
+  requestedSessionId?: string,
 ) => {
   const resolved = await resolveSessionFromToken(token);
 
@@ -573,7 +592,20 @@ export const assertInterviewTokenValidForRecordingUpload = async (
     return resolved;
   }
 
-  const session = resolved.session;
+  let session = resolved.session;
+
+  // The client records against a specific session. By the time the upload
+  // request is processed the DO may already have advanced to the next round, so
+  // the currently-active session is the WRONG one. If the client names its
+  // session and it belongs to this bundle, attach the recording there instead.
+  if (requestedSessionId && resolved.type === "bundle") {
+    const matching = resolved.rounds.find(
+      (r) => r.session.id === requestedSessionId,
+    );
+    if (matching) {
+      session = matching.session;
+    }
+  }
 
   if (session.status === "reviewed") {
     return {

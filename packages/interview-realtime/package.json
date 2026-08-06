@@ -22,6 +22,7 @@
     "./prompts": "./prompts.ts",
     "./answer-evaluation": "./answer-evaluation.ts",
     "./session-logic": "./session-logic.ts",
+    "./session-rules": "./session-rules.ts",
     "./debug-log": "./debug-log.ts"
   }
 }

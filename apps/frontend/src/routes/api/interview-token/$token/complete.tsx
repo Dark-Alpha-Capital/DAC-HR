@@ -37,6 +37,7 @@ function triggerEvaluationWorkflow(sessionId: string) {
 
 const completeSchema = z.object({
   tabSwitches: z.number().int().min(0).default(0),
+  sessionId: z.string().optional(),
   cheatingSummary: z
     .object({
       tabSwitches: z.number().optional(),
@@ -79,6 +80,21 @@ export const Route = createFileRoute("/api/interview-token/$token/complete")({
 
           const { session } = resolved;
 
+          const body = await request.json();
+          const parsed = completeSchema.safeParse(body);
+
+          if (!parsed.success) {
+            interviewServerLog.warn("api", COMPONENT, "validation_failed", {
+              sessionId: truncateId(session.id),
+            });
+            return Response.json(
+              { error: parsed.error.flatten().fieldErrors },
+              { status: 400 },
+            );
+          }
+
+          const requestedSessionId = parsed.data.sessionId;
+
           if (session.status === "completed") {
             interviewServerLog.info("api", COMPONENT, "already_completed", {
               sessionId: truncateId(session.id),
@@ -92,17 +108,47 @@ export const Route = createFileRoute("/api/interview-token/$token/complete")({
             });
           }
 
-          const body = await request.json();
-          const parsed = completeSchema.safeParse(body);
-
-          if (!parsed.success) {
-            interviewServerLog.warn("api", COMPONENT, "validation_failed", {
-              sessionId: truncateId(session.id),
-            });
-            return Response.json(
-              { error: parsed.error.flatten().fieldErrors },
-              { status: 400 },
+          // Idempotency guard: a voice round is advanced by the Interview Session
+          // DO, so a client retry/fallback complete for that session arrives when
+          // the active round has already moved on. Never advance the active round
+          // on behalf of an older session — that would skip a round.
+          if (requestedSessionId && requestedSessionId !== session.id) {
+            interviewServerLog.info(
+              "api",
+              COMPONENT,
+              "complete_session_already_advanced",
+              {
+                requestedSessionId: truncateId(requestedSessionId),
+                activeSessionId: truncateId(session.id),
+                type: resolved.type,
+              },
             );
+            if (resolved.type === "bundle") {
+              const hasMoreRounds =
+                resolved.currentRoundIndex < resolved.totalRounds - 1;
+              const nextRound = {
+                roundName: resolved.round.name,
+                roundOrder: resolved.currentRoundIndex,
+                deliveryMode: resolved.deliveryMode,
+                sessionId: session.id,
+              };
+              return Response.json({
+                session,
+                hasMoreRounds,
+                allCompleted: !hasMoreRounds,
+                totalRounds: resolved.totalRounds,
+                nextRoundName: nextRound.roundName,
+                nextRound,
+              });
+            }
+            return Response.json({
+              session,
+              hasMoreRounds: false,
+              allCompleted: true,
+              totalRounds: 1,
+              nextRoundName: null,
+              nextRound: null,
+            });
           }
 
           const cheatingSummary = parsed.data.cheatingSummary ?? {
@@ -167,6 +213,7 @@ export const Route = createFileRoute("/api/interview-token/$token/complete")({
                   roundName: nextRound.round.name,
                   roundOrder: nextRound.bundleRound.roundOrder,
                   deliveryMode: nextRound.bundleRound.deliveryMode,
+                  sessionId: nextRound.session.id,
                 }
               : null,
           });

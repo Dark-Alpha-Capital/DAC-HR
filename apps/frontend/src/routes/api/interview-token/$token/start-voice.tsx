@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createRealtimeEphemeralSession, openAIKeyFingerprint } from "@workspace/ai-config";
+import { createRealtimeEphemeralSession, openAIKeyFingerprint, sha256Hex } from "@workspace/ai-config";
 import { getServerOpenAIApiKey } from "~/lib/server/openai-api-key";
 import { getQuestionsForInterviewSession } from "@workspace/db/modules/positions";
 import {
@@ -17,6 +17,47 @@ import {
 } from "@workspace/interview-realtime/debug-log";
 
 const COMPONENT = "start-voice-api";
+
+/**
+ * Retry ephemeral-session creation on transient OpenAI failures (429 / 5xx).
+ * Applies backoff so a rate-limit burst doesn't immediately fail the round.
+ */
+async function createEphemeralSessionWithRetry(options: {
+  apiKey: string;
+  voice?: string;
+  instructions: string;
+  safetyIdentifier?: string;
+}): Promise<ReturnType<typeof createRealtimeEphemeralSession>> {
+  const attempts = 3;
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      return await createRealtimeEphemeralSession(options);
+    } catch (error) {
+      lastError = error;
+      const message =
+        error instanceof Error ? error.message : String(error);
+      const isRateLimit = /rate.?limit|429|too many/i.test(message);
+      const isTransient = /5\d\d|timeout|econnreset/i.test(message);
+      if (!isRateLimit && !isTransient) {
+        throw error;
+      }
+      if (attempt === attempts - 1) {
+        break;
+      }
+      const delay = 500 * 2 ** attempt;
+      interviewServerLog.warn("voice", COMPONENT, "ephemeral_retry", {
+        attempt: attempt + 1,
+        delayMs: delay,
+        rateLimit: isRateLimit,
+      });
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+
+  throw lastError;
+}
 
 export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
   {
@@ -145,10 +186,13 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
                 : (session.agentConfig ?? undefined),
             });
 
-            const ephemeral = await createRealtimeEphemeralSession({
+            const ephemeral = await createEphemeralSessionWithRetry({
               apiKey: openaiApiKey,
               voice: session.agentConfig?.voice,
               instructions,
+              safetyIdentifier: await sha256Hex(
+                `dac:interview-session:${session.id}`,
+              ),
             });
 
             const origin = new URL(request.url).origin;

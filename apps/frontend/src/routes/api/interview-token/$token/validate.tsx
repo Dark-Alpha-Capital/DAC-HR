@@ -69,6 +69,7 @@ export const Route = createFileRoute("/api/interview-token/$token/validate")({
                 roundOrder: r.bundleRound.roundOrder,
                 deliveryMode: r.bundleRound.deliveryMode,
                 status: r.bundleRound.status,
+                sessionId: r.session.id,
               })),
               sessionId: session?.id,
               roundName: activeRound?.round.name,

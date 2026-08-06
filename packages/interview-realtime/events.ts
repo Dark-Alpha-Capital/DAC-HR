@@ -94,7 +94,19 @@ export function parseDoMessage(
  * Client-safe typed send over the DO WebSocket. Only valid `ClientToDoMessage`
  * payloads are accepted; nothing is sent unless the socket is open.
  */
-export function sendDoMessage(ws: WebSocket, message: ClientToDoMessage) {
+/**
+ * A minimal WebSocket-shaped handle the client can send DO messages over.
+ * Matches both a native `WebSocket` and the hook's reconnecting `SessionSocket`.
+ */
+export interface DoMessageSocket {
+  readyState: number;
+  send(data: string): void;
+}
+
+export function sendDoMessage(
+  ws: DoMessageSocket,
+  message: ClientToDoMessage,
+) {
   if (ws.readyState !== WebSocket.OPEN) {
     return;
   }

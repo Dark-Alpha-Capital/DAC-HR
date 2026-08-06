@@ -25,6 +25,10 @@ Canonical terms for the HR automation platform. Use these names for modules and 
 ## Voice interview (realtime)
 
 - The **realtime contract** lives in `packages/interview-realtime` (`ClientToDoMessage` / `DoToClientMessage`). The **Interview Session DO** orchestrates a voice Session; the client (hook + route) must speak the same typed protocol.
+- **Session rules** (`packages/interview-realtime/session-rules.ts`) — pure policy for a voice Session: VAD tuning, per-question auto-expiry, closing auto-complete, reconnect grace, close-code handling, backoff. The DO applies these decisions; it holds no magic numbers.
+- **Round progression** (`packages/db/round-progression.ts`) — pure bundle round-decision rules (which round is active, which is next, when a bundle is done, delivery-mode coercion). Repositories and routes adapt DB rows to it.
+- **Interview flow** (`apps/frontend/src/lib/interview-flow.ts`) — pure planner for the candidate page: how the next round's mode is chosen and the transition slide is built, always from server-authoritative data.
+- **Voice client modules** (`apps/frontend/src/lib/voice/`) — media capture, recording/upload, WebRTC transport, and the reconnecting session socket; `useVoiceInterview` composes them behind its single interface.
 
 ## Attendance
 

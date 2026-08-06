@@ -52,6 +52,12 @@ export interface InterviewState {
   questionFollowUpCounts?: Record<string, number>;
   /** Practice session — answers are not persisted */
   isPracticeMode?: boolean;
+  /** Epoch ms when the closing phase started (auto-complete timing). */
+  closingStartedAtMs?: number;
+  /** Monotonic per-session connection counter (reconnect instrumentation). */
+  connectionGeneration?: number;
+  /** Epoch ms of recent connection attempts (reconnect rate-limit guard). */
+  reconnectAttempts?: number[];
 }
 
 export type ClientToDoMessage =

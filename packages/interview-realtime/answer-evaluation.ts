@@ -1,7 +1,13 @@
 import type { InterviewQuestion } from "./types";
 import { interviewServerLog } from "./debug-log";
 
-export const MAX_NOISE_RETRIES = 5;
+/**
+ * Max consecutive unclear-audio/noise follow-ups before the interview advances
+ * regardless. OpenAI's realtime prompting guidance says don't repeat the same
+ * clarification more than twice, so after this many we treat the question as
+ * answered (best-effort) and move on.
+ */
+export const MAX_NOISE_RETRIES = 2;
 
 /** @deprecated Use MAX_NOISE_RETRIES — kept for existing imports */
 export const MAX_ANSWER_FOLLOW_UPS = MAX_NOISE_RETRIES;

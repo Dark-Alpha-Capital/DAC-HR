@@ -76,7 +76,8 @@ export const queryKeys = {
     all: ["interview-token"] as const,
     validate: (token: string) =>
       ["interview-token", "validate", token] as const,
-    schema: (token: string) => ["interview-token", "schema", token] as const,
+    schema: (token: string, sessionId?: string) =>
+      ["interview-token", "schema", token, sessionId ?? "current"] as const,
   },
   dashboard: {
     all: ["dashboard"] as const,

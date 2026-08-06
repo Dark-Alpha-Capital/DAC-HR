@@ -8,6 +8,30 @@ import { formatRealtimeCallsError } from "@workspace/ai-config";
 import type { CheatingEventType } from "@workspace/db/enums";
 import { useCheatingPrevention } from "./useCheatingPrevention";
 import { logInterview, truncateId } from "~/lib/interview-debug-log";
+import {
+  buildRecordingStream,
+  getAudioOnlyStream,
+  getRecordingMimeType,
+  isIOSDevice,
+  preflightMedia,
+  requestDisplayMedia,
+  requestUserMedia,
+} from "~/lib/voice/media";
+import {
+  createMediaRecorder,
+  stopMediaRecorder,
+  uploadRecording as uploadRecordingFile,
+} from "~/lib/voice/recording";
+import {
+  attachRemoteAudio,
+  createDataChannel,
+  monitorPeerConnection,
+  watchDeviceChanges,
+} from "~/lib/voice/transport";
+import {
+  SessionSocket,
+  WS_CLOSE_SUPERSEDED,
+} from "~/lib/voice/session-socket";
 
 interface StartVoiceResponse {
   clientSecret: string;
@@ -33,6 +57,10 @@ export interface VoiceInterviewState {
   introActive: boolean;
   timeLimitReached?: boolean;
   error?: string;
+  /** True when running without screen capture (iOS / unsupported browsers). */
+  audioOnly?: boolean;
+  /** True when another tab superseded this connection (DO close code 4001). */
+  replacedElsewhere?: boolean;
 }
 
 const LIVE_TRANSCRIPT_FLUSH_MS = 1000;
@@ -109,33 +137,6 @@ function mergeQuestion(
   return [...questions, question];
 }
 
-async function requestDisplayMedia(): Promise<MediaStream> {
-  const advanced: DisplayMediaStreamOptions = {
-    video: {
-      displaySurface: "browser",
-      width: { ideal: 1920 },
-      height: { ideal: 1080 },
-      frameRate: { ideal: 30 },
-    },
-    audio: true,
-    preferCurrentTab: true,
-    selfBrowserSurface: "include",
-    monitorTypeSurfaces: "exclude",
-  } as DisplayMediaStreamOptions;
-
-  try {
-    return await navigator.mediaDevices.getDisplayMedia(advanced);
-  } catch (error) {
-    logInterview.warn("voice", "display_media_advanced_failed", {
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return await navigator.mediaDevices.getDisplayMedia({
-      video: true,
-      audio: true,
-    });
-  }
-}
-
 async function waitForIceGathering(
   pc: RTCPeerConnection,
   timeoutMs = 5000,
@@ -166,69 +167,6 @@ function parseRealtimeSdpError(status: number, body: string): string {
   return formatRealtimeCallsError(status, body);
 }
 
-function getRecordingMimeType(): string {
-  const candidates = [
-    "video/webm;codecs=vp9,opus",
-    "video/webm;codecs=vp8,opus",
-    "video/webm",
-  ];
-  for (const mimeType of candidates) {
-    if (MediaRecorder.isTypeSupported(mimeType)) {
-      return mimeType;
-    }
-  }
-  return "video/webm";
-}
-
-function buildRecordingStream(
-  screenStream: MediaStream,
-  micStream: MediaStream,
-  audioContext: AudioContext | null,
-): { stream: MediaStream; audioContext: AudioContext | null } {
-  const videoTracks = screenStream.getVideoTracks();
-  const micTracks = micStream.getAudioTracks();
-  const screenAudioTracks = screenStream.getAudioTracks();
-
-  if (screenAudioTracks.length === 0) {
-    return {
-      stream: new MediaStream([...videoTracks, ...micTracks]),
-      audioContext,
-    };
-  }
-
-  const context = audioContext ?? new AudioContext();
-  const destination = context.createMediaStreamDestination();
-
-  for (const track of [...screenAudioTracks, ...micTracks]) {
-    context
-      .createMediaStreamSource(new MediaStream([track]))
-      .connect(destination);
-  }
-
-  return {
-    stream: new MediaStream([
-      ...videoTracks,
-      ...destination.stream.getAudioTracks(),
-    ]),
-    audioContext: context,
-  };
-}
-
-function stopMediaRecorder(recorder: MediaRecorder): Promise<void> {
-  return new Promise((resolve) => {
-    if (recorder.state === "inactive") {
-      resolve();
-      return;
-    }
-
-    recorder.addEventListener("stop", () => resolve(), { once: true });
-    if (recorder.state === "recording") {
-      recorder.requestData();
-    }
-    recorder.stop();
-  });
-}
-
 export function useVoiceInterview(token: string) {
   const [state, setState] = useState<VoiceInterviewState>({
     status: "idle",
@@ -245,7 +183,7 @@ export function useVoiceInterview(token: string) {
     introActive: false,
   });
 
-  const wsRef = useRef<WebSocket | null>(null);
+  const socketRef = useRef<SessionSocket | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -253,12 +191,23 @@ export function useVoiceInterview(token: string) {
   const screenStreamRef = useRef<MediaStream | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const recordingMimeTypeRef = useRef("video/webm");
+  const recordingUploadedRef = useRef(false);
+  const audioOnlyRef = useRef(false);
   const endInterviewResolveRef = useRef<(() => void) | null>(null);
   const practiceEndResolveRef = useRef<(() => void) | null>(null);
   const isPracticeRef = useRef(false);
+  const sessionIdRef = useRef<string | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const liveTranscriptBuffersRef = useRef({ user: "", assistant: "" });
   const startInFlightRef = useRef(false);
+  const deviceChangeCleanupRef = useRef<(() => void) | null>(null);
+  const peerMonitorCleanupRef = useRef<(() => void) | null>(null);
+  const pendingCallStartedRef = useRef<{
+    callId: string;
+    clientSecret: string;
+  } | null>(null);
+  const stateRef = useRef(state);
+  stateRef.current = state;
   const prevVoiceStatusRef = useRef(state.status);
   const prevVoicePhaseRef = useRef(state.voicePhase);
 
@@ -291,21 +240,24 @@ export function useVoiceInterview(token: string) {
     const response = await fetch(`/api/interview-token/${token}/complete`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tabSwitches: 0 }),
+      body: JSON.stringify({
+        tabSwitches: 0,
+        sessionId: sessionIdRef.current,
+      }),
     });
 
-    if (!response.ok) {
+    if (!response.ok && response.status !== 409 && response.status !== 410) {
       throw new Error("Failed to complete interview session");
     }
   }, [token]);
 
   const sendToDO = useCallback(
     (eventType: CheatingEventType, metadata?: Record<string, unknown>) => {
-      const ws = wsRef.current;
-      if (!ws) {
+      const socket = socketRef.current;
+      if (!socket) {
         return;
       }
-      sendDoMessage(ws, { type: "CHEATING_EVENT", eventType, metadata });
+      sendDoMessage(socket, { type: "CHEATING_EVENT", eventType, metadata });
     },
     [],
   );
@@ -345,8 +297,8 @@ export function useVoiceInterview(token: string) {
   }, [state.status]);
 
   const cleanup = useCallback(() => {
-    wsRef.current?.close();
-    wsRef.current = null;
+    socketRef.current?.close();
+    socketRef.current = null;
     pcRef.current?.close();
     pcRef.current = null;
     mediaRecorderRef.current?.stop();
@@ -360,31 +312,54 @@ export function useVoiceInterview(token: string) {
     remoteAudioRef.current?.remove();
     remoteAudioRef.current = null;
     liveTranscriptBuffersRef.current = { user: "", assistant: "" };
+    sessionIdRef.current = null;
+    recordingUploadedRef.current = false;
+    deviceChangeCleanupRef.current?.();
+    deviceChangeCleanupRef.current = null;
+    peerMonitorCleanupRef.current?.();
+    peerMonitorCleanupRef.current = null;
+    pendingCallStartedRef.current = null;
   }, []);
 
   const uploadRecording = useCallback(async () => {
-    if (chunksRef.current.length === 0) {
-      throw new Error("No recording data captured");
-    }
-
-    const mimeType = recordingMimeTypeRef.current.split(";")[0] ?? "video/webm";
-    const blob = new Blob(chunksRef.current, { type: mimeType });
-    const file = new File([blob], "screen-recording.webm", { type: mimeType });
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const response = await fetch(`/api/interview-token/${token}/upload-audio`, {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const body = (await response.json().catch(() => null)) as
-        | { error?: string }
-        | null;
-      throw new Error(body?.error || "Failed to upload screen recording");
-    }
+    await uploadRecordingFile(
+      token,
+      chunksRef.current,
+      recordingMimeTypeRef.current,
+      sessionIdRef.current,
+    );
+    recordingUploadedRef.current = true;
   }, [token]);
+
+  /**
+   * Runs when the DO completes the interview on its own (all questions asked)
+   * before the candidate clicks End: stop the recorder, upload the recording
+   * best-effort, and tear down media. Idempotent via {@link recordingUploadedRef}.
+   */
+  const handleAutoEnd = useCallback(async () => {
+    if (isPracticeRef.current) {
+      return;
+    }
+    try {
+      if (mediaRecorderRef.current?.state === "recording") {
+        await stopMediaRecorder(mediaRecorderRef.current);
+      }
+      if (!recordingUploadedRef.current) {
+        recordingUploadedRef.current = true;
+        void uploadRecording().catch((error) =>
+          logInterview.error("voice", "bg_upload_failed", {
+            error: error instanceof Error ? error.message : String(error),
+          }),
+        );
+      }
+    } catch (error) {
+      logInterview.error("voice", "auto_end_finalize_failed", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    } finally {
+      cleanup();
+    }
+  }, [cleanup, uploadRecording]);
 
   const endInterview = useCallback(async () => {
     logInterview.info("voice", "end_interview_start", {
@@ -399,14 +374,19 @@ export function useVoiceInterview(token: string) {
         await stopMediaRecorder(mediaRecorderRef.current);
       }
 
-      if (!isPractice) {
-        await uploadRecording();
+      if (!isPractice && !recordingUploadedRef.current) {
+        recordingUploadedRef.current = true;
+        void uploadRecording().catch((error) =>
+          logInterview.error("voice", "bg_upload_failed", {
+            error: error instanceof Error ? error.message : String(error),
+          }),
+        );
       }
 
-      const ws = wsRef.current;
+      const socket = socketRef.current;
       let completedViaWs = false;
 
-      if (ws?.readyState === WebSocket.OPEN) {
+      if (socket?.readyState === WebSocket.OPEN) {
         const completedPromise = new Promise<void>((resolve) => {
           if (isPractice) {
             practiceEndResolveRef.current = () => {
@@ -422,7 +402,7 @@ export function useVoiceInterview(token: string) {
           window.setTimeout(resolve, 12000);
         });
 
-        sendDoMessage(ws, { type: "END_INTERVIEW" });
+        sendDoMessage(socket, { type: "END_INTERVIEW" });
         await completedPromise;
       }
 
@@ -592,6 +572,9 @@ export function useVoiceInterview(token: string) {
         case "INTERVIEW_COMPLETED":
           endInterviewResolveRef.current?.();
           setState((current) => ({ ...current, status: "completed" }));
+          // Auto-end: the DO finished all questions before the candidate clicked
+          // End — finalize the recording and tear down media.
+          void handleAutoEnd();
           break;
 
         case "SESSION_TIME_LIMIT":
@@ -668,29 +651,34 @@ export function useVoiceInterview(token: string) {
     try {
       await document.documentElement.requestFullscreen().catch(() => undefined);
 
+      const { audioOnly } = preflightMedia();
+      audioOnlyRef.current = audioOnly;
+      setState((current) => ({ ...current, audioOnly }));
+
       logInterview.info("voice", "requesting_display_media", {
         token: truncateId(token),
-      });
-      const screenStream = await requestDisplayMedia();
-      screenStreamRef.current = screenStream;
-
-      const screenTrack = screenStream.getVideoTracks()[0];
-      screenTrack?.addEventListener("ended", () => {
-        sendToDO("WINDOW_BLUR", { reason: "screen_share_stopped" });
-        if (mediaRecorderRef.current?.state === "recording") {
-          void stopMediaRecorder(mediaRecorderRef.current);
-        }
+        audioOnly,
+        isIOS: isIOSDevice(),
       });
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: {
-          facingMode: "user",
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-      });
+      const screenStream = audioOnly ? null : await requestDisplayMedia();
+      if (screenStream) {
+        screenStreamRef.current = screenStream;
+        const screenTrack = screenStream.getVideoTracks()[0];
+        screenTrack?.addEventListener("ended", () => {
+          sendToDO("WINDOW_BLUR", { reason: "screen_share_stopped" });
+          if (mediaRecorderRef.current?.state === "recording") {
+            void stopMediaRecorder(mediaRecorderRef.current);
+          }
+        });
+      }
+
+      const stream = await requestUserMedia(audioOnly);
       streamRef.current = stream;
+      deviceChangeCleanupRef.current?.();
+      deviceChangeCleanupRef.current = watchDeviceChanges(() => {
+        logInterview.info("voice", "device_change", {});
+      });
 
       const { stream: recordingStream, audioContext } = buildRecordingStream(
         screenStream,
@@ -699,29 +687,20 @@ export function useVoiceInterview(token: string) {
       );
       audioContextRef.current = audioContext;
 
-      const mimeType = getRecordingMimeType();
+      const mimeType = getRecordingMimeType(audioOnly);
       recordingMimeTypeRef.current = mimeType;
 
-      const audioStream = new MediaStream(stream.getAudioTracks());
+      const audioStream = getAudioOnlyStream(stream);
       chunksRef.current = [];
-      let recorder: MediaRecorder;
-      try {
-        recorder = new MediaRecorder(recordingStream, { mimeType });
-      } catch (error) {
-        logInterview.warn("voice", "media_recorder_mime_fallback", {
-          mimeType,
-          error: error instanceof Error ? error.message : String(error),
-        });
-        recorder = new MediaRecorder(recordingStream);
-        recordingMimeTypeRef.current = recorder.mimeType || "video/webm";
-      }
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunksRef.current.push(event.data);
-        }
-      };
-      recorder.start(1000);
-      mediaRecorderRef.current = recorder;
+      mediaRecorderRef.current = createMediaRecorder(
+        recordingStream,
+        mimeType,
+        (event) => {
+          if (event.data.size > 0) {
+            chunksRef.current.push(event.data);
+          }
+        },
+      );
 
       logInterview.info("voice", "requesting_start_voice", {
         token: truncateId(token),
@@ -754,36 +733,45 @@ export function useVoiceInterview(token: string) {
       }
 
       const config = await parseStartVoiceResponse(startRes);
+      sessionIdRef.current = config.sessionId;
       logInterview.success("voice", "start_voice_ok", {
         sessionId: truncateId(config.sessionId),
         questionCount: config.questions.length,
         wsUrl: config.wsUrl,
       });
 
-      const ws = new WebSocket(config.wsUrl);
-      wsRef.current = ws;
-      ws.onmessage = handleWsMessage;
-
-      ws.onopen = () => {
-        logInterview.info("ws", "ws_open", { wsUrl: config.wsUrl });
-        sendDoMessage(ws, { type: "PING" });
-        sendDoMessage(ws, {
-          type: "FULLSCREEN_STATE",
-          isFullscreen: Boolean(document.fullscreenElement),
-        });
-      };
-
-      ws.onerror = () => {
-        logInterview.error("ws", "ws_error", { wsUrl: config.wsUrl });
-      };
-
-      ws.onclose = (closeEvent) => {
-        logInterview.warn("ws", "ws_close", {
-          code: closeEvent.code,
-          reason: closeEvent.reason,
-          wasClean: closeEvent.wasClean,
-        });
-      };
+      const socket = new SessionSocket(config.wsUrl, {
+        onMessage: handleWsMessage,
+        onOpen: () => {
+          logInterview.info("ws", "ws_open", { wsUrl: config.wsUrl });
+          sendDoMessage(socket, { type: "PING" });
+          sendDoMessage(socket, {
+            type: "FULLSCREEN_STATE",
+            isFullscreen: Boolean(document.fullscreenElement),
+          });
+          const pending = pendingCallStartedRef.current;
+          if (pending) {
+            pendingCallStartedRef.current = null;
+            sendDoMessage(socket, {
+              type: "CALL_STARTED",
+              callId: pending.callId,
+              clientSecret: pending.clientSecret,
+            });
+          }
+        },
+        onClose: (code, reason) => {
+          logInterview.warn("ws", "ws_close", { code, reason });
+          if (code === WS_CLOSE_SUPERSEDED) {
+            setState((current) => ({ ...current, replacedElsewhere: true }));
+          }
+        },
+        canReconnect: () => {
+          const s = stateRef.current.status;
+          return s === "active" || s === "connecting";
+        },
+      });
+      socketRef.current = socket;
+      socket.connect();
 
       logInterview.info("ws", "ws_connecting", {
         wsUrl: config.wsUrl,
@@ -799,31 +787,20 @@ export function useVoiceInterview(token: string) {
       pcRef.current = pc;
       audioStream.getTracks().forEach((track) => pc.addTrack(track, audioStream));
 
-      pc.ontrack = (event) => {
-        let audio = remoteAudioRef.current;
-        if (!audio) {
-          audio = document.createElement("audio");
-          audio.autoplay = true;
-          audio.setAttribute("playsinline", "");
-          audio.style.display = "none";
-          document.body.appendChild(audio);
-          remoteAudioRef.current = audio;
-        }
-        audio.srcObject = event.streams[0] ?? null;
-        void audio.play().catch(() => undefined);
-      };
+      attachRemoteAudio(pc, remoteAudioRef);
+      peerMonitorCleanupRef.current = monitorPeerConnection(pc);
 
-      const oaiEvents = pc.createDataChannel("oai-events");
-      oaiEvents.addEventListener("message", (event) => {
-        const ws = wsRef.current;
-        if (ws?.readyState !== WebSocket.OPEN) {
+      const oaiEvents = createDataChannel(pc, (event) => {
+        const current = socketRef.current;
+        if (current?.readyState !== WebSocket.OPEN) {
           return;
         }
-        sendDoMessage(ws, {
+        sendDoMessage(current, {
           type: "REALTIME_EVENT",
           event: event.data,
         });
       });
+      void oaiEvents;
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
@@ -866,29 +843,25 @@ export function useVoiceInterview(token: string) {
       await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
 
       if (callId) {
-        const sendCallStarted = () => {
-          if (ws.readyState === WebSocket.OPEN) {
-            logInterview.info("ws", "call_started_sent", {
-              callId: truncateId(callId),
-              location,
-            });
-            sendDoMessage(ws, {
-              type: "CALL_STARTED",
-              callId,
-              clientSecret: config.clientSecret,
-            });
-          } else {
-            logInterview.warn("ws", "call_started_not_sent_ws_not_open", {
-              callId: truncateId(callId),
-              readyState: ws.readyState,
-            });
-          }
-        };
-
-        if (ws.readyState === WebSocket.OPEN) {
-          sendCallStarted();
+        if (socket.readyState === WebSocket.OPEN) {
+          logInterview.info("ws", "call_started_sent", {
+            callId: truncateId(callId),
+            location,
+          });
+          sendDoMessage(socket, {
+            type: "CALL_STARTED",
+            callId,
+            clientSecret: config.clientSecret,
+          });
         } else {
-          ws.addEventListener("open", sendCallStarted, { once: true });
+          pendingCallStartedRef.current = {
+            callId,
+            clientSecret: config.clientSecret,
+          };
+          logInterview.warn("ws", "call_started_queued_ws_not_open", {
+            callId: truncateId(callId),
+            readyState: socket.readyState,
+          });
         }
       } else {
         logInterview.warn("ws", "call_started_missing_call_id", {

@@ -26,6 +26,7 @@
     "./kanban-cursor": "./kanban-cursor.ts",
     "./kanban-queries": "./kanban-queries.ts",
     "./sqlite-helpers": "./sqlite-helpers.ts",
+    "./round-progression": "./round-progression.ts",
     "./index": "./index.ts"
   },
   "scripts": {

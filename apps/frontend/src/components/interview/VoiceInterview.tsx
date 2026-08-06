@@ -142,12 +142,17 @@ export default function VoiceInterview({
         <p className="mt-1 text-sm text-[#9aa0a6]">
           {positionName} — {candidateName}
         </p>
-        {state.error ? (
+        {state.replacedElsewhere ? (
+          <div className="mt-6 max-w-md rounded-lg bg-[#3c4043] px-4 py-3 text-center text-sm text-[#e8eaed]">
+            This interview was opened in another tab. Please use the other tab
+            to continue.
+          </div>
+        ) : state.error ? (
           <p className="mt-4 max-w-md text-center text-sm text-red-400">
             {state.error}
           </p>
         ) : null}
-        {state.status === "error" ? (
+        {state.status === "error" && !state.replacedElsewhere ? (
           <Button
             onClick={() => {
               logInterview.info("voice", "ui_retry_clicked");
@@ -169,6 +174,16 @@ export default function VoiceInterview({
 
   return (
     <div className="flex h-svh flex-col bg-[#202124] text-white">
+      {state.audioOnly ? (
+        <div className="border-b border-white/10 bg-[#1a73e8]/20 px-4 py-2 text-center text-xs text-[#8ab4f8]">
+          Voice only — screen recording isn&apos;t available on this device.
+        </div>
+      ) : null}
+      {state.replacedElsewhere ? (
+        <div className="border-b border-white/10 bg-[#3c4043] px-4 py-2 text-center text-xs text-[#e8eaed]">
+          This interview was opened in another tab. Please use the other tab.
+        </div>
+      ) : null}
       {/* Sticky session progress bar */}
       <div className="shrink-0 border-b border-white/10 bg-[#292929] px-4 py-2 sm:px-6">
         <div className="flex items-center justify-between gap-4">
