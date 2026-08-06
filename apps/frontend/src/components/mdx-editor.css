@@ -1,0 +1,122 @@
+/*
+ * MDXEditor theme — maps the editor's Radix alias variables to the app's
+ * Apple design tokens (DESIGN.md) so the editor looks native in light + dark.
+ */
+.mdx-editor.mdxeditor {
+  --accentBase: #f0f6ff;
+  --accentBgSubtle: #e6f0ff;
+  --accentBg: #d9eaff;
+  --accentBgHover: #cce0ff;
+  --accentBgActive: #bcd4ff;
+  --accentLine: #8ebaff;
+  --accentBorder: #4d94ff;
+  --accentBorderHover: #0071e3;
+  --accentSolid: #0066cc;
+  --accentSolidHover: #0071e3;
+  --accentText: #0066cc;
+  --accentTextContrast: #ffffff;
+
+  --baseBase: #ffffff;
+  --baseBgSubtle: #f5f5f7;
+  --baseBg: #ffffff;
+  --baseBgHover: #fafafc;
+  --baseBgActive: #f0f0f2;
+  --baseLine: #e0e0e0;
+  --baseBorder: #e0e0e0;
+  --baseBorderHover: #d2d2d7;
+  --baseSolid: #f5f5f7;
+  --baseSolidHover: #e9e9ec;
+  --baseText: #1d1d1f;
+  --baseTextContrast: #1d1d1f;
+
+  --basePageBg: #ffffff;
+
+  color: var(--baseTextContrast);
+  font-family: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  background: var(--color-card);
+  border: 1px solid var(--baseLine);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.dark .mdx-editor.mdxeditor {
+  --accentBase: #0a1f33;
+  --accentBgSubtle: #0d2944;
+  --accentBg: #123458;
+  --accentBgHover: #17406e;
+  --accentBgActive: #1d4c85;
+  --accentLine: #2367ad;
+  --accentBorder: #2b7fd4;
+  --accentBorderHover: #2997ff;
+  --accentSolid: #0071e3;
+  --accentSolidHover: #2997ff;
+  --accentText: #2997ff;
+  --accentTextContrast: #ffffff;
+
+  --baseBase: #1d1d1f;
+  --baseBgSubtle: #2a2a2c;
+  --baseBg: #1d1d1f;
+  --baseBgHover: #333336;
+  --baseBgActive: #3a3a3d;
+  --baseLine: rgba(255, 255, 255, 0.14);
+  --baseBorder: rgba(255, 255, 255, 0.14);
+  --baseBorderHover: rgba(255, 255, 255, 0.24);
+  --baseSolid: #2a2a2c;
+  --baseSolidHover: #3a3a3d;
+  --baseText: #f5f5f7;
+  --baseTextContrast: #f5f5f7;
+
+  --basePageBg: #000000;
+}
+
+/* Toolbar — parchment strip with a hairline divider, flush with the card. */
+.mdx-editor .mdxeditor-toolbar {
+  background: var(--baseBgSubtle);
+  border-bottom: 1px solid var(--baseLine);
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+  padding: 6px 8px;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+/* Content area — comfortable reading rhythm, min-height driven by the prop. */
+.mdx-editor .mdxeditor-root-contenteditable {
+  min-height: var(--mdx-min-height, 320px);
+  padding: 18px 22px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--baseText);
+}
+
+.mdx-editor .mdxeditor-root-contenteditable:focus-visible {
+  outline: none;
+}
+
+/* Source / diff mode textarea follows the same surface. */
+.mdx-editor .mdxeditor-source-editor,
+.mdx-editor .mdxeditor-diff-editor {
+  background: var(--baseBg);
+  color: var(--baseText);
+  min-height: var(--mdx-min-height, 320px);
+}
+
+/* Keep tables legible inside the editing area. */
+.mdx-editor .mdxeditor-root-contenteditable table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-block: 0.5rem;
+}
+
+.mdx-editor .mdxeditor-root-contenteditable table th,
+.mdx-editor .mdxeditor-root-contenteditable table td {
+  border: 1px solid var(--baseLine);
+  padding: 6px 10px;
+}
+
+/* Ensure editor popups/tooltips sit above the app chrome. */
+.mdxeditor-popup-container {
+  z-index: 60;
+}

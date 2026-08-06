@@ -36,9 +36,8 @@ import {
 } from "~/components/ui/select";
 import { createPosition } from "~/lib/actions/create-position";
 import { useRouter } from "@tanstack/react-router";
-import { RichTextEditorField } from "~/components/rich-text-editor";
+import { MarkdownEditor } from "~/components/markdown-editor";
 import { cn } from "~/lib/utils";
-
 const departmentLabels: Record<z.infer<typeof departmentEnum>, string> = {
   management: "Management",
   "capital-markets": "Capital Markets",
@@ -183,15 +182,15 @@ const PositionUploadForm = () => {
                   <FieldLabel htmlFor={field.name}>
                     Position Description
                   </FieldLabel>
-                  <RichTextEditorField
+                  <MarkdownEditor
                     value={field.state.value}
-                    onValueChange={(html) => field.handleChange(html)}
+                    onChange={(value) => field.handleChange(value)}
                     error={isInvalid}
                     minHeight="240px"
                     placeholder="Describe the position in detail."
                   />
                   <FieldDescription>
-                    Add the job description with rich formatting.
+                    Add the job description. Supports Markdown.
                   </FieldDescription>
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>

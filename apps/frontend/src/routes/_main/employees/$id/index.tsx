@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import DeleteEmployeeButton from "~/components/delete-employee-button";
 import EmployeeProfileImage from "~/components/employee-profile-image";
+import { Markdown } from "~/components/markdown";
 
 function employeeDetailQueryOptions(id: string) {
   return queryOptions({
@@ -167,8 +168,8 @@ function EmployeeDetailPage() {
 
           <TabsContent value="bio" className="mt-6">
             {employee.bio ? (
-              <div className="narrow-container max-w-none text-sm leading-6 text-foreground whitespace-pre-line break-words">
-                {employee.bio}
+              <div className="narrow-container max-w-none text-sm leading-6 text-foreground break-words">
+                <Markdown>{employee.bio}</Markdown>
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">No bio provided.</p>

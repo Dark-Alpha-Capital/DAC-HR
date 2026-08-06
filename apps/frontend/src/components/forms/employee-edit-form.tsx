@@ -36,7 +36,7 @@ import {
 import { updateEmployee } from "~/lib/actions/update-employee";
 import * as z from "zod";
 import EmployeeProfileImage from "../employee-profile-image";
-import { RichTextEditor } from "~/components/rich-text-editor";
+import { MarkdownEditor } from "~/components/markdown-editor";
 import { cn } from "~/lib/utils";
 
 interface EmployeeEditFormProps {
@@ -466,18 +466,18 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Bio (Optional)</FieldLabel>
-                  <RichTextEditor
-                    content={field.state.value || ""}
-                    onChange={(html) => {
+                  <MarkdownEditor
+                    value={field.state.value || ""}
+                    onChange={(value) => {
                       // Ensure we always pass a string, even if empty
-                      field.handleChange(html || "");
+                      field.handleChange(value || "");
                     }}
+                    error={isInvalid}
                     placeholder="Enter a detailed bio for this employee..."
                     minHeight="200px"
                   />
                   <FieldDescription>
-                    Add a detailed bio for this employee. You can use rich text
-                    formatting.
+                    Add a detailed bio for this employee. Supports Markdown.
                   </FieldDescription>
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>

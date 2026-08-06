@@ -16,14 +16,7 @@ import {
 import DeletePositionButton from "~/components/delete-position-button";
 import PositionTabsClient from "~/components/position-tabs-client";
 import { PositionRoundsSection } from "~/components/position-rounds-section";
-
-function htmlToPlainText(html: string) {
-  return html
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/p>/gi, "\n\n")
-    .replace(/<[^>]+>/g, "")
-    .trim();
-}
+import { Markdown } from "~/components/markdown";
 
 export const Route = createFileRoute("/_main/positions/$slug/")({
   head: () => ({
@@ -166,9 +159,9 @@ function PositionDetailPage() {
                 <div className="space-y-2">
                   <h3 className="text-sm font-medium">Description</h3>
                   {position.description ? (
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                      {htmlToPlainText(position.description)}
-                    </p>
+                    <Markdown className="text-sm">
+                      {position.description}
+                    </Markdown>
                   ) : (
                     <p className="text-sm text-muted-foreground italic">
                       No description provided.

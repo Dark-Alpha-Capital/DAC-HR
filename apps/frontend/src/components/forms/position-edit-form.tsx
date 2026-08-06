@@ -43,7 +43,7 @@ import {
 import { updatePosition } from "~/lib/actions/update-position";
 import { useRouter } from "@tanstack/react-router";
 import type { Position } from "@workspace/db/schema";
-import { RichTextEditorField } from "~/components/rich-text-editor";
+import { MarkdownEditor } from "~/components/markdown-editor";
 import { cn } from "~/lib/utils";
 import * as z from "zod";
 
@@ -209,15 +209,15 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
                   <FieldLabel htmlFor={field.name}>
                     Position Description
                   </FieldLabel>
-                  <RichTextEditorField
+                  <MarkdownEditor
                     value={field.state.value}
-                    onValueChange={(html) => field.handleChange(html)}
+                    onChange={(value) => field.handleChange(value)}
                     error={isInvalid}
                     minHeight="240px"
                     placeholder="Describe the position in detail."
                   />
                   <FieldDescription>
-                    Describe the position in detail.
+                    Describe the position in detail. Supports Markdown.
                   </FieldDescription>
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>
