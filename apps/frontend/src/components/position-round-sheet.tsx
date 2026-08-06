@@ -10,6 +10,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "~/components/ui/sheet";
+import { EditRoundDialog } from "~/components/dialogs/edit-round-dialog";
+import DeleteRoundButton from "~/components/delete-round-button";
 import { RoundQuestionsSection } from "~/components/round-questions-section";
 import { loadRoundById } from "~/lib/loaders/rounds";
 import { queryKeys } from "~/lib/query/query-keys";
@@ -27,6 +29,8 @@ interface PositionRoundSheetProps {
   round: RoundSummary | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onRoundUpdated?: () => void;
+  onRoundDeleted?: (roundId: string) => void | Promise<void>;
 }
 
 export function PositionRoundSheet({
@@ -35,6 +39,8 @@ export function PositionRoundSheet({
   round,
   open,
   onOpenChange,
+  onRoundUpdated,
+  onRoundDeleted,
 }: PositionRoundSheetProps) {
   const roundId = round?.id ?? "";
 
@@ -55,12 +61,39 @@ export function PositionRoundSheet({
         className="flex h-full w-full flex-col gap-0 p-0 sm:max-w-2xl lg:max-w-3xl"
       >
         <SheetHeader className="shrink-0 space-y-1.5 border-b px-6 pt-6 pb-5">
-          <SheetTitle className="pr-8 text-xl">
-            {displayRound?.name ?? "Round"}
-          </SheetTitle>
-          <SheetDescription>
-            Interview round for {positionName}
-          </SheetDescription>
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <SheetTitle className="truncate text-xl">
+                {displayRound?.name ?? "Round"}
+              </SheetTitle>
+              <SheetDescription>
+                Interview round for {positionName}
+              </SheetDescription>
+            </div>
+            {roundId ? (
+              <div className="flex shrink-0 items-center gap-1.5">
+                <EditRoundDialog
+                  round={{
+                    id: roundId,
+                    name: displayRound?.name ?? round?.name ?? "",
+                    description:
+                      displayRound?.description ?? round?.description ?? null,
+                  }}
+                  onSaved={() => {
+                    void refetch();
+                    onRoundUpdated?.();
+                  }}
+                />
+                <DeleteRoundButton
+                  roundId={roundId}
+                  onDeleted={async () => {
+                    onOpenChange(false);
+                    await onRoundDeleted?.(roundId);
+                  }}
+                />
+              </div>
+            ) : null}
+          </div>
         </SheetHeader>
 
         <div className="min-h-0 flex-1 overflow-hidden">

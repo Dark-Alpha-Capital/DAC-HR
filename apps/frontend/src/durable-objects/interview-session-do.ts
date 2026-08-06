@@ -437,7 +437,6 @@ export class InterviewSessionDO implements DurableObject {
 
     const questions = await getQuestionsForInterviewSession(
       row.session.roundId,
-      row.session.id,
     );
 
     this.logTranscript("ensure_state_initialized", {

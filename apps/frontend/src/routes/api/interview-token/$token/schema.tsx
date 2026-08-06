@@ -68,7 +68,6 @@ export const Route = createFileRoute("/api/interview-token/$token/schema")({
 
           const questions = await getQuestionsForInterviewSession(
             session.roundId,
-            session.id,
           );
 
           if (session.status === "pending" || session.status === "invited") {

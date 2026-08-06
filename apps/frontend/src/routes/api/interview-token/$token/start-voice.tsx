@@ -127,10 +127,7 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
             const candidateName = `${candidate.firstName} ${candidate.lastName}`;
             const questions = isPractice
               ? PRACTICE_QUESTIONS
-              : await getQuestionsForInterviewSession(
-                  session.roundId,
-                  session.id,
-                );
+              : await getQuestionsForInterviewSession(session.roundId);
 
             if (!isPractice && questions.length === 0) {
               interviewServerLog.warn("voice", COMPONENT, "no_questions_for_round", {

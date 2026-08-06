@@ -1,10 +1,14 @@
 import { useState } from "react";
+import { useRouter } from "@tanstack/react-router";
 import { Eye, ClipboardList } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { CreateRoundDialog } from "~/components/dialogs/create-round-dialog";
+import { EditRoundDialog } from "~/components/dialogs/edit-round-dialog";
+import DeleteRoundButton from "~/components/delete-round-button";
 import { PositionRoundSheet } from "~/components/position-round-sheet";
+import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 
 type PositionRound = {
   id: string;
@@ -23,6 +27,8 @@ export function PositionRoundsSection({
   positionName,
   rounds,
 }: PositionRoundsSectionProps) {
+  const router = useRouter();
+  const invalidate = useQueryInvalidation();
   const [selectedRound, setSelectedRound] = useState<PositionRound | null>(
     null,
   );
@@ -31,6 +37,26 @@ export function PositionRoundsSection({
   const openRound = (round: PositionRound) => {
     setSelectedRound(round);
     setSheetOpen(true);
+  };
+
+  const refreshRounds = async () => {
+    await Promise.all([
+      router.invalidate(),
+      invalidate.roundLists(),
+      invalidate.positionLists(),
+    ]);
+  };
+
+  const handleRoundSaved = () => {
+    void refreshRounds();
+  };
+
+  const handleRoundDeleted = async (roundId: string) => {
+    if (selectedRound?.id === roundId) {
+      setSelectedRound(null);
+      setSheetOpen(false);
+    }
+    await refreshRounds();
   };
 
   return (
@@ -76,14 +102,24 @@ export function PositionRoundsSection({
                       </p>
                     )}
                   </div>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => openRound(round)}
-                  >
-                    <Eye className="mr-1 h-3 w-3" />
-                    View
-                  </Button>
+                  <div className="flex items-center gap-1.5">
+                    <EditRoundDialog
+                      round={round}
+                      onSaved={handleRoundSaved}
+                    />
+                    <DeleteRoundButton
+                      roundId={round.id}
+                      onDeleted={() => handleRoundDeleted(round.id)}
+                    />
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => openRound(round)}
+                    >
+                      <Eye className="mr-1 h-3 w-3" />
+                      View
+                    </Button>
+                  </div>
                 </div>
                 {index !== rounds.length - 1 ? (
                   <Separator className="my-2" />
@@ -100,6 +136,8 @@ export function PositionRoundsSection({
         round={selectedRound}
         open={sheetOpen}
         onOpenChange={setSheetOpen}
+        onRoundUpdated={handleRoundSaved}
+        onRoundDeleted={handleRoundDeleted}
       />
     </>
   );

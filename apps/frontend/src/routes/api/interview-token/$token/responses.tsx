@@ -83,7 +83,6 @@ export const Route = createFileRoute("/api/interview-token/$token/responses")({
           if (resolved.type === "bundle") {
             const roundQuestions = await getQuestionsForInterviewSession(
               session.roundId,
-              session.id,
             );
             const belongsToRound = roundQuestions.some(
               (q) => q.id === questionId,

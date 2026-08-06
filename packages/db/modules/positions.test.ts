@@ -1,24 +1,8 @@
 import { test, expect } from "bun:test";
-import { seededShuffle, hashString } from "../seeded-shuffle";
 import {
   sortCandidateListItems,
   type CandidateListItem,
 } from "../candidate-list-sort";
-
-test("seededShuffle is deterministic for the same seed", () => {
-  const input = ["a", "b", "c", "d", "e"];
-  expect(seededShuffle(input, 42)).toEqual(seededShuffle(input, 42));
-});
-
-test("seededShuffle differs across seeds", () => {
-  const input = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-  expect(seededShuffle(input, 1)).not.toEqual(seededShuffle(input, 2));
-});
-
-test("hashString is stable and non-negative", () => {
-  expect(hashString("round-abc")).toBe(hashString("round-abc"));
-  expect(hashString("anything")).toBeGreaterThanOrEqual(0);
-});
 
 const items: CandidateListItem[] = [
   {

@@ -21,7 +21,13 @@ import {
   TooltipTrigger,
 } from "~/components/ui/tooltip";
 
-const DeleteRoundButton = ({ roundId }: { roundId: string }) => {
+const DeleteRoundButton = ({
+  roundId,
+  onDeleted,
+}: {
+  roundId: string;
+  onDeleted?: () => void | Promise<void>;
+}) => {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -62,10 +68,15 @@ const DeleteRoundButton = ({ roundId }: { roundId: string }) => {
                   const response = await deleteRound({ data: roundId });
                   if (response?.error) {
                     toast.error(response.error);
+                    return;
                   }
                   if (response?.success) {
                     toast.success("Round deleted successfully");
-                    router.navigate({ to: "/rounds", search: {} as any });
+                    if (onDeleted) {
+                      await onDeleted();
+                    } else {
+                      router.navigate({ to: "/rounds", search: {} as any });
+                    }
                   }
                 });
               }}

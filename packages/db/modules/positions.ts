@@ -13,7 +13,6 @@ import {
 } from "../schema";
 import { eq, and, or, inArray, asc, desc, isNull, count } from "drizzle-orm";
 import { ilike } from "../sqlite-helpers";
-import { seededShuffle, hashString } from "../seeded-shuffle";
 export const getPositions = async (
   hireLevels?: string[],
   statuses?: string[],
@@ -604,13 +603,9 @@ export const getQuestionsByRoundId = async (roundId: string) => {
   }
 };
 
-export const getQuestionsForInterviewSession = async (
-  roundId: string,
-  seed: string,
-  categoryLimits?: Record<string, number>,
-) => {
+export const getQuestionsForInterviewSession = async (roundId: string) => {
   try {
-    const results = await db
+    return await db
       .select({
         id: questionBank.id,
         questionText: questionBank.questionText,
@@ -633,36 +628,6 @@ export const getQuestionsForInterviewSession = async (
           eq(questionBank.isActive, true),
         ),
       );
-
-    const groupedByCategory = new Map<string, typeof results>();
-    for (const q of results) {
-      const cat = q.category ?? "screening";
-      if (!groupedByCategory.has(cat)) {
-        groupedByCategory.set(cat, []);
-      }
-      groupedByCategory.get(cat)!.push(q);
-    }
-
-    const numericSeed = hashString(seed);
-    const defaults: Record<string, number> = {
-      screening: 5,
-      technical: 5,
-      behavioral: 5,
-    };
-    const limits = { ...defaults, ...categoryLimits };
-
-    const selected: typeof results = [];
-    for (const [category, questions] of groupedByCategory) {
-      const limit = limits[category] ?? 5;
-      const shuffled = seededShuffle(questions, numericSeed + hashString(category));
-      selected.push(...shuffled.slice(0, limit));
-    }
-
-    const finalOrdered = selected.sort(
-      (a, b) => (a.orderIndex ?? 9999) - (b.orderIndex ?? 9999),
-    );
-
-    return finalOrdered;
   } catch (error) {
     console.error("Error fetching questions for interview session", error);
     return [];
