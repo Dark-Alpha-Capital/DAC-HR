@@ -31,7 +31,7 @@ function CandidateKanbanCard({
       params={{ uid: candidate.id }}
       search={{} as any}
       aria-label={`View ${candidate.firstName} ${candidate.lastName}`}
-      className={`block bg-white dark:bg-card border border-border rounded-md p-3 hover:shadow-md hover:border-primary/40 transition-all cursor-pointer ${borderColor} border-l-4 min-w-0`}
+      className={`block bg-white dark:bg-card border border-border rounded-md p-3 cursor-pointer ${borderColor} border-l-4 min-w-0`}
     >
       <div className="mb-3 min-w-0">
         <h3 className="font-semibold text-sm leading-tight mb-1 [overflow-wrap:anywhere]">
@@ -45,12 +45,9 @@ function CandidateKanbanCard({
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-2 border-t border-border/50 pt-2">
+      <div className="flex items-center gap-2 border-t border-border/50 pt-2">
         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
           {formatDate(candidate.createdAt)}
-        </span>
-        <span className="text-xs font-medium capitalize text-muted-foreground">
-          {status.replace(/_/g, " ")}
         </span>
       </div>
     </Link>
