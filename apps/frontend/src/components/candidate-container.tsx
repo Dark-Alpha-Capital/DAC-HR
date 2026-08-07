@@ -13,6 +13,9 @@ import BulkDeleteCandidatesButton from "~/components/bulk-delete-candidates-butt
 import type { Candidate } from "@workspace/db/schema";
 import { ApplicationStatusBadge } from "~/components/application-status-badge";
 import CopyButton from "~/components/copy-button";
+import { Badge } from "~/components/ui/badge";
+import { displayPhone } from "~/components/ui/phone-input";
+import { formatDate, isNew } from "~/lib/utils";
 
 type CandidateWithPosition = Candidate & {
   position: { id: string; name: string } | null;
@@ -103,13 +106,14 @@ const CandidateContainer = ({
             <TableHead className="py-1.5 px-2 text-xs">Position</TableHead>
             <TableHead className="py-1.5 px-2 text-xs">Phone</TableHead>
             <TableHead className="py-1.5 px-2 text-xs">Location</TableHead>
+            <TableHead className="py-1.5 px-2 text-xs">Created</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {candidates.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={7}
+                colSpan={8}
                 className="py-10 text-center text-sm text-muted-foreground"
               >
                 No candidates on this page.
@@ -117,60 +121,79 @@ const CandidateContainer = ({
             </TableRow>
           ) : (
             candidates.map((candidate) => {
-            const fullName = `${candidate.firstName} ${candidate.lastName}`;
-            const isSelected = selectedIds.has(candidate.id);
-            return (
-              <TableRow
-                key={candidate.id}
-                className={`cursor-pointer ${isSelected ? "bg-muted/50" : ""}`}
-                onClick={() => handleRowClick(candidate.id)}
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleRowClick(candidate.id);
-                  }
-                }}
-              >
-                <TableCell
-                  className="py-1.5 px-2"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Checkbox
-                    checked={isSelected}
-                    onCheckedChange={(checked) =>
-                      handleSelectCandidate(candidate.id, checked === true)
+              const fullName = `${candidate.firstName} ${candidate.lastName}`;
+              const isSelected = selectedIds.has(candidate.id);
+              const location =
+                candidate.locationCity && candidate.locationState
+                  ? `${candidate.locationCity}, ${candidate.locationState}`
+                  : candidate.locationCity ||
+                    candidate.locationState ||
+                    candidate.location ||
+                    "-";
+              return (
+                <TableRow
+                  key={candidate.id}
+                  className={`cursor-pointer ${isSelected ? "bg-muted/50" : ""}`}
+                  onClick={() => handleRowClick(candidate.id)}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleRowClick(candidate.id);
                     }
-                    aria-label={`Select ${fullName}`}
-                  />
-                </TableCell>
-                <TableCell className="py-1.5 px-2 text-sm">
-                  {candidate.applicationStatus ? (
-                    <ApplicationStatusBadge status={candidate.applicationStatus} />
-                  ) : (
-                    "-"
-                  )}
-                </TableCell>
-                <TableCell className="py-1.5 px-2 font-medium text-sm">
-                  {fullName}
-                </TableCell>
-                <TableCell className="py-1.5 px-2 text-sm max-w-[200px]">
-                  <div className="flex items-center gap-1 min-w-0">
-                    <span className="truncate">{candidate.email}</span>
-                    <CopyButton value={candidate.email} label="email" />
-                  </div>
-                </TableCell>
-                <TableCell className="py-1.5 px-2 text-sm">
-                  {candidate.position?.name || "-"}
-                </TableCell>
-                <TableCell className="py-1.5 px-2 text-sm">
-                  {candidate.phone || "-"}
-                </TableCell>
-                <TableCell className="py-1.5 px-2 text-sm">
-                  {candidate.location || "-"}
-                </TableCell>
-              </TableRow>
-            );
-          })
+                  }}
+                >
+                  <TableCell
+                    className="py-1.5 px-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={(checked) =>
+                        handleSelectCandidate(candidate.id, checked === true)
+                      }
+                      aria-label={`Select ${fullName}`}
+                    />
+                  </TableCell>
+                  <TableCell className="py-1.5 px-2 text-sm">
+                    {candidate.applicationStatus ? (
+                      <ApplicationStatusBadge
+                        status={candidate.applicationStatus}
+                      />
+                    ) : (
+                      "-"
+                    )}
+                  </TableCell>
+                  <TableCell className="py-1.5 px-2 font-medium text-sm">
+                    <div className="flex items-center gap-2">
+                      {isNew(candidate.createdAt) && (
+                        <Badge className="bg-primary text-primary-foreground border-0 text-xs">
+                          New
+                        </Badge>
+                      )}
+                      {fullName}
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-1.5 px-2 text-sm max-w-[200px]">
+                    <div className="flex items-center gap-1 min-w-0">
+                      <span className="truncate">{candidate.email}</span>
+                      <CopyButton value={candidate.email} label="email" />
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-1.5 px-2 text-sm">
+                    {candidate.position?.name || "-"}
+                  </TableCell>
+                  <TableCell className="py-1.5 px-2 text-sm">
+                    {displayPhone(candidate.phone) || "-"}
+                  </TableCell>
+                  <TableCell className="py-1.5 px-2 text-sm">
+                    {location}
+                  </TableCell>
+                  <TableCell className="py-1.5 px-2 text-sm whitespace-nowrap">
+                    {formatDate(candidate.createdAt)}
+                  </TableCell>
+                </TableRow>
+              );
+            })
           )}
         </TableBody>
       </Table>

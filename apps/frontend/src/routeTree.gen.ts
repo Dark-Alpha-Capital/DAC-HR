@@ -9,134 +9,109 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as MainRouteRouteImport } from './routes/_main/route'
 import { Route as AuthRouteRouteImport } from './routes/_auth/route'
-import { Route as MainIndexRouteImport } from './routes/_main/index'
-import { Route as ApiScreenersRouteImport } from './routes/api/screeners'
-import { Route as ApiInterviewSessionsRouteImport } from './routes/api/interview-sessions'
-import { Route as ApiHealthRouteImport } from './routes/api/health'
-import { Route as MainDashboardRouteImport } from './routes/_main/dashboard'
-import { Route as AuthUnauthorizedRouteImport } from './routes/_auth/unauthorized'
-import { Route as AuthSignupRouteImport } from './routes/_auth/signup'
+import { Route as MainRouteRouteImport } from './routes/_main/route'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
-import { Route as MainDocsRouteRouteImport } from './routes/_main/docs/route'
+import { Route as AuthSignupRouteImport } from './routes/_auth/signup'
+import { Route as AuthUnauthorizedRouteImport } from './routes/_auth/unauthorized'
+import { Route as MainIndexRouteImport } from './routes/_main/index'
 import { Route as MainAdminRouteRouteImport } from './routes/_main/admin/route'
-import { Route as InterviewTokenIndexRouteImport } from './routes/interview/$token/index'
-import { Route as ApiCandidateIndexRouteImport } from './routes/api/candidate/index'
-import { Route as MainWeeklyCheckinIndexRouteImport } from './routes/_main/weekly-checkin/index'
-import { Route as MainScreenersIndexRouteImport } from './routes/_main/screeners/index'
-import { Route as MainRoundsIndexRouteImport } from './routes/_main/rounds/index'
-import { Route as MainQuestionsIndexRouteImport } from './routes/_main/questions/index'
-import { Route as MainProfileIndexRouteImport } from './routes/_main/profile/index'
-import { Route as MainPositionsIndexRouteImport } from './routes/_main/positions/index'
-import { Route as MainInterviewsIndexRouteImport } from './routes/_main/interviews/index'
-import { Route as MainEmployeesIndexRouteImport } from './routes/_main/employees/index'
-import { Route as MainDocumentsIndexRouteImport } from './routes/_main/documents/index'
-import { Route as MainDocsIndexRouteImport } from './routes/_main/docs/index'
-import { Route as MainCandidatesIndexRouteImport } from './routes/_main/candidates/index'
-import { Route as MainApplicationsIndexRouteImport } from './routes/_main/applications/index'
+import { Route as MainDashboardRouteImport } from './routes/_main/dashboard'
+import { Route as MainDocsRouteRouteImport } from './routes/_main/docs/route'
+import { Route as ApiHealthRouteImport } from './routes/api/health'
+import { Route as ApiInterviewSessionsRouteImport } from './routes/api/interview-sessions'
+import { Route as ApiScreenersRouteImport } from './routes/api/screeners'
 import { Route as MainAdminIndexRouteImport } from './routes/_main/admin/index'
-import { Route as ApiLoginGoogleRouteImport } from './routes/api/login/google'
-import { Route as ApiKanbanCardsRouteImport } from './routes/api/kanban/cards'
-import { Route as ApiDocumentsViewRouteImport } from './routes/api/documents/view'
-import { Route as ApiDocumentsUploadRouteImport } from './routes/api/documents/upload'
-import { Route as ApiDebugOpenaiPingRouteImport } from './routes/api/debug/openai-ping'
-import { Route as ApiCandidateBulkRouteImport } from './routes/api/candidate/bulk'
-import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
-import { Route as ApiAuditLogsGenerateReportRouteImport } from './routes/api/audit-logs/generate-report'
-import { Route as MainWeeklyCheckinRecordsRouteImport } from './routes/_main/weekly-checkin/records'
-import { Route as MainScreenersNewRouteImport } from './routes/_main/screeners/new'
-import { Route as MainRoundsNewRouteImport } from './routes/_main/rounds/new'
-import { Route as MainQuestionsNewRouteImport } from './routes/_main/questions/new'
-import { Route as MainProfileUserIdRouteImport } from './routes/_main/profile/$userId'
-import { Route as MainPositionsNewRouteImport } from './routes/_main/positions/new'
-import { Route as MainEmployeesNewRouteImport } from './routes/_main/employees/new'
-import { Route as MainDocumentsNewRouteImport } from './routes/_main/documents/new'
-import { Route as MainDocsWhatsNewRouteImport } from './routes/_main/docs/whats-new'
-import { Route as MainDocsRoundsRouteImport } from './routes/_main/docs/rounds'
-import { Route as MainDocsQuestionsRouteImport } from './routes/_main/docs/questions'
-import { Route as MainDocsPositionsRouteImport } from './routes/_main/docs/positions'
-import { Route as MainDocsInterviewsRouteImport } from './routes/_main/docs/interviews'
-import { Route as MainDocsEmployeesRouteImport } from './routes/_main/docs/employees'
-import { Route as MainDocsDocumentsRouteImport } from './routes/_main/docs/documents'
-import { Route as MainDocsCandidatesRouteImport } from './routes/_main/docs/candidates'
-import { Route as MainDocsApplicationsRouteImport } from './routes/_main/docs/applications'
-import { Route as MainDocsAiFeaturesRouteImport } from './routes/_main/docs/ai-features'
-import { Route as MainCandidatesNewRouteImport } from './routes/_main/candidates/new'
 import { Route as MainAdminAuditLogsRouteImport } from './routes/_main/admin/audit-logs'
-import { Route as ApiCandidateImportIndexRouteImport } from './routes/api/candidate/import/index'
-import { Route as ApiCandidateIdIndexRouteImport } from './routes/api/candidate/$id/index'
-import { Route as MainRoundsIdIndexRouteImport } from './routes/_main/rounds/$id/index'
-import { Route as MainQuestionsIdIndexRouteImport } from './routes/_main/questions/$id/index'
-import { Route as MainPositionsSlugIndexRouteImport } from './routes/_main/positions/$slug/index'
-import { Route as MainInterviewsIdIndexRouteImport } from './routes/_main/interviews/$id/index'
-import { Route as MainEmployeesAttendanceIndexRouteImport } from './routes/_main/employees/attendance/index'
-import { Route as MainEmployeesIdIndexRouteImport } from './routes/_main/employees/$id/index'
-import { Route as MainCandidatesUidIndexRouteImport } from './routes/_main/candidates/$uid/index'
+import { Route as MainApplicationsIndexRouteImport } from './routes/_main/applications/index'
+import { Route as MainCandidatesIndexRouteImport } from './routes/_main/candidates/index'
+import { Route as MainCandidatesNewRouteImport } from './routes/_main/candidates/new'
+import { Route as MainDocsIndexRouteImport } from './routes/_main/docs/index'
+import { Route as MainDocsAiFeaturesRouteImport } from './routes/_main/docs/ai-features'
+import { Route as MainDocsApplicationsRouteImport } from './routes/_main/docs/applications'
+import { Route as MainDocsCandidatesRouteImport } from './routes/_main/docs/candidates'
+import { Route as MainDocsDocumentsRouteImport } from './routes/_main/docs/documents'
+import { Route as MainDocsEmployeesRouteImport } from './routes/_main/docs/employees'
+import { Route as MainDocsInterviewsRouteImport } from './routes/_main/docs/interviews'
+import { Route as MainDocsPositionsRouteImport } from './routes/_main/docs/positions'
+import { Route as MainDocsQuestionsRouteImport } from './routes/_main/docs/questions'
+import { Route as MainDocsRoundsRouteImport } from './routes/_main/docs/rounds'
+import { Route as MainDocsWhatsNewRouteImport } from './routes/_main/docs/whats-new'
+import { Route as MainDocumentsIndexRouteImport } from './routes/_main/documents/index'
+import { Route as MainDocumentsNewRouteImport } from './routes/_main/documents/new'
+import { Route as MainEmployeesIndexRouteImport } from './routes/_main/employees/index'
+import { Route as MainEmployeesNewRouteImport } from './routes/_main/employees/new'
+import { Route as MainInterviewsIndexRouteImport } from './routes/_main/interviews/index'
+import { Route as MainPositionsIndexRouteImport } from './routes/_main/positions/index'
+import { Route as MainPositionsNewRouteImport } from './routes/_main/positions/new'
+import { Route as MainProfileIndexRouteImport } from './routes/_main/profile/index'
+import { Route as MainProfileUserIdRouteImport } from './routes/_main/profile/$userId'
+import { Route as MainQuestionsIndexRouteImport } from './routes/_main/questions/index'
+import { Route as MainQuestionsNewRouteImport } from './routes/_main/questions/new'
+import { Route as MainRoundsIndexRouteImport } from './routes/_main/rounds/index'
+import { Route as MainRoundsNewRouteImport } from './routes/_main/rounds/new'
+import { Route as MainScreenersIndexRouteImport } from './routes/_main/screeners/index'
+import { Route as MainScreenersNewRouteImport } from './routes/_main/screeners/new'
+import { Route as MainWeeklyCheckinIndexRouteImport } from './routes/_main/weekly-checkin/index'
+import { Route as MainWeeklyCheckinRecordsRouteImport } from './routes/_main/weekly-checkin/records'
+import { Route as ApiAuditLogsGenerateReportRouteImport } from './routes/api/audit-logs/generate-report'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiCandidateIndexRouteImport } from './routes/api/candidate/index'
+import { Route as ApiCandidateBulkRouteImport } from './routes/api/candidate/bulk'
+import { Route as ApiDebugOpenaiPingRouteImport } from './routes/api/debug/openai-ping'
+import { Route as ApiDocumentsUploadRouteImport } from './routes/api/documents/upload'
+import { Route as ApiDocumentsViewRouteImport } from './routes/api/documents/view'
+import { Route as ApiKanbanCardsRouteImport } from './routes/api/kanban/cards'
+import { Route as ApiLoginGoogleRouteImport } from './routes/api/login/google'
+import { Route as InterviewTokenIndexRouteImport } from './routes/interview/$token/index'
 import { Route as MainApplicationsIdIndexRouteImport } from './routes/_main/applications/$id/index'
-import { Route as ApiInterviewIdAiAnalysisRouteImport } from './routes/api/interview/$id/ai-analysis'
-import { Route as ApiInterviewTokenTokenValidateRouteImport } from './routes/api/interview-token/$token/validate'
-import { Route as ApiInterviewTokenTokenUploadAudioRouteImport } from './routes/api/interview-token/$token/upload-audio'
-import { Route as ApiInterviewTokenTokenStartVoiceRouteImport } from './routes/api/interview-token/$token/start-voice'
-import { Route as ApiInterviewTokenTokenSchemaRouteImport } from './routes/api/interview-token/$token/schema'
-import { Route as ApiInterviewTokenTokenResponsesRouteImport } from './routes/api/interview-token/$token/responses'
-import { Route as ApiInterviewTokenTokenCompleteRouteImport } from './routes/api/interview-token/$token/complete'
-import { Route as ApiInterviewSessionsSessionIdRecordingRouteImport } from './routes/api/interview-sessions/$sessionId/recording'
-import { Route as ApiInterviewBundleBundleIdAiAnalysisRouteImport } from './routes/api/interview-bundle/$bundleId/ai-analysis'
-import { Route as ApiCandidateImportIdRouteImport } from './routes/api/candidate/import/$id'
-import { Route as ApiCandidateIdDocumentsRouteImport } from './routes/api/candidate/$id/documents'
-import { Route as ApiCandidateIdAiScreeningRouteImport } from './routes/api/candidate/$id/ai-screening'
-import { Route as ApiCandidateIdAiAnalysisRouteImport } from './routes/api/candidate/$id/ai-analysis'
-import { Route as MainScreenersIdEditRouteImport } from './routes/_main/screeners/$id/edit'
-import { Route as MainRoundsIdEditRouteImport } from './routes/_main/rounds/$id/edit'
-import { Route as MainRoundsIdAddQuestionRouteImport } from './routes/_main/rounds/$id/add-question'
-import { Route as MainQuestionsIdEditRouteImport } from './routes/_main/questions/$id/edit'
-import { Route as MainPositionsSlugEditRouteImport } from './routes/_main/positions/$slug/edit'
-import { Route as MainEmployeesMemberUidRouteImport } from './routes/_main/employees/member/$uid'
-import { Route as MainEmployeesAttendanceMeetingAttendanceRouteImport } from './routes/_main/employees/attendance/meeting-attendance'
-import { Route as MainEmployeesAttendanceConferenceIdRouteImport } from './routes/_main/employees/attendance/$conferenceId'
-import { Route as MainEmployeesIdEditRouteImport } from './routes/_main/employees/$id/edit'
+import { Route as MainCandidatesUidIndexRouteImport } from './routes/_main/candidates/$uid/index'
 import { Route as MainCandidatesUidEditRouteImport } from './routes/_main/candidates/$uid/edit'
+import { Route as MainEmployeesIdIndexRouteImport } from './routes/_main/employees/$id/index'
+import { Route as MainEmployeesIdEditRouteImport } from './routes/_main/employees/$id/edit'
+import { Route as MainEmployeesAttendanceIndexRouteImport } from './routes/_main/employees/attendance/index'
+import { Route as MainEmployeesAttendanceConferenceIdRouteImport } from './routes/_main/employees/attendance/$conferenceId'
+import { Route as MainEmployeesAttendanceMeetingAttendanceRouteImport } from './routes/_main/employees/attendance/meeting-attendance'
+import { Route as MainEmployeesMemberUidRouteImport } from './routes/_main/employees/member/$uid'
+import { Route as MainInterviewsIdIndexRouteImport } from './routes/_main/interviews/$id/index'
+import { Route as MainPositionsSlugIndexRouteImport } from './routes/_main/positions/$slug/index'
+import { Route as MainPositionsSlugEditRouteImport } from './routes/_main/positions/$slug/edit'
+import { Route as MainQuestionsIdIndexRouteImport } from './routes/_main/questions/$id/index'
+import { Route as MainQuestionsIdEditRouteImport } from './routes/_main/questions/$id/edit'
+import { Route as MainRoundsIdIndexRouteImport } from './routes/_main/rounds/$id/index'
+import { Route as MainRoundsIdAddQuestionRouteImport } from './routes/_main/rounds/$id/add-question'
+import { Route as MainRoundsIdEditRouteImport } from './routes/_main/rounds/$id/edit'
+import { Route as MainScreenersIdEditRouteImport } from './routes/_main/screeners/$id/edit'
+import { Route as ApiCandidateIdIndexRouteImport } from './routes/api/candidate/$id/index'
+import { Route as ApiCandidateIdAiAnalysisRouteImport } from './routes/api/candidate/$id/ai-analysis'
+import { Route as ApiCandidateIdAiScreeningRouteImport } from './routes/api/candidate/$id/ai-screening'
+import { Route as ApiCandidateIdDocumentsRouteImport } from './routes/api/candidate/$id/documents'
+import { Route as ApiCandidateImportIndexRouteImport } from './routes/api/candidate/import/index'
+import { Route as ApiCandidateImportIdRouteImport } from './routes/api/candidate/import/$id'
+import { Route as ApiInterviewBundleBundleIdAiAnalysisRouteImport } from './routes/api/interview-bundle/$bundleId/ai-analysis'
+import { Route as ApiInterviewSessionsSessionIdRecordingRouteImport } from './routes/api/interview-sessions/$sessionId/recording'
+import { Route as ApiInterviewTokenTokenCompleteRouteImport } from './routes/api/interview-token/$token/complete'
+import { Route as ApiInterviewTokenTokenResponsesRouteImport } from './routes/api/interview-token/$token/responses'
+import { Route as ApiInterviewTokenTokenSchemaRouteImport } from './routes/api/interview-token/$token/schema'
+import { Route as ApiInterviewTokenTokenStartVoiceRouteImport } from './routes/api/interview-token/$token/start-voice'
+import { Route as ApiInterviewTokenTokenUploadAudioRouteImport } from './routes/api/interview-token/$token/upload-audio'
+import { Route as ApiInterviewTokenTokenValidateRouteImport } from './routes/api/interview-token/$token/validate'
+import { Route as ApiInterviewIdAiAnalysisRouteImport } from './routes/api/interview/$id/ai-analysis'
 import { Route as MainInterviewsBundleBundleIdIndexRouteImport } from './routes/_main/interviews/bundle/$bundleId/index'
 import { Route as ApiCandidateIdDocumentsDocumentIdRouteImport } from './routes/api/candidate/$id/documents/$documentId'
 import { Route as MainCandidatesUidDocumentsDocumentIdEditRouteImport } from './routes/_main/candidates/$uid/documents/$documentId/edit'
 
-const MainRouteRoute = MainRouteRouteImport.update({
-  id: '/_main',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthRouteRoute = AuthRouteRouteImport.update({
   id: '/_auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MainIndexRoute = MainIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const ApiScreenersRoute = ApiScreenersRouteImport.update({
-  id: '/api/screeners',
-  path: '/api/screeners',
+const MainRouteRoute = MainRouteRouteImport.update({
+  id: '/_main',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiInterviewSessionsRoute = ApiInterviewSessionsRouteImport.update({
-  id: '/api/interview-sessions',
-  path: '/api/interview-sessions',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiHealthRoute = ApiHealthRouteImport.update({
-  id: '/api/health',
-  path: '/api/health',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MainDashboardRoute = MainDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const AuthUnauthorizedRoute = AuthUnauthorizedRouteImport.update({
-  id: '/unauthorized',
-  path: '/unauthorized',
+const AuthLoginRoute = AuthLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => AuthRouteRoute,
 } as any)
 const AuthSignupRoute = AuthSignupRouteImport.update({
@@ -144,14 +119,14 @@ const AuthSignupRoute = AuthSignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => AuthRouteRoute,
 } as any)
-const AuthLoginRoute = AuthLoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const AuthUnauthorizedRoute = AuthUnauthorizedRouteImport.update({
+  id: '/unauthorized',
+  path: '/unauthorized',
   getParentRoute: () => AuthRouteRoute,
 } as any)
-const MainDocsRouteRoute = MainDocsRouteRouteImport.update({
-  id: '/docs',
-  path: '/docs',
+const MainIndexRoute = MainIndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => MainRouteRoute,
 } as any)
 const MainAdminRouteRoute = MainAdminRouteRouteImport.update({
@@ -159,59 +134,54 @@ const MainAdminRouteRoute = MainAdminRouteRouteImport.update({
   path: '/admin',
   getParentRoute: () => MainRouteRoute,
 } as any)
-const InterviewTokenIndexRoute = InterviewTokenIndexRouteImport.update({
-  id: '/interview/$token/',
-  path: '/interview/$token/',
+const MainDashboardRoute = MainDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainDocsRouteRoute = MainDocsRouteRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const ApiHealthRoute = ApiHealthRouteImport.update({
+  id: '/api/health',
+  path: '/api/health',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiCandidateIndexRoute = ApiCandidateIndexRouteImport.update({
-  id: '/api/candidate/',
-  path: '/api/candidate/',
+const ApiInterviewSessionsRoute = ApiInterviewSessionsRouteImport.update({
+  id: '/api/interview-sessions',
+  path: '/api/interview-sessions',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MainWeeklyCheckinIndexRoute = MainWeeklyCheckinIndexRouteImport.update({
-  id: '/weekly-checkin/',
-  path: '/weekly-checkin/',
+const ApiScreenersRoute = ApiScreenersRouteImport.update({
+  id: '/api/screeners',
+  path: '/api/screeners',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MainAdminIndexRoute = MainAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MainAdminRouteRoute,
+} as any)
+const MainAdminAuditLogsRoute = MainAdminAuditLogsRouteImport.update({
+  id: '/audit-logs',
+  path: '/audit-logs',
+  getParentRoute: () => MainAdminRouteRoute,
+} as any)
+const MainApplicationsIndexRoute = MainApplicationsIndexRouteImport.update({
+  id: '/applications/',
+  path: '/applications/',
   getParentRoute: () => MainRouteRoute,
 } as any)
-const MainScreenersIndexRoute = MainScreenersIndexRouteImport.update({
-  id: '/screeners/',
-  path: '/screeners/',
+const MainCandidatesIndexRoute = MainCandidatesIndexRouteImport.update({
+  id: '/candidates/',
+  path: '/candidates/',
   getParentRoute: () => MainRouteRoute,
 } as any)
-const MainRoundsIndexRoute = MainRoundsIndexRouteImport.update({
-  id: '/rounds/',
-  path: '/rounds/',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainQuestionsIndexRoute = MainQuestionsIndexRouteImport.update({
-  id: '/questions/',
-  path: '/questions/',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainProfileIndexRoute = MainProfileIndexRouteImport.update({
-  id: '/profile/',
-  path: '/profile/',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainPositionsIndexRoute = MainPositionsIndexRouteImport.update({
-  id: '/positions/',
-  path: '/positions/',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainInterviewsIndexRoute = MainInterviewsIndexRouteImport.update({
-  id: '/interviews/',
-  path: '/interviews/',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainEmployeesIndexRoute = MainEmployeesIndexRouteImport.update({
-  id: '/employees/',
-  path: '/employees/',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainDocumentsIndexRoute = MainDocumentsIndexRouteImport.update({
-  id: '/documents/',
-  path: '/documents/',
+const MainCandidatesNewRoute = MainCandidatesNewRouteImport.update({
+  id: '/candidates/new',
+  path: '/candidates/new',
   getParentRoute: () => MainRouteRoute,
 } as any)
 const MainDocsIndexRoute = MainDocsIndexRouteImport.update({
@@ -219,141 +189,9 @@ const MainDocsIndexRoute = MainDocsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => MainDocsRouteRoute,
 } as any)
-const MainCandidatesIndexRoute = MainCandidatesIndexRouteImport.update({
-  id: '/candidates/',
-  path: '/candidates/',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainApplicationsIndexRoute = MainApplicationsIndexRouteImport.update({
-  id: '/applications/',
-  path: '/applications/',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainAdminIndexRoute = MainAdminIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => MainAdminRouteRoute,
-} as any)
-const ApiLoginGoogleRoute = ApiLoginGoogleRouteImport.update({
-  id: '/api/login/google',
-  path: '/api/login/google',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiKanbanCardsRoute = ApiKanbanCardsRouteImport.update({
-  id: '/api/kanban/cards',
-  path: '/api/kanban/cards',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiDocumentsViewRoute = ApiDocumentsViewRouteImport.update({
-  id: '/api/documents/view',
-  path: '/api/documents/view',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiDocumentsUploadRoute = ApiDocumentsUploadRouteImport.update({
-  id: '/api/documents/upload',
-  path: '/api/documents/upload',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiDebugOpenaiPingRoute = ApiDebugOpenaiPingRouteImport.update({
-  id: '/api/debug/openai-ping',
-  path: '/api/debug/openai-ping',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiCandidateBulkRoute = ApiCandidateBulkRouteImport.update({
-  id: '/api/candidate/bulk',
-  path: '/api/candidate/bulk',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
-  id: '/api/auth/$',
-  path: '/api/auth/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAuditLogsGenerateReportRoute =
-  ApiAuditLogsGenerateReportRouteImport.update({
-    id: '/api/audit-logs/generate-report',
-    path: '/api/audit-logs/generate-report',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const MainWeeklyCheckinRecordsRoute =
-  MainWeeklyCheckinRecordsRouteImport.update({
-    id: '/weekly-checkin/records',
-    path: '/weekly-checkin/records',
-    getParentRoute: () => MainRouteRoute,
-  } as any)
-const MainScreenersNewRoute = MainScreenersNewRouteImport.update({
-  id: '/screeners/new',
-  path: '/screeners/new',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainRoundsNewRoute = MainRoundsNewRouteImport.update({
-  id: '/rounds/new',
-  path: '/rounds/new',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainQuestionsNewRoute = MainQuestionsNewRouteImport.update({
-  id: '/questions/new',
-  path: '/questions/new',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainProfileUserIdRoute = MainProfileUserIdRouteImport.update({
-  id: '/profile/$userId',
-  path: '/profile/$userId',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainPositionsNewRoute = MainPositionsNewRouteImport.update({
-  id: '/positions/new',
-  path: '/positions/new',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainEmployeesNewRoute = MainEmployeesNewRouteImport.update({
-  id: '/employees/new',
-  path: '/employees/new',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainDocumentsNewRoute = MainDocumentsNewRouteImport.update({
-  id: '/documents/new',
-  path: '/documents/new',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainDocsWhatsNewRoute = MainDocsWhatsNewRouteImport.update({
-  id: '/whats-new',
-  path: '/whats-new',
-  getParentRoute: () => MainDocsRouteRoute,
-} as any)
-const MainDocsRoundsRoute = MainDocsRoundsRouteImport.update({
-  id: '/rounds',
-  path: '/rounds',
-  getParentRoute: () => MainDocsRouteRoute,
-} as any)
-const MainDocsQuestionsRoute = MainDocsQuestionsRouteImport.update({
-  id: '/questions',
-  path: '/questions',
-  getParentRoute: () => MainDocsRouteRoute,
-} as any)
-const MainDocsPositionsRoute = MainDocsPositionsRouteImport.update({
-  id: '/positions',
-  path: '/positions',
-  getParentRoute: () => MainDocsRouteRoute,
-} as any)
-const MainDocsInterviewsRoute = MainDocsInterviewsRouteImport.update({
-  id: '/interviews',
-  path: '/interviews',
-  getParentRoute: () => MainDocsRouteRoute,
-} as any)
-const MainDocsEmployeesRoute = MainDocsEmployeesRouteImport.update({
-  id: '/employees',
-  path: '/employees',
-  getParentRoute: () => MainDocsRouteRoute,
-} as any)
-const MainDocsDocumentsRoute = MainDocsDocumentsRouteImport.update({
-  id: '/documents',
-  path: '/documents',
-  getParentRoute: () => MainDocsRouteRoute,
-} as any)
-const MainDocsCandidatesRoute = MainDocsCandidatesRouteImport.update({
-  id: '/candidates',
-  path: '/candidates',
+const MainDocsAiFeaturesRoute = MainDocsAiFeaturesRouteImport.update({
+  id: '/ai-features',
+  path: '/ai-features',
   getParentRoute: () => MainDocsRouteRoute,
 } as any)
 const MainDocsApplicationsRoute = MainDocsApplicationsRouteImport.update({
@@ -361,49 +199,206 @@ const MainDocsApplicationsRoute = MainDocsApplicationsRouteImport.update({
   path: '/applications',
   getParentRoute: () => MainDocsRouteRoute,
 } as any)
-const MainDocsAiFeaturesRoute = MainDocsAiFeaturesRouteImport.update({
-  id: '/ai-features',
-  path: '/ai-features',
+const MainDocsCandidatesRoute = MainDocsCandidatesRouteImport.update({
+  id: '/candidates',
+  path: '/candidates',
   getParentRoute: () => MainDocsRouteRoute,
 } as any)
-const MainCandidatesNewRoute = MainCandidatesNewRouteImport.update({
-  id: '/candidates/new',
-  path: '/candidates/new',
+const MainDocsDocumentsRoute = MainDocsDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => MainDocsRouteRoute,
+} as any)
+const MainDocsEmployeesRoute = MainDocsEmployeesRouteImport.update({
+  id: '/employees',
+  path: '/employees',
+  getParentRoute: () => MainDocsRouteRoute,
+} as any)
+const MainDocsInterviewsRoute = MainDocsInterviewsRouteImport.update({
+  id: '/interviews',
+  path: '/interviews',
+  getParentRoute: () => MainDocsRouteRoute,
+} as any)
+const MainDocsPositionsRoute = MainDocsPositionsRouteImport.update({
+  id: '/positions',
+  path: '/positions',
+  getParentRoute: () => MainDocsRouteRoute,
+} as any)
+const MainDocsQuestionsRoute = MainDocsQuestionsRouteImport.update({
+  id: '/questions',
+  path: '/questions',
+  getParentRoute: () => MainDocsRouteRoute,
+} as any)
+const MainDocsRoundsRoute = MainDocsRoundsRouteImport.update({
+  id: '/rounds',
+  path: '/rounds',
+  getParentRoute: () => MainDocsRouteRoute,
+} as any)
+const MainDocsWhatsNewRoute = MainDocsWhatsNewRouteImport.update({
+  id: '/whats-new',
+  path: '/whats-new',
+  getParentRoute: () => MainDocsRouteRoute,
+} as any)
+const MainDocumentsIndexRoute = MainDocumentsIndexRouteImport.update({
+  id: '/documents/',
+  path: '/documents/',
   getParentRoute: () => MainRouteRoute,
 } as any)
-const MainAdminAuditLogsRoute = MainAdminAuditLogsRouteImport.update({
-  id: '/audit-logs',
-  path: '/audit-logs',
-  getParentRoute: () => MainAdminRouteRoute,
+const MainDocumentsNewRoute = MainDocumentsNewRouteImport.update({
+  id: '/documents/new',
+  path: '/documents/new',
+  getParentRoute: () => MainRouteRoute,
 } as any)
-const ApiCandidateImportIndexRoute = ApiCandidateImportIndexRouteImport.update({
-  id: '/api/candidate/import/',
-  path: '/api/candidate/import/',
+const MainEmployeesIndexRoute = MainEmployeesIndexRouteImport.update({
+  id: '/employees/',
+  path: '/employees/',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainEmployeesNewRoute = MainEmployeesNewRouteImport.update({
+  id: '/employees/new',
+  path: '/employees/new',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainInterviewsIndexRoute = MainInterviewsIndexRouteImport.update({
+  id: '/interviews/',
+  path: '/interviews/',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainPositionsIndexRoute = MainPositionsIndexRouteImport.update({
+  id: '/positions/',
+  path: '/positions/',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainPositionsNewRoute = MainPositionsNewRouteImport.update({
+  id: '/positions/new',
+  path: '/positions/new',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainProfileIndexRoute = MainProfileIndexRouteImport.update({
+  id: '/profile/',
+  path: '/profile/',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainProfileUserIdRoute = MainProfileUserIdRouteImport.update({
+  id: '/profile/$userId',
+  path: '/profile/$userId',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainQuestionsIndexRoute = MainQuestionsIndexRouteImport.update({
+  id: '/questions/',
+  path: '/questions/',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainQuestionsNewRoute = MainQuestionsNewRouteImport.update({
+  id: '/questions/new',
+  path: '/questions/new',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainRoundsIndexRoute = MainRoundsIndexRouteImport.update({
+  id: '/rounds/',
+  path: '/rounds/',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainRoundsNewRoute = MainRoundsNewRouteImport.update({
+  id: '/rounds/new',
+  path: '/rounds/new',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainScreenersIndexRoute = MainScreenersIndexRouteImport.update({
+  id: '/screeners/',
+  path: '/screeners/',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainScreenersNewRoute = MainScreenersNewRouteImport.update({
+  id: '/screeners/new',
+  path: '/screeners/new',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainWeeklyCheckinIndexRoute = MainWeeklyCheckinIndexRouteImport.update({
+  id: '/weekly-checkin/',
+  path: '/weekly-checkin/',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainWeeklyCheckinRecordsRoute =
+  MainWeeklyCheckinRecordsRouteImport.update({
+    id: '/weekly-checkin/records',
+    path: '/weekly-checkin/records',
+    getParentRoute: () => MainRouteRoute,
+  } as any)
+const ApiAuditLogsGenerateReportRoute =
+  ApiAuditLogsGenerateReportRouteImport.update({
+    id: '/api/audit-logs/generate-report',
+    path: '/api/audit-logs/generate-report',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiCandidateIdIndexRoute = ApiCandidateIdIndexRouteImport.update({
-  id: '/api/candidate/$id/',
-  path: '/api/candidate/$id/',
+const ApiCandidateIndexRoute = ApiCandidateIndexRouteImport.update({
+  id: '/api/candidate/',
+  path: '/api/candidate/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MainRoundsIdIndexRoute = MainRoundsIdIndexRouteImport.update({
-  id: '/rounds/$id/',
-  path: '/rounds/$id/',
+const ApiCandidateBulkRoute = ApiCandidateBulkRouteImport.update({
+  id: '/api/candidate/bulk',
+  path: '/api/candidate/bulk',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDebugOpenaiPingRoute = ApiDebugOpenaiPingRouteImport.update({
+  id: '/api/debug/openai-ping',
+  path: '/api/debug/openai-ping',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDocumentsUploadRoute = ApiDocumentsUploadRouteImport.update({
+  id: '/api/documents/upload',
+  path: '/api/documents/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDocumentsViewRoute = ApiDocumentsViewRouteImport.update({
+  id: '/api/documents/view',
+  path: '/api/documents/view',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiKanbanCardsRoute = ApiKanbanCardsRouteImport.update({
+  id: '/api/kanban/cards',
+  path: '/api/kanban/cards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLoginGoogleRoute = ApiLoginGoogleRouteImport.update({
+  id: '/api/login/google',
+  path: '/api/login/google',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InterviewTokenIndexRoute = InterviewTokenIndexRouteImport.update({
+  id: '/interview/$token/',
+  path: '/interview/$token/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MainApplicationsIdIndexRoute = MainApplicationsIdIndexRouteImport.update({
+  id: '/applications/$id/',
+  path: '/applications/$id/',
   getParentRoute: () => MainRouteRoute,
 } as any)
-const MainQuestionsIdIndexRoute = MainQuestionsIdIndexRouteImport.update({
-  id: '/questions/$id/',
-  path: '/questions/$id/',
+const MainCandidatesUidIndexRoute = MainCandidatesUidIndexRouteImport.update({
+  id: '/candidates/$uid/',
+  path: '/candidates/$uid/',
   getParentRoute: () => MainRouteRoute,
 } as any)
-const MainPositionsSlugIndexRoute = MainPositionsSlugIndexRouteImport.update({
-  id: '/positions/$slug/',
-  path: '/positions/$slug/',
+const MainCandidatesUidEditRoute = MainCandidatesUidEditRouteImport.update({
+  id: '/candidates/$uid/edit',
+  path: '/candidates/$uid/edit',
   getParentRoute: () => MainRouteRoute,
 } as any)
-const MainInterviewsIdIndexRoute = MainInterviewsIdIndexRouteImport.update({
-  id: '/interviews/$id/',
-  path: '/interviews/$id/',
+const MainEmployeesIdIndexRoute = MainEmployeesIdIndexRouteImport.update({
+  id: '/employees/$id/',
+  path: '/employees/$id/',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainEmployeesIdEditRoute = MainEmployeesIdEditRouteImport.update({
+  id: '/employees/$id/edit',
+  path: '/employees/$id/edit',
   getParentRoute: () => MainRouteRoute,
 } as any)
 const MainEmployeesAttendanceIndexRoute =
@@ -412,61 +407,104 @@ const MainEmployeesAttendanceIndexRoute =
     path: '/employees/attendance/',
     getParentRoute: () => MainRouteRoute,
   } as any)
-const MainEmployeesIdIndexRoute = MainEmployeesIdIndexRouteImport.update({
-  id: '/employees/$id/',
-  path: '/employees/$id/',
+const MainEmployeesAttendanceConferenceIdRoute =
+  MainEmployeesAttendanceConferenceIdRouteImport.update({
+    id: '/employees/attendance/$conferenceId',
+    path: '/employees/attendance/$conferenceId',
+    getParentRoute: () => MainRouteRoute,
+  } as any)
+const MainEmployeesAttendanceMeetingAttendanceRoute =
+  MainEmployeesAttendanceMeetingAttendanceRouteImport.update({
+    id: '/employees/attendance/meeting-attendance',
+    path: '/employees/attendance/meeting-attendance',
+    getParentRoute: () => MainRouteRoute,
+  } as any)
+const MainEmployeesMemberUidRoute = MainEmployeesMemberUidRouteImport.update({
+  id: '/employees/member/$uid',
+  path: '/employees/member/$uid',
   getParentRoute: () => MainRouteRoute,
 } as any)
-const MainCandidatesUidIndexRoute = MainCandidatesUidIndexRouteImport.update({
-  id: '/candidates/$uid/',
-  path: '/candidates/$uid/',
+const MainInterviewsIdIndexRoute = MainInterviewsIdIndexRouteImport.update({
+  id: '/interviews/$id/',
+  path: '/interviews/$id/',
   getParentRoute: () => MainRouteRoute,
 } as any)
-const MainApplicationsIdIndexRoute = MainApplicationsIdIndexRouteImport.update({
-  id: '/applications/$id/',
-  path: '/applications/$id/',
+const MainPositionsSlugIndexRoute = MainPositionsSlugIndexRouteImport.update({
+  id: '/positions/$slug/',
+  path: '/positions/$slug/',
   getParentRoute: () => MainRouteRoute,
 } as any)
-const ApiInterviewIdAiAnalysisRoute =
-  ApiInterviewIdAiAnalysisRouteImport.update({
-    id: '/api/interview/$id/ai-analysis',
-    path: '/api/interview/$id/ai-analysis',
+const MainPositionsSlugEditRoute = MainPositionsSlugEditRouteImport.update({
+  id: '/positions/$slug/edit',
+  path: '/positions/$slug/edit',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainQuestionsIdIndexRoute = MainQuestionsIdIndexRouteImport.update({
+  id: '/questions/$id/',
+  path: '/questions/$id/',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainQuestionsIdEditRoute = MainQuestionsIdEditRouteImport.update({
+  id: '/questions/$id/edit',
+  path: '/questions/$id/edit',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainRoundsIdIndexRoute = MainRoundsIdIndexRouteImport.update({
+  id: '/rounds/$id/',
+  path: '/rounds/$id/',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainRoundsIdAddQuestionRoute = MainRoundsIdAddQuestionRouteImport.update({
+  id: '/rounds/$id/add-question',
+  path: '/rounds/$id/add-question',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainRoundsIdEditRoute = MainRoundsIdEditRouteImport.update({
+  id: '/rounds/$id/edit',
+  path: '/rounds/$id/edit',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainScreenersIdEditRoute = MainScreenersIdEditRouteImport.update({
+  id: '/screeners/$id/edit',
+  path: '/screeners/$id/edit',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const ApiCandidateIdIndexRoute = ApiCandidateIdIndexRouteImport.update({
+  id: '/api/candidate/$id/',
+  path: '/api/candidate/$id/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCandidateIdAiAnalysisRoute =
+  ApiCandidateIdAiAnalysisRouteImport.update({
+    id: '/api/candidate/$id/ai-analysis',
+    path: '/api/candidate/$id/ai-analysis',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiInterviewTokenTokenValidateRoute =
-  ApiInterviewTokenTokenValidateRouteImport.update({
-    id: '/api/interview-token/$token/validate',
-    path: '/api/interview-token/$token/validate',
+const ApiCandidateIdAiScreeningRoute =
+  ApiCandidateIdAiScreeningRouteImport.update({
+    id: '/api/candidate/$id/ai-screening',
+    path: '/api/candidate/$id/ai-screening',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiInterviewTokenTokenUploadAudioRoute =
-  ApiInterviewTokenTokenUploadAudioRouteImport.update({
-    id: '/api/interview-token/$token/upload-audio',
-    path: '/api/interview-token/$token/upload-audio',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiInterviewTokenTokenStartVoiceRoute =
-  ApiInterviewTokenTokenStartVoiceRouteImport.update({
-    id: '/api/interview-token/$token/start-voice',
-    path: '/api/interview-token/$token/start-voice',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiInterviewTokenTokenSchemaRoute =
-  ApiInterviewTokenTokenSchemaRouteImport.update({
-    id: '/api/interview-token/$token/schema',
-    path: '/api/interview-token/$token/schema',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiInterviewTokenTokenResponsesRoute =
-  ApiInterviewTokenTokenResponsesRouteImport.update({
-    id: '/api/interview-token/$token/responses',
-    path: '/api/interview-token/$token/responses',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiInterviewTokenTokenCompleteRoute =
-  ApiInterviewTokenTokenCompleteRouteImport.update({
-    id: '/api/interview-token/$token/complete',
-    path: '/api/interview-token/$token/complete',
+const ApiCandidateIdDocumentsRoute = ApiCandidateIdDocumentsRouteImport.update({
+  id: '/api/candidate/$id/documents',
+  path: '/api/candidate/$id/documents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCandidateImportIndexRoute = ApiCandidateImportIndexRouteImport.update({
+  id: '/api/candidate/import/',
+  path: '/api/candidate/import/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCandidateImportIdRoute = ApiCandidateImportIdRouteImport.update({
+  id: '/api/candidate/import/$id',
+  path: '/api/candidate/import/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiInterviewBundleBundleIdAiAnalysisRoute =
+  ApiInterviewBundleBundleIdAiAnalysisRouteImport.update({
+    id: '/api/interview-bundle/$bundleId/ai-analysis',
+    path: '/api/interview-bundle/$bundleId/ai-analysis',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiInterviewSessionsSessionIdRecordingRoute =
@@ -475,86 +513,48 @@ const ApiInterviewSessionsSessionIdRecordingRoute =
     path: '/$sessionId/recording',
     getParentRoute: () => ApiInterviewSessionsRoute,
   } as any)
-const ApiInterviewBundleBundleIdAiAnalysisRoute =
-  ApiInterviewBundleBundleIdAiAnalysisRouteImport.update({
-    id: '/api/interview-bundle/$bundleId/ai-analysis',
-    path: '/api/interview-bundle/$bundleId/ai-analysis',
+const ApiInterviewTokenTokenCompleteRoute =
+  ApiInterviewTokenTokenCompleteRouteImport.update({
+    id: '/api/interview-token/$token/complete',
+    path: '/api/interview-token/$token/complete',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiCandidateImportIdRoute = ApiCandidateImportIdRouteImport.update({
-  id: '/api/candidate/import/$id',
-  path: '/api/candidate/import/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiCandidateIdDocumentsRoute = ApiCandidateIdDocumentsRouteImport.update({
-  id: '/api/candidate/$id/documents',
-  path: '/api/candidate/$id/documents',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiCandidateIdAiScreeningRoute =
-  ApiCandidateIdAiScreeningRouteImport.update({
-    id: '/api/candidate/$id/ai-screening',
-    path: '/api/candidate/$id/ai-screening',
+const ApiInterviewTokenTokenResponsesRoute =
+  ApiInterviewTokenTokenResponsesRouteImport.update({
+    id: '/api/interview-token/$token/responses',
+    path: '/api/interview-token/$token/responses',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiCandidateIdAiAnalysisRoute =
-  ApiCandidateIdAiAnalysisRouteImport.update({
-    id: '/api/candidate/$id/ai-analysis',
-    path: '/api/candidate/$id/ai-analysis',
+const ApiInterviewTokenTokenSchemaRoute =
+  ApiInterviewTokenTokenSchemaRouteImport.update({
+    id: '/api/interview-token/$token/schema',
+    path: '/api/interview-token/$token/schema',
     getParentRoute: () => rootRouteImport,
   } as any)
-const MainScreenersIdEditRoute = MainScreenersIdEditRouteImport.update({
-  id: '/screeners/$id/edit',
-  path: '/screeners/$id/edit',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainRoundsIdEditRoute = MainRoundsIdEditRouteImport.update({
-  id: '/rounds/$id/edit',
-  path: '/rounds/$id/edit',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainRoundsIdAddQuestionRoute = MainRoundsIdAddQuestionRouteImport.update({
-  id: '/rounds/$id/add-question',
-  path: '/rounds/$id/add-question',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainQuestionsIdEditRoute = MainQuestionsIdEditRouteImport.update({
-  id: '/questions/$id/edit',
-  path: '/questions/$id/edit',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainPositionsSlugEditRoute = MainPositionsSlugEditRouteImport.update({
-  id: '/positions/$slug/edit',
-  path: '/positions/$slug/edit',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainEmployeesMemberUidRoute = MainEmployeesMemberUidRouteImport.update({
-  id: '/employees/member/$uid',
-  path: '/employees/member/$uid',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainEmployeesAttendanceMeetingAttendanceRoute =
-  MainEmployeesAttendanceMeetingAttendanceRouteImport.update({
-    id: '/employees/attendance/meeting-attendance',
-    path: '/employees/attendance/meeting-attendance',
-    getParentRoute: () => MainRouteRoute,
+const ApiInterviewTokenTokenStartVoiceRoute =
+  ApiInterviewTokenTokenStartVoiceRouteImport.update({
+    id: '/api/interview-token/$token/start-voice',
+    path: '/api/interview-token/$token/start-voice',
+    getParentRoute: () => rootRouteImport,
   } as any)
-const MainEmployeesAttendanceConferenceIdRoute =
-  MainEmployeesAttendanceConferenceIdRouteImport.update({
-    id: '/employees/attendance/$conferenceId',
-    path: '/employees/attendance/$conferenceId',
-    getParentRoute: () => MainRouteRoute,
+const ApiInterviewTokenTokenUploadAudioRoute =
+  ApiInterviewTokenTokenUploadAudioRouteImport.update({
+    id: '/api/interview-token/$token/upload-audio',
+    path: '/api/interview-token/$token/upload-audio',
+    getParentRoute: () => rootRouteImport,
   } as any)
-const MainEmployeesIdEditRoute = MainEmployeesIdEditRouteImport.update({
-  id: '/employees/$id/edit',
-  path: '/employees/$id/edit',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainCandidatesUidEditRoute = MainCandidatesUidEditRouteImport.update({
-  id: '/candidates/$uid/edit',
-  path: '/candidates/$uid/edit',
-  getParentRoute: () => MainRouteRoute,
-} as any)
+const ApiInterviewTokenTokenValidateRoute =
+  ApiInterviewTokenTokenValidateRouteImport.update({
+    id: '/api/interview-token/$token/validate',
+    path: '/api/interview-token/$token/validate',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiInterviewIdAiAnalysisRoute =
+  ApiInterviewIdAiAnalysisRouteImport.update({
+    id: '/api/interview/$id/ai-analysis',
+    path: '/api/interview/$id/ai-analysis',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const MainInterviewsBundleBundleIdIndexRoute =
   MainInterviewsBundleBundleIdIndexRouteImport.update({
     id: '/interviews/bundle/$bundleId/',
@@ -1158,13 +1158,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/_main': {
-      id: '/_main'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof MainRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_auth': {
       id: '/_auth'
       path: ''
@@ -1172,46 +1165,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_main/': {
-      id: '/_main/'
-      path: '/'
+    '/_main': {
+      id: '/_main'
+      path: ''
       fullPath: '/'
-      preLoaderRoute: typeof MainIndexRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/api/screeners': {
-      id: '/api/screeners'
-      path: '/api/screeners'
-      fullPath: '/api/screeners'
-      preLoaderRoute: typeof ApiScreenersRouteImport
+      preLoaderRoute: typeof MainRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/interview-sessions': {
-      id: '/api/interview-sessions'
-      path: '/api/interview-sessions'
-      fullPath: '/api/interview-sessions'
-      preLoaderRoute: typeof ApiInterviewSessionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/health': {
-      id: '/api/health'
-      path: '/api/health'
-      fullPath: '/api/health'
-      preLoaderRoute: typeof ApiHealthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_main/dashboard': {
-      id: '/_main/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof MainDashboardRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_auth/unauthorized': {
-      id: '/_auth/unauthorized'
-      path: '/unauthorized'
-      fullPath: '/unauthorized'
-      preLoaderRoute: typeof AuthUnauthorizedRouteImport
+    '/_auth/login': {
+      id: '/_auth/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof AuthRouteRoute
     }
     '/_auth/signup': {
@@ -1221,18 +1186,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSignupRouteImport
       parentRoute: typeof AuthRouteRoute
     }
-    '/_auth/login': {
-      id: '/_auth/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof AuthLoginRouteImport
+    '/_auth/unauthorized': {
+      id: '/_auth/unauthorized'
+      path: '/unauthorized'
+      fullPath: '/unauthorized'
+      preLoaderRoute: typeof AuthUnauthorizedRouteImport
       parentRoute: typeof AuthRouteRoute
     }
-    '/_main/docs': {
-      id: '/_main/docs'
-      path: '/docs'
-      fullPath: '/docs'
-      preLoaderRoute: typeof MainDocsRouteRouteImport
+    '/_main/': {
+      id: '/_main/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof MainIndexRouteImport
       parentRoute: typeof MainRouteRoute
     }
     '/_main/admin': {
@@ -1242,81 +1207,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainAdminRouteRouteImport
       parentRoute: typeof MainRouteRoute
     }
-    '/interview/$token/': {
-      id: '/interview/$token/'
-      path: '/interview/$token'
-      fullPath: '/interview/$token/'
-      preLoaderRoute: typeof InterviewTokenIndexRouteImport
+    '/_main/dashboard': {
+      id: '/_main/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof MainDashboardRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/docs': {
+      id: '/_main/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof MainDocsRouteRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/api/health': {
+      id: '/api/health'
+      path: '/api/health'
+      fullPath: '/api/health'
+      preLoaderRoute: typeof ApiHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/candidate/': {
-      id: '/api/candidate/'
-      path: '/api/candidate'
-      fullPath: '/api/candidate/'
-      preLoaderRoute: typeof ApiCandidateIndexRouteImport
+    '/api/interview-sessions': {
+      id: '/api/interview-sessions'
+      path: '/api/interview-sessions'
+      fullPath: '/api/interview-sessions'
+      preLoaderRoute: typeof ApiInterviewSessionsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_main/weekly-checkin/': {
-      id: '/_main/weekly-checkin/'
-      path: '/weekly-checkin'
-      fullPath: '/weekly-checkin/'
-      preLoaderRoute: typeof MainWeeklyCheckinIndexRouteImport
+    '/api/screeners': {
+      id: '/api/screeners'
+      path: '/api/screeners'
+      fullPath: '/api/screeners'
+      preLoaderRoute: typeof ApiScreenersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_main/admin/': {
+      id: '/_main/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof MainAdminIndexRouteImport
+      parentRoute: typeof MainAdminRouteRoute
+    }
+    '/_main/admin/audit-logs': {
+      id: '/_main/admin/audit-logs'
+      path: '/audit-logs'
+      fullPath: '/admin/audit-logs'
+      preLoaderRoute: typeof MainAdminAuditLogsRouteImport
+      parentRoute: typeof MainAdminRouteRoute
+    }
+    '/_main/applications/': {
+      id: '/_main/applications/'
+      path: '/applications'
+      fullPath: '/applications/'
+      preLoaderRoute: typeof MainApplicationsIndexRouteImport
       parentRoute: typeof MainRouteRoute
     }
-    '/_main/screeners/': {
-      id: '/_main/screeners/'
-      path: '/screeners'
-      fullPath: '/screeners/'
-      preLoaderRoute: typeof MainScreenersIndexRouteImport
+    '/_main/candidates/': {
+      id: '/_main/candidates/'
+      path: '/candidates'
+      fullPath: '/candidates/'
+      preLoaderRoute: typeof MainCandidatesIndexRouteImport
       parentRoute: typeof MainRouteRoute
     }
-    '/_main/rounds/': {
-      id: '/_main/rounds/'
-      path: '/rounds'
-      fullPath: '/rounds/'
-      preLoaderRoute: typeof MainRoundsIndexRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/questions/': {
-      id: '/_main/questions/'
-      path: '/questions'
-      fullPath: '/questions/'
-      preLoaderRoute: typeof MainQuestionsIndexRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/profile/': {
-      id: '/_main/profile/'
-      path: '/profile'
-      fullPath: '/profile/'
-      preLoaderRoute: typeof MainProfileIndexRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/positions/': {
-      id: '/_main/positions/'
-      path: '/positions'
-      fullPath: '/positions/'
-      preLoaderRoute: typeof MainPositionsIndexRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/interviews/': {
-      id: '/_main/interviews/'
-      path: '/interviews'
-      fullPath: '/interviews/'
-      preLoaderRoute: typeof MainInterviewsIndexRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/employees/': {
-      id: '/_main/employees/'
-      path: '/employees'
-      fullPath: '/employees/'
-      preLoaderRoute: typeof MainEmployeesIndexRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/documents/': {
-      id: '/_main/documents/'
-      path: '/documents'
-      fullPath: '/documents/'
-      preLoaderRoute: typeof MainDocumentsIndexRouteImport
+    '/_main/candidates/new': {
+      id: '/_main/candidates/new'
+      path: '/candidates/new'
+      fullPath: '/candidates/new'
+      preLoaderRoute: typeof MainCandidatesNewRouteImport
       parentRoute: typeof MainRouteRoute
     }
     '/_main/docs/': {
@@ -1326,193 +1284,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainDocsIndexRouteImport
       parentRoute: typeof MainDocsRouteRoute
     }
-    '/_main/candidates/': {
-      id: '/_main/candidates/'
-      path: '/candidates'
-      fullPath: '/candidates/'
-      preLoaderRoute: typeof MainCandidatesIndexRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/applications/': {
-      id: '/_main/applications/'
-      path: '/applications'
-      fullPath: '/applications/'
-      preLoaderRoute: typeof MainApplicationsIndexRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/admin/': {
-      id: '/_main/admin/'
-      path: '/'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof MainAdminIndexRouteImport
-      parentRoute: typeof MainAdminRouteRoute
-    }
-    '/api/login/google': {
-      id: '/api/login/google'
-      path: '/api/login/google'
-      fullPath: '/api/login/google'
-      preLoaderRoute: typeof ApiLoginGoogleRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/kanban/cards': {
-      id: '/api/kanban/cards'
-      path: '/api/kanban/cards'
-      fullPath: '/api/kanban/cards'
-      preLoaderRoute: typeof ApiKanbanCardsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/documents/view': {
-      id: '/api/documents/view'
-      path: '/api/documents/view'
-      fullPath: '/api/documents/view'
-      preLoaderRoute: typeof ApiDocumentsViewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/documents/upload': {
-      id: '/api/documents/upload'
-      path: '/api/documents/upload'
-      fullPath: '/api/documents/upload'
-      preLoaderRoute: typeof ApiDocumentsUploadRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/debug/openai-ping': {
-      id: '/api/debug/openai-ping'
-      path: '/api/debug/openai-ping'
-      fullPath: '/api/debug/openai-ping'
-      preLoaderRoute: typeof ApiDebugOpenaiPingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/candidate/bulk': {
-      id: '/api/candidate/bulk'
-      path: '/api/candidate/bulk'
-      fullPath: '/api/candidate/bulk'
-      preLoaderRoute: typeof ApiCandidateBulkRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/auth/$': {
-      id: '/api/auth/$'
-      path: '/api/auth/$'
-      fullPath: '/api/auth/$'
-      preLoaderRoute: typeof ApiAuthSplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/audit-logs/generate-report': {
-      id: '/api/audit-logs/generate-report'
-      path: '/api/audit-logs/generate-report'
-      fullPath: '/api/audit-logs/generate-report'
-      preLoaderRoute: typeof ApiAuditLogsGenerateReportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_main/weekly-checkin/records': {
-      id: '/_main/weekly-checkin/records'
-      path: '/weekly-checkin/records'
-      fullPath: '/weekly-checkin/records'
-      preLoaderRoute: typeof MainWeeklyCheckinRecordsRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/screeners/new': {
-      id: '/_main/screeners/new'
-      path: '/screeners/new'
-      fullPath: '/screeners/new'
-      preLoaderRoute: typeof MainScreenersNewRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/rounds/new': {
-      id: '/_main/rounds/new'
-      path: '/rounds/new'
-      fullPath: '/rounds/new'
-      preLoaderRoute: typeof MainRoundsNewRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/questions/new': {
-      id: '/_main/questions/new'
-      path: '/questions/new'
-      fullPath: '/questions/new'
-      preLoaderRoute: typeof MainQuestionsNewRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/profile/$userId': {
-      id: '/_main/profile/$userId'
-      path: '/profile/$userId'
-      fullPath: '/profile/$userId'
-      preLoaderRoute: typeof MainProfileUserIdRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/positions/new': {
-      id: '/_main/positions/new'
-      path: '/positions/new'
-      fullPath: '/positions/new'
-      preLoaderRoute: typeof MainPositionsNewRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/employees/new': {
-      id: '/_main/employees/new'
-      path: '/employees/new'
-      fullPath: '/employees/new'
-      preLoaderRoute: typeof MainEmployeesNewRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/documents/new': {
-      id: '/_main/documents/new'
-      path: '/documents/new'
-      fullPath: '/documents/new'
-      preLoaderRoute: typeof MainDocumentsNewRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/docs/whats-new': {
-      id: '/_main/docs/whats-new'
-      path: '/whats-new'
-      fullPath: '/docs/whats-new'
-      preLoaderRoute: typeof MainDocsWhatsNewRouteImport
-      parentRoute: typeof MainDocsRouteRoute
-    }
-    '/_main/docs/rounds': {
-      id: '/_main/docs/rounds'
-      path: '/rounds'
-      fullPath: '/docs/rounds'
-      preLoaderRoute: typeof MainDocsRoundsRouteImport
-      parentRoute: typeof MainDocsRouteRoute
-    }
-    '/_main/docs/questions': {
-      id: '/_main/docs/questions'
-      path: '/questions'
-      fullPath: '/docs/questions'
-      preLoaderRoute: typeof MainDocsQuestionsRouteImport
-      parentRoute: typeof MainDocsRouteRoute
-    }
-    '/_main/docs/positions': {
-      id: '/_main/docs/positions'
-      path: '/positions'
-      fullPath: '/docs/positions'
-      preLoaderRoute: typeof MainDocsPositionsRouteImport
-      parentRoute: typeof MainDocsRouteRoute
-    }
-    '/_main/docs/interviews': {
-      id: '/_main/docs/interviews'
-      path: '/interviews'
-      fullPath: '/docs/interviews'
-      preLoaderRoute: typeof MainDocsInterviewsRouteImport
-      parentRoute: typeof MainDocsRouteRoute
-    }
-    '/_main/docs/employees': {
-      id: '/_main/docs/employees'
-      path: '/employees'
-      fullPath: '/docs/employees'
-      preLoaderRoute: typeof MainDocsEmployeesRouteImport
-      parentRoute: typeof MainDocsRouteRoute
-    }
-    '/_main/docs/documents': {
-      id: '/_main/docs/documents'
-      path: '/documents'
-      fullPath: '/docs/documents'
-      preLoaderRoute: typeof MainDocsDocumentsRouteImport
-      parentRoute: typeof MainDocsRouteRoute
-    }
-    '/_main/docs/candidates': {
-      id: '/_main/docs/candidates'
-      path: '/candidates'
-      fullPath: '/docs/candidates'
-      preLoaderRoute: typeof MainDocsCandidatesRouteImport
+    '/_main/docs/ai-features': {
+      id: '/_main/docs/ai-features'
+      path: '/ai-features'
+      fullPath: '/docs/ai-features'
+      preLoaderRoute: typeof MainDocsAiFeaturesRouteImport
       parentRoute: typeof MainDocsRouteRoute
     }
     '/_main/docs/applications': {
@@ -1522,81 +1298,256 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainDocsApplicationsRouteImport
       parentRoute: typeof MainDocsRouteRoute
     }
-    '/_main/docs/ai-features': {
-      id: '/_main/docs/ai-features'
-      path: '/ai-features'
-      fullPath: '/docs/ai-features'
-      preLoaderRoute: typeof MainDocsAiFeaturesRouteImport
+    '/_main/docs/candidates': {
+      id: '/_main/docs/candidates'
+      path: '/candidates'
+      fullPath: '/docs/candidates'
+      preLoaderRoute: typeof MainDocsCandidatesRouteImport
       parentRoute: typeof MainDocsRouteRoute
     }
-    '/_main/candidates/new': {
-      id: '/_main/candidates/new'
-      path: '/candidates/new'
-      fullPath: '/candidates/new'
-      preLoaderRoute: typeof MainCandidatesNewRouteImport
+    '/_main/docs/documents': {
+      id: '/_main/docs/documents'
+      path: '/documents'
+      fullPath: '/docs/documents'
+      preLoaderRoute: typeof MainDocsDocumentsRouteImport
+      parentRoute: typeof MainDocsRouteRoute
+    }
+    '/_main/docs/employees': {
+      id: '/_main/docs/employees'
+      path: '/employees'
+      fullPath: '/docs/employees'
+      preLoaderRoute: typeof MainDocsEmployeesRouteImport
+      parentRoute: typeof MainDocsRouteRoute
+    }
+    '/_main/docs/interviews': {
+      id: '/_main/docs/interviews'
+      path: '/interviews'
+      fullPath: '/docs/interviews'
+      preLoaderRoute: typeof MainDocsInterviewsRouteImport
+      parentRoute: typeof MainDocsRouteRoute
+    }
+    '/_main/docs/positions': {
+      id: '/_main/docs/positions'
+      path: '/positions'
+      fullPath: '/docs/positions'
+      preLoaderRoute: typeof MainDocsPositionsRouteImport
+      parentRoute: typeof MainDocsRouteRoute
+    }
+    '/_main/docs/questions': {
+      id: '/_main/docs/questions'
+      path: '/questions'
+      fullPath: '/docs/questions'
+      preLoaderRoute: typeof MainDocsQuestionsRouteImport
+      parentRoute: typeof MainDocsRouteRoute
+    }
+    '/_main/docs/rounds': {
+      id: '/_main/docs/rounds'
+      path: '/rounds'
+      fullPath: '/docs/rounds'
+      preLoaderRoute: typeof MainDocsRoundsRouteImport
+      parentRoute: typeof MainDocsRouteRoute
+    }
+    '/_main/docs/whats-new': {
+      id: '/_main/docs/whats-new'
+      path: '/whats-new'
+      fullPath: '/docs/whats-new'
+      preLoaderRoute: typeof MainDocsWhatsNewRouteImport
+      parentRoute: typeof MainDocsRouteRoute
+    }
+    '/_main/documents/': {
+      id: '/_main/documents/'
+      path: '/documents'
+      fullPath: '/documents/'
+      preLoaderRoute: typeof MainDocumentsIndexRouteImport
       parentRoute: typeof MainRouteRoute
     }
-    '/_main/admin/audit-logs': {
-      id: '/_main/admin/audit-logs'
-      path: '/audit-logs'
-      fullPath: '/admin/audit-logs'
-      preLoaderRoute: typeof MainAdminAuditLogsRouteImport
-      parentRoute: typeof MainAdminRouteRoute
+    '/_main/documents/new': {
+      id: '/_main/documents/new'
+      path: '/documents/new'
+      fullPath: '/documents/new'
+      preLoaderRoute: typeof MainDocumentsNewRouteImport
+      parentRoute: typeof MainRouteRoute
     }
-    '/api/candidate/import/': {
-      id: '/api/candidate/import/'
-      path: '/api/candidate/import'
-      fullPath: '/api/candidate/import/'
-      preLoaderRoute: typeof ApiCandidateImportIndexRouteImport
+    '/_main/employees/': {
+      id: '/_main/employees/'
+      path: '/employees'
+      fullPath: '/employees/'
+      preLoaderRoute: typeof MainEmployeesIndexRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/employees/new': {
+      id: '/_main/employees/new'
+      path: '/employees/new'
+      fullPath: '/employees/new'
+      preLoaderRoute: typeof MainEmployeesNewRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/interviews/': {
+      id: '/_main/interviews/'
+      path: '/interviews'
+      fullPath: '/interviews/'
+      preLoaderRoute: typeof MainInterviewsIndexRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/positions/': {
+      id: '/_main/positions/'
+      path: '/positions'
+      fullPath: '/positions/'
+      preLoaderRoute: typeof MainPositionsIndexRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/positions/new': {
+      id: '/_main/positions/new'
+      path: '/positions/new'
+      fullPath: '/positions/new'
+      preLoaderRoute: typeof MainPositionsNewRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/profile/': {
+      id: '/_main/profile/'
+      path: '/profile'
+      fullPath: '/profile/'
+      preLoaderRoute: typeof MainProfileIndexRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/profile/$userId': {
+      id: '/_main/profile/$userId'
+      path: '/profile/$userId'
+      fullPath: '/profile/$userId'
+      preLoaderRoute: typeof MainProfileUserIdRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/questions/': {
+      id: '/_main/questions/'
+      path: '/questions'
+      fullPath: '/questions/'
+      preLoaderRoute: typeof MainQuestionsIndexRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/questions/new': {
+      id: '/_main/questions/new'
+      path: '/questions/new'
+      fullPath: '/questions/new'
+      preLoaderRoute: typeof MainQuestionsNewRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/rounds/': {
+      id: '/_main/rounds/'
+      path: '/rounds'
+      fullPath: '/rounds/'
+      preLoaderRoute: typeof MainRoundsIndexRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/rounds/new': {
+      id: '/_main/rounds/new'
+      path: '/rounds/new'
+      fullPath: '/rounds/new'
+      preLoaderRoute: typeof MainRoundsNewRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/screeners/': {
+      id: '/_main/screeners/'
+      path: '/screeners'
+      fullPath: '/screeners/'
+      preLoaderRoute: typeof MainScreenersIndexRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/screeners/new': {
+      id: '/_main/screeners/new'
+      path: '/screeners/new'
+      fullPath: '/screeners/new'
+      preLoaderRoute: typeof MainScreenersNewRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/weekly-checkin/': {
+      id: '/_main/weekly-checkin/'
+      path: '/weekly-checkin'
+      fullPath: '/weekly-checkin/'
+      preLoaderRoute: typeof MainWeeklyCheckinIndexRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/weekly-checkin/records': {
+      id: '/_main/weekly-checkin/records'
+      path: '/weekly-checkin/records'
+      fullPath: '/weekly-checkin/records'
+      preLoaderRoute: typeof MainWeeklyCheckinRecordsRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/api/audit-logs/generate-report': {
+      id: '/api/audit-logs/generate-report'
+      path: '/api/audit-logs/generate-report'
+      fullPath: '/api/audit-logs/generate-report'
+      preLoaderRoute: typeof ApiAuditLogsGenerateReportRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/candidate/$id/': {
-      id: '/api/candidate/$id/'
-      path: '/api/candidate/$id'
-      fullPath: '/api/candidate/$id/'
-      preLoaderRoute: typeof ApiCandidateIdIndexRouteImport
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_main/rounds/$id/': {
-      id: '/_main/rounds/$id/'
-      path: '/rounds/$id'
-      fullPath: '/rounds/$id/'
-      preLoaderRoute: typeof MainRoundsIdIndexRouteImport
-      parentRoute: typeof MainRouteRoute
+    '/api/candidate/': {
+      id: '/api/candidate/'
+      path: '/api/candidate'
+      fullPath: '/api/candidate/'
+      preLoaderRoute: typeof ApiCandidateIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_main/questions/$id/': {
-      id: '/_main/questions/$id/'
-      path: '/questions/$id'
-      fullPath: '/questions/$id/'
-      preLoaderRoute: typeof MainQuestionsIdIndexRouteImport
-      parentRoute: typeof MainRouteRoute
+    '/api/candidate/bulk': {
+      id: '/api/candidate/bulk'
+      path: '/api/candidate/bulk'
+      fullPath: '/api/candidate/bulk'
+      preLoaderRoute: typeof ApiCandidateBulkRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_main/positions/$slug/': {
-      id: '/_main/positions/$slug/'
-      path: '/positions/$slug'
-      fullPath: '/positions/$slug/'
-      preLoaderRoute: typeof MainPositionsSlugIndexRouteImport
-      parentRoute: typeof MainRouteRoute
+    '/api/debug/openai-ping': {
+      id: '/api/debug/openai-ping'
+      path: '/api/debug/openai-ping'
+      fullPath: '/api/debug/openai-ping'
+      preLoaderRoute: typeof ApiDebugOpenaiPingRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_main/interviews/$id/': {
-      id: '/_main/interviews/$id/'
-      path: '/interviews/$id'
-      fullPath: '/interviews/$id/'
-      preLoaderRoute: typeof MainInterviewsIdIndexRouteImport
-      parentRoute: typeof MainRouteRoute
+    '/api/documents/upload': {
+      id: '/api/documents/upload'
+      path: '/api/documents/upload'
+      fullPath: '/api/documents/upload'
+      preLoaderRoute: typeof ApiDocumentsUploadRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_main/employees/attendance/': {
-      id: '/_main/employees/attendance/'
-      path: '/employees/attendance'
-      fullPath: '/employees/attendance/'
-      preLoaderRoute: typeof MainEmployeesAttendanceIndexRouteImport
-      parentRoute: typeof MainRouteRoute
+    '/api/documents/view': {
+      id: '/api/documents/view'
+      path: '/api/documents/view'
+      fullPath: '/api/documents/view'
+      preLoaderRoute: typeof ApiDocumentsViewRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_main/employees/$id/': {
-      id: '/_main/employees/$id/'
-      path: '/employees/$id'
-      fullPath: '/employees/$id/'
-      preLoaderRoute: typeof MainEmployeesIdIndexRouteImport
+    '/api/kanban/cards': {
+      id: '/api/kanban/cards'
+      path: '/api/kanban/cards'
+      fullPath: '/api/kanban/cards'
+      preLoaderRoute: typeof ApiKanbanCardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/login/google': {
+      id: '/api/login/google'
+      path: '/api/login/google'
+      fullPath: '/api/login/google'
+      preLoaderRoute: typeof ApiLoginGoogleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/interview/$token/': {
+      id: '/interview/$token/'
+      path: '/interview/$token'
+      fullPath: '/interview/$token/'
+      preLoaderRoute: typeof InterviewTokenIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_main/applications/$id/': {
+      id: '/_main/applications/$id/'
+      path: '/applications/$id'
+      fullPath: '/applications/$id/'
+      preLoaderRoute: typeof MainApplicationsIdIndexRouteImport
       parentRoute: typeof MainRouteRoute
     }
     '/_main/candidates/$uid/': {
@@ -1606,158 +1557,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainCandidatesUidIndexRouteImport
       parentRoute: typeof MainRouteRoute
     }
-    '/_main/applications/$id/': {
-      id: '/_main/applications/$id/'
-      path: '/applications/$id'
-      fullPath: '/applications/$id/'
-      preLoaderRoute: typeof MainApplicationsIdIndexRouteImport
+    '/_main/candidates/$uid/edit': {
+      id: '/_main/candidates/$uid/edit'
+      path: '/candidates/$uid/edit'
+      fullPath: '/candidates/$uid/edit'
+      preLoaderRoute: typeof MainCandidatesUidEditRouteImport
       parentRoute: typeof MainRouteRoute
     }
-    '/api/interview/$id/ai-analysis': {
-      id: '/api/interview/$id/ai-analysis'
-      path: '/api/interview/$id/ai-analysis'
-      fullPath: '/api/interview/$id/ai-analysis'
-      preLoaderRoute: typeof ApiInterviewIdAiAnalysisRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/interview-token/$token/validate': {
-      id: '/api/interview-token/$token/validate'
-      path: '/api/interview-token/$token/validate'
-      fullPath: '/api/interview-token/$token/validate'
-      preLoaderRoute: typeof ApiInterviewTokenTokenValidateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/interview-token/$token/upload-audio': {
-      id: '/api/interview-token/$token/upload-audio'
-      path: '/api/interview-token/$token/upload-audio'
-      fullPath: '/api/interview-token/$token/upload-audio'
-      preLoaderRoute: typeof ApiInterviewTokenTokenUploadAudioRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/interview-token/$token/start-voice': {
-      id: '/api/interview-token/$token/start-voice'
-      path: '/api/interview-token/$token/start-voice'
-      fullPath: '/api/interview-token/$token/start-voice'
-      preLoaderRoute: typeof ApiInterviewTokenTokenStartVoiceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/interview-token/$token/schema': {
-      id: '/api/interview-token/$token/schema'
-      path: '/api/interview-token/$token/schema'
-      fullPath: '/api/interview-token/$token/schema'
-      preLoaderRoute: typeof ApiInterviewTokenTokenSchemaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/interview-token/$token/responses': {
-      id: '/api/interview-token/$token/responses'
-      path: '/api/interview-token/$token/responses'
-      fullPath: '/api/interview-token/$token/responses'
-      preLoaderRoute: typeof ApiInterviewTokenTokenResponsesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/interview-token/$token/complete': {
-      id: '/api/interview-token/$token/complete'
-      path: '/api/interview-token/$token/complete'
-      fullPath: '/api/interview-token/$token/complete'
-      preLoaderRoute: typeof ApiInterviewTokenTokenCompleteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/interview-sessions/$sessionId/recording': {
-      id: '/api/interview-sessions/$sessionId/recording'
-      path: '/$sessionId/recording'
-      fullPath: '/api/interview-sessions/$sessionId/recording'
-      preLoaderRoute: typeof ApiInterviewSessionsSessionIdRecordingRouteImport
-      parentRoute: typeof ApiInterviewSessionsRoute
-    }
-    '/api/interview-bundle/$bundleId/ai-analysis': {
-      id: '/api/interview-bundle/$bundleId/ai-analysis'
-      path: '/api/interview-bundle/$bundleId/ai-analysis'
-      fullPath: '/api/interview-bundle/$bundleId/ai-analysis'
-      preLoaderRoute: typeof ApiInterviewBundleBundleIdAiAnalysisRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/candidate/import/$id': {
-      id: '/api/candidate/import/$id'
-      path: '/api/candidate/import/$id'
-      fullPath: '/api/candidate/import/$id'
-      preLoaderRoute: typeof ApiCandidateImportIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/candidate/$id/documents': {
-      id: '/api/candidate/$id/documents'
-      path: '/api/candidate/$id/documents'
-      fullPath: '/api/candidate/$id/documents'
-      preLoaderRoute: typeof ApiCandidateIdDocumentsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/candidate/$id/ai-screening': {
-      id: '/api/candidate/$id/ai-screening'
-      path: '/api/candidate/$id/ai-screening'
-      fullPath: '/api/candidate/$id/ai-screening'
-      preLoaderRoute: typeof ApiCandidateIdAiScreeningRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/candidate/$id/ai-analysis': {
-      id: '/api/candidate/$id/ai-analysis'
-      path: '/api/candidate/$id/ai-analysis'
-      fullPath: '/api/candidate/$id/ai-analysis'
-      preLoaderRoute: typeof ApiCandidateIdAiAnalysisRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_main/screeners/$id/edit': {
-      id: '/_main/screeners/$id/edit'
-      path: '/screeners/$id/edit'
-      fullPath: '/screeners/$id/edit'
-      preLoaderRoute: typeof MainScreenersIdEditRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/rounds/$id/edit': {
-      id: '/_main/rounds/$id/edit'
-      path: '/rounds/$id/edit'
-      fullPath: '/rounds/$id/edit'
-      preLoaderRoute: typeof MainRoundsIdEditRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/rounds/$id/add-question': {
-      id: '/_main/rounds/$id/add-question'
-      path: '/rounds/$id/add-question'
-      fullPath: '/rounds/$id/add-question'
-      preLoaderRoute: typeof MainRoundsIdAddQuestionRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/questions/$id/edit': {
-      id: '/_main/questions/$id/edit'
-      path: '/questions/$id/edit'
-      fullPath: '/questions/$id/edit'
-      preLoaderRoute: typeof MainQuestionsIdEditRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/positions/$slug/edit': {
-      id: '/_main/positions/$slug/edit'
-      path: '/positions/$slug/edit'
-      fullPath: '/positions/$slug/edit'
-      preLoaderRoute: typeof MainPositionsSlugEditRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/employees/member/$uid': {
-      id: '/_main/employees/member/$uid'
-      path: '/employees/member/$uid'
-      fullPath: '/employees/member/$uid'
-      preLoaderRoute: typeof MainEmployeesMemberUidRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/employees/attendance/meeting-attendance': {
-      id: '/_main/employees/attendance/meeting-attendance'
-      path: '/employees/attendance/meeting-attendance'
-      fullPath: '/employees/attendance/meeting-attendance'
-      preLoaderRoute: typeof MainEmployeesAttendanceMeetingAttendanceRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/employees/attendance/$conferenceId': {
-      id: '/_main/employees/attendance/$conferenceId'
-      path: '/employees/attendance/$conferenceId'
-      fullPath: '/employees/attendance/$conferenceId'
-      preLoaderRoute: typeof MainEmployeesAttendanceConferenceIdRouteImport
+    '/_main/employees/$id/': {
+      id: '/_main/employees/$id/'
+      path: '/employees/$id'
+      fullPath: '/employees/$id/'
+      preLoaderRoute: typeof MainEmployeesIdIndexRouteImport
       parentRoute: typeof MainRouteRoute
     }
     '/_main/employees/$id/edit': {
@@ -1767,12 +1578,201 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainEmployeesIdEditRouteImport
       parentRoute: typeof MainRouteRoute
     }
-    '/_main/candidates/$uid/edit': {
-      id: '/_main/candidates/$uid/edit'
-      path: '/candidates/$uid/edit'
-      fullPath: '/candidates/$uid/edit'
-      preLoaderRoute: typeof MainCandidatesUidEditRouteImport
+    '/_main/employees/attendance/': {
+      id: '/_main/employees/attendance/'
+      path: '/employees/attendance'
+      fullPath: '/employees/attendance/'
+      preLoaderRoute: typeof MainEmployeesAttendanceIndexRouteImport
       parentRoute: typeof MainRouteRoute
+    }
+    '/_main/employees/attendance/$conferenceId': {
+      id: '/_main/employees/attendance/$conferenceId'
+      path: '/employees/attendance/$conferenceId'
+      fullPath: '/employees/attendance/$conferenceId'
+      preLoaderRoute: typeof MainEmployeesAttendanceConferenceIdRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/employees/attendance/meeting-attendance': {
+      id: '/_main/employees/attendance/meeting-attendance'
+      path: '/employees/attendance/meeting-attendance'
+      fullPath: '/employees/attendance/meeting-attendance'
+      preLoaderRoute: typeof MainEmployeesAttendanceMeetingAttendanceRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/employees/member/$uid': {
+      id: '/_main/employees/member/$uid'
+      path: '/employees/member/$uid'
+      fullPath: '/employees/member/$uid'
+      preLoaderRoute: typeof MainEmployeesMemberUidRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/interviews/$id/': {
+      id: '/_main/interviews/$id/'
+      path: '/interviews/$id'
+      fullPath: '/interviews/$id/'
+      preLoaderRoute: typeof MainInterviewsIdIndexRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/positions/$slug/': {
+      id: '/_main/positions/$slug/'
+      path: '/positions/$slug'
+      fullPath: '/positions/$slug/'
+      preLoaderRoute: typeof MainPositionsSlugIndexRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/positions/$slug/edit': {
+      id: '/_main/positions/$slug/edit'
+      path: '/positions/$slug/edit'
+      fullPath: '/positions/$slug/edit'
+      preLoaderRoute: typeof MainPositionsSlugEditRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/questions/$id/': {
+      id: '/_main/questions/$id/'
+      path: '/questions/$id'
+      fullPath: '/questions/$id/'
+      preLoaderRoute: typeof MainQuestionsIdIndexRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/questions/$id/edit': {
+      id: '/_main/questions/$id/edit'
+      path: '/questions/$id/edit'
+      fullPath: '/questions/$id/edit'
+      preLoaderRoute: typeof MainQuestionsIdEditRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/rounds/$id/': {
+      id: '/_main/rounds/$id/'
+      path: '/rounds/$id'
+      fullPath: '/rounds/$id/'
+      preLoaderRoute: typeof MainRoundsIdIndexRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/rounds/$id/add-question': {
+      id: '/_main/rounds/$id/add-question'
+      path: '/rounds/$id/add-question'
+      fullPath: '/rounds/$id/add-question'
+      preLoaderRoute: typeof MainRoundsIdAddQuestionRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/rounds/$id/edit': {
+      id: '/_main/rounds/$id/edit'
+      path: '/rounds/$id/edit'
+      fullPath: '/rounds/$id/edit'
+      preLoaderRoute: typeof MainRoundsIdEditRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/screeners/$id/edit': {
+      id: '/_main/screeners/$id/edit'
+      path: '/screeners/$id/edit'
+      fullPath: '/screeners/$id/edit'
+      preLoaderRoute: typeof MainScreenersIdEditRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/api/candidate/$id/': {
+      id: '/api/candidate/$id/'
+      path: '/api/candidate/$id'
+      fullPath: '/api/candidate/$id/'
+      preLoaderRoute: typeof ApiCandidateIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/candidate/$id/ai-analysis': {
+      id: '/api/candidate/$id/ai-analysis'
+      path: '/api/candidate/$id/ai-analysis'
+      fullPath: '/api/candidate/$id/ai-analysis'
+      preLoaderRoute: typeof ApiCandidateIdAiAnalysisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/candidate/$id/ai-screening': {
+      id: '/api/candidate/$id/ai-screening'
+      path: '/api/candidate/$id/ai-screening'
+      fullPath: '/api/candidate/$id/ai-screening'
+      preLoaderRoute: typeof ApiCandidateIdAiScreeningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/candidate/$id/documents': {
+      id: '/api/candidate/$id/documents'
+      path: '/api/candidate/$id/documents'
+      fullPath: '/api/candidate/$id/documents'
+      preLoaderRoute: typeof ApiCandidateIdDocumentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/candidate/import/': {
+      id: '/api/candidate/import/'
+      path: '/api/candidate/import'
+      fullPath: '/api/candidate/import/'
+      preLoaderRoute: typeof ApiCandidateImportIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/candidate/import/$id': {
+      id: '/api/candidate/import/$id'
+      path: '/api/candidate/import/$id'
+      fullPath: '/api/candidate/import/$id'
+      preLoaderRoute: typeof ApiCandidateImportIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/interview-bundle/$bundleId/ai-analysis': {
+      id: '/api/interview-bundle/$bundleId/ai-analysis'
+      path: '/api/interview-bundle/$bundleId/ai-analysis'
+      fullPath: '/api/interview-bundle/$bundleId/ai-analysis'
+      preLoaderRoute: typeof ApiInterviewBundleBundleIdAiAnalysisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/interview-sessions/$sessionId/recording': {
+      id: '/api/interview-sessions/$sessionId/recording'
+      path: '/$sessionId/recording'
+      fullPath: '/api/interview-sessions/$sessionId/recording'
+      preLoaderRoute: typeof ApiInterviewSessionsSessionIdRecordingRouteImport
+      parentRoute: typeof ApiInterviewSessionsRoute
+    }
+    '/api/interview-token/$token/complete': {
+      id: '/api/interview-token/$token/complete'
+      path: '/api/interview-token/$token/complete'
+      fullPath: '/api/interview-token/$token/complete'
+      preLoaderRoute: typeof ApiInterviewTokenTokenCompleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/interview-token/$token/responses': {
+      id: '/api/interview-token/$token/responses'
+      path: '/api/interview-token/$token/responses'
+      fullPath: '/api/interview-token/$token/responses'
+      preLoaderRoute: typeof ApiInterviewTokenTokenResponsesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/interview-token/$token/schema': {
+      id: '/api/interview-token/$token/schema'
+      path: '/api/interview-token/$token/schema'
+      fullPath: '/api/interview-token/$token/schema'
+      preLoaderRoute: typeof ApiInterviewTokenTokenSchemaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/interview-token/$token/start-voice': {
+      id: '/api/interview-token/$token/start-voice'
+      path: '/api/interview-token/$token/start-voice'
+      fullPath: '/api/interview-token/$token/start-voice'
+      preLoaderRoute: typeof ApiInterviewTokenTokenStartVoiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/interview-token/$token/upload-audio': {
+      id: '/api/interview-token/$token/upload-audio'
+      path: '/api/interview-token/$token/upload-audio'
+      fullPath: '/api/interview-token/$token/upload-audio'
+      preLoaderRoute: typeof ApiInterviewTokenTokenUploadAudioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/interview-token/$token/validate': {
+      id: '/api/interview-token/$token/validate'
+      path: '/api/interview-token/$token/validate'
+      fullPath: '/api/interview-token/$token/validate'
+      preLoaderRoute: typeof ApiInterviewTokenTokenValidateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/interview/$id/ai-analysis': {
+      id: '/api/interview/$id/ai-analysis'
+      path: '/api/interview/$id/ai-analysis'
+      fullPath: '/api/interview/$id/ai-analysis'
+      preLoaderRoute: typeof ApiInterviewIdAiAnalysisRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_main/interviews/bundle/$bundleId/': {
       id: '/_main/interviews/bundle/$bundleId/'

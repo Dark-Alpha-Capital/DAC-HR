@@ -14,6 +14,8 @@ import {
 import type { CandidateDocument } from "@workspace/db/schema";
 import DeleteCandidateDocumentButton from "./delete-candidate-document-button";
 import { resolveDocumentAccessUrl } from "~/lib/documents/access";
+import DocumentPreviewDialog from "./document-preview-dialog";
+import { isNew } from "~/lib/utils";
 
 interface CandidateDocumentTableProps {
   documents: CandidateDocument[];
@@ -49,7 +51,7 @@ const CandidateDocumentTableRow = ({
   document,
   candidateId,
 }: CandidateDocumentTableRowProps) => {
-  const [isLoadingViewUrl, setIsLoadingViewUrl] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
   const categoryColor =
@@ -60,24 +62,8 @@ const CandidateDocumentTableRow = ({
   const formatDate = (date: Date) =>
     documentDateFormatter.format(new Date(date));
 
-  const handleViewDocument = async () => {
-    setIsLoadingViewUrl(true);
-    try {
-      const accessUrl = await resolveDocumentAccessUrl(document.url);
-      window.open(accessUrl, "_blank", "noopener,noreferrer");
-    } catch (error) {
-      console.error("Error viewing document:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to open document. Please try again.",
-        {
-          position: "bottom-right",
-        },
-      );
-    } finally {
-      setIsLoadingViewUrl(false);
-    }
+  const handleViewDocument = () => {
+    setPreviewOpen(true);
   };
 
   const handleDownloadDocument = async () => {
@@ -122,7 +108,14 @@ const CandidateDocumentTableRow = ({
         </div>
       </TableCell>
       <TableCell className="py-1.5 px-2 text-xs">
-        <Badge variant={categoryColor}>{categoryLabel}</Badge>
+        <div className="flex items-center gap-1.5">
+          {isNew(document.createdAt) && (
+            <Badge className="bg-primary text-primary-foreground border-0 text-xs">
+              New
+            </Badge>
+          )}
+          <Badge variant={categoryColor}>{categoryLabel}</Badge>
+        </div>
       </TableCell>
       <TableCell className="py-1.5 px-2 text-sm text-muted-foreground">
         <div className="max-w-md truncate" title={document.description || ""}>
@@ -146,14 +139,9 @@ const CandidateDocumentTableRow = ({
             size="icon"
             className="h-7 w-7"
             onClick={handleViewDocument}
-            disabled={isLoadingViewUrl}
             aria-label={`View ${document.name}`}
           >
-            {isLoadingViewUrl ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Eye className="h-3.5 w-3.5" />
-            )}
+            <Eye className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="secondary"
@@ -175,6 +163,12 @@ const CandidateDocumentTableRow = ({
             candidateId={candidateId}
           />
         </div>
+
+        <DocumentPreviewDialog
+          document={{ name: document.name, url: document.url }}
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+        />
       </TableCell>
     </TableRow>
   );

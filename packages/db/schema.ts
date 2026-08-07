@@ -134,6 +134,8 @@ export const candidate = sqliteTable("candidate", {
   email: text("email").notNull().unique(),
   phone: text("phone"),
   location: text("location"),
+  locationCity: text("location_city"),
+  locationState: text("location_state"),
   source: text("source"),
   sourceUrl: text("source_url"),
   note: text("note"),
@@ -520,7 +522,9 @@ export const screener = sqliteTable(
     updatedAt: updatedAtCol(),
   },
   (table) => ({
-    positionUnique: uniqueIndex("screener_position_unique").on(table.positionId),
+    positionUnique: uniqueIndex("screener_position_unique").on(
+      table.positionId,
+    ),
   }),
 );
 export type Screener = InferSelectModel<typeof screener>;

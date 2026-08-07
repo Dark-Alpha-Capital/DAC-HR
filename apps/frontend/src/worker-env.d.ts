@@ -7,6 +7,7 @@ interface Env {
   INTERVIEW_EVALUATION_WORKFLOW: Workflow;
   CANDIDATE_IMPORT_WORKFLOW: Workflow;
   INTERVIEW_SESSION_DO: DurableObjectNamespace;
+  EMAIL: SendEmail | undefined;
   BETTER_AUTH_URL: string;
   // Secrets — set via Cloudflare dashboard or `wrangler secret put`, not wrangler.jsonc vars
   OPENAI_API_KEY: string;

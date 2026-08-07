@@ -12,6 +12,8 @@ import {
   FieldLabel,
 } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
+import { PhoneInput } from "~/components/ui/phone-input";
+import { US_STATES } from "~/lib/location";
 import {
   InputGroup,
   InputGroupAddon,
@@ -61,6 +63,8 @@ const CandidateEditForm = ({
       email: candidate.email,
       phone: candidate.phone || "",
       location: candidate.location || "",
+      locationCity: candidate.locationCity || "",
+      locationState: candidate.locationState || "",
       source:
         candidate.source &&
         ["LinkedIn", "Upwork", "Handshake", "Indeed"].includes(candidate.source)
@@ -133,10 +137,7 @@ const CandidateEditForm = ({
                     candidate.source,
                   )
                   ? (candidate.source as
-                      | "LinkedIn"
-                      | "Upwork"
-                      | "Handshake"
-                      | "Indeed")
+                      "LinkedIn" | "Upwork" | "Handshake" | "Indeed")
                   : undefined,
               );
             }}
@@ -245,15 +246,13 @@ const CandidateEditForm = ({
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Phone</FieldLabel>
-                  <Input
+                  <PhoneInput
                     id={field.name}
                     name={field.name}
                     value={field.state.value}
                     onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
+                    onChange={(value) => field.handleChange(value)}
                     aria-invalid={isInvalid}
-                    placeholder="Enter the phone number"
-                    autoComplete="off"
                   />
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>
@@ -276,10 +275,7 @@ const CandidateEditForm = ({
                         value === ""
                           ? undefined
                           : (value as
-                              | "LinkedIn"
-                              | "Upwork"
-                              | "Handshake"
-                              | "Indeed");
+                              "LinkedIn" | "Upwork" | "Handshake" | "Indeed");
                       field.handleChange(newSource);
                       setSelectedSource(newSource);
                       // Clear sourceUrl when source is cleared
@@ -386,13 +382,13 @@ const CandidateEditForm = ({
           />
 
           <form.Field
-            name="location"
+            name="locationCity"
             children={(field) => {
               const isInvalid =
                 field.state.meta.isTouched && !field.state.meta.isValid;
               return (
                 <Field data-invalid={isInvalid}>
-                  <FieldLabel htmlFor={field.name}>Location</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>City</FieldLabel>
                   <Input
                     id={field.name}
                     name={field.name}
@@ -400,9 +396,42 @@ const CandidateEditForm = ({
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
                     aria-invalid={isInvalid}
-                    placeholder="Enter the location"
+                    placeholder="Enter city (e.g., Philadelphia)"
                     autoComplete="off"
                   />
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
+            }}
+          />
+
+          <form.Field
+            name="locationState"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>State</FieldLabel>
+                  <Select
+                    value={field.state.value || ""}
+                    onValueChange={(value) => field.handleChange(value)}
+                  >
+                    <SelectTrigger
+                      id={field.name}
+                      aria-invalid={isInvalid}
+                      className="w-full"
+                    >
+                      <SelectValue placeholder="Select state (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {US_STATES.map((state) => (
+                        <SelectItem key={state.abbr} value={state.abbr}>
+                          {state.abbr} — {state.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>
               );

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
@@ -16,6 +15,7 @@ import DeleteDocumentButton from "~/components/delete-document-button";
 import DeleteCandidateDocumentButton from "~/components/delete-candidate-document-button";
 import DocumentPreviewDialog from "~/components/document-preview-dialog";
 import { resolveDocumentAccessUrl } from "~/lib/documents/access";
+import { isNew } from "~/lib/utils";
 import {
   Tooltip,
   TooltipContent,
@@ -138,9 +138,17 @@ const DocumentContainer = ({
               </TableCell>
               <TableCell className="py-1.5 px-2 font-medium text-sm">
                 <div className="flex items-center gap-2">
+                  {isNew(document.createdAt) && (
+                    <Badge className="bg-primary text-primary-foreground border-0 text-xs">
+                      New
+                    </Badge>
+                  )}
                   {document.name}
                   {document.scope === "candidate" ? (
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] px-1.5 py-0"
+                    >
                       Candidate
                     </Badge>
                   ) : null}
@@ -208,8 +216,7 @@ const DocumentContainer = ({
                     </TooltipTrigger>
                     <TooltipContent>Download</TooltipContent>
                   </Tooltip>
-                  {document.scope === "candidate" &&
-                  document.candidateId ? (
+                  {document.scope === "candidate" && document.candidateId ? (
                     <DeleteCandidateDocumentButton
                       documentId={document.id}
                       candidateId={document.candidateId}
@@ -227,15 +234,8 @@ const DocumentContainer = ({
       {previewDocument ? (
         <DocumentPreviewDialog
           document={{
-            id: previewDocument.id,
             name: previewDocument.name,
             url: previewDocument.url,
-            description: previewDocument.description,
-            tags: previewDocument.tags,
-            createdAt: previewDocument.createdAt,
-            updatedAt: previewDocument.updatedAt,
-            slug: "",
-            category: "other",
           }}
           open={!!previewDocument}
           onOpenChange={(open) => !open && setPreviewDocument(null)}

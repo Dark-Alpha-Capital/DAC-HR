@@ -11,3 +11,4 @@ export {
   lte,
 } from "drizzle-orm";
 export type { InferSelectModel, InferInsertModel } from "drizzle-orm";
+export { splitLocation } from "./location";

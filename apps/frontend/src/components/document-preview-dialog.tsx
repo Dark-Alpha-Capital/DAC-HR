@@ -11,10 +11,12 @@ import { ScrollArea } from "~/components/ui/scroll-area";
 import { Loader2, FileText, Download, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { resolveDocumentAccessUrl } from "~/lib/documents/access";
-import type { Document } from "@workspace/db/schema";
 
 interface DocumentPreviewDialogProps {
-  document: Document;
+  document: {
+    name: string;
+    url: string;
+  };
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }

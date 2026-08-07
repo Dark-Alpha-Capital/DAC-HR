@@ -12,6 +12,8 @@ type Candidate = {
   email: string;
   phone: string | null;
   location: string | null;
+  locationCity: string | null;
+  locationState: string | null;
   source: string | null;
   sourceUrl: string | null;
   note: string | null;

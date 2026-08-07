@@ -2,16 +2,7 @@ import { Link } from "@tanstack/react-router";
 
 import { Badge } from "~/components/ui/badge";
 import type { MeetConferenceSummary } from "~/lib/attendance/meet-attendance";
-
-function formatTime(value: string | null) {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
-}
+import { formatDateTime } from "~/lib/utils";
 
 export function ConferencesList({
   conferences,
@@ -42,10 +33,10 @@ export function ConferencesList({
                 {conference.title}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                {formatTime(conference.startTime)}
+                {formatDateTime(conference.startTime)}
                 {" → "}
                 {conference.endTime
-                  ? formatTime(conference.endTime)
+                  ? formatDateTime(conference.endTime)
                   : "in progress"}
               </p>
               {conference.meetingCode ? (

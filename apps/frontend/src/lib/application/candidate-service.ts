@@ -15,6 +15,8 @@ export type CreateCandidateWithPositionsInput = {
   email: string;
   phone?: string | null;
   location?: string | null;
+  locationCity?: string | null;
+  locationState?: string | null;
   source?: string | null;
   sourceUrl?: string | null;
   note?: string | null;
@@ -35,6 +37,8 @@ export const createCandidateWithPositions = async (
         lastName: input.lastName,
         email: input.email,
         phone: input.phone?.trim() || null,
+        locationCity: input.locationCity?.trim() || null,
+        locationState: input.locationState?.trim() || null,
         location: input.location?.trim() || null,
         source: input.source || null,
         sourceUrl: input.sourceUrl?.trim() || null,

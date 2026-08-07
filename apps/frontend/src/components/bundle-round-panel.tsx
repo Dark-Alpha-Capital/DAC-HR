@@ -320,6 +320,12 @@ export function BundleRoundPanel({
                 Completed {formatDate(session.completedAt)}
               </span>
             ) : null}
+            {session.interruptedAt ? (
+              <span className="flex items-center gap-1">
+                <ShieldAlert className="h-3 w-3 text-amber-500" />
+                Interrupted {formatDate(session.interruptedAt)}
+              </span>
+            ) : null}
           </div>
         </div>
         <RoundStatusBadges roundDetail={roundDetail} />

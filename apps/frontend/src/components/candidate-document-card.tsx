@@ -9,11 +9,11 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { Eye, Pencil, FileText, Loader2 } from "lucide-react";
+import { Eye, Pencil, FileText } from "lucide-react";
 import type { CandidateDocument } from "@workspace/db/schema";
 import DeleteCandidateDocumentButton from "./delete-candidate-document-button";
-import { resolveDocumentAccessUrl } from "~/lib/documents/access";
-import { toast } from "sonner";
+import DocumentPreviewDialog from "./document-preview-dialog";
+import { isNew } from "~/lib/utils";
 
 interface CandidateDocumentCardProps {
   document: CandidateDocument;
@@ -38,7 +38,7 @@ const CandidateDocumentCard = ({
   document,
   candidateId,
 }: CandidateDocumentCardProps) => {
-  const [isLoadingViewUrl, setIsLoadingViewUrl] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const categoryColor =
     categoryColors[document.category] || categoryColors.other;
@@ -53,24 +53,8 @@ const CandidateDocumentCard = ({
     });
   };
 
-  const handleViewDocument = async () => {
-    setIsLoadingViewUrl(true);
-    try {
-      const accessUrl = await resolveDocumentAccessUrl(document.url);
-      window.open(accessUrl, "_blank", "noopener,noreferrer");
-    } catch (error) {
-      console.error("Error viewing document:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to open document. Please try again.",
-        {
-          position: "bottom-right",
-        },
-      );
-    } finally {
-      setIsLoadingViewUrl(false);
-    }
+  const handleViewDocument = () => {
+    setPreviewOpen(true);
   };
 
   return (
@@ -83,9 +67,14 @@ const CandidateDocumentCard = ({
               {document.name}
             </CardTitle>
           </div>
-          <Badge variant={categoryColor} className="shrink-0">
-            {categoryLabel}
-          </Badge>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {isNew(document.createdAt) && (
+              <Badge className="bg-primary text-primary-foreground border-0 text-xs">
+                New
+              </Badge>
+            )}
+            <Badge variant={categoryColor}>{categoryLabel}</Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="flex-1">
@@ -119,21 +108,15 @@ const CandidateDocumentCard = ({
       </CardContent>
       <CardFooter className="border-t">
         <div className="flex gap-2 w-full">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleViewDocument}
-            disabled={isLoadingViewUrl}
-          >
-            {isLoadingViewUrl ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Eye className="h-4 w-4" />
-            )}
+          <Button variant="secondary" size="sm" onClick={handleViewDocument}>
+            <Eye className="h-4 w-4" />
             View
           </Button>
           <Button variant="secondary" size="sm" asChild>
-            <Link to={`/candidates/${candidateId}/documents/${document.id}/edit` as any}
+            <Link
+              to={
+                `/candidates/${candidateId}/documents/${document.id}/edit` as any
+              }
             >
               <Pencil className="h-4 w-4" />
               Edit
@@ -145,6 +128,12 @@ const CandidateDocumentCard = ({
           />
         </div>
       </CardFooter>
+
+      <DocumentPreviewDialog
+        document={{ name: document.name, url: document.url }}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+      />
     </Card>
   );
 };

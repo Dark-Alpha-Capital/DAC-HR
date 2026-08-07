@@ -19,16 +19,7 @@ import {
 } from "~/components/ui/table";
 import type { MeetParticipantKind } from "~/lib/attendance/meet-attendance";
 import type { StoredAttendanceRow } from "@workspace/db/repositories/meet-attendance-repository";
-
-function formatTime(value: string | null) {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
-}
+import { formatDateTime, formatMMDD } from "~/lib/utils";
 
 function formatDuration(ms: number | null) {
   if (ms === null || Number.isNaN(ms) || ms < 0) return "—";
@@ -63,7 +54,9 @@ const columns: ColumnDef<StoredAttendanceRow>[] = [
     accessorKey: "attendanceDate",
     header: "Date",
     cell: ({ row }) => (
-      <span className="font-mono text-xs">{row.original.attendanceDate}</span>
+      <span className="font-mono text-xs">
+        {formatMMDD(row.original.attendanceDate)}
+      </span>
     ),
   },
   {
@@ -103,7 +96,7 @@ const columns: ColumnDef<StoredAttendanceRow>[] = [
     header: "Joined",
     cell: ({ row }) => (
       <span className="text-xs text-muted-foreground">
-        {formatTime(row.original.joinedAt)}
+        {formatDateTime(row.original.joinedAt)}
       </span>
     ),
   },
@@ -112,7 +105,7 @@ const columns: ColumnDef<StoredAttendanceRow>[] = [
     header: "Left",
     cell: ({ row }) => (
       <span className="text-xs text-muted-foreground">
-        {row.original.leftAt ? formatTime(row.original.leftAt) : "—"}
+        {row.original.leftAt ? formatDateTime(row.original.leftAt) : "—"}
       </span>
     ),
   },
@@ -166,10 +159,7 @@ export function AttendanceDataTable({ data }: { data: StoredAttendanceRow[] }) {
               <TableRow key={row.id}>
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id}>
-                    {flexRender(
-                      cell.column.columnDef.cell,
-                      cell.getContext(),
-                    )}
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
               </TableRow>

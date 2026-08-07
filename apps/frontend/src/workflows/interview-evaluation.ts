@@ -45,9 +45,12 @@ export class InterviewEvaluationWorkflow extends WorkflowEntrypoint<
   async run(event: WorkflowEvent<Params>, step: WorkflowStep) {
     const { sessionId } = event.payload;
 
-    const alreadyEvaluated = await step.do("check-existing-evaluation", async () => {
-      return Boolean(await getEvaluationBySessionId(sessionId));
-    });
+    const alreadyEvaluated = await step.do(
+      "check-existing-evaluation",
+      async () => {
+        return Boolean(await getEvaluationBySessionId(sessionId));
+      },
+    );
 
     if (alreadyEvaluated) {
       return;
@@ -66,6 +69,7 @@ export class InterviewEvaluationWorkflow extends WorkflowEntrypoint<
     const evaluation = await step.do("generate-evaluation", async () => {
       const { row, responses } = context;
       const cheatingSummary = row.session.cheatingSummary;
+      const interruptedAt = row.session.interruptedAt;
       const responseBlock = responses
         .map((response, index) => {
           const answer =
@@ -89,6 +93,9 @@ export class InterviewEvaluationWorkflow extends WorkflowEntrypoint<
           cheatingSummary
             ? `Cheating signals: ${JSON.stringify(cheatingSummary)}. Penalize integrity risks in risks and recommendation.`
             : "No cheating signals recorded.",
+          interruptedAt
+            ? `The session was interrupted at ${new Date(interruptedAt).toISOString()}. Consider that the candidate may have been disconnected mid-answer; do not over-penalize incomplete final answers that follow an interruption.`
+            : "No interruptions recorded.",
           "Responses:",
           responseBlock,
         ].join("\n"),

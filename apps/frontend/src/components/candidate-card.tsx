@@ -8,10 +8,13 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
 import { Eye, Pencil } from "lucide-react";
 import type { Candidate } from "@workspace/db/schema";
 import DeleteCandidateButton from "./delete-candidate-button";
 import { ApplicationStatusBadge } from "~/components/application-status-badge";
+import { isNew } from "~/lib/utils";
+import { displayPhone } from "~/components/ui/phone-input";
 
 interface CandidateCardProps {
   candidate: Candidate & {
@@ -21,29 +24,40 @@ interface CandidateCardProps {
 
 const CandidateCard = ({ candidate }: CandidateCardProps) => {
   const fullName = `${candidate.firstName} ${candidate.lastName}`;
+  const location =
+    candidate.locationCity && candidate.locationState
+      ? `${candidate.locationCity}, ${candidate.locationState}`
+      : candidate.locationCity || candidate.locationState || candidate.location;
 
   return (
     <Card>
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="">{fullName}</CardTitle>
-          {candidate.applicationStatus ? (
-            <ApplicationStatusBadge
-              status={candidate.applicationStatus}
-              className="shrink-0"
-            />
-          ) : null}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {isNew(candidate.createdAt) && (
+              <Badge className="bg-primary text-primary-foreground border-0 text-xs">
+                New
+              </Badge>
+            )}
+            {candidate.applicationStatus ? (
+              <ApplicationStatusBadge
+                status={candidate.applicationStatus}
+                className="shrink-0"
+              />
+            ) : null}
+          </div>
         </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-1 text-sm">
           <p className="text-muted-foreground">{candidate.email}</p>
           {candidate.phone && (
-            <p className="text-muted-foreground">{candidate.phone}</p>
+            <p className="text-muted-foreground">
+              {displayPhone(candidate.phone)}
+            </p>
           )}
-          {candidate.location && (
-            <p className="text-muted-foreground">{candidate.location}</p>
-          )}
+          {location && <p className="text-muted-foreground">{location}</p>}
           {candidate.note && (
             <p className="text-muted-foreground line-clamp-2 mt-2">
               {candidate.note}

@@ -36,7 +36,7 @@ import {
   ClipboardList,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { formatDate } from "~/lib/utils";
+import { formatDate, formatDateTime } from "~/lib/utils";
 import RecordInterviewDialogWrapper from "./record-interview-dialog-wrapper";
 import type {
   InterviewBundleRoundStatus,
@@ -90,6 +90,10 @@ interface BundleRound {
   session: {
     id: string;
     status: string;
+    startedAt: Date | null;
+    completedAt: Date | null;
+    createdAt: Date;
+    interruptedAt: Date | null;
   };
 }
 
@@ -236,7 +240,9 @@ function BundleCard({
             </CardTitle>
             <p className="text-sm text-muted-foreground">
               {completedCount}/{item.rounds.length} rounds complete
-              {isExpired ? " · Expired" : ` · Expires ${formatDate(item.bundle.expiresAt)}`}
+              {isExpired
+                ? " · Expired"
+                : ` · Expires ${formatDate(item.bundle.expiresAt)}`}
             </p>
           </div>
           {getBundleStatusBadge(isExpired ? "completed" : item.bundle.status)}
@@ -254,6 +260,22 @@ function BundleCard({
               )}{" "}
               {r.bundleRound.deliveryMode}
             </Badge>
+          ))}
+        </div>
+        <div className="flex flex-col gap-1">
+          {item.rounds.map((r) => (
+            <p
+              key={`${r.bundleRound.id}-time`}
+              className="text-xs text-muted-foreground"
+            >
+              {r.round.name}:{" "}
+              {r.session.completedAt
+                ? `Completed ${formatDateTime(r.session.completedAt)}`
+                : r.session.startedAt
+                  ? `Started ${formatDateTime(r.session.startedAt)}`
+                  : `Created ${formatDateTime(r.session.createdAt)}`}
+              {r.session.interruptedAt ? " · Interrupted" : ""}
+            </p>
           ))}
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -307,7 +329,9 @@ export default function ApplicationProgressTimeline({
   const invalidate = useQueryInvalidation();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteBundleDialogOpen, setDeleteBundleDialogOpen] = useState(false);
-  const [interviewToDelete, setInterviewToDelete] = useState<string | null>(null);
+  const [interviewToDelete, setInterviewToDelete] = useState<string | null>(
+    null,
+  );
   const [bundleToDelete, setBundleToDelete] = useState<string | null>(null);
   const [deletingInterviewId, setDeletingInterviewId] = useState<string | null>(
     null,
@@ -459,7 +483,9 @@ export default function ApplicationProgressTimeline({
         {rounds.length === 0 ? (
           <div className="py-12 text-center text-muted-foreground">
             <MessageSquare className="h-8 w-8 mx-auto mb-3 opacity-50" />
-            <p className="text-sm">No interview rounds configured for this position.</p>
+            <p className="text-sm">
+              No interview rounds configured for this position.
+            </p>
           </div>
         ) : (
           <div className="divide-y divide-border">
@@ -499,11 +525,19 @@ export default function ApplicationProgressTimeline({
                         <TableHeader>
                           <TableRow className="bg-muted/30">
                             <TableHead className="font-medium">Type</TableHead>
-                            <TableHead className="font-medium">Interviewer</TableHead>
+                            <TableHead className="font-medium">
+                              Interviewer
+                            </TableHead>
                             <TableHead className="font-medium">Date</TableHead>
-                            <TableHead className="font-medium">Status</TableHead>
-                            <TableHead className="font-medium">Rating</TableHead>
-                            <TableHead className="text-right font-medium">Actions</TableHead>
+                            <TableHead className="font-medium">
+                              Status
+                            </TableHead>
+                            <TableHead className="font-medium">
+                              Rating
+                            </TableHead>
+                            <TableHead className="text-right font-medium">
+                              Actions
+                            </TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -535,21 +569,34 @@ export default function ApplicationProgressTimeline({
                                     ? formatDate(interview.createdAt)
                                     : "-"}
                               </TableCell>
-                              <TableCell>{getStatusBadge(interview.status)}</TableCell>
+                              <TableCell>
+                                {getStatusBadge(interview.status)}
+                              </TableCell>
                               <TableCell>
                                 {interview.rating ? (
                                   <div className="flex items-center gap-1">
                                     <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
-                                    <span className="text-sm">{interview.rating}/5</span>
+                                    <span className="text-sm">
+                                      {interview.rating}/5
+                                    </span>
                                   </div>
                                 ) : (
-                                  <span className="text-muted-foreground">-</span>
+                                  <span className="text-muted-foreground">
+                                    -
+                                  </span>
                                 )}
                               </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex items-center justify-end gap-1">
-                                  <Button variant="secondary" size="sm" className="h-8 w-8 p-0" asChild>
-                                    <Link to={`/interviews/${interview.id}` as any}>
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    className="h-8 w-8 p-0"
+                                    asChild
+                                  >
+                                    <Link
+                                      to={`/interviews/${interview.id}` as any}
+                                    >
                                       <Eye className="h-4 w-4" />
                                     </Link>
                                   </Button>
@@ -558,7 +605,9 @@ export default function ApplicationProgressTimeline({
                                     size="sm"
                                     className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                                     disabled={deletingInterviewId !== null}
-                                    onClick={() => handleDeleteClick(interview.id)}
+                                    onClick={() =>
+                                      handleDeleteClick(interview.id)
+                                    }
                                   >
                                     {deletingInterviewId === interview.id ? (
                                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -602,7 +651,10 @@ export default function ApplicationProgressTimeline({
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={deleteBundleDialogOpen} onOpenChange={setDeleteBundleDialogOpen}>
+      <AlertDialog
+        open={deleteBundleDialogOpen}
+        onOpenChange={setDeleteBundleDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete AI Interview Link</AlertDialogTitle>

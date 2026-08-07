@@ -7,6 +7,7 @@ import {
 } from "@workspace/db/schema";
 import { findExistingCandidate } from "../dedup/find-existing-candidate";
 import { importLog } from "../logger";
+import { splitLocation } from "@workspace/db/location";
 import type {
   ImportCandidateInput,
   ImportCandidateResult,
@@ -255,6 +256,10 @@ export async function createCandidateFromImport(
     const candidateId = crypto.randomUUID();
     createdCandidateId = candidateId;
 
+    const { city: locationCity, state: locationState } = splitLocation(
+      input.location,
+    );
+
     const [newCandidate] = await db
       .insert(candidate)
       .values({
@@ -263,6 +268,8 @@ export async function createCandidateFromImport(
         lastName: input.lastName.trim(),
         email,
         phone: input.phone?.trim() || null,
+        locationCity,
+        locationState,
         location: input.location?.trim() || null,
         source: input.source?.trim() || "import",
         sourceUrl: input.sourceUrl?.trim() || null,

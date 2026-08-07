@@ -1,22 +1,39 @@
-import {
-  Briefcase,
-  GraduationCap,
-  Link as LinkIcon,
-  ExternalLink,
-  Mail,
-  MapPin,
-  Phone,
-  FileText,
-} from "lucide-react";
+import { useState } from "react";
+import { FileText, Link as LinkIcon, Mail, MapPin, Phone } from "lucide-react";
 import { getCandidateWithApplications } from "@workspace/db/repositories/candidate-repository";
+import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
+import DocumentPreviewDialog from "./document-preview-dialog";
+import { Button } from "~/components/ui/button";
+import { displayPhone } from "~/components/ui/phone-input";
 
-type Candidate = NonNullable<Awaited<ReturnType<typeof getCandidateWithApplications>>>;
+type Candidate = NonNullable<
+  Awaited<ReturnType<typeof getCandidateWithApplications>>
+>;
+type Documents = Awaited<ReturnType<typeof getDocumentsByCandidateId>>;
 
-export function CandidateOverviewTab({ candidate }: { candidate: Candidate }) {
-  const profile = candidate.profile;
-  const hasEducation =
-    profile && (profile.school || profile.major || profile.graduationYear);
-  const hasLinkedIn = profile?.linkedinUrl;
+export function formatCandidateLocation(candidate: {
+  location: string | null;
+  locationCity: string | null;
+  locationState: string | null;
+}) {
+  if (candidate.locationCity && candidate.locationState) {
+    return `${candidate.locationCity}, ${candidate.locationState}`;
+  }
+  if (candidate.locationCity) return candidate.locationCity;
+  if (candidate.locationState) return candidate.locationState;
+  return candidate.location;
+}
+
+export function CandidateOverviewTab({
+  candidate,
+  documents,
+}: {
+  candidate: Candidate;
+  documents: Documents;
+}) {
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const resumeDocument = documents.find((doc) => doc.category === "resume");
+  const location = formatCandidateLocation(candidate);
 
   return (
     <div className="space-y-10">
@@ -41,16 +58,14 @@ export function CandidateOverviewTab({ candidate }: { candidate: Candidate }) {
                 href={`tel:${candidate.phone}`}
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                {candidate.phone}
+                {displayPhone(candidate.phone)}
               </a>
             </div>
           ) : null}
-          {candidate.location ? (
+          {location ? (
             <div className="flex items-center gap-3">
               <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                {candidate.location}
-              </span>
+              <span className="text-sm text-muted-foreground">{location}</span>
             </div>
           ) : null}
           {candidate.source ? (
@@ -73,87 +88,42 @@ export function CandidateOverviewTab({ candidate }: { candidate: Candidate }) {
             </div>
           ) : null}
         </div>
-        {candidate.note ? (
-          <div className="mt-6 pt-6 border-t">
-            <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
-              Notes
-            </h4>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-              {candidate.note}
-            </p>
-          </div>
-        ) : null}
-        <div className="mt-6 pt-6 border-t">
-          <span className="text-xs text-muted-foreground">
-            <span className="font-medium">ID</span>{" "}
-            <span className="font-mono">{candidate.id}</span>
-          </span>
-        </div>
       </section>
 
-      {hasEducation ? (
-        <section>
-          <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">
-            Education
-          </h3>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <GraduationCap className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="text-sm">
-                {[profile.major, profile.school]
-                  .filter(Boolean)
-                  .join(" at ")}
-                {profile.graduationYear ? ` (${profile.graduationYear})` : ""}
+      <section>
+        <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">
+          Resume
+        </h3>
+        {resumeDocument ? (
+          <div className="flex items-center justify-between gap-3 rounded-lg border p-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <FileText className="h-5 w-5 shrink-0 text-muted-foreground" />
+              <span className="text-sm font-medium truncate">
+                {resumeDocument.name}
               </span>
             </div>
-          </div>
-        </section>
-      ) : null}
-
-      {hasLinkedIn ? (
-        <section>
-          <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">
-            LinkedIn
-          </h3>
-          <div className="flex items-center gap-3">
-            <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <a
-              href={profile.linkedinUrl!}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors underline break-all"
+            <Button
+              variant="secondary"
+              size="sm"
+              className="shrink-0"
+              onClick={() => setPreviewOpen(true)}
             >
-              {profile.linkedinUrl}
-            </a>
+              <FileText className="h-4 w-4 mr-1.5" />
+              View resume
+            </Button>
           </div>
-        </section>
-      ) : null}
+        ) : (
+          <p className="text-sm text-muted-foreground">No resume on file.</p>
+        )}
 
-      {profile?.resumeText ? (
-        <section>
-          <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">
-            Resume
-          </h3>
-          <div className="flex items-start gap-3">
-            <FileText className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto">
-              {profile.resumeText}
-            </p>
-          </div>
-        </section>
-      ) : null}
-
-      <section>
-        <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
-          Applications
-        </h3>
-        <div className="flex items-center gap-3">
-          <Briefcase className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm">
-            <span className="font-medium">{candidate.applications.length}</span>{" "}
-            <span className="text-muted-foreground">total</span>
-          </span>
-        </div>
+        <DocumentPreviewDialog
+          document={{
+            name: resumeDocument?.name ?? "Resume",
+            url: resumeDocument?.url ?? "",
+          }}
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+        />
       </section>
     </div>
   );

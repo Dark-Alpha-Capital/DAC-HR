@@ -1,7 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
-import { candidate, application, candidatePosition } from "@workspace/db/schema";
+import {
+  candidate,
+  application,
+  candidatePosition,
+} from "@workspace/db/schema";
 import {
   CandidateFormSchema,
   candidateFormSchema,
@@ -13,83 +17,86 @@ export const updateCandidate = createServerFn({ method: "POST" })
   .middleware([serverFnAuthGuard])
   .validator((data: [string, CandidateFormSchema]) => data)
   .handler(async ({ data: [candidateId, data], context: { session } }) => {
-
-  const result = candidateFormSchema.safeParse(data);
-  if (!result.success) {
-    return { error: result.error.flatten().fieldErrors };
-  }
-
-  const {
-    firstName,
-    lastName,
-    email,
-    phone,
-    location,
-    source,
-    sourceUrl,
-    note,
-    positionIds,
-  } = result.data;
-
-  const normalizedPositionIds = positionIds
-    .map((id) => id.trim())
-    .filter(Boolean);
-
-  try {
-    const [updatedCandidate] = await db
-      .update(candidate)
-      .set({
-        firstName,
-        lastName,
-        email,
-        phone: phone || null,
-        location: location || null,
-        source: source || null,
-        sourceUrl: sourceUrl?.trim() || null,
-        note: note || null,
-        updatedAt: new Date(),
-      })
-      .where(eq(candidate.id, candidateId))
-      .returning();
-
-    if (!updatedCandidate) {
-      return { error: "Candidate not found" };
+    const result = candidateFormSchema.safeParse(data);
+    if (!result.success) {
+      return { error: result.error.flatten().fieldErrors };
     }
 
-    // Get existing applications for this candidate
-    const existingApplications = await db
-      .select({ positionId: application.positionId })
-      .from(application)
-      .where(eq(application.candidateId, candidateId));
+    const {
+      firstName,
+      lastName,
+      email,
+      phone,
+      location,
+      locationCity,
+      locationState,
+      source,
+      sourceUrl,
+      note,
+      positionIds,
+    } = result.data;
 
-    const existingPositions = await db
-      .select({ positionId: candidatePosition.positionId })
-      .from(candidatePosition)
-      .where(eq(candidatePosition.candidateId, candidateId));
+    const normalizedPositionIds = positionIds
+      .map((id) => id.trim())
+      .filter(Boolean);
 
-    const existingPositionIds = new Set([
-      ...existingApplications.map((a) => a.positionId),
-      ...existingPositions.map((p) => p.positionId),
-    ]);
+    try {
+      const [updatedCandidate] = await db
+        .update(candidate)
+        .set({
+          firstName,
+          lastName,
+          email,
+          phone: phone || null,
+          locationCity: locationCity?.trim() || null,
+          locationState: locationState?.trim() || null,
+          location: location || null,
+          source: source || null,
+          sourceUrl: sourceUrl?.trim() || null,
+          note: note || null,
+          updatedAt: new Date(),
+        })
+        .where(eq(candidate.id, candidateId))
+        .returning();
 
-    // Create applications for new positions (skip already applied positions)
-    let applicationsCreated = 0;
-    for (const positionId of normalizedPositionIds) {
-      if (!existingPositionIds.has(positionId)) {
-        await db.insert(application).values({
-          candidateId,
-          positionId,
-          status: "ai_screening",
-        });
-        await db.insert(candidatePosition).values({
-          candidateId,
-          positionId,
-        });
-        applicationsCreated++;
+      if (!updatedCandidate) {
+        return { error: "Candidate not found" };
       }
-    }
 
-    insertAuditLog({
+      // Get existing applications for this candidate
+      const existingApplications = await db
+        .select({ positionId: application.positionId })
+        .from(application)
+        .where(eq(application.candidateId, candidateId));
+
+      const existingPositions = await db
+        .select({ positionId: candidatePosition.positionId })
+        .from(candidatePosition)
+        .where(eq(candidatePosition.candidateId, candidateId));
+
+      const existingPositionIds = new Set([
+        ...existingApplications.map((a) => a.positionId),
+        ...existingPositions.map((p) => p.positionId),
+      ]);
+
+      // Create applications for new positions (skip already applied positions)
+      let applicationsCreated = 0;
+      for (const positionId of normalizedPositionIds) {
+        if (!existingPositionIds.has(positionId)) {
+          await db.insert(application).values({
+            candidateId,
+            positionId,
+            status: "ai_screening",
+          });
+          await db.insert(candidatePosition).values({
+            candidateId,
+            positionId,
+          });
+          applicationsCreated++;
+        }
+      }
+
+      insertAuditLog({
         userId: session.user.id,
         action: "update_candidate",
         entityType: "candidate",
@@ -102,6 +109,8 @@ export const updateCandidate = createServerFn({ method: "POST" })
             email: updatedCandidate.email,
             phone: updatedCandidate.phone,
             location: updatedCandidate.location,
+            locationCity: updatedCandidate.locationCity,
+            locationState: updatedCandidate.locationState,
             source: updatedCandidate.source,
             sourceUrl: updatedCandidate.sourceUrl,
             note: updatedCandidate.note,
@@ -113,6 +122,8 @@ export const updateCandidate = createServerFn({ method: "POST" })
             email,
             phone: phone || null,
             location: location || null,
+            locationCity: locationCity?.trim() || null,
+            locationState: locationState?.trim() || null,
             source: source || null,
             sourceUrl: sourceUrl?.trim() || null,
             note: note || null,
@@ -132,14 +143,14 @@ export const updateCandidate = createServerFn({ method: "POST" })
         },
       }).catch((error) => console.error("Audit log error:", error));
 
-    return { success: true, data: updatedCandidate };
-  } catch (error) {
-    console.error(error);
+      return { success: true, data: updatedCandidate };
+    } catch (error) {
+      console.error(error);
 
-    if (error instanceof Error) {
-      return { error: error.message };
+      if (error instanceof Error) {
+        return { error: error.message };
+      }
+
+      return { error: "Failed to update candidate" };
     }
-
-    return { error: "Failed to update candidate" };
-  }
-});
+  });

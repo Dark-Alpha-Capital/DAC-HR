@@ -27,8 +27,8 @@ export const candidateFormSchema = z
       .refine(
         (val) => {
           if (!val || val.trim() === "") return true; // Allow empty phone numbers
-          // Remove common formatting characters
-          const cleaned = val.replace(/[\s\-\(\)\+\.]/g, "");
+          // Remove common formatting characters (incl. brackets like [123])
+          const cleaned = val.replace(/[\s\-\(\)\+\.\[\]]/g, "");
           // Check if it's all digits and has reasonable length (7-15 digits)
           return /^\d{7,15}$/.test(cleaned);
         },
@@ -38,6 +38,17 @@ export const candidateFormSchema = z
         },
       )
       .max(20, "Phone number must be at most 20 characters."),
+    locationCity: z.string().max(100, "City must be at most 100 characters."),
+    locationState: z
+      .string()
+      .max(2, "State must be a 2-letter abbreviation.")
+      .refine(
+        (val) => {
+          if (!val || val.trim() === "") return true;
+          return /^[A-Za-z]{2}$/.test(val);
+        },
+        { message: "Invalid state abbreviation." },
+      ),
     location: z.string().max(100, "Location must be at most 100 characters."),
     source: z.union([candidateSourceEnum, z.undefined()]),
     sourceUrl: z.string(),

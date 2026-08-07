@@ -104,7 +104,7 @@ function ApplicationDetailPage() {
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                Applied {formatDate(application.createdAt)}
+                Added {formatDate(application.createdAt)}
               </span>
               <span className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" />
@@ -169,7 +169,7 @@ function ApplicationDetailPage() {
                   />
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Applied</span>
+                  <span className="text-muted-foreground">Added</span>
                   <span>{formatDate(application.createdAt)}</span>
                 </div>
               </div>
@@ -199,7 +199,7 @@ function ApplicationDetailPage() {
           {aiScreenings.length > 0 && (
             <div className="mt-6 space-y-4 rounded-lg border p-4">
               <h3 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">
-                AI Screenings
+                First Round (AI)
               </h3>
               <div className="space-y-2">
                 {aiScreenings.map((screening) => (
@@ -231,9 +231,9 @@ function ApplicationDetailPage() {
             currentUser={currentUser}
             users={users}
             application={application as any}
-            positionSlug={(application as any).position?.slug as
-              | string
-              | undefined}
+            positionSlug={
+              (application as any).position?.slug as string | undefined
+            }
           />
         </TabsContent>
       </Tabs>

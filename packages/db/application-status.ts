@@ -1,12 +1,9 @@
-import {
-  applicationStatuses,
-  type ApplicationStatus,
-} from "./enums";
+import { applicationStatuses, type ApplicationStatus } from "./enums";
 
 export { applicationStatuses, type ApplicationStatus };
 
 export const applicationStatusLabels: Record<ApplicationStatus, string> = {
-  ai_screening: "AI Screening",
+  ai_screening: "First Round (AI)",
   first_round: "First Round",
   offer_agreement: "Offer/Agreement",
   technical_round: "Technical Round",
@@ -17,7 +14,7 @@ export const applicationStatusLabels: Record<ApplicationStatus, string> = {
 
 export const applicationStatusDescriptions: Record<ApplicationStatus, string> =
   {
-    ai_screening: "AI analysis is being performed on the candidate",
+    ai_screening: "AI-assisted first-round interview is being performed",
     first_round: "Candidate is in the first interview round",
     offer_agreement: "Offer or agreement is being discussed",
     technical_round: "Candidate is in the technical interview round",
@@ -44,25 +41,27 @@ export const applicationStatusBadgeVariants: Record<
   rejected: "destructive",
 };
 
-export const applicationStatusKanbanColors: Record<ApplicationStatus, string> = {
-  ai_screening: "bg-indigo-500",
-  first_round: "bg-blue-500",
-  offer_agreement: "bg-amber-500",
-  technical_round: "bg-purple-500",
-  contract_offer: "bg-green-500",
-  onboarding: "bg-emerald-500",
-  rejected: "bg-red-500",
-};
+export const applicationStatusKanbanColors: Record<ApplicationStatus, string> =
+  {
+    ai_screening: "bg-indigo-500",
+    first_round: "bg-blue-500",
+    offer_agreement: "bg-amber-500",
+    technical_round: "bg-purple-500",
+    contract_offer: "bg-green-500",
+    onboarding: "bg-emerald-500",
+    rejected: "bg-red-500",
+  };
 
-export const applicationStatusBorderColors: Record<ApplicationStatus, string> = {
-  ai_screening: "border-l-indigo-500",
-  first_round: "border-l-blue-500",
-  offer_agreement: "border-l-amber-500",
-  technical_round: "border-l-purple-500",
-  contract_offer: "border-l-green-500",
-  onboarding: "border-l-emerald-500",
-  rejected: "border-l-red-500",
-};
+export const applicationStatusBorderColors: Record<ApplicationStatus, string> =
+  {
+    ai_screening: "border-l-indigo-500",
+    first_round: "border-l-blue-500",
+    offer_agreement: "border-l-amber-500",
+    technical_round: "border-l-purple-500",
+    contract_offer: "border-l-green-500",
+    onboarding: "border-l-emerald-500",
+    rejected: "border-l-red-500",
+  };
 
 export const applicationStatusChartColors: Record<ApplicationStatus, string> = {
   ai_screening: "#6366F1",

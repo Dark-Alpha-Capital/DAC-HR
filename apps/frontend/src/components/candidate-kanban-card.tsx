@@ -1,7 +1,8 @@
 import { memo } from "react";
 import { Link } from "@tanstack/react-router";
 import { getApplicationStatusCardBorderClass } from "~/components/application-status-badge";
-import { formatDate } from "~/lib/utils";
+import { formatDate, isNew } from "~/lib/utils";
+import { Badge } from "~/components/ui/badge";
 import CopyButton from "./copy-button";
 
 type CandidateKanbanCardProps = {
@@ -16,10 +17,7 @@ type CandidateKanbanCardProps = {
   status: string;
 };
 
-function CandidateKanbanCard({
-  candidate,
-  status,
-}: CandidateKanbanCardProps) {
+function CandidateKanbanCard({ candidate, status }: CandidateKanbanCardProps) {
   const borderColor = getApplicationStatusCardBorderClass(status);
   const title = candidate.position
     ? `${candidate.firstName} ${candidate.lastName} - ${candidate.position.name}`
@@ -46,6 +44,11 @@ function CandidateKanbanCard({
       </div>
 
       <div className="flex items-center gap-2 border-t border-border/50 pt-2">
+        {isNew(candidate.createdAt) && (
+          <Badge className="bg-primary text-primary-foreground border-0 text-xs">
+            New
+          </Badge>
+        )}
         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
           {formatDate(candidate.createdAt)}
         </span>

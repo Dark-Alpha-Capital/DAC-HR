@@ -14,6 +14,8 @@ import {
   FieldLabel,
 } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
+import { PhoneInput } from "~/components/ui/phone-input";
+import { US_STATES } from "~/lib/location";
 import {
   InputGroup,
   InputGroupAddon,
@@ -87,12 +89,10 @@ const CandidateUploadForm = ({
       email: "",
       phone: "",
       location: "",
+      locationCity: "",
+      locationState: "",
       source: undefined as
-        | "LinkedIn"
-        | "Upwork"
-        | "Handshake"
-        | "Indeed"
-        | undefined,
+        "LinkedIn" | "Upwork" | "Handshake" | "Indeed" | undefined,
       sourceUrl: "",
       note: "",
       positionIds: defaultPositionId ? [defaultPositionId] : [],
@@ -157,13 +157,10 @@ const CandidateUploadForm = ({
                 "Resume uploaded during candidate creation",
               );
 
-              await fetch(
-                `/api/candidate/${candidateId}/documents`,
-                {
-                  method: "POST",
-                  body: formData,
-                },
-              );
+              await fetch(`/api/candidate/${candidateId}/documents`, {
+                method: "POST",
+                body: formData,
+              });
             } catch (documentError) {
               console.error("Error uploading resume:", documentError);
             }
@@ -417,7 +414,7 @@ const CandidateUploadForm = ({
             validators={{
               onChange: ({ value }) => {
                 if (!value || value.trim() === "") return undefined;
-                const cleaned = value.replace(/[\s\-\(\)\+\.]/g, "");
+                const cleaned = value.replace(/[\s\-\(\)\+\.\[\]]/g, "");
                 if (!/^\d{7,15}$/.test(cleaned)) {
                   return [
                     {
@@ -440,15 +437,13 @@ const CandidateUploadForm = ({
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Phone</FieldLabel>
-                  <Input
+                  <PhoneInput
                     id={field.name}
                     name={field.name}
                     value={field.state.value}
                     onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
+                    onChange={(value) => field.handleChange(value)}
                     aria-invalid={isInvalid}
-                    placeholder="Enter the phone number (e.g., +1 (555) 123-4567)"
-                    autoComplete="tel"
                   />
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>
@@ -457,13 +452,13 @@ const CandidateUploadForm = ({
           />
 
           <form.Field
-            name="location"
+            name="locationCity"
             children={(field) => {
               const isInvalid =
                 field.state.meta.isTouched && !field.state.meta.isValid;
               return (
                 <Field data-invalid={isInvalid}>
-                  <FieldLabel htmlFor={field.name}>Location</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>City</FieldLabel>
                   <Input
                     id={field.name}
                     name={field.name}
@@ -471,9 +466,42 @@ const CandidateUploadForm = ({
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
                     aria-invalid={isInvalid}
-                    placeholder="Enter city, state, or country"
+                    placeholder="Enter city (e.g., Philadelphia)"
                     autoComplete="off"
                   />
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
+            }}
+          />
+
+          <form.Field
+            name="locationState"
+            children={(field) => {
+              const isInvalid =
+                field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>State</FieldLabel>
+                  <Select
+                    value={field.state.value || ""}
+                    onValueChange={(value) => field.handleChange(value)}
+                  >
+                    <SelectTrigger
+                      id={field.name}
+                      aria-invalid={isInvalid}
+                      className="w-full"
+                    >
+                      <SelectValue placeholder="Select state (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {US_STATES.map((state) => (
+                        <SelectItem key={state.abbr} value={state.abbr}>
+                          {state.abbr} — {state.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>
               );
@@ -495,10 +523,7 @@ const CandidateUploadForm = ({
                         value === ""
                           ? undefined
                           : (value as
-                              | "LinkedIn"
-                              | "Upwork"
-                              | "Handshake"
-                              | "Indeed");
+                              "LinkedIn" | "Upwork" | "Handshake" | "Indeed");
                       field.handleChange(newSource);
                       setSelectedSource(newSource);
                       if (value === "") {
@@ -712,7 +737,10 @@ const CandidateUploadForm = ({
                 }}
               />
               <div className="grid gap-1">
-                <Label htmlFor="generate-ai-session" className="text-sm font-medium cursor-pointer">
+                <Label
+                  htmlFor="generate-ai-session"
+                  className="text-sm font-medium cursor-pointer"
+                >
                   Generate AI Interview Link
                 </Label>
                 <p className="text-xs text-muted-foreground">

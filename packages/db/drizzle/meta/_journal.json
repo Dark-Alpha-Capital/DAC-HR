@@ -127,6 +127,13 @@
       "when": 1785933343496,
       "tag": "0017_living_lady_deathstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1786125888763,
+      "tag": "0018_chilly_colleen_wing",
+      "breakpoints": true
     }
   ]
 }

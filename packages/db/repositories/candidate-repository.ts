@@ -1,13 +1,4 @@
-import {
-  and,
-  asc,
-  count,
-  desc,
-  eq,
-  inArray,
-  or,
-  sql,
-} from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { db } from "@workspace/db/db";
 import {
   application,
@@ -249,10 +240,7 @@ export const getApplicationsFiltered = async (
 
     if (statuses && statuses.length > 0) {
       conditions.push(
-        inArray(
-          application.status,
-          statuses as ApplicationStatus[],
-        ),
+        inArray(application.status, statuses as ApplicationStatus[]),
       );
     }
 
@@ -348,6 +336,8 @@ export const getCandidatesWithPositionsFiltered = async (
     email: string;
     phone: string | null;
     location: string | null;
+    locationCity: string | null;
+    locationState: string | null;
     source: string | null;
     sourceUrl: string | null;
     note: string | null;
@@ -368,6 +358,8 @@ export const getCandidatesWithPositionsFiltered = async (
           email: candidate.email,
           phone: candidate.phone,
           location: candidate.location,
+          locationCity: candidate.locationCity,
+          locationState: candidate.locationState,
           source: candidate.source,
           sourceUrl: candidate.sourceUrl,
           note: candidate.note,
@@ -445,6 +437,8 @@ export const getCandidatesWithPositionsFiltered = async (
         email: string;
         phone: string | null;
         location: string | null;
+        locationCity: string | null;
+        locationState: string | null;
         source: string | null;
         sourceUrl: string | null;
         note: string | null;
@@ -461,9 +455,9 @@ export const getCandidatesWithPositionsFiltered = async (
           ...result.candidate,
           position: result.position?.id
             ? {
-              id: result.position.id,
-              name: result.position.name,
-            }
+                id: result.position.id,
+                name: result.position.name,
+              }
             : null,
         });
       }

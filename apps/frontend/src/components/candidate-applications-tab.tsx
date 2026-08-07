@@ -9,7 +9,9 @@ import {
 import { getCandidateWithApplications } from "@workspace/db/repositories/candidate-repository";
 import { CreateApplicationDialog } from "~/components/dialogs/create-application-dialog";
 
-type Candidate = NonNullable<Awaited<ReturnType<typeof getCandidateWithApplications>>>;
+type Candidate = NonNullable<
+  Awaited<ReturnType<typeof getCandidateWithApplications>>
+>;
 
 export function CandidateApplicationsTab({
   candidate,
@@ -36,7 +38,9 @@ export function CandidateApplicationsTab({
       {candidate.applications.length === 0 ? (
         <div className="py-12 text-center text-muted-foreground">
           <Briefcase className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm mb-4">No applications found for this candidate.</p>
+          <p className="text-sm mb-4">
+            No applications found for this candidate.
+          </p>
           <CreateApplicationDialog
             candidateId={candidate.id}
             existingPositionIds={existingPositionIds}
@@ -67,7 +71,7 @@ export function CandidateApplicationsTab({
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1.5">
                     <Calendar className="h-3 w-3 shrink-0" />
-                    Applied {formatDate(app.createdAt)}
+                    Added {formatDate(app.createdAt)}
                   </span>
                   {app.interviews?.length != null ? (
                     <span>

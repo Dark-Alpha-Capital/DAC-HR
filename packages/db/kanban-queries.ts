@@ -6,10 +6,7 @@ import {
   kanbanColumnMatchesStatusFilter,
   normalizeApplicationStatus,
 } from "./application-status";
-import {
-  decodeKanbanCursor,
-  encodeKanbanCursor,
-} from "./kanban-cursor";
+import { decodeKanbanCursor, encodeKanbanCursor } from "./kanban-cursor";
 import type { CandidateSortOption } from "./candidate-list-filters";
 
 export type KanbanColumnCandidate = {
@@ -19,6 +16,8 @@ export type KanbanColumnCandidate = {
   email: string;
   phone: string | null;
   location: string | null;
+  locationCity: string | null;
+  locationState: string | null;
   source: string | null;
   sourceUrl: string | null;
   note: string | null;
@@ -146,6 +145,8 @@ const kanbanCandidatesCte = sql`
       c.email,
       c.phone,
       c.location,
+      c.location_city,
+      c.location_state,
       c.source,
       c.source_url,
       c.note,
@@ -182,9 +183,7 @@ function buildKanbanWhereClause(
   cursor?: { updatedAt: string; id: string } | null,
 ): SqlFragment {
   const filterFragments = buildFilterFragments(filters);
-  const clauses: SqlFragment[] = [
-    sql`kc.normalized_status = ${columnStatus}`,
-  ];
+  const clauses: SqlFragment[] = [sql`kc.normalized_status = ${columnStatus}`];
 
   const combinedFilters = combineSqlFragments(filterFragments);
   if (combinedFilters) {
@@ -210,6 +209,8 @@ type KanbanRow = {
   email: string;
   phone: string | null;
   location: string | null;
+  location_city: string | null;
+  location_state: string | null;
   source: string | null;
   source_url: string | null;
   note: string | null;
@@ -223,7 +224,8 @@ type KanbanRow = {
 
 function mapKanbanRow(row: KanbanRow): KanbanColumnCandidate {
   const applicationStatus = row.application_status
-    ? (normalizeApplicationStatus(row.application_status) ?? row.application_status)
+    ? (normalizeApplicationStatus(row.application_status) ??
+      row.application_status)
     : "ai_screening";
 
   return {
@@ -233,6 +235,8 @@ function mapKanbanRow(row: KanbanRow): KanbanColumnCandidate {
     email: row.email,
     phone: row.phone,
     location: row.location,
+    locationCity: row.location_city,
+    locationState: row.location_state,
     source: row.source,
     sourceUrl: row.source_url,
     note: row.note,
@@ -292,6 +296,8 @@ export async function getKanbanColumnCandidates(
         kc.email,
         kc.phone,
         kc.location,
+        kc.location_city,
+        kc.location_state,
         kc.source,
         kc.source_url,
         kc.note,
@@ -338,9 +344,7 @@ export async function getKanbanFilteredTotalCount(
   try {
     const filterFragments = buildFilterFragments(filters);
     const combinedFilters = combineSqlFragments(filterFragments);
-    const whereClause = combinedFilters
-      ? sql`WHERE ${combinedFilters}`
-      : sql``;
+    const whereClause = combinedFilters ? sql`WHERE ${combinedFilters}` : sql``;
 
     const result = await db.all<{ total: number }>(sql`
       WITH ${latestApplicationCte},

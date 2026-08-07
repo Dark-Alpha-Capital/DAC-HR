@@ -41,6 +41,12 @@
     },
   ],
 
+  "send_email": [
+    {
+      "name": "EMAIL",
+    },
+  ],
+
   "vectorize": [
     {
       "binding": "VECTORIZE",

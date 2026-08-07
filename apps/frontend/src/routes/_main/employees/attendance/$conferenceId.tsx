@@ -14,6 +14,7 @@ import type {
   MeetAttendanceParticipant,
   MeetParticipantKind,
 } from "~/lib/attendance/meet-attendance";
+import { formatDateTime } from "~/lib/utils";
 
 function detailQueryOptions(conferenceId: string) {
   return queryOptions({
@@ -45,16 +46,6 @@ function AttendanceDetailPending() {
       <Skeleton className="h-64 w-full" />
     </div>
   );
-}
-
-function formatTime(value: string | null) {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
 }
 
 function formatDuration(ms: number | null) {
@@ -121,14 +112,14 @@ function ParticipantRow({
           <div>
             <dt className="inline">Joined: </dt>
             <dd className="inline">
-              {formatTime(participant.earliestStartTime)}
+              {formatDateTime(participant.earliestStartTime)}
             </dd>
           </div>
           <div>
             <dt className="inline">Left: </dt>
             <dd className="inline">
               {participant.latestEndTime
-                ? formatTime(participant.latestEndTime)
+                ? formatDateTime(participant.latestEndTime)
                 : "still in call"}
             </dd>
           </div>
@@ -139,8 +130,8 @@ function ParticipantRow({
         <ul className="mt-2 space-y-1 border-l border-border pl-3 text-xs text-muted-foreground">
           {participant.sessions.map((session, index) => (
             <li key={session.name || `${participant.name}-${index}`}>
-              Session {index + 1}: {formatTime(session.startTime)} →{" "}
-              {session.endTime ? formatTime(session.endTime) : "open"} (
+              Session {index + 1}: {formatDateTime(session.startTime)} →{" "}
+              {session.endTime ? formatDateTime(session.endTime) : "open"} (
               {formatDuration(session.durationMs)})
             </li>
           ))}
@@ -179,13 +170,13 @@ function AttendanceDetailPage() {
           <dl className="mt-3 grid gap-1 text-sm text-muted-foreground sm:grid-cols-2">
             <div>
               <dt className="inline font-medium text-foreground/80">Start: </dt>
-              <dd className="inline">{formatTime(conference.startTime)}</dd>
+              <dd className="inline">{formatDateTime(conference.startTime)}</dd>
             </div>
             <div>
               <dt className="inline font-medium text-foreground/80">End: </dt>
               <dd className="inline">
                 {conference.endTime
-                  ? formatTime(conference.endTime)
+                  ? formatDateTime(conference.endTime)
                   : "still active / unknown"}
               </dd>
             </div>

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
 import { db } from "@workspace/db/db";
-import { application } from "@workspace/db/schema";
+import { application, candidate, position } from "@workspace/db/schema";
 import { eq } from "@workspace/db";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import {
@@ -10,6 +10,11 @@ import {
   type RoundConfig,
 } from "@workspace/db/repositories/interview-bundle-repository";
 import { getRoundsByPositionId } from "@workspace/db/modules/positions";
+import { sendMail } from "@workspace/mail";
+import {
+  getServerEmailSender,
+  getPublicBaseUrl,
+} from "~/lib/server/email-sender";
 
 import type { AgentConfig, RoundDeliveryMode } from "@workspace/db/enums";
 
@@ -32,8 +37,14 @@ export const createInterviewSession = createServerFn({ method: "POST" })
         .select({
           positionId: application.positionId,
           status: application.status,
+          candidateEmail: candidate.email,
+          candidateName: candidate.firstName,
+          candidateLastName: candidate.lastName,
+          positionName: position.name,
         })
         .from(application)
+        .innerJoin(candidate, eq(candidate.id, application.candidateId))
+        .innerJoin(position, eq(position.id, application.positionId))
         .where(eq(application.id, applicationId))
         .limit(1);
 
@@ -72,6 +83,29 @@ export const createInterviewSession = createServerFn({ method: "POST" })
           .update(application)
           .set({ status: "first_round" })
           .where(eq(application.id, applicationId));
+      }
+
+      // Non-blocking: send the interview link to the candidate. A missing
+      // EMAIL binding or a send failure must not fail link creation.
+      if (app.candidateEmail) {
+        const origin = getPublicBaseUrl();
+        const sender = getServerEmailSender();
+        if (sender) {
+          sendMail({
+            sender,
+            to: app.candidateEmail,
+            template: "interview-invite",
+            data: {
+              candidateName:
+                `${app.candidateName} ${app.candidateLastName}`.trim(),
+              positionName: app.positionName,
+              interviewUrl: `${origin}/interview/${result.token}`,
+              expiresAt: result.bundle.expiresAt,
+            },
+          }).catch((error) =>
+            console.error("Failed to send interview invite email:", error),
+          );
+        }
       }
 
       insertAuditLog({

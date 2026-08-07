@@ -20,6 +20,7 @@ import {
   user,
 } from "./schema";
 import { CLEAR_SEED_SQL, exportSeedDataSql } from "./seed-sql";
+import { splitLocation } from "./location";
 import { createPositionInterviewBundle } from "./repositories/interview-bundle-repository";
 
 const webDir = path.resolve(
@@ -41,7 +42,9 @@ function getLocalD1SqlitePath(): string {
     (file) => file.endsWith(".sqlite") && file !== "metadata.sqlite",
   );
   if (sqliteFiles.length === 0) {
-    throw new Error("No local D1 database found. Run bun run db:migrate first.");
+    throw new Error(
+      "No local D1 database found. Run bun run db:migrate first.",
+    );
   }
   return path.join(d1Dir, sqliteFiles[0]!);
 }
@@ -98,14 +101,7 @@ function applyMigrations(remote: boolean) {
   const target = remote ? "--remote" : "--local";
   const migrate = spawnSync(
     "bunx",
-    [
-      "wrangler",
-      "d1",
-      "migrations",
-      "apply",
-      "hr-automation-db",
-      target,
-    ],
+    ["wrangler", "d1", "migrations", "apply", "hr-automation-db", target],
     { cwd: webDir, stdio: "inherit" },
   );
   if (migrate.status !== 0) {
@@ -352,7 +348,8 @@ async function seed() {
       orderIndex: 3,
     },
     {
-      questionText: "How do you prioritize tasks when facing multiple deadlines?",
+      questionText:
+        "How do you prioritize tasks when facing multiple deadlines?",
       questionType: "text" as const,
       category: "behavioral" as const,
       timeLimitSeconds: 240,
@@ -617,6 +614,10 @@ async function seed() {
     const pos = positionBySlug[seedCandidate.positionSlug];
     if (!pos) continue;
 
+    const { city: locationCity, state: locationState } = splitLocation(
+      seedCandidate.location,
+    );
+
     const [newCandidate] = await db
       .insert(candidate)
       .values({
@@ -624,6 +625,8 @@ async function seed() {
         lastName: seedCandidate.lastName,
         email: seedCandidate.email,
         phone: seedCandidate.phone,
+        locationCity,
+        locationState,
         location: seedCandidate.location,
         source: seedCandidate.source,
       })
@@ -733,7 +736,9 @@ async function seed() {
   console.log(
     `✅ ${seedCandidates.length} candidates with applications & interview rounds`,
   );
-  console.log(`✅ 3 sample interview sessions (pending, in-progress, completed)`);
+  console.log(
+    `✅ 3 sample interview sessions (pending, in-progress, completed)`,
+  );
 
   if (seedRemote) {
     pushSeedToRemote(sqlite);

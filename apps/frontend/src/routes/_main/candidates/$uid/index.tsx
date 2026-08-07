@@ -39,9 +39,7 @@ export const Route = createFileRoute("/_main/candidates/$uid/")({
     meta: [{ title: "Candidate Detail" }],
   }),
   loader: async ({ context: { queryClient }, params }) => {
-    await queryClient.ensureQueryData(
-      candidateDetailQueryOptions(params.uid),
-    );
+    await queryClient.ensureQueryData(candidateDetailQueryOptions(params.uid));
   },
   component: CandidateDetailPage,
 });
@@ -146,7 +144,7 @@ function CandidateDetailPage() {
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <CandidateOverviewTab candidate={candidate} />
+          <CandidateOverviewTab candidate={candidate} documents={documents} />
         </TabsContent>
 
         <TabsContent value="applications" className="mt-6">

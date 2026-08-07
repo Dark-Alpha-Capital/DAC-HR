@@ -22,3 +22,14 @@ test("shouldMarkInterrupted never interrupts practice or completed sessions", ()
   expect(shouldMarkInterrupted(1011, "active", false)).toBe(true);
   expect(shouldMarkInterrupted(1000, "active", false)).toBe(true);
 });
+
+test("shouldMarkInterrupted treats server error closes as interruptions", () => {
+  expect(shouldMarkInterrupted(1011, "in_progress", false)).toBe(true);
+  expect(shouldMarkInterrupted(1012, "pending", false)).toBe(true);
+  expect(shouldMarkInterrupted(1000, "pending", false)).toBe(true);
+});
+
+test("shouldMarkInterrupted covers reviewed sessions too", () => {
+  expect(shouldMarkInterrupted(1000, "reviewed", false)).toBe(true);
+  expect(shouldMarkInterrupted(1000, "reviewed", true)).toBe(false);
+});

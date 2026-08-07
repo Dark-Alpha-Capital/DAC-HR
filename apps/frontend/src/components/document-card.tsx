@@ -13,6 +13,7 @@ import { Eye, Pencil, FileText } from "lucide-react";
 import type { Document } from "@workspace/db/schema";
 import DeleteDocumentButton from "./delete-document-button";
 import DocumentPreviewDialog from "./document-preview-dialog";
+import { isNew } from "~/lib/utils";
 
 interface DocumentCardProps {
   document: Document;
@@ -60,9 +61,14 @@ const DocumentCard = ({ document }: DocumentCardProps) => {
               {document.name}
             </CardTitle>
           </div>
-          <Badge variant={categoryColor} className="shrink-0">
-            {categoryLabel}
-          </Badge>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {isNew(document.createdAt) && (
+              <Badge className="bg-primary text-primary-foreground border-0 text-xs">
+                New
+              </Badge>
+            )}
+            <Badge variant={categoryColor}>{categoryLabel}</Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="flex-1">
