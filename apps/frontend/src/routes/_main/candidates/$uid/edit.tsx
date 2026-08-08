@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_main/candidates/$uid/edit")({
 });
 
 function EditCandidatePage() {
-  const { candidate, positions } = Route.useLoaderData();
+  const { candidate } = Route.useLoaderData();
 
   if (!candidate) {
     return (
@@ -27,7 +27,9 @@ function EditCandidatePage() {
           The candidate you&apos;re looking for doesn&apos;t exist.
         </p>
         <Button asChild>
-          <Link to="/candidates" search={{} as any}>Back to Candidates</Link>
+          <Link to="/candidates" search={{} as any}>
+            Back to Candidates
+          </Link>
         </Button>
       </div>
     );
@@ -43,7 +45,6 @@ function EditCandidatePage() {
               ...candidate,
               positionIds: (candidate as any).positionIds || [],
             }}
-            positions={positions}
           />
         </Suspense>
       </div>

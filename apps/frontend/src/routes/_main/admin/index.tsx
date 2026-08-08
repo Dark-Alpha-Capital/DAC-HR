@@ -85,6 +85,7 @@ export const Route = createFileRoute("/_main/admin/")({
     );
     await queryClient.ensureQueryData(adminUsersIndexQueryOptions(search));
   },
+  pendingComponent: () => <ListPageSkeleton showActions={false} />,
   component: AdminPage,
 });
 

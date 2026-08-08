@@ -60,6 +60,7 @@ export const Route = createFileRoute("/_main/candidates/")({
     );
     await queryClient.ensureQueryData(candidatesIndexQueries.options(search));
   },
+  pendingComponent: () => <ListPageSkeleton layout="cards" />,
   component: CandidatesPage,
 });
 

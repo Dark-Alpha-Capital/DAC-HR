@@ -53,6 +53,7 @@ export const Route = createFileRoute("/_main/questions/")({
     );
     await queryClient.ensureQueryData(questionsIndexQueryOptions(search));
   },
+  pendingComponent: () => <ListPageSkeleton />,
   component: QuestionsPage,
 });
 

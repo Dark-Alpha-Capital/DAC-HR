@@ -22,6 +22,7 @@ import {
 } from "~/components/ui/input-group";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
+import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 import { candidateFormSchema } from "~/lib/schemas/candidate-form-schema";
 import {
   Select,
@@ -35,17 +36,11 @@ import type { Candidate } from "@workspace/db/schema";
 
 interface CandidateEditFormProps {
   candidate: Candidate & { positionIds?: string[] };
-  positions: {
-    id: string;
-    name: string;
-  }[];
 }
 
-const CandidateEditForm = ({
-  candidate,
-  positions,
-}: CandidateEditFormProps) => {
+const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
   const router = useRouter();
+  const invalidate = useQueryInvalidation();
   const [isPending, startTransition] = useTransition();
   const [selectedSource, setSelectedSource] = React.useState<
     "LinkedIn" | "Upwork" | "Handshake" | "Indeed" | undefined
@@ -108,6 +103,9 @@ const CandidateEditForm = ({
               },
             },
           });
+          if (result.data?.id) {
+            await invalidate.candidateDetail(result.data.id);
+          }
           router.navigate({ to: `/candidates/${result.data?.id}` });
         }
       });
@@ -341,45 +339,6 @@ const CandidateEditForm = ({
               }}
             />
           )}
-
-          <form.Field
-            name="positionIds"
-            children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
-              const selectedId = field.state.value?.[0] || "";
-              return (
-                <Field data-invalid={isInvalid}>
-                  <FieldLabel htmlFor={field.name}>Position</FieldLabel>
-                  <Select
-                    value={selectedId}
-                    onValueChange={(value) => {
-                      field.handleChange(value ? [value] : []);
-                    }}
-                  >
-                    <SelectTrigger
-                      id={field.name}
-                      aria-invalid={isInvalid}
-                      className="w-full"
-                    >
-                      <SelectValue placeholder="Select a position (optional)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {positions.map((position) => (
-                        <SelectItem key={position.id} value={position.id}>
-                          {position.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FieldDescription>
-                    Select a position to automatically create an application
-                  </FieldDescription>
-                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                </Field>
-              );
-            }}
-          />
 
           <form.Field
             name="locationCity"

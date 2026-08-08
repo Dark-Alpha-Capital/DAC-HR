@@ -35,6 +35,7 @@ export const Route = createFileRoute("/_main/employees/$id/")({
   loader: async ({ context: { queryClient }, params }) => {
     await queryClient.ensureQueryData(employeeDetailQueryOptions(params.id));
   },
+  pendingComponent: () => <DetailPageSkeleton container tabs showBreadcrumb />,
   component: EmployeeDetailPage,
 });
 

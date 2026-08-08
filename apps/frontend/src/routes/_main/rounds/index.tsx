@@ -43,9 +43,12 @@ export const Route = createFileRoute("/_main/rounds/")({
   }),
   validateSearch: parseRoundsSearch,
   loader: async ({ context: { queryClient }, location }) => {
-    const search = parseRoundsSearch(location.search as Record<string, unknown>);
+    const search = parseRoundsSearch(
+      location.search as Record<string, unknown>,
+    );
     await queryClient.ensureQueryData(roundsIndexQueryOptions(search));
   },
+  pendingComponent: () => <ListPageSkeleton />,
   component: RoundsPage,
 });
 
@@ -77,7 +80,9 @@ function RoundsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Rounds</h1>
         <Button asChild>
-          <Link to="/rounds/new" search="{}">New Round</Link>
+          <Link to="/rounds/new" search="{}">
+            New Round
+          </Link>
         </Button>
       </div>
 
@@ -97,7 +102,9 @@ function RoundsPage() {
               : "No rounds found."}
           </p>
           <Button asChild className="mt-4">
-            <Link to="/rounds/new" search="{}">Create your first round</Link>
+            <Link to="/rounds/new" search="{}">
+              Create your first round
+            </Link>
           </Button>
         </div>
       ) : (

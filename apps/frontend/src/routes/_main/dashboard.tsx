@@ -48,6 +48,7 @@ export const Route = createFileRoute("/_main/dashboard")({
   loader: async ({ context: { queryClient } }) => {
     await queryClient.ensureQueryData(dashboardStatsQueryOptions());
   },
+  pendingComponent: DashboardPending,
   component: DashboardPage,
 });
 
@@ -139,7 +140,8 @@ function DashboardPage() {
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
         <p className="text-sm text-muted-foreground">
-          Recruiting pipeline, hiring metrics, and quick access to core workflows.
+          Recruiting pipeline, hiring metrics, and quick access to core
+          workflows.
         </p>
       </div>
 
@@ -203,6 +205,22 @@ function DashboardPage() {
             );
           })}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function DashboardPending() {
+  return (
+    <div className="space-y-8">
+      <div className="space-y-1">
+        <Skeleton className="h-7 w-32" />
+        <Skeleton className="h-4 w-72 max-w-full" />
+      </div>
+      <StatsGridSkeleton />
+      <div className="space-y-3">
+        <Skeleton className="h-5 w-32" />
+        <Skeleton className="h-28 w-full rounded-xl" />
       </div>
     </div>
   );

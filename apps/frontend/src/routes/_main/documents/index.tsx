@@ -59,6 +59,7 @@ export const Route = createFileRoute("/_main/documents/")({
     );
     await queryClient.ensureQueryData(documentsIndexQueryOptions(search));
   },
+  pendingComponent: () => <ListPageSkeleton />,
   component: DocumentsPage,
 });
 

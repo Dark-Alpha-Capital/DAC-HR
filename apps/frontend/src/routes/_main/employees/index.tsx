@@ -68,6 +68,7 @@ export const Route = createFileRoute("/_main/employees/")({
     );
     await queryClient.ensureQueryData(prismicMembersQueryOptions(search));
   },
+  pendingComponent: () => <ListPageSkeleton />,
   component: EmployeesPage,
 });
 

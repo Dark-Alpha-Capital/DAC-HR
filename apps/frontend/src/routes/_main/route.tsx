@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { MainLayout } from "~/components/main-layout";
+import { MainLayoutSkeleton } from "~/components/main-layout-skeleton";
 import { Providers } from "~/components/providers";
 import { Toaster } from "~/components/ui/sonner";
 import { fetchSession } from "~/lib/auth-session";
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/_main")({
 
     return { session };
   },
+  pendingComponent: () => <MainLayoutSkeleton />,
   component: MainSiteLayout,
 });
 

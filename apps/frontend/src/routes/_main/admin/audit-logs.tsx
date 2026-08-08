@@ -48,6 +48,7 @@ export const Route = createFileRoute("/_main/admin/audit-logs")({
     );
     await queryClient.ensureQueryData(auditLogsIndexQueryOptions(search));
   },
+  pendingComponent: () => <ListPageSkeleton rowCount={8} showActions={false} />,
   component: AuditLogsPage,
 });
 

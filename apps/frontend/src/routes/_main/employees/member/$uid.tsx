@@ -97,6 +97,7 @@ export const Route = createFileRoute("/_main/employees/member/$uid")({
       prismicMemberQueryOptions(params.uid, kind),
     );
   },
+  pendingComponent: () => <DetailPageSkeleton />,
   component: PrismicMemberDetailPage,
 });
 
@@ -153,8 +154,8 @@ function PrismicMemberDetailPage() {
   const titleLabel = member.kind === "operating" ? "Designation" : "Level";
   const titleValue =
     member.kind === "operating"
-      ? member.designation ?? member.title
-      : member.level ?? member.title;
+      ? (member.designation ?? member.title)
+      : (member.level ?? member.title);
 
   return (
     <div className="space-y-8">
@@ -190,10 +191,7 @@ function PrismicMemberDetailPage() {
         </DetailRow>
 
         {member.kind === "team" ? (
-          <DetailRow
-            icon={<Building2 className="size-4" />}
-            label="Department"
-          >
+          <DetailRow icon={<Building2 className="size-4" />} label="Department">
             <OptionalValue value={member.department} />
           </DetailRow>
         ) : null}

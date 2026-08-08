@@ -52,6 +52,7 @@ export const Route = createFileRoute("/_main/positions/")({
     );
     await queryClient.ensureQueryData(positionsIndexQueryOptions(search));
   },
+  pendingComponent: () => <ListPageSkeleton />,
   component: PositionsPage,
 });
 

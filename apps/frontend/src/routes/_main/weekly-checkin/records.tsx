@@ -70,6 +70,7 @@ export const Route = createFileRoute("/_main/weekly-checkin/records")({
     );
     await queryClient.ensureQueryData(weeklyCheckinRecordsQueryOptions(search));
   },
+  pendingComponent: () => <ListPageSkeleton rowCount={8} showActions={false} />,
   component: WeeklyCheckinRecordsPage,
 });
 

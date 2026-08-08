@@ -6,7 +6,10 @@ import {
   getOrCreateCandidateOnboarding,
   getUsers,
 } from "@workspace/db/repositories/candidate-repository";
-import { getPositions, getRoundsByPositionId } from "@workspace/db/modules/positions";
+import {
+  getPositions,
+  getRoundsByPositionId,
+} from "@workspace/db/modules/positions";
 import {
   parseCandidateSortOption,
   type CandidateSortOption,
@@ -16,7 +19,10 @@ import { getChecklistItemsByCandidateId } from "@workspace/db/repositories/candi
 import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
 import { getApplicationWithInterviews } from "@workspace/db/repositories/interview-repository";
 import { getSessionsByApplicationId } from "@workspace/db/repositories/interview-session-repository";
-import { getCandidateWithApplications, getCandidatesWithPositionsFiltered } from "@workspace/db/repositories/candidate-repository";
+import {
+  getCandidateWithApplications,
+  getCandidatesWithPositionsFiltered,
+} from "@workspace/db/repositories/candidate-repository";
 import { getKanbanFilteredTotalCount } from "@workspace/db/kanban-queries";
 import type { Session } from "better-auth";
 
@@ -191,7 +197,6 @@ export const loadCandidateDetail = createServerFn({ method: "GET" })
   .middleware([serverFnAuthGuard])
   .validator((data: CandidateDetailInput) => data)
   .handler(async ({ data, context: { session } }) => {
-
     const [users, candidate, documents, screenings] = await Promise.all([
       getUsers(),
       getCandidateWithApplications(data.uid),
@@ -227,11 +232,11 @@ export const loadCandidateDetail = createServerFn({ method: "GET" })
 
     const onboardingData = rawOnboarding
       ? {
-        contractSigned: rawOnboarding.contractSigned ?? false,
-        registrationEmailSent: rawOnboarding.emailProvided ?? false,
-        packetSent: rawOnboarding.onboardingPacketSent ?? false,
-        companyEmailActivate: rawOnboarding.companyEmailActivate ?? false,
-      }
+          contractSigned: rawOnboarding.contractSigned ?? false,
+          registrationEmailSent: rawOnboarding.emailProvided ?? false,
+          packetSent: rawOnboarding.onboardingPacketSent ?? false,
+          companyEmailActivate: rawOnboarding.companyEmailActivate ?? false,
+        }
       : null;
 
     return {
@@ -252,15 +257,8 @@ export const loadCandidateEdit = createServerFn({ method: "GET" })
   .middleware([serverFnAuthGuard])
   .validator((data: string) => data)
   .handler(async ({ data: uid }) => {
-    const [candidate, { positions }] = await Promise.all([
-      getCandidateById(uid),
-      getPositions(),
-    ]);
-
-    return {
-      candidate,
-      positions: positions.map((p) => ({ id: p.id, name: p.name })),
-    };
+    const candidate = await getCandidateById(uid);
+    return { candidate };
   });
 
 type CandidateDocumentEditInput = {
@@ -315,10 +313,7 @@ export const loadApplicationsIndex = createServerFn({ method: "GET" })
       hasNextPage: currentPage < totalPages,
       hasPreviousPage: currentPage > 1,
       hasFilters: Boolean(
-        deps.name ||
-        deps.email ||
-        deps.position?.length ||
-        deps.status?.length,
+        deps.name || deps.email || deps.position?.length || deps.status?.length,
       ),
     };
   });

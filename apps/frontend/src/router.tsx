@@ -2,7 +2,7 @@ import { createRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 import type { QueryClient } from "@tanstack/react-query";
 import { routeTree } from "./routeTree.gen";
-import { DetailPageSkeleton } from "~/components/route-skeletons/detail-page-skeleton";
+import { PageLoadingFallback } from "~/components/route-skeletons/page-loading-fallback";
 import { getQueryClient } from "~/lib/query/query-client";
 
 export type RouterContext = {
@@ -16,9 +16,9 @@ export function getRouter() {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
-    defaultPendingMs: 0,
-    defaultPendingMinMs: 250,
-    defaultPendingComponent: () => <DetailPageSkeleton />,
+    defaultPendingMs: 150,
+    defaultPendingMinMs: 150,
+    defaultPendingComponent: () => <PageLoadingFallback />,
   });
 
   setupRouterSsrQueryIntegration({

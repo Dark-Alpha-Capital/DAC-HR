@@ -41,6 +41,7 @@ export const Route = createFileRoute("/_main/candidates/$uid/")({
   loader: async ({ context: { queryClient }, params }) => {
     await queryClient.ensureQueryData(candidateDetailQueryOptions(params.uid));
   },
+  pendingComponent: () => <DetailPageSkeleton tabs tabCount={4} />,
   component: CandidateDetailPage,
 });
 

@@ -58,6 +58,9 @@ export const Route = createFileRoute("/_main/applications/")({
     );
     await queryClient.ensureQueryData(applicationsIndexQueryOptions(search));
   },
+  pendingComponent: () => (
+    <ListPageSkeleton filterCount={5} layout="cards" showActions={false} />
+  ),
   component: ApplicationsPage,
 });
 

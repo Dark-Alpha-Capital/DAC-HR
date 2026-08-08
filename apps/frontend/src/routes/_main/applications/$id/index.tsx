@@ -34,6 +34,9 @@ export const Route = createFileRoute("/_main/applications/$id/")({
   loader: async ({ context: { queryClient }, params }) => {
     await queryClient.ensureQueryData(applicationDetailQueryOptions(params.id));
   },
+  pendingComponent: () => (
+    <DetailPageSkeleton container tabs showBreadcrumb showActions />
+  ),
   component: ApplicationDetailPage,
 });
 
@@ -212,6 +215,17 @@ function ApplicationDetailPage() {
         </TabsContent>
 
         <TabsContent value="interviews" className="mt-6">
+          <div className="mb-6 rounded-lg border bg-muted/50 p-4 text-sm text-muted-foreground">
+            <p>
+              This is where you create or record interviews for this
+              candidate&apos;s application. You can either generate an
+              interview link to send to the candidate so they can complete the
+              interview process on their own, or you can record it manually by
+              adding their responses yourself. Once the interview is done, use
+              screeners to screen the candidate and evaluate whether they are
+              the right fit for this position.
+            </p>
+          </div>
           <ApplicationProgressTimeline
             rounds={rounds}
             interviews={interviews}
