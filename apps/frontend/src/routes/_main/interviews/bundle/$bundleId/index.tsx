@@ -24,33 +24,10 @@ import { useState } from "react";
 
 type BundleDetailTab = "rounds" | "ai-analysis" | "screenings";
 
-interface BundleDetailSearch {
-  tab?: BundleDetailTab;
-  round?: number;
-}
-
-function parseBundleDetailSearch(
-  search: Record<string, unknown>,
-): BundleDetailSearch {
-  const tab =
-    search.tab === "ai-analysis" || search.tab === "screenings"
-      ? search.tab
-      : undefined;
-  const rawRound = Number(search.round);
-  return {
-    tab,
-    round:
-      search.round !== undefined && Number.isFinite(rawRound)
-        ? rawRound
-        : undefined,
-  };
-}
-
 export const Route = createFileRoute("/_main/interviews/bundle/$bundleId/")({
   head: () => ({
     meta: [{ title: "Position Interview" }],
   }),
-  validateSearch: parseBundleDetailSearch,
   loader: async ({ context: { queryClient }, params }) => {
     const detail = await queryClient.ensureQueryData(
       interviewBundleDetailQueryOptions(params.bundleId),
@@ -98,9 +75,9 @@ function BundleStatusBadge({ status }: { status: string }) {
 function InterviewBundleDetailPage() {
   const { bundleId } = Route.useParams();
   const queryClient = useQueryClient();
-  const search = Route.useSearch();
-  const navigate = Route.useNavigate();
   const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState<BundleDetailTab>("rounds");
+  const [activeRoundIndex, setActiveRoundIndex] = useState<number | null>(null);
 
   const { data, isLoading } = useQuery(
     interviewBundleDetailQueryOptions(bundleId),
@@ -144,17 +121,16 @@ function InterviewBundleDetailPage() {
       : 0;
   const isExpired = new Date(bundle.expiresAt) < new Date();
 
-  const activeTab = search.tab ?? "rounds";
   const defaultRoundIndex = Math.max(
     0,
     roundDetails.findIndex((r) => r.round.bundleRound.status !== "pending"),
   );
-  const activeRoundIndex =
+  const currentRoundIndex =
     roundDetails.length === 0
       ? 0
       : Math.min(
-          Math.max(search.round ?? defaultRoundIndex, 0),
-          roundDetails.length - 1,
+          activeRoundIndex ?? defaultRoundIndex,
+          Math.max(0, roundDetails.length - 1),
         );
 
   const screeners =
@@ -180,15 +156,11 @@ function InterviewBundleDetailPage() {
   };
 
   const handleTabChange = (tab: string) => {
-    void navigate({
-      search: (current) => ({ ...current, tab: tab as BundleDetailTab }),
-    });
+    setActiveTab(tab as BundleDetailTab);
   };
 
   const handleRoundSelect = (round: number) => {
-    void navigate({
-      search: (current) => ({ ...current, round }),
-    });
+    setActiveRoundIndex(round);
   };
 
   const handleAnalysisComplete = () => {
@@ -285,14 +257,14 @@ function InterviewBundleDetailPage() {
             <>
               <BundleRoundStepper
                 rounds={roundDetails}
-                activeIndex={activeRoundIndex}
+                activeIndex={currentRoundIndex}
                 onSelect={handleRoundSelect}
               />
               <BundleRoundPanel
-                key={roundDetails[activeRoundIndex].round.round.id}
-                roundDetail={roundDetails[activeRoundIndex]}
+                key={roundDetails[currentRoundIndex].round.round.id}
+                roundDetail={roundDetails[currentRoundIndex]}
                 candidate={candidate}
-                index={activeRoundIndex}
+                index={currentRoundIndex}
                 totalRounds={roundDetails.length}
               />
             </>

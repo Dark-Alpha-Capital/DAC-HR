@@ -21,6 +21,13 @@ import {
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import {
   Eye,
   Trash2,
   Plus,
@@ -48,6 +55,80 @@ import { deleteInterview } from "~/lib/actions/delete-interview";
 import { removeInterviewBundle } from "~/lib/actions/remove-interview-bundle";
 import { toast } from "sonner";
 import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
+
+type TimeFilter = "all" | "7d" | "30d";
+type SortDir = "newest" | "oldest";
+
+interface InterviewFilter {
+  time: TimeFilter;
+  sort: SortDir;
+}
+
+const TIME_FILTER_OPTIONS: { value: TimeFilter; label: string }[] = [
+  { value: "all", label: "All time" },
+  { value: "7d", label: "Last 7 days" },
+  { value: "30d", label: "Last 30 days" },
+];
+
+const SORT_OPTIONS: { value: SortDir; label: string }[] = [
+  { value: "newest", label: "Newest first" },
+  { value: "oldest", label: "Oldest first" },
+];
+
+const timeCutoff = (time: TimeFilter): Date | null => {
+  if (time === "all") return null;
+  const days = time === "7d" ? 7 : 30;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  cutoff.setHours(0, 0, 0, 0);
+  return cutoff;
+};
+
+const compareByDate = (sort: SortDir, a: Date, b: Date) =>
+  sort === "newest" ? b.getTime() - a.getTime() : a.getTime() - b.getTime();
+
+function InterviewFilterControls({
+  value,
+  onChange,
+}: {
+  value: InterviewFilter;
+  onChange: (next: InterviewFilter) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <Select
+        value={value.time}
+        onValueChange={(v) => onChange({ ...value, time: v as TimeFilter })}
+      >
+        <SelectTrigger className="h-8 w-[130px] text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {TIME_FILTER_OPTIONS.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select
+        value={value.sort}
+        onValueChange={(v) => onChange({ ...value, sort: v as SortDir })}
+      >
+        <SelectTrigger className="h-8 w-[140px] text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {SORT_OPTIONS.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
 
 interface Round {
   id: string;
@@ -201,11 +282,13 @@ function BundleCard({
   applicationId,
   onDelete,
   deleting,
+  isLatest,
 }: {
   item: InterviewBundleItem;
   applicationId?: string;
   onDelete: (id: string) => void;
   deleting: boolean;
+  isLatest?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const completedCount = item.rounds.filter(
@@ -237,9 +320,15 @@ function BundleCard({
             <CardTitle className="text-base flex items-center gap-2">
               <Bot className="h-4 w-4 text-purple-600" />
               Position Interview
+              {isLatest ? (
+                <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-0">
+                  Latest
+                </Badge>
+              ) : null}
             </CardTitle>
             <p className="text-sm text-muted-foreground">
-              {completedCount}/{item.rounds.length} rounds complete
+              Created {formatDateTime(item.bundle.createdAt)} · {completedCount}
+              /{item.rounds.length} rounds complete
               {isExpired
                 ? " · Expired"
                 : ` · Expires ${formatDate(item.bundle.expiresAt)}`}
@@ -337,34 +426,102 @@ export default function ApplicationProgressTimeline({
     null,
   );
   const [deletingBundleId, setDeletingBundleId] = useState<string | null>(null);
+  const [aiFilter, setAiFilter] = useState<InterviewFilter>({
+    time: "all",
+    sort: "newest",
+  });
+  const [manualFilter, setManualFilter] = useState<InterviewFilter>({
+    time: "all",
+    sort: "newest",
+  });
 
   const manualInterviews = useMemo(
     () => interviews.filter((i) => i.mode === "manual"),
     [interviews],
   );
 
+  const filteredBundles = useMemo(() => {
+    const cutoff = timeCutoff(aiFilter.time);
+    return bundles
+      .filter((item) => !cutoff || new Date(item.bundle.createdAt) >= cutoff)
+      .sort((a, b) =>
+        compareByDate(
+          aiFilter.sort,
+          new Date(a.bundle.createdAt),
+          new Date(b.bundle.createdAt),
+        ),
+      );
+  }, [bundles, aiFilter]);
+
+  const filteredManualInterviews = useMemo(() => {
+    const cutoff = timeCutoff(manualFilter.time);
+    return manualInterviews
+      .filter((i) => !cutoff || new Date(i.createdAt) >= cutoff)
+      .sort((a, b) =>
+        compareByDate(
+          manualFilter.sort,
+          new Date(a.createdAt),
+          new Date(b.createdAt),
+        ),
+      );
+  }, [manualInterviews, manualFilter]);
+
+  const latestManualAt = useMemo(() => {
+    if (filteredManualInterviews.length === 0) return null;
+    return Math.max(
+      ...filteredManualInterviews.map((i) => new Date(i.createdAt).getTime()),
+    );
+  }, [filteredManualInterviews]);
+
   const interviewsByRound = useMemo(() => {
     const grouped = new Map<string, Interview[]>();
     rounds.forEach((round) => grouped.set(round.id, []));
-    manualInterviews.forEach((interview) => {
+    filteredManualInterviews.forEach((interview) => {
       const roundInterviews = grouped.get(interview.roundId) || [];
       roundInterviews.push(interview);
       grouped.set(interview.roundId, roundInterviews);
     });
     return grouped;
-  }, [rounds, manualInterviews]);
+  }, [rounds, filteredManualInterviews]);
+
+  const orderedRounds = useMemo(() => {
+    const withInterviews = rounds.filter(
+      (r) => (interviewsByRound.get(r.id)?.length ?? 0) > 0,
+    );
+    const withoutInterviews = rounds.filter(
+      (r) => (interviewsByRound.get(r.id)?.length ?? 0) === 0,
+    );
+    withInterviews.sort((a, b) => {
+      const latestA = Math.max(
+        ...(interviewsByRound.get(a.id) ?? []).map((i) =>
+          new Date(i.createdAt).getTime(),
+        ),
+      );
+      const latestB = Math.max(
+        ...(interviewsByRound.get(b.id) ?? []).map((i) =>
+          new Date(i.createdAt).getTime(),
+        ),
+      );
+      return compareByDate(
+        manualFilter.sort,
+        new Date(latestA),
+        new Date(latestB),
+      );
+    });
+    return [...withInterviews, ...withoutInterviews];
+  }, [rounds, interviewsByRound, manualFilter.sort]);
 
   const stats = useMemo(() => {
     const roundsWithManual = Array.from(interviewsByRound.values()).filter(
       (r) => r.length > 0,
     ).length;
     return {
-      manualCount: manualInterviews.length,
-      bundleCount: bundles.length,
+      manualCount: filteredManualInterviews.length,
+      bundleCount: filteredBundles.length,
       roundsWithManual,
       totalRounds: rounds.length,
     };
-  }, [manualInterviews, bundles, interviewsByRound, rounds]);
+  }, [filteredManualInterviews, filteredBundles, interviewsByRound, rounds]);
 
   const handleDeleteClick = (interviewId: string) => {
     setInterviewToDelete(interviewId);
@@ -459,27 +616,43 @@ export default function ApplicationProgressTimeline({
 
       {bundles.length > 0 && (
         <section className="space-y-3">
-          <h3 className="text-sm font-medium text-muted-foreground">
-            AI Interview Links
-          </h3>
+          <div className="flex items-center justify-between gap-4">
+            <h3 className="text-sm font-medium text-muted-foreground">
+              AI Interview Links
+            </h3>
+            <InterviewFilterControls value={aiFilter} onChange={setAiFilter} />
+          </div>
           <div className="space-y-3">
-            {bundles.map((item) => (
-              <BundleCard
-                key={item.bundle.id}
-                item={item}
-                applicationId={applicationId}
-                onDelete={handleDeleteBundleClick}
-                deleting={deletingBundleId === item.bundle.id}
-              />
-            ))}
+            {filteredBundles.length === 0 ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                No AI interview links match this filter.
+              </div>
+            ) : (
+              filteredBundles.map((item, index) => (
+                <BundleCard
+                  key={item.bundle.id}
+                  item={item}
+                  applicationId={applicationId}
+                  onDelete={handleDeleteBundleClick}
+                  deleting={deletingBundleId === item.bundle.id}
+                  isLatest={aiFilter.sort === "newest" && index === 0}
+                />
+              ))
+            )}
           </div>
         </section>
       )}
 
       <section className="space-y-1">
-        <h3 className="text-sm font-medium text-muted-foreground mb-3">
-          Manual Interviews by Round
-        </h3>
+        <div className="flex items-center justify-between gap-4 mb-3">
+          <h3 className="text-sm font-medium text-muted-foreground">
+            Manual Interviews by Round
+          </h3>
+          <InterviewFilterControls
+            value={manualFilter}
+            onChange={setManualFilter}
+          />
+        </div>
         {rounds.length === 0 ? (
           <div className="py-12 text-center text-muted-foreground">
             <MessageSquare className="h-8 w-8 mx-auto mb-3 opacity-50" />
@@ -489,7 +662,7 @@ export default function ApplicationProgressTimeline({
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {rounds.map((round) => {
+            {orderedRounds.map((round) => {
               const roundInterviews = interviewsByRound.get(round.id) || [];
               const hasInterviews = roundInterviews.length > 0;
 
@@ -497,7 +670,19 @@ export default function ApplicationProgressTimeline({
                 <section key={round.id} className="py-5 first:pt-0">
                   <div className="flex items-start justify-between gap-4 mb-4">
                     <div className="space-y-0.5 flex-1">
-                      <h3 className="text-base font-medium">{round.name}</h3>
+                      <h3 className="text-base font-medium flex items-center gap-2">
+                        {round.name}
+                        {manualFilter.sort === "newest" &&
+                        latestManualAt !== null &&
+                        roundInterviews.some(
+                          (i) =>
+                            new Date(i.createdAt).getTime() === latestManualAt,
+                        ) ? (
+                          <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-0">
+                            Latest
+                          </Badge>
+                        ) : null}
+                      </h3>
                       {round.description && (
                         <p className="text-sm text-muted-foreground">
                           {round.description}
@@ -529,6 +714,9 @@ export default function ApplicationProgressTimeline({
                               Interviewer
                             </TableHead>
                             <TableHead className="font-medium">Date</TableHead>
+                            <TableHead className="font-medium">
+                              Created
+                            </TableHead>
                             <TableHead className="font-medium">
                               Status
                             </TableHead>
@@ -568,6 +756,11 @@ export default function ApplicationProgressTimeline({
                                   : interview.createdAt
                                     ? formatDate(interview.createdAt)
                                     : "-"}
+                              </TableCell>
+                              <TableCell>
+                                {interview.createdAt
+                                  ? formatDateTime(interview.createdAt)
+                                  : "-"}
                               </TableCell>
                               <TableCell>
                                 {getStatusBadge(interview.status)}

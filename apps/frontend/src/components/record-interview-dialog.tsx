@@ -66,11 +66,12 @@ export default function RecordInterviewDialog({
     initialRoundId || application.rounds[0]?.id || "",
   );
   const [scheduledAt, setScheduledAt] = useState("");
-  const [roundModes, setRoundModes] = useState<Record<string, RoundDeliveryMode>>(
-    () =>
-      Object.fromEntries(
-        application.rounds.map((r) => [r.id, "form" as RoundDeliveryMode]),
-      ),
+  const [roundModes, setRoundModes] = useState<
+    Record<string, RoundDeliveryMode>
+  >(() =>
+    Object.fromEntries(
+      application.rounds.map((r) => [r.id, "form" as RoundDeliveryMode]),
+    ),
   );
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -201,7 +202,10 @@ export default function RecordInterviewDialog({
     }
   };
 
-  const setRoundMode = (roundIdKey: string, deliveryMode: RoundDeliveryMode) => {
+  const setRoundMode = (
+    roundIdKey: string,
+    deliveryMode: RoundDeliveryMode,
+  ) => {
     setRoundModes((prev) => ({ ...prev, [roundIdKey]: deliveryMode }));
   };
 
@@ -271,8 +275,11 @@ export default function RecordInterviewDialog({
               <form onSubmit={handleAiLinkSubmit}>
                 <div className="space-y-4 py-4">
                   <p className="text-sm text-muted-foreground">
-                    One link covers all rounds for this position. Choose how
-                    each round should be conducted.
+                    Generates a link you can send to the candidate — they will
+                    take the interview using that link. Select which rounds of
+                    this position are included, and choose how the candidate
+                    answers each round: a real-time voice AI agent interview or
+                    a simple form interview the candidate fills out.
                   </p>
                   <div className="space-y-3">
                     {application.rounds.map((round) => (
@@ -280,7 +287,9 @@ export default function RecordInterviewDialog({
                         key={round.id}
                         className="flex items-center justify-between gap-3 rounded-md border p-3"
                       >
-                        <span className="text-sm font-medium">{round.name}</span>
+                        <span className="text-sm font-medium">
+                          {round.name}
+                        </span>
                         <Select
                           value={roundModes[round.id] ?? "form"}
                           onValueChange={(value) =>
@@ -353,6 +362,12 @@ export default function RecordInterviewDialog({
             <TabsContent value="manual">
               <form onSubmit={handleManualSubmit}>
                 <div className="space-y-4 py-4">
+                  <p className="text-sm text-muted-foreground">
+                    Use this when you conduct the interview yourself. Ask the
+                    candidate the questions defined in the selected round for
+                    this position, then record the interview details and your
+                    evaluation of their responses here.
+                  </p>
                   <div className="space-y-2">
                     <Label htmlFor="round">Round</Label>
                     <Select value={roundId} onValueChange={setRoundId} required>

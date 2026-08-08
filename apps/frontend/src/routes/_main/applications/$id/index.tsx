@@ -11,7 +11,6 @@ import {
 } from "~/lib/loaders/candidates";
 import { queryKeys } from "~/lib/query/query-keys";
 import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { Briefcase, Calendar, MessageSquare, Star } from "lucide-react";
 import { formatDate } from "~/lib/utils";
@@ -106,11 +105,6 @@ function ApplicationDetailPage() {
                 <Calendar className="h-4 w-4" />
                 Added {formatDate(application.createdAt)}
               </span>
-              <span className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" />
-                {interviews.length} interview
-                {interviews.length !== 1 ? "s" : ""}
-              </span>
             </div>
           </div>
 
@@ -136,11 +130,6 @@ function ApplicationDetailPage() {
           <TabsTrigger value="interviews" className="gap-2">
             <MessageSquare className="h-4 w-4" />
             Interviews
-            {interviews.length > 0 ? (
-              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                {interviews.length}
-              </Badge>
-            ) : null}
           </TabsTrigger>
         </TabsList>
 
