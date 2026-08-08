@@ -64,47 +64,53 @@ export class DocumentIndexingWorkflow extends WorkflowEntrypoint<Env, Params> {
     });
 
     // Step 1: Download from Nextcloud
-    const buffer = await step.do("download from nextcloud", {
-      retries: { limit: 3, delay: "5 seconds", backoff: "exponential" },
-    }, async () => {
-      log("log", "Downloading from Nextcloud", {
-        documentId,
-        filePath: nextcloudFilePath,
-      });
-
-      const client = createNextcloudClient({
-        url: this.env.NEXTCLOUD_URL,
-        user: this.env.NEXTCLOUD_USER,
-        password: this.env.NEXTCLOUD_PASSWORD,
-      });
-      const downloadResult = await downloadFile({
-        client,
-        filePathOrUrl: nextcloudFilePath,
-      });
-
-      if (!downloadResult.success || !downloadResult.buffer) {
-        log("error", "Nextcloud download failed", {
+    const buffer = await step.do(
+      "download from nextcloud",
+      {
+        retries: { limit: 3, delay: "5 seconds", backoff: "exponential" },
+      },
+      async () => {
+        log("log", "Downloading from Nextcloud", {
           documentId,
           filePath: nextcloudFilePath,
-          error: downloadResult.error,
-          code: downloadResult.code,
         });
-        throw new Error(
-          downloadResult.error ?? "Failed to download file from Nextcloud",
-        );
-      }
 
-      log("log", "Step completed: download from nextcloud", {
-        documentId,
-        bytes: downloadResult.buffer.length,
-        filePath: downloadResult.filePath,
-      });
-      return downloadResult.buffer;
-    });
+        const client = createNextcloudClient({
+          url: this.env.NEXTCLOUD_URL,
+          user: this.env.NEXTCLOUD_USER,
+          password: this.env.NEXTCLOUD_PASSWORD,
+        });
+        const downloadResult = await downloadFile({
+          client,
+          filePathOrUrl: nextcloudFilePath,
+        });
+
+        if (!downloadResult.success || !downloadResult.buffer) {
+          log("error", "Nextcloud download failed", {
+            documentId,
+            filePath: nextcloudFilePath,
+            error: downloadResult.error,
+            code: downloadResult.code,
+          });
+          throw new Error(
+            downloadResult.error ?? "Failed to download file from Nextcloud",
+          );
+        }
+
+        log("log", "Step completed: download from nextcloud", {
+          documentId,
+          bytes: downloadResult.buffer.length,
+          filePath: downloadResult.filePath,
+        });
+        return downloadResult.buffer;
+      },
+    );
 
     // Step 2: Extract text
     const text = await step.do("extract text", async () => {
-      const result = await extractTextFromDocument(buffer, metadata.name, log);
+      const result = await extractTextFromDocument(buffer, metadata.name, log, {
+        openAiApiKey: this.env.OPENAI_API_KEY,
+      });
       log("log", "Step completed: extract text", {
         documentId,
         textLength: result.length,
@@ -128,68 +134,80 @@ export class DocumentIndexingWorkflow extends WorkflowEntrypoint<Env, Params> {
     log("log", "Text chunked", { documentId, chunkCount: chunks.length });
 
     // Step 4: Generate OpenAI embeddings
-    const embeddings = await step.do("generate embeddings", {
-      retries: { limit: 5, delay: "10 seconds", backoff: "exponential" },
-    }, async () => {
-      const result = await generateEmbeddings(chunks);
-      log("log", "Step completed: generate embeddings", {
-        documentId,
-        chunkCount: chunks.length,
-        embeddingCount: result.length,
-      });
-      return result;
-    });
+    const embeddings = await step.do(
+      "generate embeddings",
+      {
+        retries: { limit: 5, delay: "10 seconds", backoff: "exponential" },
+      },
+      async () => {
+        const result = await generateEmbeddings(chunks);
+        log("log", "Step completed: generate embeddings", {
+          documentId,
+          chunkCount: chunks.length,
+          embeddingCount: result.length,
+        });
+        return result;
+      },
+    );
 
     // Step 5: Upsert to Vectorize
-    const vectorCount = await step.do("upsert to vectorize", {
-      retries: { limit: 3, delay: "5 seconds", backoff: "exponential" },
-    }, async () => {
-      const indexInfo = await this.env.VECTORIZE.describe();
-      if (indexInfo.dimensions !== EMBEDDING_DIMENSIONS) {
-        throw new Error(
-          `Vectorize index expects ${indexInfo.dimensions} dimensions but embeddings use ${EMBEDDING_DIMENSIONS}`,
-        );
-      }
+    const vectorCount = await step.do(
+      "upsert to vectorize",
+      {
+        retries: { limit: 3, delay: "5 seconds", backoff: "exponential" },
+      },
+      async () => {
+        const indexInfo = await this.env.VECTORIZE.describe();
+        if (indexInfo.dimensions !== EMBEDDING_DIMENSIONS) {
+          throw new Error(
+            `Vectorize index expects ${indexInfo.dimensions} dimensions but embeddings use ${EMBEDDING_DIMENSIONS}`,
+          );
+        }
 
-      const vectors = chunks.map((chunk, i) => ({
-        id: `${documentId}-chunk-${i}`,
-        values: embeddings[i],
-        metadata: {
+        const vectors = chunks.map((chunk, i) => ({
+          id: `${documentId}-chunk-${i}`,
+          values: embeddings[i],
+          metadata: {
+            documentId,
+            candidateId,
+            name: metadata.name.slice(0, 64),
+            category: metadata.category,
+            url: metadata.url.slice(0, 64),
+            chunkIndex: i,
+            text: chunk.substring(0, 64),
+          },
+          namespace,
+        }));
+
+        if (
+          vectors.some(
+            (vector) => vector.values.length !== indexInfo.dimensions,
+          )
+        ) {
+          throw new Error(
+            `Embedding vector length does not match index (${indexInfo.dimensions})`,
+          );
+        }
+
+        log("log", "Upserting vectors to Vectorize", {
           documentId,
-          candidateId,
-          name: metadata.name.slice(0, 64),
-          category: metadata.category,
-          url: metadata.url.slice(0, 64),
-          chunkIndex: i,
-          text: chunk.substring(0, 64),
-        },
-        namespace,
-      }));
+          namespace,
+          vectorCount: vectors.length,
+          dimensions: indexInfo.dimensions,
+        });
 
-      if (vectors.some((vector) => vector.values.length !== indexInfo.dimensions)) {
-        throw new Error(
-          `Embedding vector length does not match index (${indexInfo.dimensions})`,
-        );
-      }
+        for (let i = 0; i < vectors.length; i += 1000) {
+          await this.env.VECTORIZE.upsert(vectors.slice(i, i + 1000));
+        }
 
-      log("log", "Upserting vectors to Vectorize", {
-        documentId,
-        namespace,
-        vectorCount: vectors.length,
-        dimensions: indexInfo.dimensions,
-      });
-
-      for (let i = 0; i < vectors.length; i += 1000) {
-        await this.env.VECTORIZE.upsert(vectors.slice(i, i + 1000));
-      }
-
-      log("log", "Step completed: upsert to vectorize", {
-        documentId,
-        namespace,
-        vectorCount: vectors.length,
-      });
-      return vectors.length;
-    });
+        log("log", "Step completed: upsert to vectorize", {
+          documentId,
+          namespace,
+          vectorCount: vectors.length,
+        });
+        return vectors.length;
+      },
+    );
 
     // Step 6: Wait for Vectorize sync
     await step.do("wait for sync", async () => {

@@ -1,7 +1,16 @@
 import { extractText as unpdfExtract } from "unpdf";
 import mammoth from "mammoth";
+import WordExtractor from "word-extractor";
+import * as XLSX from "xlsx";
+import { generateText } from "ai";
+import { getOpenAIModel } from "@workspace/ai-config";
 
-export type DocumentFormat = "pdf" | "docx" | "text" | "legacy-doc" | "unknown";
+export type DocumentFormat =
+  "pdf" | "docx" | "xlsx" | "text" | "legacy-doc" | "image" | "unknown";
+
+export type DocumentExtractionOptions = {
+  openAiApiKey?: string;
+};
 
 export type DocumentExtractionLogger = (
   level: "log" | "warn" | "error",
@@ -19,6 +28,24 @@ const TEXT_EXTENSIONS = new Set([
   "xml",
   "rtf",
 ]);
+
+const XLSX_EXTENSIONS = new Set(["xlsx", "xls"]);
+
+const IMAGE_EXTENSIONS = new Set([
+  "png",
+  "jpg",
+  "jpeg",
+  "gif",
+  "webp",
+  "bmp",
+  "tif",
+  "tiff",
+  "heic",
+  "heif",
+  "avif",
+]);
+
+const IMAGE_OCR_MAX_BYTES = 20 * 1024 * 1024;
 
 export function getFileExtension(fileName: string): string {
   const lower = fileName.toLowerCase();
@@ -43,7 +70,9 @@ export function toBuffer(data: Buffer | Uint8Array | ArrayBuffer): Buffer {
   return Buffer.from(data as Uint8Array);
 }
 
-export function toUint8Array(data: Buffer | Uint8Array | ArrayBuffer): Uint8Array {
+export function toUint8Array(
+  data: Buffer | Uint8Array | ArrayBuffer,
+): Uint8Array {
   if (data instanceof Uint8Array && !Buffer.isBuffer(data)) return data;
   return Uint8Array.from(toBuffer(data));
 }
@@ -58,6 +87,8 @@ export function detectFormat(
   if (ext === "pdf") return "pdf";
   if (ext === "docx") return "docx";
   if (ext === "doc") return "legacy-doc";
+  if (XLSX_EXTENSIONS.has(ext)) return "xlsx";
+  if (IMAGE_EXTENSIONS.has(ext)) return "image";
   if (TEXT_EXTENSIONS.has(ext)) return "text";
 
   if (bytes.length >= 4) {
@@ -79,6 +110,56 @@ export function detectFormat(
       bytes[3] === 0xe0
     ) {
       return "legacy-doc";
+    }
+    if (
+      bytes[0] === 0x89 &&
+      bytes[1] === 0x50 &&
+      bytes[2] === 0x4e &&
+      bytes[3] === 0x47
+    ) {
+      return "image";
+    }
+    if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+      return "image";
+    }
+    if (
+      bytes[0] === 0x47 &&
+      bytes[1] === 0x49 &&
+      bytes[2] === 0x46 &&
+      bytes[3] === 0x38
+    ) {
+      return "image";
+    }
+    if (bytes[0] === 0x42 && bytes[1] === 0x4d) {
+      return "image";
+    }
+    if (bytes.length >= 12) {
+      const isRiff =
+        bytes[0] === 0x52 &&
+        bytes[1] === 0x49 &&
+        bytes[2] === 0x46 &&
+        bytes[3] === 0x46;
+      const isWebp =
+        bytes[8] === 0x57 &&
+        bytes[9] === 0x45 &&
+        bytes[10] === 0x42 &&
+        bytes[11] === 0x50;
+      if (isRiff && isWebp) {
+        return "image";
+      }
+    }
+    const isLittleEndianTiff =
+      bytes[0] === 0x49 &&
+      bytes[1] === 0x49 &&
+      bytes[2] === 0x2a &&
+      bytes[3] === 0x00;
+    const isBigEndianTiff =
+      bytes[0] === 0x4d &&
+      bytes[1] === 0x4d &&
+      bytes[2] === 0x00 &&
+      bytes[3] === 0x2a;
+    if (isLittleEndianTiff || isBigEndianTiff) {
+      return "image";
     }
   }
 
@@ -168,10 +249,134 @@ function extractPlainText(
   return truncated;
 }
 
+async function extractXlsxText(
+  buffer: Buffer | Uint8Array,
+  fileName: string,
+  startTime: number,
+  log: DocumentExtractionLogger,
+): Promise<string | null> {
+  const workbook = XLSX.read(toBuffer(buffer), { type: "buffer" });
+
+  const sheets = workbook.SheetNames.map((sheetName) => {
+    const sheet = workbook.Sheets[sheetName];
+    return sheet
+      ? XLSX.utils.sheet_to_csv(sheet, { blankrows: false }).trim()
+      : "";
+  })
+    .filter(Boolean)
+    .join("\n\n")
+    .trim();
+
+  if (sheets.length > 0) {
+    log("log", "XLSX text extracted", {
+      fileName,
+      sheetCount: workbook.SheetNames.length,
+      textLength: sheets.length,
+      elapsedMs: Date.now() - startTime,
+    });
+    return sheets;
+  }
+
+  log("warn", "XLSX extraction returned empty text", {
+    fileName,
+    elapsedMs: Date.now() - startTime,
+  });
+  return null;
+}
+
+async function extractLegacyDocText(
+  buffer: Buffer | Uint8Array,
+  fileName: string,
+  startTime: number,
+  log: DocumentExtractionLogger,
+): Promise<string | null> {
+  const extractor = new WordExtractor();
+  const doc = await extractor.extract(toBuffer(buffer));
+  const text = doc.getBody().trim();
+
+  if (text.length > 0) {
+    log("log", "Legacy .doc text extracted", {
+      fileName,
+      textLength: text.length,
+      elapsedMs: Date.now() - startTime,
+    });
+    return text;
+  }
+
+  log("warn", "Legacy .doc extraction returned empty text", {
+    fileName,
+    elapsedMs: Date.now() - startTime,
+  });
+  return null;
+}
+
+async function extractImageText(
+  buffer: Buffer | Uint8Array,
+  fileName: string,
+  startTime: number,
+  log: DocumentExtractionLogger,
+  openAiApiKey?: string,
+): Promise<string | null> {
+  const bytes = toBuffer(buffer);
+
+  if (!openAiApiKey) {
+    log("warn", "OpenAI API key not provided; skipping image OCR", {
+      fileName,
+    });
+    return null;
+  }
+
+  if (bytes.length > IMAGE_OCR_MAX_BYTES) {
+    log("warn", "Image exceeds OCR size cap; skipping", {
+      fileName,
+      sizeBytes: bytes.length,
+      capBytes: IMAGE_OCR_MAX_BYTES,
+    });
+    return null;
+  }
+
+  const result = await generateText({
+    model: getOpenAIModel(openAiApiKey, "gpt-4o-mini"),
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "image",
+            image: new Uint8Array(bytes),
+          },
+          {
+            type: "text",
+            text: "Extract ALL visible text from this image verbatim. Preserve line breaks, table structure, and numbers. Output only the extracted text, with no commentary.",
+          },
+        ],
+      },
+    ],
+  });
+
+  const text = result.text.trim();
+
+  if (text.length > 0) {
+    log("log", "Image text extracted via OCR", {
+      fileName,
+      textLength: text.length,
+      elapsedMs: Date.now() - startTime,
+    });
+    return text;
+  }
+
+  log("warn", "Image OCR returned empty text", {
+    fileName,
+    elapsedMs: Date.now() - startTime,
+  });
+  return null;
+}
+
 export async function extractTextFromDocument(
   buffer: Buffer | Uint8Array,
   fileName: string,
   log: DocumentExtractionLogger = () => {},
+  options: DocumentExtractionOptions = {},
 ): Promise<string> {
   const bytes = toBuffer(buffer);
   const startTime = Date.now();
@@ -191,26 +396,70 @@ export async function extractTextFromDocument(
         if (text) return text;
         break;
       }
-      case "legacy-doc":
-        log("warn", "Legacy .doc format is not supported; please upload .docx", {
+      case "xlsx": {
+        const text = await extractXlsxText(bytes, fileName, startTime, log);
+        if (text) return text;
+        break;
+      }
+      case "legacy-doc": {
+        const text = await extractLegacyDocText(
+          bytes,
           fileName,
-        });
-        return "";
+          startTime,
+          log,
+        );
+        if (text) return text;
+        break;
+      }
+      case "image": {
+        const text = await extractImageText(
+          bytes,
+          fileName,
+          startTime,
+          log,
+          options.openAiApiKey,
+        );
+        if (text) return text;
+        break;
+      }
       case "text": {
         const text = extractPlainText(bytes, fileName, startTime, log);
         if (text) return text;
         break;
       }
       case "unknown": {
-        const pdfText = await extractPdfText(bytes, fileName, startTime, log).catch(
-          () => null,
-        );
+        const pdfText = await extractPdfText(
+          bytes,
+          fileName,
+          startTime,
+          log,
+        ).catch(() => null);
         if (pdfText) return pdfText;
 
-        const docxText = await extractDocxText(bytes, fileName, startTime, log).catch(
-          () => null,
-        );
+        const docxText = await extractDocxText(
+          bytes,
+          fileName,
+          startTime,
+          log,
+        ).catch(() => null);
         if (docxText) return docxText;
+
+        const xlsxText = await extractXlsxText(
+          bytes,
+          fileName,
+          startTime,
+          log,
+        ).catch(() => null);
+        if (xlsxText) return xlsxText;
+
+        const imageText = await extractImageText(
+          bytes,
+          fileName,
+          startTime,
+          log,
+          options.openAiApiKey,
+        ).catch(() => null);
+        if (imageText) return imageText;
 
         const plainText = extractPlainText(bytes, fileName, startTime, log);
         if (plainText) return plainText;

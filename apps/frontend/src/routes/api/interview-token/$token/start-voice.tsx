@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createRealtimeEphemeralSession, openAIKeyFingerprint, sha256Hex } from "@workspace/ai-config";
+import {
+  createRealtimeEphemeralSession,
+  openAIKeyFingerprint,
+  sha256Hex,
+} from "@workspace/ai-config";
 import { getServerOpenAIApiKey } from "~/lib/server/openai-api-key";
 import { getQuestionsForInterviewSession } from "@workspace/db/modules/positions";
-import {
-  updateSessionStatus,
-} from "@workspace/db/repositories/interview-session-repository";
-import {
-  startBundleRound,
-} from "@workspace/db/repositories/interview-bundle-repository";
+import { updateSessionStatus } from "@workspace/db/repositories/interview-session-repository";
+import { startBundleRound } from "@workspace/db/repositories/interview-bundle-repository";
 import { PRACTICE_QUESTIONS } from "@workspace/interview-realtime";
 import { buildRealtimeInstructions } from "@workspace/interview-realtime/prompts";
 import { resolveInterviewToken } from "~/lib/interview-token";
@@ -36,8 +36,7 @@ async function createEphemeralSessionWithRetry(options: {
       return await createRealtimeEphemeralSession(options);
     } catch (error) {
       lastError = error;
-      const message =
-        error instanceof Error ? error.message : String(error);
+      const message = error instanceof Error ? error.message : String(error);
       const isRateLimit = /rate.?limit|429|too many/i.test(message);
       const isTransient = /5\d\d|timeout|econnreset/i.test(message);
       if (!isRateLimit && !isTransient) {
@@ -75,9 +74,9 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
               );
             }
 
-            const body = (await request.json().catch(() => null)) as
-              | { practice?: boolean }
-              | null;
+            const body = (await request.json().catch(() => null)) as {
+              practice?: boolean;
+            } | null;
             const isPractice = body?.practice === true;
 
             const openaiApiKey = getServerOpenAIApiKey();
@@ -90,11 +89,16 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
 
             const resolved = await resolveInterviewToken(token);
             if (!resolved.ok) {
-              interviewServerLog.warn("voice", COMPONENT, "token_resolve_failed", {
-                token: truncateId(token),
-                status: resolved.status,
-                error: resolved.error,
-              });
+              interviewServerLog.warn(
+                "voice",
+                COMPONENT,
+                "token_resolve_failed",
+                {
+                  token: truncateId(token),
+                  status: resolved.status,
+                  error: resolved.error,
+                },
+              );
               return Response.json(
                 { error: resolved.error },
                 { status: resolved.status },
@@ -130,12 +134,17 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
               : await getQuestionsForInterviewSession(session.roundId);
 
             if (!isPractice && questions.length === 0) {
-              interviewServerLog.warn("voice", COMPONENT, "no_questions_for_round", {
-                token: truncateId(token),
-                sessionId: truncateId(session.id),
-                roundId: truncateId(session.roundId),
-                type: resolved.type,
-              });
+              interviewServerLog.warn(
+                "voice",
+                COMPONENT,
+                "no_questions_for_round",
+                {
+                  token: truncateId(token),
+                  sessionId: truncateId(session.id),
+                  roundId: truncateId(session.roundId),
+                  type: resolved.type,
+                },
+              );
             }
 
             if (
@@ -247,7 +256,9 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
               error: detail,
               openaiKey: resolvedKeyFingerprint,
             });
-            const clientMessage = detail.startsWith("OpenAI Realtime client secret request failed: ")
+            const clientMessage = detail.startsWith(
+              "OpenAI Realtime client secret request failed: ",
+            )
               ? `[start-voice] ${detail.replace("OpenAI Realtime client secret request failed: ", "")}`
               : "Failed to start voice session";
             return Response.json({ error: clientMessage }, { status: 500 });

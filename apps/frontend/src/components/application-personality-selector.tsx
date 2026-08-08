@@ -86,13 +86,13 @@ export default function ApplicationPersonalitySelector({
   };
 
   return (
-    <div className="w-full">
+    <div className="w-fit">
       <Select
         value={value}
         onValueChange={handleValueChange}
         disabled={isPending}
       >
-        <SelectTrigger className="w-full">
+        <SelectTrigger>
           <SelectValue placeholder="Select personality type" />
         </SelectTrigger>
         <SelectContent>

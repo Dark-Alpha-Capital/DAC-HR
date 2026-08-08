@@ -137,6 +137,7 @@ export const getPositionBySlug = async (slug: string) => {
  */
 
 export async function getCandidatesByPositionId(positionId: string) {
+
   try {
     const results = await db
       .select({
@@ -171,6 +172,8 @@ export async function getCandidatesByPositionId(positionId: string) {
  */
 
 export const getRounds = async () => {
+
+
   try {
     return await db.select().from(roundTemplate);
   } catch (error) {

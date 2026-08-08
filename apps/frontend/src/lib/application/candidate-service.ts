@@ -4,7 +4,9 @@ import {
   application,
   candidate,
   candidatePosition,
+  type Candidate,
 } from "@workspace/db/schema";
+import type { BatchItem } from "drizzle-orm/batch";
 import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
 import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
 import { deleteFile } from "~/lib/storage";
@@ -29,53 +31,59 @@ export const createCandidateWithPositions = async (
   const positionIds =
     input.positionIds?.map((id) => id.trim()).filter(Boolean) ?? [];
 
-  const createdCandidate = await db.transaction(async (tx) => {
-    const [newCandidate] = await tx
-      .insert(candidate)
-      .values({
-        firstName: input.firstName,
-        lastName: input.lastName,
-        email: input.email,
-        phone: input.phone?.trim() || null,
-        locationCity: input.locationCity?.trim() || null,
-        locationState: input.locationState?.trim() || null,
-        location: input.location?.trim() || null,
-        source: input.source || null,
-        sourceUrl: input.sourceUrl?.trim() || null,
-        note: input.note?.trim() || null,
-      })
-      .returning();
+  const candidateId = crypto.randomUUID();
+  const applicationIds = positionIds.map(() => crypto.randomUUID());
 
-    if (!newCandidate) {
-      throw new Error("Failed to create candidate");
-    }
+  const candidateInsert = db
+    .insert(candidate)
+    .values({
+      id: candidateId,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      email: input.email,
+      phone: input.phone?.trim() || null,
+      locationCity: input.locationCity?.trim() || null,
+      locationState: input.locationState?.trim() || null,
+      location: input.location?.trim() || null,
+      source: input.source || null,
+      sourceUrl: input.sourceUrl?.trim() || null,
+      note: input.note?.trim() || null,
+    })
+    .returning();
 
-    const appIds: string[] = [];
-    for (const positionId of positionIds) {
-      const [app] = await tx
-        .insert(application)
-        .values({
-          candidateId: newCandidate.id,
-          positionId,
-          status: "ai_screening",
-        })
-        .returning({ id: application.id });
-      if (app) {
-        appIds.push(app.id);
-      }
+  const applicationInserts = positionIds.map((positionId, index) =>
+    db.insert(application).values({
+      id: applicationIds[index],
+      candidateId,
+      positionId,
+      status: "ai_screening",
+    }),
+  );
 
-      await tx.insert(candidatePosition).values({
-        candidateId: newCandidate.id,
-        positionId,
-      });
-    }
+  const candidatePositionInserts = positionIds.map((positionId) =>
+    db.insert(candidatePosition).values({
+      candidateId,
+      positionId,
+    }),
+  );
 
-    return { candidate: newCandidate, applicationIds: appIds };
-  });
+  const statements = [
+    candidateInsert,
+    ...applicationInserts,
+    ...candidatePositionInserts,
+  ] as unknown as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]];
+
+  const results = await db.batch(statements);
+
+  const [newCandidate] = results[0] as Candidate[];
+
+  if (!newCandidate) {
+    throw new Error("Failed to create candidate");
+  }
 
   return {
-    candidate: createdCandidate.candidate,
-    applicationIds: createdCandidate.applicationIds,
+    candidate: newCandidate,
+    applicationIds,
     positionIds,
   };
 };

@@ -45,6 +45,18 @@ import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
 
 type Round = { roundTemplateId: string; name: string };
 
+type CreateCandidateResponse = {
+  success?: boolean;
+  data?: { id?: string } | null;
+  applicationIds?: string[];
+  error?: string | object;
+};
+
+type CreateInterviewSessionResponse = {
+  interviewLink?: string;
+  error?: string | object;
+};
+
 const CandidateUploadForm = ({
   positions,
   positionRounds,
@@ -98,7 +110,13 @@ const CandidateUploadForm = ({
       positionIds: defaultPositionId ? [defaultPositionId] : [],
     },
     validators: {
-      onSubmit: candidateFormSchema,
+      onSubmit: ({ value }) => {
+        const result = candidateFormSchema.safeParse(value);
+        if (!result.success) {
+          return result.error.format();
+        }
+        return undefined;
+      },
     },
     onSubmit: async ({ value }) => {
       if (!userSession) {
@@ -119,7 +137,7 @@ const CandidateUploadForm = ({
             body: JSON.stringify(value),
           });
 
-          const result = await response.json();
+          const result = (await response.json()) as CreateCandidateResponse;
 
           if (!response.ok) {
             toast.error(
@@ -186,8 +204,9 @@ const CandidateUploadForm = ({
               });
 
               if (sessionResponse.ok) {
-                const sessionResult = await sessionResponse.json();
-                setGeneratedLink(sessionResult.interviewLink);
+                const sessionResult =
+                  (await sessionResponse.json()) as CreateInterviewSessionResponse;
+                setGeneratedLink(sessionResult.interviewLink ?? null);
                 toast.success("Interview link generated", {
                   position: "bottom-right",
                 });

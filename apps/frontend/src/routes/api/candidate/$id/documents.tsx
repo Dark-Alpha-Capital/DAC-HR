@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { env } from "cloudflare:workers";
 import { getSession } from "~/lib/get-session";
 import { db } from "@workspace/db/db";
 import { eq } from "@workspace/db";
@@ -79,10 +80,7 @@ export const Route = createFileRoute("/api/candidate/$id/documents")({
           const name = formData.get("name") as string;
           const description = formData.get("description") as string | null;
           const category = formData.get("category") as
-            | "resume"
-            | "cover-letter"
-            | "portfolio"
-            | "other";
+            "resume" | "cover-letter" | "portfolio" | "other";
           const urlField = formData.get("url") as string | null;
           const tagsInput = formData.get("tags") as string | null;
 
@@ -209,8 +207,7 @@ export const Route = createFileRoute("/api/candidate/$id/documents")({
           if (newCandidateDocument && nextcloudFilePath) {
             (env as Record<string, unknown>).DOCUMENT_INDEXING_WORKFLOW &&
               (
-                (env as Record<string, unknown>)
-                  .DOCUMENT_INDEXING_WORKFLOW as {
+                (env as Record<string, unknown>).DOCUMENT_INDEXING_WORKFLOW as {
                   create: (opts: {
                     id: string;
                     params: Record<string, unknown>;

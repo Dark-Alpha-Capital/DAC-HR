@@ -50,7 +50,7 @@ export const candidateFormSchema = z
         { message: "Invalid state abbreviation." },
       ),
     location: z.string().max(100, "Location must be at most 100 characters."),
-    source: z.union([candidateSourceEnum, z.undefined()]),
+    source: candidateSourceEnum.optional(),
     sourceUrl: z.string(),
     note: z.string().max(1000, "Note must be at most 1000 characters."),
     positionIds: z.array(z.string()),
