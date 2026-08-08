@@ -1,8 +1,7 @@
 import * as React from "react";
-import { useTransition } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
-import * as z from "zod";
 import { Button } from "~/components/ui/button";
 import {
   Field,
@@ -23,7 +22,10 @@ import {
 import { Loader2 } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
-import { candidateFormSchema } from "~/lib/schemas/candidate-form-schema";
+import {
+  candidateFormSchema,
+  type CandidateFormSchema,
+} from "~/lib/schemas/candidate-form-schema";
 import {
   Select,
   SelectContent,
@@ -38,18 +40,70 @@ interface CandidateEditFormProps {
   candidate: Candidate & { positionIds?: string[] };
 }
 
+const SOURCES = ["LinkedIn", "Upwork", "Handshake", "Indeed"] as const;
+type Source = (typeof SOURCES)[number];
+
+const isSource = (value: unknown): value is Source =>
+  typeof value === "string" &&
+  (SOURCES as readonly string[]).includes(value);
+
 const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
   const router = useRouter();
   const invalidate = useQueryInvalidation();
-  const [isPending, startTransition] = useTransition();
-  const [selectedSource, setSelectedSource] = React.useState<
-    "LinkedIn" | "Upwork" | "Handshake" | "Indeed" | undefined
-  >(
-    candidate.source &&
-      ["LinkedIn", "Upwork", "Handshake", "Indeed"].includes(candidate.source)
-      ? (candidate.source as "LinkedIn" | "Upwork" | "Handshake" | "Indeed")
-      : undefined,
+  const [selectedSource, setSelectedSource] = React.useState<Source | undefined>(
+    isSource(candidate.source) ? candidate.source : undefined,
   );
+
+  const updateMutation = useMutation({
+    mutationFn: async (value: CandidateFormSchema) => {
+      console.log(
+        "[candidate-edit-form] updateCandidate called",
+        JSON.stringify({ candidateId: candidate.id, value }),
+      );
+      const result = await updateCandidate({
+        data: [candidate.id, value],
+      });
+      console.log(
+        "[candidate-edit-form] updateCandidate result",
+        JSON.stringify(result),
+      );
+      if (result.error) {
+        throw new Error(
+          typeof result.error === "string"
+            ? result.error
+            : "Failed to update candidate",
+        );
+      }
+      return result.data;
+    },
+    onSuccess: async (data) => {
+      console.log(
+        "[candidate-edit-form] updateCandidate succeeded",
+        JSON.stringify({ id: data?.id }),
+      );
+      toast.success("Candidate updated successfully", {
+        position: "bottom-right",
+        description: "The candidate has been updated successfully.",
+        action: {
+          label: "View Candidate",
+          onClick: () => {
+            router.navigate({ to: `/candidates/${data?.id}` });
+          },
+        },
+      });
+      if (data?.id) {
+        await invalidate.candidateDetail(data.id);
+      }
+      router.navigate({ to: `/candidates/${data?.id}` });
+    },
+    onError: (error) => {
+      console.error("[candidate-edit-form] updateCandidate failed", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update candidate",
+        { position: "bottom-right" },
+      );
+    },
+  });
 
   const form = useForm({
     defaultValues: {
@@ -60,12 +114,8 @@ const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
       location: candidate.location || "",
       locationCity: candidate.locationCity || "",
       locationState: candidate.locationState || "",
-      source:
-        candidate.source &&
-        ["LinkedIn", "Upwork", "Handshake", "Indeed"].includes(candidate.source)
-          ? (candidate.source as "LinkedIn" | "Upwork" | "Handshake" | "Indeed")
-          : undefined,
-      sourceUrl: (candidate as any).sourceUrl || "",
+      source: isSource(candidate.source) ? candidate.source : undefined,
+      sourceUrl: candidate.sourceUrl || "",
       note: candidate.note || "",
       positionIds: candidate.positionIds || [],
     },
@@ -78,37 +128,31 @@ const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
         return undefined;
       },
     },
-    onSubmit: async ({ value }) => {
-      startTransition(async () => {
-        const result = await updateCandidate({
-          data: [candidate.id, value],
-        });
-        if (result.error) {
-          toast.error(
-            typeof result.error === "string"
-              ? result.error
-              : "Failed to update candidate",
-            {
-              position: "bottom-right",
-            },
-          );
-        } else {
-          toast.success("Candidate updated successfully", {
-            position: "bottom-right",
-            description: "The candidate has been updated successfully.",
-            action: {
-              label: "View Candidate",
-              onClick: () => {
-                router.navigate({ to: `/candidates/${result.data?.id}` });
-              },
-            },
-          });
-          if (result.data?.id) {
-            await invalidate.candidateDetail(result.data.id);
-          }
-          router.navigate({ to: `/candidates/${result.data?.id}` });
-        }
-      });
+    onSubmitInvalid: ({ value }) => {
+      const result = candidateFormSchema.safeParse(value);
+      if (result.success) return;
+      const flattened = result.error.flatten();
+      const messages = [
+        ...Object.values(flattened.fieldErrors).flat(),
+        ...flattened.formErrors,
+      ];
+      console.error(
+        "[candidate-edit-form] validation failed",
+        JSON.stringify(flattened),
+      );
+      toast.error(
+        messages.length > 0
+          ? messages.join(" ")
+          : "Please fix the highlighted fields.",
+        { position: "bottom-right" },
+      );
+    },
+    onSubmit: ({ value }) => {
+      console.log(
+        "[candidate-edit-form] form submitted",
+        JSON.stringify(value),
+      );
+      updateMutation.mutate(value);
     },
   });
 
@@ -130,21 +174,19 @@ const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
             onClick={() => {
               form.reset();
               setSelectedSource(
-                candidate.source &&
-                  ["LinkedIn", "Upwork", "Handshake", "Indeed"].includes(
-                    candidate.source,
-                  )
-                  ? (candidate.source as
-                      "LinkedIn" | "Upwork" | "Handshake" | "Indeed")
-                  : undefined,
+                isSource(candidate.source) ? candidate.source : undefined,
               );
             }}
-            disabled={isPending}
+            disabled={updateMutation.isPending}
           >
             Reset
           </Button>
-          <Button type="submit" form="candidate-edit-form" disabled={isPending}>
-            {isPending ? (
+          <Button
+            type="submit"
+            form="candidate-edit-form"
+            disabled={updateMutation.isPending}
+          >
+            {updateMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Updating...
@@ -270,10 +312,7 @@ const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
                     value={field.state.value || ""}
                     onValueChange={(value) => {
                       const newSource =
-                        value === ""
-                          ? undefined
-                          : (value as
-                              "LinkedIn" | "Upwork" | "Handshake" | "Indeed");
+                        value === "" ? undefined : (value as Source);
                       field.handleChange(newSource);
                       setSelectedSource(newSource);
                       // Clear sourceUrl when source is cleared
