@@ -44,15 +44,14 @@ const SOURCES = ["LinkedIn", "Upwork", "Handshake", "Indeed"] as const;
 type Source = (typeof SOURCES)[number];
 
 const isSource = (value: unknown): value is Source =>
-  typeof value === "string" &&
-  (SOURCES as readonly string[]).includes(value);
+  typeof value === "string" && (SOURCES as readonly string[]).includes(value);
 
 const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
   const router = useRouter();
   const invalidate = useQueryInvalidation();
-  const [selectedSource, setSelectedSource] = React.useState<Source | undefined>(
-    isSource(candidate.source) ? candidate.source : undefined,
-  );
+  const [selectedSource, setSelectedSource] = React.useState<
+    Source | undefined
+  >(isSource(candidate.source) ? candidate.source : undefined);
 
   const updateMutation = useMutation({
     mutationFn: async (value: CandidateFormSchema) => {
