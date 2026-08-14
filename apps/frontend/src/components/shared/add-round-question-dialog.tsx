@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -10,23 +10,23 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "~/components/ui/dialog";
-import { Label } from "~/components/ui/label";
+} from "#/components/ui/dialog";
+import { Label } from "#/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "~/components/ui/select";
-import { Textarea } from "~/components/ui/textarea";
-import { McqOptionsField } from "~/components/forms/mcq-options-field";
-import { createQuestion } from "~/lib/actions/create-question";
+} from "#/components/ui/select";
+import { Textarea } from "#/components/ui/textarea";
+import { McqOptionsField } from "#/components/shared/mcq-options-field";
+import { createQuestion } from "#/features/questions/server/mutations/create-question";
 import {
   questionFormSchema,
   type QuestionFormSchema,
-} from "~/lib/schemas/question-form-schema";
-import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
+} from "#/features/questions/schemas";
+import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
 
 interface AddRoundQuestionDialogProps {
   positionId: string;

@@ -1,10 +1,10 @@
 import React, { useTransition, useState } from "react";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
-import { deleteEmployee } from "~/lib/actions/delete-employee";
+import { deleteEmployee } from "#/features/employees/server/mutations/delete-employee";
 import { toast } from "sonner";
 import { useRouter } from "@tanstack/react-router";
-import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
+import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "~/components/ui/alert-dialog";
+} from "#/components/ui/alert-dialog";
 
 const DeleteEmployeeButton = ({ employeeId }: { employeeId: string }) => {
   const router = useRouter();

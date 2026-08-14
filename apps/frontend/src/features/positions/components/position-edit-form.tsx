@@ -2,21 +2,21 @@ import * as React from "react";
 import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "~/components/ui/field";
-import { Input } from "~/components/ui/input";
+} from "#/components/ui/field";
+import { Input } from "#/components/ui/input";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupText,
   InputGroupTextarea,
-} from "~/components/ui/input-group";
+} from "#/components/ui/input-group";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -24,14 +24,14 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
+} from "#/components/ui/dropdown-menu";
 import {
   positionFormSchema,
   hireLevelEnum,
   positionStatusEnum,
   type PositionFormSchema,
-} from "~/lib/schemas/position-form-schema";
-import { departmentEnum } from "~/lib/schemas/employee-form-schema";
+} from "#/features/positions/schemas";
+import { departmentEnum } from "#/features/employees/schemas";
 import { Loader2, ChevronDown } from "lucide-react";
 import {
   Select,
@@ -39,12 +39,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "~/components/ui/select";
-import { updatePosition } from "~/lib/actions/update-position";
+} from "#/components/ui/select";
+import { updatePosition } from "#/features/positions/server/mutations/update-position";
 import { useRouter } from "@tanstack/react-router";
 import type { Position } from "@workspace/db/schema";
-import { MarkdownEditor } from "~/components/markdown-editor";
-import { cn } from "~/lib/utils";
+import { MarkdownEditor } from "#/components/shared/markdown-editor";
+import { cn } from "#/lib/utils";
 import * as z from "zod";
 
 interface PositionEditFormProps {
@@ -100,7 +100,7 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
         const result = await updatePosition({
           data: [position.id, value as PositionFormSchema],
         });
-        if (result.success) {
+        if ("success" in result && result.success) {
           toast("Position updated successfully", {
             position: "bottom-right",
             action: {

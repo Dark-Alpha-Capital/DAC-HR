@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "~/components/ui/button";
-import { authClient } from "~/auth-client";
-import { cn } from "~/lib/utils";
+import { Button } from "#/components/ui/button";
+import { authClient } from "#/features/auth/client";
+import { cn } from "#/lib/utils";
 
 type Props = {
   callbackURL?: string;

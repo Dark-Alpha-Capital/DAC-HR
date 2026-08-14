@@ -7,7 +7,7 @@ import { parseDoMessage, sendDoMessage } from "@workspace/interview-realtime/eve
 import { formatRealtimeCallsError } from "@workspace/ai-config";
 import type { CheatingEventType } from "@workspace/db/enums";
 import { useCheatingPrevention } from "./useCheatingPrevention";
-import { logInterview, truncateId } from "~/lib/interview-debug-log";
+import { logInterview, truncateId } from "#/features/voice-interview/interview-debug-log";
 import {
   buildRecordingStream,
   getAudioOnlyStream,
@@ -16,22 +16,22 @@ import {
   preflightMedia,
   requestDisplayMedia,
   requestUserMedia,
-} from "~/lib/voice/media";
+} from "#/features/voice-interview/voice/media";
 import {
   createMediaRecorder,
   stopMediaRecorder,
   uploadRecording as uploadRecordingFile,
-} from "~/lib/voice/recording";
+} from "#/features/voice-interview/voice/recording";
 import {
   attachRemoteAudio,
   createDataChannel,
   monitorPeerConnection,
   watchDeviceChanges,
-} from "~/lib/voice/transport";
+} from "#/features/voice-interview/voice/transport";
 import {
   SessionSocket,
   WS_CLOSE_SUPERSEDED,
-} from "~/lib/voice/session-socket";
+} from "#/features/voice-interview/voice/session-socket";
 
 interface StartVoiceResponse {
   clientSecret: string;

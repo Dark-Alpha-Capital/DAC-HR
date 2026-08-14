@@ -1,43 +1,13 @@
-import { FormPageSkeleton } from "~/components/route-skeletons/form-page-skeleton";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Suspense } from "react";
-import { loadQuestionById } from "~/lib/loaders/questions";
-import BackButton from "~/components/back-button";
-import QuestionEditForm from "~/components/forms/question-edit-form";
-import { FormLoadingFallback } from "~/components/skeletons/form-loading-skeleton";
-import { Button } from "~/components/ui/button";
+import { createFileRoute } from "@tanstack/react-router";
+import { FormPageSkeleton } from "#/components/shared/form-page-skeleton";
+import { QuestionEditPage } from "#/features/questions/components/question-edit-page";
+import { loadQuestionById } from "#/features/questions/server/queries/questions";
 
 export const Route = createFileRoute("/_main/questions/$id/edit")({
   head: () => ({
     meta: [{ title: "Edit Question" }],
   }),
   loader: async ({ params }) => loadQuestionById({ data: params.id }),
-  component: EditQuestionPage,
+  component: QuestionEditPage,
   pendingComponent: () => <FormPageSkeleton fieldCount={7} />,
 });
-
-function EditQuestionPage() {
-  const { question } = Route.useLoaderData();
-
-  return (
-    <div className="block-space narrow-container mx-auto">
-      <BackButton />
-
-      {!question ? (
-        <div className="text-center py-12">
-          <h1 className="text-2xl font-bold mb-4">Question not found</h1>
-          <p className="text-muted-foreground mb-4">
-            The question you&apos;re looking for doesn&apos;t exist.
-          </p>
-          <Button asChild>
-            <Link to="/questions" search={{} as any}>Back to Questions</Link>
-          </Button>
-        </div>
-      ) : (
-        <Suspense fallback={<FormLoadingFallback />}>
-          <QuestionEditForm question={question} />
-        </Suspense>
-      )}
-    </div>
-  );
-}

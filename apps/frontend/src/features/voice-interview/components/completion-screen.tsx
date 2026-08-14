@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { Mail, X } from "lucide-react";
-import { Button } from "~/components/ui/button";
-import InterviewBrandHeader from "~/components/interview/InterviewBrandHeader";
+import { Button } from "#/components/ui/button";
+import InterviewBrandHeader from "#/features/voice-interview/components/interview-brand-header";
 
 interface CompletionScreenProps {
   candidateEmail?: string;

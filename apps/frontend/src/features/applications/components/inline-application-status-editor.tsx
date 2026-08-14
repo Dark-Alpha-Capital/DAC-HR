@@ -1,13 +1,13 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { useRouter } from "@tanstack/react-router";
-import { Badge } from "~/components/ui/badge";
+import { Badge } from "#/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
+} from "#/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,8 +17,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "~/components/ui/alert-dialog";
-import { updateApplication } from "~/lib/actions/update-application";
+} from "#/components/ui/alert-dialog";
+import { updateApplication } from "#/features/applications/server/mutations/applications";
 import { toast } from "sonner";
 import { ChevronDown } from "lucide-react";
 import {
@@ -28,7 +28,7 @@ import {
   isApplicationStatus,
   type ApplicationStatus,
 } from "@workspace/db/application-status";
-import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
+import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
 
 interface InlineApplicationStatusEditorProps {
   application: {

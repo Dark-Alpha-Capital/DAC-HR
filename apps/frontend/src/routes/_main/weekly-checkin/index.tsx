@@ -1,8 +1,9 @@
-import { ListPageSkeleton } from "~/components/route-skeletons/list-page-skeleton";
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { loadWeeklyCheckinForm } from "~/lib/loaders/weekly-checkin";
-import WeeklyCheckinForm from "~/components/forms/weekly-checkin-form";
-import { Button } from "~/components/ui/button";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import {
+  WeeklyCheckinPage,
+  WeeklyCheckinPagePending,
+} from "#/features/weekly-checkin/components/weekly-checkin-page";
+import { loadWeeklyCheckinForm } from "#/features/weekly-checkin/server/queries/weekly-checkin";
 
 export const Route = createFileRoute("/_main/weekly-checkin/")({
   head: () => ({
@@ -17,19 +18,5 @@ export const Route = createFileRoute("/_main/weekly-checkin/")({
     return data;
   },
   component: WeeklyCheckinPage,
-  pendingComponent: () => <ListPageSkeleton filterCount={2} showActions={false} />,
+  pendingComponent: WeeklyCheckinPagePending,
 });
-
-function WeeklyCheckinPage() {
-  const { positions, userName } = Route.useLoaderData();
-
-  return (
-    <div className="container max-w-4xl mx-auto py-6 space-y-8">
-      <Button variant="secondary" asChild>
-        <Link to="/dashboard">Back to Dashboard</Link>
-      </Button>
-
-      <WeeklyCheckinForm positions={positions} userName={userName} />
-    </div>
-  );
-}

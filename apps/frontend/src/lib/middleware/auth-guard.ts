@@ -1,6 +1,6 @@
 import { createMiddleware } from "@tanstack/react-start";
 import { redirect } from "@tanstack/react-router";
-import { getSession } from "~/lib/server/session.server";
+import { getSession } from "#/lib/server/session.server";
 
 /** Request middleware for route loaders — redirects to login. */
 export const authGuard = createMiddleware().server(async ({ next }) => {

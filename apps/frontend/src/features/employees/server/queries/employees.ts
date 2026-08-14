@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
+import { serverFnAuthGuard } from "#/lib/middleware/auth-guard";
 import { getCandidateWithApplications } from "@workspace/db/repositories/candidate-repository";
 import { getEmployeeById, getEmployees } from "@workspace/db/modules/dashboard";
 import { getPositions } from "@workspace/db/modules/positions";
@@ -110,3 +110,13 @@ export const loadEmployeeEdit = createServerFn({ method: "GET" })
       })),
     };
   });
+
+import { queryOptions } from "@tanstack/react-query";
+import { queryKeys } from "#/lib/query/query-keys";
+
+export function employeeDetailQueryOptions(id: string) {
+  return queryOptions({
+    queryKey: queryKeys.employees.detail(id),
+    queryFn: () => loadEmployeeDetail({ data: { id } }),
+  });
+}

@@ -1,16 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSession } from "~/lib/get-session";
+import { getSession } from "#/lib/get-session";
 import { z } from "zod";
 import { roundDeliveryModes } from "@workspace/db/enums";
-import { eq } from "@workspace/db";
-import { db } from "@workspace/db/db";
-import { application } from "@workspace/db/schema";
-import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import {
-  createPositionInterviewBundle,
-  validatePositionRounds,
-} from "@workspace/db/repositories/interview-bundle-repository";
-import { getRoundsByPositionId } from "@workspace/db/modules/positions";
+import { createInterviewSession } from "#/features/interviews/server/mutations/interviews";
 
 const agentConfigSchema = z.object({
   provider: z.literal("openai"),
@@ -54,76 +46,21 @@ export const Route = createFileRoute("/api/interview-sessions")({
             );
           }
 
-          const { applicationId, expiryHours, agentConfig } = parsed.data;
-          const expiresAt = new Date(
-            Date.now() + expiryHours * 60 * 60 * 1000,
-          );
-
-          const [app] = await db
-            .select({ positionId: application.positionId })
-            .from(application)
-            .where(eq(application.id, applicationId))
-            .limit(1);
-
-          if (!app) {
-            return Response.json(
-              { error: "Application not found" },
-              { status: 404 },
-            );
-          }
-
-          let roundConfigs = parsed.data.roundConfigs;
-
-          if (!roundConfigs || roundConfigs.length === 0) {
-            const positionRounds = await getRoundsByPositionId(app.positionId);
-            roundConfigs = positionRounds.map((round) => ({
-              roundId: round.id,
-              deliveryMode: "form" as const,
-            }));
-          }
-
-          const validation = await validatePositionRounds(
-            applicationId,
-            roundConfigs,
-          );
-
-          if (!validation.ok) {
-            return Response.json({ error: validation.error }, { status: 404 });
-          }
-
-          const result = await createPositionInterviewBundle({
-            applicationId,
-            roundConfigs,
-            expiresAt,
-            agentConfig,
+          const result = await createInterviewSession({
+            data: parsed.data,
           });
 
-          insertAuditLog({
-            userId: authSession.user.id,
-            action: "create_interview_bundle",
-            entityType: "interview_bundle",
-            entityId: result.bundle.id,
-            details: {
-              bundle: {
-                id: result.bundle.id,
-                applicationId,
-                roundCount: result.bundleRounds.length,
-                expiresAt: expiresAt.toISOString(),
-              },
-              createdBy: {
-                id: authSession.user.id,
-                email: authSession.user.email,
-                name: authSession.user.name,
-              },
-            },
-          }).catch((error) => console.error("Audit log error:", error));
+          if (!result.success) {
+            const status =
+              result.error === "Application not found" ? 404 : 500;
+            return Response.json({ error: result.error }, { status });
+          }
 
-          const interviewLink = `${new URL(request.url).origin}/interview/${result.token}`;
+          const interviewLink = `${new URL(request.url).origin}/interview/${result.data.token}`;
 
           return Response.json({
-            bundle: result.bundle,
-            bundleId: result.bundle.id,
-            token: result.token,
+            bundleId: result.data.bundleId,
+            token: result.data.token,
             interviewLink,
           });
         } catch (error) {

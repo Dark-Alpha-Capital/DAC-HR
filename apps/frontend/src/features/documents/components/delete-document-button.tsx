@@ -1,9 +1,9 @@
 import React, { useTransition } from "react";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
-import { deleteDocument } from "~/lib/actions/delete-document";
+import { deleteDocument } from "#/features/documents/server/mutations/delete-document";
 import { toast } from "sonner";
-import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
+import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,12 +14,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "~/components/ui/alert-dialog";
+} from "#/components/ui/alert-dialog";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "~/components/ui/tooltip";
+} from "#/components/ui/tooltip";
 
 const DeleteDocumentButton = ({ documentId }: { documentId: string }) => {
   const invalidate = useQueryInvalidation();

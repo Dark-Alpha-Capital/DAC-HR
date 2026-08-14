@@ -1,4 +1,4 @@
-import { logInterview } from "~/lib/interview-debug-log";
+import { logInterview } from "#/features/voice-interview/interview-debug-log";
 
 /**
  * Screen-recording capture + upload for the voice interview. The hook owns the

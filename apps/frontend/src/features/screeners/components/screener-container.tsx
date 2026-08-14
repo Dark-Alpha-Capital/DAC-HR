@@ -5,11 +5,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "~/components/ui/table";
-import { Button } from "~/components/ui/button";
+} from "#/components/ui/table";
+import { Button } from "#/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { Pencil } from "lucide-react";
-import DeleteScreenerButton from "~/components/delete-screener-button";
+import DeleteScreenerButton from "#/features/screeners/components/delete-screener-button";
 import type { Screener } from "@workspace/db/schema";
 
 interface ScreenerContainerProps {

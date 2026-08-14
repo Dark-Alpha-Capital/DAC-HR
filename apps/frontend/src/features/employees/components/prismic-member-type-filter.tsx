@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { cn } from "~/lib/utils";
-import type { PrismicMemberFilter } from "~/lib/loaders/prismic-members";
+import { cn } from "#/lib/utils";
+import type { PrismicMemberFilter } from "#/features/docs/server/queries/members";
 
 const options: { value: PrismicMemberFilter; label: string }[] = [
   { value: "all", label: "All" },

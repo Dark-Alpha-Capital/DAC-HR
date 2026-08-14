@@ -1,13 +1,13 @@
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "~/components/ui/card";
+} from "#/components/ui/card";
 import { ClipboardList, Mic } from "lucide-react";
-import { logInterview } from "~/lib/interview-debug-log";
+import { logInterview } from "#/features/voice-interview/interview-debug-log";
 
 interface DeliveryModePickerProps {
   onSelectForm: () => void;

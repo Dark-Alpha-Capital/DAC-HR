@@ -1,4 +1,4 @@
-import { getOptionLabel } from "./question-options";
+import { getOptionLabel } from "#/features/questions/helpers";
 import type { QuestionOption } from "@workspace/db/question-types";
 import type { Screener } from "@workspace/db/schema";
 import type { getInterviewById } from "@workspace/db/repositories/interview-repository";

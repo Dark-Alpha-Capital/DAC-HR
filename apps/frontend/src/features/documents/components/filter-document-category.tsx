@@ -1,5 +1,5 @@
-import { useUrlSearchParams } from "~/lib/hooks/use-url-search-params";
-import { resetListPageParam } from "~/lib/parse-search";
+import { useUrlSearchParams } from "#/lib/hooks/use-url-search-params";
+import { resetListPageParam } from "#/lib/parse-search";
 import React, { useOptimistic, useTransition } from "react";
 import {
   DropdownMenu,
@@ -8,9 +8,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
-import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
+} from "#/components/ui/dropdown-menu";
+import { Button } from "#/components/ui/button";
+import { Badge } from "#/components/ui/badge";
 import { Filter, X } from "lucide-react";
 import type { DocumentCategory } from "@workspace/db/schema";
 

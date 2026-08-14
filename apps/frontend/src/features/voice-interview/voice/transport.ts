@@ -1,4 +1,4 @@
-import { logInterview } from "~/lib/interview-debug-log";
+import { logInterview } from "#/features/voice-interview/interview-debug-log";
 
 /**
  * WebRTC transport helpers for the Realtime API call. The hook owns the

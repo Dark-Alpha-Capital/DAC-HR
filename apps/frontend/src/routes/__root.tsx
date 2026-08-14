@@ -5,12 +5,13 @@ import {
   Outlet,
   Scripts,
 } from "@tanstack/react-router";
-import appCss from "~/styles/app.css?url";
-import type { RouterContext } from "~/router";
+import appCss from "#/styles/app.css?url";
+import type { RouterContext } from "#/router";
 import {
   ThemeProvider,
   THEME_STORAGE_KEY,
-} from "~/components/theme-provider";
+} from "#/components/shared/theme-provider";
+import { NotFoundPage } from "#/components/shared/not-found";
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   head: () => ({
@@ -24,20 +25,9 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     links: [{ rel: "stylesheet", href: appCss }],
     scripts: [{ src: "/theme-init.js" }],
   }),
-  notFoundComponent: NotFound,
+  notFoundComponent: NotFoundPage,
   component: RootDocument,
 });
-
-function NotFound() {
-  return (
-    <div className="flex min-h-svh flex-col items-center justify-center gap-2">
-      <h1 className="text-2xl font-semibold">404 — Not Found</h1>
-      <p className="text-muted-foreground">
-        The page you are looking for does not exist.
-      </p>
-    </div>
-  );
-}
 
 function RootDocument() {
   return (

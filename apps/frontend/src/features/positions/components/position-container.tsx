@@ -6,8 +6,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "~/components/ui/table";
-import { Badge } from "~/components/ui/badge";
+} from "#/components/ui/table";
+import { Badge } from "#/components/ui/badge";
 
 const hireLevelLabels: Record<string, string> = {
   "managing-director": "Managing Director",

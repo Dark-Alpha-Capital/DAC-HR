@@ -1,4 +1,4 @@
-import { logInterview } from "~/lib/interview-debug-log";
+import { logInterview } from "#/features/voice-interview/interview-debug-log";
 
 /**
  * Media capture helpers for the voice interview client. Pure-ish: each helper

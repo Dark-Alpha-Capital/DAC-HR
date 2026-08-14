@@ -1,7 +1,7 @@
-import { useUrlSearchParams } from "~/lib/hooks/use-url-search-params";
+import { useUrlSearchParams } from "#/lib/hooks/use-url-search-params";
 
 import React from "react";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface PaginationControlsProps {

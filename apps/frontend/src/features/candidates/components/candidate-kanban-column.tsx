@@ -1,18 +1,18 @@
 import { memo, useEffect, useMemo, useRef } from "react";
 import { infiniteQueryOptions, useInfiniteQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import CandidateKanbanCard from "~/components/candidate-kanban-card";
-import { KanbanStatusHeader } from "~/components/application-status-badge";
-import { Skeleton } from "~/components/ui/skeleton";
-import { Button } from "~/components/ui/button";
+import CandidateKanbanCard from "#/features/candidates/components/candidate-kanban-card";
+import { KanbanStatusHeader } from "#/components/shared/application-status-badge";
+import { Skeleton } from "#/components/ui/skeleton";
+import { Button } from "#/components/ui/button";
 import type { ApplicationStatus } from "@workspace/db/application-status";
 import {
   buildKanbanCardsUrl,
   KANBAN_COLUMN_PAGE_SIZE,
   type KanbanFilters,
   type KanbanPage,
-} from "~/lib/kanban/types";
-import { queryKeys } from "~/lib/query/query-keys";
+} from "#/features/candidates/kanban-types";
+import { queryKeys } from "#/lib/query/query-keys";
 
 async function fetchKanbanColumnPage(url: string): Promise<KanbanPage> {
   const response = await fetch(url);

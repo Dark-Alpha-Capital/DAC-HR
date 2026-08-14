@@ -1,16 +1,16 @@
 import { ChevronDown } from "lucide-react";
-import { authClient } from "~/auth-client";
-import { Button } from "~/components/ui/button";
+import { authClient } from "#/features/auth/client";
+import { Button } from "#/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
+} from "#/components/ui/dropdown-menu";
 import { useRouter } from "@tanstack/react-router";
-import { useTheme } from "~/components/theme-provider";
-import type { AppSession } from "~/lib/auth-session";
+import { useTheme } from "#/components/shared/theme-provider";
+import type { AppSession } from "#/lib/auth-session";
 
 export function UserNav({ session }: { session: AppSession | null }) {
   const router = useRouter();

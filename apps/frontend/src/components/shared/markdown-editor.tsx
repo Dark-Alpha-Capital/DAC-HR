@@ -1,6 +1,6 @@
 import * as React from "react";
 import { ClientOnly } from "@tanstack/react-router";
-import { Skeleton } from "~/components/ui/skeleton";
+import { Skeleton } from "#/components/ui/skeleton";
 
 interface MarkdownEditorProps {
   value: string;

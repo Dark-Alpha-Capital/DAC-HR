@@ -1,11 +1,7 @@
-import { FormPageSkeleton } from "~/components/route-skeletons/form-page-skeleton";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Suspense } from "react";
-import { Button } from "~/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import DocumentUploadForm from "~/components/forms/document-upload-form";
-import { FormLoadingFallback } from "~/components/skeletons/form-loading-skeleton";
-import { getAllCategories } from "~/lib/actions/document-category-actions";
+import { createFileRoute } from "@tanstack/react-router";
+import { FormPageSkeleton } from "#/components/shared/form-page-skeleton";
+import { DocumentNewPage } from "#/features/documents/components/document-new-page";
+import { getAllCategories } from "#/features/documents/server/mutations/document-category-actions";
 
 export const Route = createFileRoute("/_main/documents/new")({
   head: () => ({
@@ -18,24 +14,6 @@ export const Route = createFileRoute("/_main/documents/new")({
     }
     return { categories: categoriesResult.data };
   },
-  component: NewDocumentPage,
+  component: DocumentNewPage,
   pendingComponent: () => <FormPageSkeleton fieldCount={5} />,
 });
-
-function NewDocumentPage() {
-  const { categories } = Route.useLoaderData();
-
-  return (
-    <div className="narrow-container mx-auto space-y-8 py-6">
-      <Button size="sm" asChild variant="secondary">
-        <Link to="/documents" search="{}">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Documents
-        </Link>
-      </Button>
-      <Suspense fallback={<FormLoadingFallback />}>
-        <DocumentUploadForm categories={categories} />
-      </Suspense>
-    </div>
-  );
-}

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,16 +8,16 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
-} from "~/components/ui/dialog";
+} from "#/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "~/components/ui/select";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
+} from "#/components/ui/select";
+import { Input } from "#/components/ui/input";
+import { Label } from "#/components/ui/label";
 import { Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -58,7 +58,7 @@ export default function GenerateReportDialog() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
+        const error = (await response.json()) as { error?: string };
         throw new Error(error.error || "Failed to generate report");
       }
 

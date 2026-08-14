@@ -5,7 +5,7 @@ import {
   getQuestionById,
   getQuestionsForInterviewSession,
 } from "@workspace/db/modules/positions";
-import { resolveInterviewToken } from "~/lib/interview-token";
+import { resolveInterviewToken } from "#/features/interviews/interview-token";
 import {
   interviewServerLog,
   truncateId,

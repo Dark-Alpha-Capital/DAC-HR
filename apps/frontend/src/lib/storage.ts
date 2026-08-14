@@ -4,7 +4,7 @@ import {
   resolveFilePath,
   uploadFile as uploadToNextcloud,
 } from "@workspace/nextcloud";
-import { getServerNextcloudClient } from "~/lib/nextcloud-server";
+import { getServerNextcloudClient } from "#/lib/nextcloud-server";
 
 /**
  * Uploads a file to Nextcloud storage

@@ -1,4 +1,4 @@
-import { useUrlSearchParams } from "~/lib/hooks/use-url-search-params";
+import { useUrlSearchParams } from "#/lib/hooks/use-url-search-params";
 
 import React, { useTransition } from "react";
 import {
@@ -7,7 +7,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "~/components/ui/select";
+} from "#/components/ui/select";
 import {
   candidateSortLabels,
   candidateSortOptions,

@@ -1,10 +1,10 @@
 import { HelpCircle } from "lucide-react";
-import { Badge } from "~/components/ui/badge";
-import { AddRoundQuestionDialog } from "~/components/dialogs/add-round-question-dialog";
+import { Badge } from "#/components/ui/badge";
+import { AddRoundQuestionDialog } from "#/components/shared/add-round-question-dialog";
 import {
   PositionRoundQuestionItem,
   type RoundSheetQuestion,
-} from "~/components/position-round-question-item";
+} from "#/components/shared/position-round-question-item";
 
 interface RoundQuestionsSectionProps {
   roundId: string;

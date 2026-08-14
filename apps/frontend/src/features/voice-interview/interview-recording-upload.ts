@@ -3,7 +3,7 @@ import {
   formatPersonName,
   uploadFile as uploadToNextcloud,
 } from "@workspace/nextcloud";
-import { getServerNextcloudClient } from "~/lib/nextcloud-server";
+import { getServerNextcloudClient } from "#/lib/nextcloud-server";
 import {
   assertInterviewTokenValidForRecordingUpload,
   updateSessionVoiceMetadata,

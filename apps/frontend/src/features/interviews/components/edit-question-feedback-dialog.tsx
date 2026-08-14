@@ -5,8 +5,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "~/components/ui/dialog";
-import InterviewQuestionFeedbackForm from "../interview-question-feedback-form";
+} from "#/components/ui/dialog";
+import InterviewQuestionFeedbackForm from "./interview-question-feedback-form";
 
 interface QuestionFeedback {
   id: string;

@@ -7,7 +7,7 @@ import type { EmailSender } from "@workspace/mail";
  * this returns null so email failures never break the primary action.
  */
 export function getServerEmailSender(): EmailSender | null {
-  const binding = (env as Record<string, unknown>).EMAIL;
+  const binding = (env).EMAIL;
   if (binding && typeof binding === "object" && "send" in binding) {
     return binding as EmailSender;
   }
@@ -16,7 +16,7 @@ export function getServerEmailSender(): EmailSender | null {
 
 /** Public base URL used to build shareable links in emails. */
 export function getPublicBaseUrl(): string {
-  const binding = (env as Record<string, unknown>).BETTER_AUTH_URL;
+  const binding = (env).BETTER_AUTH_URL;
   if (typeof binding === "string" && binding.trim()) {
     return binding.replace(/\/$/, "");
   }

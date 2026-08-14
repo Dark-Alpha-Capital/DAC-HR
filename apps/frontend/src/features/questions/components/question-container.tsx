@@ -6,15 +6,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "~/components/ui/table";
-import { Button } from "~/components/ui/button";
-import { Checkbox } from "~/components/ui/checkbox";
+} from "#/components/ui/table";
+import { Button } from "#/components/ui/button";
+import { Checkbox } from "#/components/ui/checkbox";
 import { Link } from "@tanstack/react-router";
 import { Eye, Pencil } from "lucide-react";
-import DeleteQuestionButton from "~/components/delete-question-button";
-import BulkDeleteQuestionsButton from "~/components/bulk-delete-questions-button";
-import { Badge } from "~/components/ui/badge";
-import { getQuestionTypeLabel } from "~/lib/question-type-label";
+import DeleteQuestionButton from "#/features/questions/components/delete-question-button";
+import BulkDeleteQuestionsButton from "#/features/questions/components/bulk-delete-questions-button";
+import { Badge } from "#/components/ui/badge";
+import { getQuestionTypeLabel } from "#/features/questions/helpers";
 
 type QuestionPosition = { id: string; name: string };
 

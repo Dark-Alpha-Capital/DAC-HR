@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
+import { serverFnAuthGuard } from "#/lib/middleware/auth-guard";
 import {
   parseDocumentScope,
   type DocumentScope,
@@ -59,3 +59,32 @@ export const loadDocumentsIndex = createServerFn({ method: "GET" })
       ),
     };
   });
+
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
+import { queryKeys } from "#/lib/query/query-keys";
+import { toOptionalString, toPageNumber, toStringArray } from "#/lib/parse-search";
+
+export function parseDocumentsSearch(search: Record<string, unknown>) {
+  return {
+    scope: toOptionalString(search.scope),
+    category: toStringArray(search.category as string | string[] | undefined),
+    name: toOptionalString(search.name),
+    candidateId: toOptionalString(search.candidateId),
+    page:
+      search.page !== undefined
+        ? toPageNumber(search.page)
+        : (undefined as number | undefined),
+  };
+}
+
+export type DocumentsIndexSearch = ReturnType<typeof parseDocumentsSearch>;
+export type DocumentsIndexData = Awaited<ReturnType<typeof loadDocumentsIndex>>;
+
+export function documentsIndexQueryOptions(deps: DocumentsIndexSearch) {
+  return queryOptions({
+    queryKey: queryKeys.documents.list(deps),
+    queryFn: async (): Promise<DocumentsIndexData> =>
+      loadDocumentsIndex({ data: deps }),
+    placeholderData: keepPreviousData,
+  });
+}

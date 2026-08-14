@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ResumeFields } from "../types";
 
 /** Loose schema for OpenAI structured output — all keys required, values may be null */
 export const resumeFieldsSchema = z.object({

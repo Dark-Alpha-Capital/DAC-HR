@@ -1,6 +1,6 @@
 import { createMiddleware } from "@tanstack/react-start";
-import { getSession } from "~/lib/server/session.server";
-import { isPublicApiPath } from "~/lib/middleware/public-paths";
+import { getSession } from "#/lib/server/session.server";
+import { isPublicApiPath } from "#/lib/middleware/public-paths";
 
 export const apiAuthGuard = createMiddleware().server(
   async ({ request, next }) => {

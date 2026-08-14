@@ -1,4 +1,4 @@
-import { normalizeListDeps } from "~/lib/query/normalize-deps";
+import { normalizeListDeps } from "#/lib/query/normalize-deps";
 
 const prismicKeys = {
   all: ["prismic"] as const,

@@ -1,14 +1,14 @@
 import * as React from "react";
-import { useUrlSearchParams } from "~/lib/hooks/use-url-search-params";
-import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
+import { useUrlSearchParams } from "#/lib/hooks/use-url-search-params";
+import { Button } from "#/components/ui/button";
+import { Badge } from "#/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "~/components/ui/card";
+} from "#/components/ui/card";
 import {
   Table,
   TableBody,
@@ -16,7 +16,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "~/components/ui/table";
+} from "#/components/ui/table";
 import {
   Search,
   ChevronLeft,
@@ -26,16 +26,16 @@ import {
   Activity,
   Calendar,
 } from "lucide-react";
-import { Input } from "~/components/ui/input";
-import { formatDate } from "~/lib/utils";
+import { Input } from "#/components/ui/input";
+import { formatDate } from "#/lib/utils";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "~/components/ui/select";
-import GenerateReportDialog from "~/components/generate-report-dialog";
+} from "#/components/ui/select";
+import GenerateReportDialog from "#/features/admin/components/generate-report-dialog";
 
 export type AuditLog = {
   id: string;

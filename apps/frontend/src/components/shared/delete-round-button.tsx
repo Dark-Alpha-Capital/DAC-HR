@@ -1,7 +1,7 @@
 import React, { useTransition } from "react";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
-import { deleteRound } from "~/lib/actions/delete-round";
+import { deleteRound } from "#/features/rounds/server/mutations/delete-round";
 import { toast } from "sonner";
 import { useRouter } from "@tanstack/react-router";
 import {
@@ -14,12 +14,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "~/components/ui/alert-dialog";
+} from "#/components/ui/alert-dialog";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "~/components/ui/tooltip";
+} from "#/components/ui/tooltip";
 
 const DeleteRoundButton = ({
   roundId,

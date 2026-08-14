@@ -1,6 +1,6 @@
-import { Button } from "~/components/ui/button";
-import { Field, FieldLabel } from "~/components/ui/field";
-import { Input } from "~/components/ui/input";
+import { Button } from "#/components/ui/button";
+import { Field, FieldLabel } from "#/components/ui/field";
+import { Input } from "#/components/ui/input";
 import { Plus, Trash2 } from "lucide-react";
 
 export type McqOptionInput = {

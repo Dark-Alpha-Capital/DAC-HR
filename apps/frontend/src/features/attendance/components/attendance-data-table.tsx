@@ -16,10 +16,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "~/components/ui/table";
-import type { MeetParticipantKind } from "~/lib/attendance/meet-attendance";
+} from "#/components/ui/table";
+import type { MeetParticipantKind } from "#/features/attendance/meet-attendance";
 import type { StoredAttendanceRow } from "@workspace/db/repositories/meet-attendance-repository";
-import { formatDateTime, formatMMDD } from "~/lib/utils";
+import { formatDateTime, formatMMDD } from "#/lib/utils";
 
 function formatDuration(ms: number | null) {
   if (ms === null || Number.isNaN(ms) || ms < 0) return "—";

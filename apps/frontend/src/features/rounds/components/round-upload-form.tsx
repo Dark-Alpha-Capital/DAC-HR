@@ -2,21 +2,21 @@ import * as React from "react";
 import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "~/components/ui/field";
-import { Input } from "~/components/ui/input";
+} from "#/components/ui/field";
+import { Input } from "#/components/ui/input";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupText,
   InputGroupTextarea,
-} from "~/components/ui/input-group";
+} from "#/components/ui/input-group";
 import {
   Select,
   SelectContent,
@@ -24,11 +24,11 @@ import {
   SelectSeparator,
   SelectTrigger,
   SelectValue,
-} from "~/components/ui/select";
+} from "#/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
-import { roundFormSchema } from "~/lib/schemas/round-form-schema";
-import { createRound } from "~/lib/actions/create-round";
+import { roundFormSchema } from "#/features/rounds/schemas";
+import { createRound } from "#/features/rounds/server/mutations/create-round";
 
 const RoundUploadForm = ({
   positions,
@@ -55,7 +55,7 @@ const RoundUploadForm = ({
     onSubmit: async ({ value }) => {
       startTransition(async () => {
         const result = await createRound({ data: value });
-        if (result.error) {
+        if (result.error !== undefined) {
           toast.error(
             typeof result.error === "string"
               ? result.error

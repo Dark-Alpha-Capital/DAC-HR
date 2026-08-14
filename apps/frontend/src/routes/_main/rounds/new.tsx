@@ -1,11 +1,8 @@
-import { FormPageSkeleton } from "~/components/route-skeletons/form-page-skeleton";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Suspense } from "react";
-import RoundUploadForm from "~/components/forms/round-upload-form";
-import { FormLoadingFallback } from "~/components/skeletons/form-loading-skeleton";
-import { Button } from "~/components/ui/button";
-import { loadRoundsNew } from "~/lib/loaders/rounds";
-import { toOptionalString } from "~/lib/parse-search";
+import { createFileRoute } from "@tanstack/react-router";
+import { FormPageSkeleton } from "#/components/shared/form-page-skeleton";
+import { RoundNewPage } from "#/features/rounds/components/round-new-page";
+import { loadRoundsNew } from "#/features/rounds/server/queries/rounds";
+import { toOptionalString } from "#/lib/parse-search";
 
 export const Route = createFileRoute("/_main/rounds/new")({
   head: () => ({
@@ -16,25 +13,6 @@ export const Route = createFileRoute("/_main/rounds/new")({
   }),
   loaderDeps: ({ search }) => search,
   loader: async ({ deps }) => loadRoundsNew({ data: deps }),
-  component: NewRoundPage,
+  component: RoundNewPage,
   pendingComponent: () => <FormPageSkeleton />,
 });
-
-function NewRoundPage() {
-  const { positions, preSelectedPositionId } = Route.useLoaderData();
-
-  return (
-    <div className="container mx-auto py-8 space-y-6">
-      <Button asChild>
-        <Link to="/rounds" search={{} as any}>Back to Rounds</Link>
-      </Button>
-
-      <Suspense fallback={<FormLoadingFallback />}>
-        <RoundUploadForm
-          positions={positions}
-          preSelectedPositionId={preSelectedPositionId}
-        />
-      </Suspense>
-    </div>
-  );
-}

@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router";
 
-import { Badge } from "~/components/ui/badge";
-import type { MeetConferenceSummary } from "~/lib/attendance/meet-attendance";
-import { formatDateTime } from "~/lib/utils";
+import { Badge } from "#/components/ui/badge";
+import type { MeetConferenceSummary } from "#/features/attendance/meet-attendance";
+import { formatDateTime } from "#/lib/utils";
 
 export function ConferencesList({
   conferences,

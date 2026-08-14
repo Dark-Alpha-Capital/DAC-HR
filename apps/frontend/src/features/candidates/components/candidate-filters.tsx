@@ -1,11 +1,11 @@
 import React from "react";
-import FilterCandidateName from "~/components/filter-candidate-name";
-import FilterCandidateEmail from "~/components/filter-candidate-email";
-import FilterCandidatePosition from "~/components/filter-candidate-position";
-import FilterApplicationStatus from "~/components/filter-application-status";
-import FilterCandidateSource from "~/components/filter-candidate-source";
-import CandidateSortSelect from "~/components/candidate-sort-select";
-import ClearCandidateFiltersButton from "~/components/clear-candidate-filters-button";
+import FilterCandidateName from "#/components/shared/filter-candidate-name";
+import FilterCandidateEmail from "#/components/shared/filter-candidate-email";
+import FilterCandidatePosition from "#/components/shared/filter-candidate-position";
+import FilterApplicationStatus from "#/components/shared/filter-application-status";
+import FilterCandidateSource from "#/features/candidates/components/filter-candidate-source";
+import CandidateSortSelect from "#/features/candidates/components/candidate-sort-select";
+import ClearCandidateFiltersButton from "#/features/candidates/components/clear-candidate-filters-button";
 
 interface CandidateFiltersProps {
   positions: {

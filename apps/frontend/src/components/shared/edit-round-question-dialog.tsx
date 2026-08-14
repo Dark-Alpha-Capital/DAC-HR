@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Pencil } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -10,18 +10,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "~/components/ui/dialog";
-import { Label } from "~/components/ui/label";
-import { Textarea } from "~/components/ui/textarea";
-import { Badge } from "~/components/ui/badge";
-import { McqOptionsField } from "~/components/forms/mcq-options-field";
-import { patchQuestion } from "~/lib/actions/patch-question";
+} from "#/components/ui/dialog";
+import { Label } from "#/components/ui/label";
+import { Textarea } from "#/components/ui/textarea";
+import { Badge } from "#/components/ui/badge";
+import { McqOptionsField } from "#/components/shared/mcq-options-field";
+import { patchQuestion } from "#/features/questions/server/mutations/patch-question";
 import {
   questionEditFormSchema,
   type QuestionEditFormSchema,
-} from "~/lib/schemas/question-form-schema";
-import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
-import { getQuestionTypeLabel } from "~/lib/question-type-label";
+} from "#/features/questions/schemas";
+import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
+import { getQuestionTypeLabel } from "#/features/questions/helpers";
 import type { QuestionOption } from "@workspace/db/question-types";
 
 type RoundQuestion = {

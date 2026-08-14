@@ -1,35 +1,13 @@
-import { FormPageSkeleton } from "~/components/route-skeletons/form-page-skeleton";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Suspense } from "react";
-import { Button } from "~/components/ui/button";
-import CandidateUploadForm from "~/components/forms/candidate-upload-form";
-import { FormLoadingFallback } from "~/components/skeletons/form-loading-skeleton";
-import { loadCandidatesNew } from "~/lib/loaders/candidates";
+import { createFileRoute } from "@tanstack/react-router";
+import { FormPageSkeleton } from "#/components/shared/form-page-skeleton";
+import { CandidateNewPage } from "#/features/candidates/components/candidate-new-page";
+import { loadCandidatesNew } from "#/features/candidates/server/queries/candidates";
 
 export const Route = createFileRoute("/_main/candidates/new")({
   head: () => ({
     meta: [{ title: "New Candidate" }],
   }),
   loader: async () => loadCandidatesNew(),
-  component: NewCandidatePage,
+  component: CandidateNewPage,
   pendingComponent: () => <FormPageSkeleton />,
 });
-
-function NewCandidatePage() {
-  const { positions, positionRounds, userSession } = Route.useLoaderData();
-
-  return (
-    <div className="narrow-container mx-auto py-6 space-y-8">
-      <Button asChild>
-        <Link to="/candidates">Back to Candidates</Link>
-      </Button>
-      <div className="mt-4 md:mt-6 lg:mt-8">
-        <CandidateUploadForm
-          positions={positions}
-          positionRounds={positionRounds as any}
-          userSession={userSession as any}
-        />
-      </div>
-    </div>
-  );
-}

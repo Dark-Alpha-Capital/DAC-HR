@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
+import { serverFnAuthGuard } from "#/lib/middleware/auth-guard";
 import {
   getCandidatesByPositionId,
   getPositionBySlug,
@@ -76,3 +76,31 @@ export const loadPositionOptions = createServerFn({ method: "GET" })
     const { positions } = await getPositions(undefined, undefined, 1, 200);
     return positions.map((p) => ({ id: p.id, name: p.name }));
   });
+
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
+import { queryKeys } from "#/lib/query/query-keys";
+import { toPageNumber, toStringArray } from "#/lib/parse-search";
+
+export function parsePositionsSearch(search: Record<string, unknown>) {
+  return {
+    search: typeof search.search === "string" ? search.search : "",
+    hireLevel: toStringArray(search.hireLevel as string | string[] | undefined),
+    status: toStringArray(search.status as string | string[] | undefined),
+    page:
+      search.page !== undefined
+        ? toPageNumber(search.page)
+        : (undefined as number | undefined),
+  };
+}
+
+export type PositionsIndexSearch = ReturnType<typeof parsePositionsSearch>;
+export type PositionsIndexData = Awaited<ReturnType<typeof loadPositionsIndex>>;
+
+export function positionsIndexQueryOptions(deps: PositionsIndexSearch) {
+  return queryOptions({
+    queryKey: queryKeys.positions.list(deps),
+    queryFn: async (): Promise<PositionsIndexData> =>
+      loadPositionsIndex({ data: deps }),
+    placeholderData: keepPreviousData,
+  });
+}

@@ -2,20 +2,20 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { authClient } from "~/auth-client";
-import { Button } from "~/components/ui/button";
+import { authClient } from "#/features/auth/client";
+import { Button } from "#/components/ui/button";
 import {
   Field,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "~/components/ui/field";
-import { Input } from "~/components/ui/input";
+} from "#/components/ui/field";
+import { Input } from "#/components/ui/input";
 import {
   isAllowedEmail,
   UNAUTHORIZED_DOMAIN_MESSAGE,
-} from "~/lib/auth-domain";
-import { cn } from "~/lib/utils";
+} from "#/features/auth/helpers";
+import { cn } from "#/lib/utils";
 
 type Props = {
   callbackURL?: string;

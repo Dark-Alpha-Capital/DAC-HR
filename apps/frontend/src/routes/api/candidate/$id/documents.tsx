@@ -1,19 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { env } from "cloudflare:workers";
-import { getSession } from "~/lib/get-session";
-import { db } from "@workspace/db/db";
-import { eq } from "@workspace/db";
-import { candidateDocument as candidateDocumentSchema } from "@workspace/db/schema";
-import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
+import { getSession } from "#/lib/get-session";
 import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
 import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
-import { candidateDocumentFormSchema } from "~/lib/schemas/candidate-document-form-schema";
+import { candidateDocumentFormSchema } from "#/features/candidates/candidate-document-schemas";
+import { createCandidateDocument } from "#/features/candidates/candidates-service";
 import {
   buildNamedEntityFolderPath,
   formatPersonName,
   uploadFile as uploadToNextcloud,
 } from "@workspace/nextcloud";
-import { getServerNextcloudClient } from "~/lib/nextcloud-server";
+import { getServerNextcloudClient } from "#/lib/nextcloud-server";
 
 const VIDEO_TYPES = [
   "video/mp4",
@@ -173,41 +170,25 @@ export const Route = createFileRoute("/api/candidate/$id/documents")({
           }
 
           const validatedData = validationResult.data;
-          const [newCandidateDocument] = await db
-            .insert(candidateDocumentSchema)
-            .values({
+          const newCandidateDocument = await createCandidateDocument(
+            {
               candidateId,
               name: validatedData.name,
               description: validatedData.description?.trim() || null,
               category: validatedData.category || "other",
               url: validatedData.url,
-              tags: validatedData.tags?.length ? validatedData.tags : null,
-            })
-            .returning();
-
-          insertAuditLog({
-            userId: user.id,
-            action: "create_candidate_document",
-            entityType: "candidate_document",
-            entityId: newCandidateDocument?.id || "",
-            details: {
-              candidateDocument: {
-                id: newCandidateDocument?.id,
-                candidateId,
-                name: validatedData.name,
-                category: validatedData.category,
-                url: validatedData.url,
-                createdAt: newCandidateDocument?.createdAt.toISOString(),
-              },
-              createdBy: { id: user.id, email: user.email, name: user.name },
-              metadata: { timestamp: new Date().toISOString() },
+              tags: validatedData.tags?.length
+                ? validatedData.tags
+                : undefined,
+              nextcloudFilePath,
             },
-          }).catch((err) => console.error("Audit log error:", err));
+            user,
+          );
 
           if (newCandidateDocument && nextcloudFilePath) {
-            (env as Record<string, unknown>).DOCUMENT_INDEXING_WORKFLOW &&
+            (env).DOCUMENT_INDEXING_WORKFLOW &&
               (
-                (env as Record<string, unknown>).DOCUMENT_INDEXING_WORKFLOW as {
+                (env).DOCUMENT_INDEXING_WORKFLOW as {
                   create: (opts: {
                     id: string;
                     params: Record<string, unknown>;

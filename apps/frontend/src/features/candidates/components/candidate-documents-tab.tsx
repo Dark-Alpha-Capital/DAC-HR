@@ -1,9 +1,9 @@
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
+import { Badge } from "#/components/ui/badge";
+import { Button } from "#/components/ui/button";
 import { FileText, ExternalLink } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import CandidateDocumentTable from "~/components/candidate-document-table";
-import { CandidateAddDocumentDialog } from "~/components/dialogs/candidate-add-document-dialog";
+import CandidateDocumentTable from "#/features/candidates/components/candidate-document-table";
+import { CandidateAddDocumentDialog } from "#/features/candidates/components/candidate-add-document-dialog";
 import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
 
 type Documents = Awaited<ReturnType<typeof getDocumentsByCandidateId>>;
@@ -33,7 +33,6 @@ export function CandidateDocumentsTab({
                 candidateId: uid,
                 category: undefined,
                 name: undefined,
-                tags: undefined,
                 page: undefined,
               }}
             >

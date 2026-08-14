@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
+import { serverFnAuthGuard } from "#/lib/middleware/auth-guard";
 import {
   getPositions,
   getQuestionById,
@@ -72,3 +72,32 @@ export const loadQuestionById = createServerFn({ method: "GET" })
     const question = await getQuestionById(id);
     return { question };
   });
+
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
+import { queryKeys } from "#/lib/query/query-keys";
+import { toPageNumber, toStringArray } from "#/lib/parse-search";
+
+export function parseQuestionsSearch(search: Record<string, unknown>) {
+  return {
+    search: typeof search.search === "string" ? search.search : "",
+    position:
+      toStringArray(search.position as string | string[] | undefined) ?? [],
+    round: toStringArray(search.round as string | string[] | undefined) ?? [],
+    page:
+      search.page !== undefined
+        ? toPageNumber(search.page)
+        : (undefined as number | undefined),
+  };
+}
+
+export type QuestionsIndexSearch = ReturnType<typeof parseQuestionsSearch>;
+export type QuestionsIndexData = Awaited<ReturnType<typeof loadQuestionsIndex>>;
+
+export function questionsIndexQueryOptions(deps: QuestionsIndexSearch) {
+  return queryOptions({
+    queryKey: queryKeys.questions.list(deps),
+    queryFn: async (): Promise<QuestionsIndexData> =>
+      loadQuestionsIndex({ data: deps }),
+    placeholderData: keepPreviousData,
+  });
+}

@@ -2,15 +2,15 @@ import * as React from "react";
 import { useTransition, useState, useEffect } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "~/components/ui/field";
-import { Input } from "~/components/ui/input";
+} from "#/components/ui/field";
+import { Input } from "#/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -18,26 +18,26 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
+} from "#/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "~/components/ui/select";
+} from "#/components/ui/select";
 import { Loader2, ChevronDown } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import {
   employeeFormSchema,
   type EmployeeFormSchema,
   departmentEnum,
-} from "~/lib/schemas/employee-form-schema";
-import { createEmployee } from "~/lib/actions/create-employee";
-import { MarkdownEditor } from "~/components/markdown-editor";
-import { cn } from "~/lib/utils";
+} from "#/features/employees/schemas";
+import { createEmployee } from "#/features/employees/server/mutations/create-employee";
+import { MarkdownEditor } from "#/components/shared/markdown-editor";
+import { cn } from "#/lib/utils";
 import * as z from "zod";
-import EmployeeProfileImage from "../employee-profile-image";
+import EmployeeProfileImage from "./employee-profile-image";
 
 const departmentLabels: Record<z.infer<typeof departmentEnum>, string> = {
   management: "Management",
@@ -127,11 +127,15 @@ const EmployeeUploadForm = ({
             });
 
             if (!uploadResponse.ok) {
-              const errorData = await uploadResponse.json();
+              const errorData = (await uploadResponse.json()) as {
+                error?: string;
+              };
               throw new Error(errorData.error || "Failed to upload image");
             }
 
-            const { url: fileUrl } = await uploadResponse.json();
+            const { url: fileUrl } = (await uploadResponse.json()) as {
+              url: string;
+            };
             finalImageUrl = fileUrl;
           }
 

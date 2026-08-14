@@ -1,7 +1,7 @@
 import { ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { Button } from "~/components/ui/button";
-import InterviewBrandHeader from "~/components/interview/InterviewBrandHeader";
+import { Button } from "#/components/ui/button";
+import InterviewBrandHeader from "#/features/voice-interview/components/interview-brand-header";
 
 export interface TransitionInstruction {
   icon: LucideIcon;

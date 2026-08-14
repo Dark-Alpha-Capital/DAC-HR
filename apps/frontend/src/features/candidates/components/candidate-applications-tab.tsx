@@ -1,13 +1,13 @@
-import { Badge } from "~/components/ui/badge";
+import { Badge } from "#/components/ui/badge";
 import { Briefcase, Calendar, ChevronRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { formatDate } from "~/lib/utils";
+import { formatDate } from "#/lib/utils";
 import {
   getApplicationStatusLabel,
   applicationStatusBadgeVariants,
 } from "@workspace/db/application-status";
 import { getCandidateWithApplications } from "@workspace/db/repositories/candidate-repository";
-import { CreateApplicationDialog } from "~/components/dialogs/create-application-dialog";
+import { CreateApplicationDialog } from "#/features/applications/components/create-application-dialog";
 
 type Candidate = NonNullable<
   Awaited<ReturnType<typeof getCandidateWithApplications>>

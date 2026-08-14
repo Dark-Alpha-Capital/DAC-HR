@@ -1,6 +1,6 @@
 import * as React from "react";
 import { lazy, Suspense, useEffect, useState } from "react";
-import { TooltipProvider } from "~/components/ui/tooltip";
+import { TooltipProvider } from "#/components/ui/tooltip";
 
 const ReactQueryDevtools = lazy(() =>
   import("@tanstack/react-query-devtools").then((mod) => ({

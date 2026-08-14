@@ -1,9 +1,7 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { MainLayout } from "~/components/main-layout";
-import { MainLayoutSkeleton } from "~/components/main-layout-skeleton";
-import { Providers } from "~/components/providers";
-import { Toaster } from "~/components/ui/sonner";
-import { fetchSession } from "~/lib/auth-session";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { MainLayoutSkeleton } from "#/components/shared/main-layout-skeleton";
+import { MainSiteLayout } from "#/components/shared/main-site-layout";
+import { fetchSession } from "#/lib/auth-session";
 
 export const Route = createFileRoute("/_main")({
   beforeLoad: async () => {
@@ -16,19 +14,8 @@ export const Route = createFileRoute("/_main")({
     return { session };
   },
   pendingComponent: () => <MainLayoutSkeleton />,
-  component: MainSiteLayout,
+  component: () => {
+    const { session } = Route.useRouteContext();
+    return <MainSiteLayout session={session} />;
+  },
 });
-
-function MainSiteLayout() {
-  const { session } = Route.useRouteContext();
-
-  return (
-    <Providers>
-      <MainLayout session={session}>
-        <Outlet />
-      </MainLayout>
-
-      <Toaster />
-    </Providers>
-  );
-}

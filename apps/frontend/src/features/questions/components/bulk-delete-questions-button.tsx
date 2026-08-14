@@ -1,5 +1,5 @@
 import React, { useTransition } from "react";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -12,9 +12,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "~/components/ui/alert-dialog";
-import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
-import { bulkDeleteQuestions } from "~/lib/actions/bulk-delete-questions";
+} from "#/components/ui/alert-dialog";
+import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
+import { bulkDeleteQuestions } from "#/features/questions/server/mutations/bulk-delete-questions";
 
 interface BulkDeleteQuestionsButtonProps {
   selectedIds: string[];

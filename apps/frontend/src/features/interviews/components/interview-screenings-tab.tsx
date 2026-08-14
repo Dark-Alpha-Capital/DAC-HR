@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
+import { Button } from "#/components/ui/button";
+import { Badge } from "#/components/ui/badge";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "~/components/ui/card";
+} from "#/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "~/components/ui/alert-dialog";
+} from "#/components/ui/alert-dialog";
 import {
   Loader2,
   CheckCircle,
@@ -33,11 +33,11 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "~/lib/utils";
-import { formatDate } from "~/lib/utils";
-import type { InterviewAiAnalysisData } from "~/lib/schemas/interview-ai-analysis-schema";
-import { interviewBundleScreeningsQueryOptions } from "~/lib/query/interview-queries";
-import { queryKeys } from "~/lib/query/query-keys";
+import { cn } from "#/lib/utils";
+import { formatDate } from "#/lib/utils";
+import type { InterviewAiAnalysisData } from "#/features/interviews/schemas";
+import { interviewBundleScreeningsQueryOptions } from "#/features/interviews/interview-queries";
+import { queryKeys } from "#/lib/query/query-keys";
 
 type InterviewScreeningsTabProps = {
   onRefresh?: () => void;

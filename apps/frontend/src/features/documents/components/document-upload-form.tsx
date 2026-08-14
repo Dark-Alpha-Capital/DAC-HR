@@ -2,26 +2,26 @@ import * as React from "react";
 import { useTransition, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "~/components/ui/field";
-import { Input } from "~/components/ui/input";
+} from "#/components/ui/field";
+import { Input } from "#/components/ui/input";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupText,
   InputGroupTextarea,
-} from "~/components/ui/input-group";
-import { Checkbox } from "~/components/ui/checkbox";
+} from "#/components/ui/input-group";
+import { Checkbox } from "#/components/ui/checkbox";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import type { DocumentCategory } from "@workspace/db/schema";
-import { documentUploadInputSchema } from "~/lib/schemas/document-form-schema";
+import { documentUploadInputSchema } from "#/features/documents/schemas";
 
 const formValidationSchema = documentUploadInputSchema;
 
@@ -77,7 +77,10 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
             body: formData,
           });
 
-          const result = await uploadResponse.json();
+          const result = (await uploadResponse.json()) as {
+            error?: string;
+            success?: boolean;
+          };
 
           if (!uploadResponse.ok) {
             throw new Error(result.error || "Failed to upload document");

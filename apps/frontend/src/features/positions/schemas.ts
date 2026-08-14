@@ -1,5 +1,5 @@
 import * as z from "zod";
-import { departmentEnum } from "./employee-form-schema";
+import { departmentEnum } from "#/features/employees/schemas";
 
 export const hireLevelEnum = z.enum([
   "managing-director",

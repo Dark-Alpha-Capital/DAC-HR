@@ -2,8 +2,8 @@ import { createRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 import type { QueryClient } from "@tanstack/react-query";
 import { routeTree } from "./routeTree.gen";
-import { PageLoadingFallback } from "~/components/route-skeletons/page-loading-fallback";
-import { getQueryClient } from "~/lib/query/query-client";
+import { PageLoadingFallback } from "#/components/shared/page-loading-fallback";
+import { getQueryClient } from "#/lib/query/query-client";
 
 export type RouterContext = {
   queryClient: QueryClient;

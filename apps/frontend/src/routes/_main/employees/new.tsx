@@ -1,10 +1,7 @@
-import { FormPageSkeleton } from "~/components/route-skeletons/form-page-skeleton";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Suspense } from "react";
-import { Button } from "~/components/ui/button";
-import EmployeeUploadForm from "~/components/forms/employee-upload-form";
-import { FormLoadingFallback } from "~/components/skeletons/form-loading-skeleton";
-import { loadEmployeeNew } from "~/lib/loaders/employees";
+import { createFileRoute } from "@tanstack/react-router";
+import { FormPageSkeleton } from "#/components/shared/form-page-skeleton";
+import { EmployeeNewPage } from "#/features/employees/components/employee-new-page";
+import { loadEmployeeNew } from "#/features/employees/server/queries/employees";
 
 export const Route = createFileRoute("/_main/employees/new")({
   head: () => ({
@@ -20,29 +17,6 @@ export const Route = createFileRoute("/_main/employees/new")({
 
     return loadEmployeeNew({ data: { candidateId, applicationId } });
   },
-  component: NewEmployeePage,
+  component: EmployeeNewPage,
   pendingComponent: () => <FormPageSkeleton />,
 });
-
-function NewEmployeePage() {
-  const { positions, candidateId, candidateData, applicationData } =
-    Route.useLoaderData();
-
-  return (
-    <div className="narrow-container mx-auto space-y-8 py-6">
-      <Button asChild variant="secondary" size="sm">
-        <Link to="/employees" search={{ memberType: "all" }}>
-          Back to Employees
-        </Link>
-      </Button>
-      <Suspense fallback={<FormLoadingFallback />}>
-        <EmployeeUploadForm
-          positions={positions}
-          candidateId={candidateId}
-          candidateData={candidateData}
-          applicationData={applicationData}
-        />
-      </Suspense>
-    </div>
-  );
-}

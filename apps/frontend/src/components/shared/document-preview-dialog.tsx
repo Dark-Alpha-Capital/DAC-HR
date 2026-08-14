@@ -5,12 +5,12 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "~/components/ui/dialog";
-import { Button } from "~/components/ui/button";
-import { ScrollArea } from "~/components/ui/scroll-area";
+} from "#/components/ui/dialog";
+import { Button } from "#/components/ui/button";
+import { ScrollArea } from "#/components/ui/scroll-area";
 import { Loader2, FileText, Download, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { resolveDocumentAccessUrl } from "~/lib/documents/access";
+import { resolveDocumentAccessUrl } from "#/lib/documents/access";
 
 interface DocumentPreviewDialogProps {
   document: {

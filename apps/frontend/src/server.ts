@@ -1,6 +1,6 @@
 import handler from "@tanstack/react-start/server-entry";
-import { handleInterviewRealtimeWs } from "./lib/interview-realtime/ws-handler";
-import { handleRecordingUpload } from "./lib/interview-recording-upload";
+import { handleInterviewRealtimeWs } from "#/features/voice-interview/ws-handler";
+import { handleRecordingUpload } from "#/features/voice-interview/interview-recording-upload";
 
 export { DocumentIndexingWorkflow } from "./workflows/document-indexing";
 export { InterviewEvaluationWorkflow } from "./workflows/interview-evaluation";
@@ -35,6 +35,10 @@ export default {
       });
     }
 
-    return handler.fetch(request, env, ctx);
+    return (handler.fetch as unknown as (
+      request: Request,
+      env: Env,
+      ctx: ExecutionContext,
+    ) => Promise<Response>)(request, env, ctx);
   },
 };

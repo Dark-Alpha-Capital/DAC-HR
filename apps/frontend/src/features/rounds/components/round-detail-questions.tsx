@@ -2,7 +2,7 @@ import { useRouter } from "@tanstack/react-router";
 import {
   RoundQuestionsSection,
   type RoundSheetQuestion,
-} from "~/components/round-questions-section";
+} from "#/components/shared/round-questions-section";
 
 interface RoundDetailQuestionsProps {
   roundId: string;

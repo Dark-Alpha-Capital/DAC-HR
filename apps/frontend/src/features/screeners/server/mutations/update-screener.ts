@@ -1,10 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
-import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
+import { serverFnAuthGuard } from "#/lib/middleware/auth-guard";
 import { updateScreener } from "@workspace/db/repositories/screener-repository";
 import {
   screenerEditSchema,
   type ScreenerEditSchema,
-} from "../schemas/screener-form-schema";
+} from "#/features/screeners/schemas";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 type UpdateScreenerInput = ScreenerEditSchema & { id: string };

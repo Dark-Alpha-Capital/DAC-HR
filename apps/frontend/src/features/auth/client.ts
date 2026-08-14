@@ -1,6 +1,6 @@
 import { createAuthClient } from "better-auth/react";
 import { adminClient, customSessionClient } from "better-auth/client/plugins";
-import type { auth } from "~/auth";
+import type { auth } from "#/lib/auth";
 
 export const authClient = createAuthClient({
   baseURL:

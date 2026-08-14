@@ -1,7 +1,7 @@
-import { useUrlSearchParams } from "~/lib/hooks/use-url-search-params";
-import { Button } from "~/components/ui/button";
+import { useUrlSearchParams } from "#/lib/hooks/use-url-search-params";
+import { Button } from "#/components/ui/button";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
-import { getPaginationRange } from "~/lib/pagination-range";
+import { getPaginationRange } from "#/lib/pagination-range";
 
 const AttendancePaginationControls = ({
   currentPage,

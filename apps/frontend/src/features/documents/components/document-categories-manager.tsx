@@ -1,5 +1,5 @@
 import React, { useState, useTransition } from "react";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import {
   Table,
   TableBody,
@@ -7,14 +7,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "~/components/ui/table";
+} from "#/components/ui/table";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   createCategory,
   updateCategory,
   deleteCategory,
-} from "~/lib/actions/document-category-actions";
+} from "#/features/documents/server/mutations/document-category-actions";
 import {
   Dialog,
   DialogContent,
@@ -23,18 +23,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "~/components/ui/dialog";
-import { Input } from "~/components/ui/input";
+} from "#/components/ui/dialog";
+import { Input } from "#/components/ui/input";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldLabel,
-} from "~/components/ui/field";
+} from "#/components/ui/field";
 import {
   InputGroup,
   InputGroupTextarea,
-} from "~/components/ui/input-group";
+} from "#/components/ui/input-group";
 import type { DocumentCategory } from "@workspace/db/schema";
 
 interface DocumentCategoriesManagerProps {

@@ -1,17 +1,17 @@
 import * as React from "react";
-import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
-import { useUrlSearchParams } from "~/lib/hooks/use-url-search-params";
-import { authClient } from "~/auth-client";
-import { cn } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
+import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
+import { useUrlSearchParams } from "#/lib/hooks/use-url-search-params";
+import { authClient } from "#/features/auth/client";
+import { cn } from "#/lib/utils";
+import { Button } from "#/components/ui/button";
+import { Badge } from "#/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "~/components/ui/card";
+} from "#/components/ui/card";
 import {
   Table,
   TableBody,
@@ -19,18 +19,18 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "~/components/ui/table";
+} from "#/components/ui/table";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "~/components/ui/tabs";
+} from "#/components/ui/tabs";
 import {
   Avatar,
   AvatarImage,
   AvatarFallback,
-} from "~/components/ui/avatar";
+} from "#/components/ui/avatar";
 import {
   AlertCircle,
   Ban,
@@ -42,9 +42,9 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { Input } from "~/components/ui/input";
+import { Input } from "#/components/ui/input";
 import { toast } from "sonner";
-import type { AdminUser } from "~/lib/admin/fetch-non-admin-users";
+import type { AdminUser } from "#/features/admin/server/queries/users";
 
 export type { AdminUser };
 

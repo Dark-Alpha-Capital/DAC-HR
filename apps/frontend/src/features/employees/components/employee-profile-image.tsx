@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { resolveDocumentAccessUrl } from "~/lib/documents/access";
+import { resolveDocumentAccessUrl } from "#/lib/documents/access";
 
 interface EmployeeProfileImageProps {
   imageUrl: string;

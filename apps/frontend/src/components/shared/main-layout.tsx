@@ -1,8 +1,8 @@
 import React from "react";
-import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
-import { AppSidebar } from "~/components/sidebars/app-sidebar";
-import { MainSiteTopbar } from "~/components/main-site/topbar";
-import type { AppSession } from "~/lib/auth-session";
+import { SidebarInset, SidebarProvider } from "#/components/ui/sidebar";
+import { AppSidebar } from "#/components/shared/app-sidebar";
+import { MainSiteTopbar } from "#/components/shared/topbar";
+import type { AppSession } from "#/lib/auth-session";
 
 export function MainLayout({
   session,

@@ -6,16 +6,16 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "~/components/ui/table";
-import { Checkbox } from "~/components/ui/checkbox";
+} from "#/components/ui/table";
+import { Checkbox } from "#/components/ui/checkbox";
 import { useNavigate } from "@tanstack/react-router";
-import BulkDeleteCandidatesButton from "~/components/bulk-delete-candidates-button";
+import BulkDeleteCandidatesButton from "#/features/candidates/components/bulk-delete-candidates-button";
 import type { Candidate } from "@workspace/db/schema";
-import { ApplicationStatusBadge } from "~/components/application-status-badge";
-import CopyButton from "~/components/copy-button";
-import { Badge } from "~/components/ui/badge";
-import { displayPhone } from "~/components/ui/phone-input";
-import { formatDate, isNew } from "~/lib/utils";
+import { ApplicationStatusBadge } from "#/components/shared/application-status-badge";
+import CopyButton from "#/features/candidates/components/copy-button";
+import { Badge } from "#/components/ui/badge";
+import { displayPhone } from "#/components/ui/phone-input";
+import { formatDate, isNew } from "#/lib/utils";
 
 type CandidateWithPosition = Candidate & {
   position: { id: string; name: string } | null;

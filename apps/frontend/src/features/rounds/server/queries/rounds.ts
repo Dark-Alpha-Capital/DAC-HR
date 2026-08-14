@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
+import { serverFnAuthGuard } from "#/lib/middleware/auth-guard";
 import {
   getFirstPositionIdForRoundTemplate,
   getPositions,
@@ -124,3 +124,29 @@ export const loadRoundAddQuestion = createServerFn({ method: "GET" })
       preSelectedRoundId: data.roundId,
     };
   });
+
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
+import { queryKeys } from "#/lib/query/query-keys";
+import { toPageNumber, toStringArray } from "#/lib/parse-search";
+
+export function parseRoundsSearch(search: Record<string, unknown>) {
+  return {
+    type: toStringArray(search.type as string | string[] | undefined),
+    page:
+      search.page !== undefined
+        ? toPageNumber(search.page)
+        : (undefined as number | undefined),
+  };
+}
+
+export type RoundsIndexSearch = ReturnType<typeof parseRoundsSearch>;
+export type RoundsIndexData = Awaited<ReturnType<typeof loadRoundsIndex>>;
+
+export function roundsIndexQueryOptions(deps: RoundsIndexSearch) {
+  return queryOptions({
+    queryKey: queryKeys.rounds.list(deps),
+    queryFn: async (): Promise<RoundsIndexData> =>
+      loadRoundsIndex({ data: deps }),
+    placeholderData: keepPreviousData,
+  });
+}

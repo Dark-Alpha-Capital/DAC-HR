@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
-import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
+import { Button } from "#/components/ui/button";
+import { Badge } from "#/components/ui/badge";
 import { Bot, Loader2, Mic, PhoneOff, Timer } from "lucide-react";
-import { cn } from "~/lib/utils";
-import type { VoiceInterviewState } from "~/hooks/useVoiceInterview";
-import { logInterview } from "~/lib/interview-debug-log";
+import { cn } from "#/lib/utils";
+import type { VoiceInterviewState } from "#/hooks/useVoiceInterview";
+import { logInterview } from "#/features/voice-interview/interview-debug-log";
 
 interface VoiceInterviewProps {
   candidateName: string;

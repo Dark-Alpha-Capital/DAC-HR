@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSession } from "~/lib/get-session";
-import { candidateFormSchema } from "~/lib/schemas/candidate-form-schema";
+import { getSession } from "#/lib/get-session";
+import { candidateFormSchema } from "#/features/candidates/schemas";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import { createCandidateWithPositions } from "~/lib/application/candidate-service";
+import { createCandidateWithPositions } from "#/features/candidates/candidates-service";
 
 const redactEmail = (email: string | null | undefined): string => {
   if (!email) return "unknown";

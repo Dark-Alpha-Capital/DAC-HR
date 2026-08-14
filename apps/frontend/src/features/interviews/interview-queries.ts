@@ -3,9 +3,9 @@ import {
   loadBundleAiAnalyses,
   loadInterviewBundleById,
   type InterviewBundleDetailData,
-} from "~/lib/loaders/interviews";
-import { loadScreenersIndex } from "~/lib/loaders/screeners";
-import { queryKeys } from "~/lib/query/query-keys";
+} from "#/features/interviews/server/queries/interviews";
+import { loadScreenersIndex } from "#/features/screeners/server/queries/screeners";
+import { queryKeys } from "#/lib/query/query-keys";
 
 export function screenersListQueryOptions() {
   return queryOptions({

@@ -1,5 +1,5 @@
 import React, { useTransition } from "react";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -12,9 +12,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "~/components/ui/alert-dialog";
-import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
-import { useAppSession } from "~/hooks/use-app-session";
+} from "#/components/ui/alert-dialog";
+import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
+import { useAppSession } from "#/hooks/use-app-session";
 
 interface BulkDeleteCandidatesButtonProps {
   selectedIds: string[];
@@ -55,7 +55,12 @@ const BulkDeleteCandidatesButton = ({
           body: JSON.stringify({ candidateIds: selectedIds }),
         });
 
-        const result = await response.json();
+        const result = (await response.json()) as {
+          error?: string;
+          deleted?: number;
+          failed?: number;
+          errors?: string[];
+        };
 
         if (!response.ok) {
           throw new Error(result.error || "Failed to delete candidates");

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "~/lib/utils";
+import { cn } from "#/lib/utils";
 
 type CopyButtonProps = {
   value: string;

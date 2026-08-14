@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { serverFnAdminGuard } from "~/lib/middleware/auth-guard";
+import { serverFnAdminGuard } from "#/lib/middleware/auth-guard";
 import { getAuditLogs } from "@workspace/db/repositories/audit-repository";
 
 type AuditLogsInput = {
@@ -66,3 +66,33 @@ export const loadAuditLogs = createServerFn({ method: "GET" })
       hasPreviousPage: currentPage > 1,
     };
   });
+
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
+import { queryKeys } from "#/lib/query/query-keys";
+import { toOptionalString, toPageNumber } from "#/lib/parse-search";
+
+export function parseAuditLogsSearch(search: Record<string, unknown>) {
+  return {
+    action: toOptionalString(search.action),
+    entityType: toOptionalString(search.entityType),
+    userId: toOptionalString(search.userId),
+    search: toOptionalString(search.search),
+    startDate: toOptionalString(search.startDate),
+    endDate: toOptionalString(search.endDate),
+    page:
+      search.page !== undefined
+        ? toPageNumber(search.page)
+        : (undefined as number | undefined),
+  };
+}
+
+export type AuditLogsIndexSearch = ReturnType<typeof parseAuditLogsSearch>;
+
+export function auditLogsIndexQueryOptions(deps: AuditLogsIndexSearch) {
+  return queryOptions({
+    queryKey: queryKeys.admin.auditLogs(deps),
+    queryFn: async (): Promise<AuditLogsPageData> =>
+      loadAuditLogs({ data: deps }),
+    placeholderData: keepPreviousData,
+  });
+}

@@ -7,20 +7,20 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "~/components/ui/table";
-import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
+} from "#/components/ui/table";
+import { Button } from "#/components/ui/button";
+import { Badge } from "#/components/ui/badge";
 import { Download, Loader2, Eye } from "lucide-react";
-import DeleteDocumentButton from "~/components/delete-document-button";
-import DeleteCandidateDocumentButton from "~/components/delete-candidate-document-button";
-import DocumentPreviewDialog from "~/components/document-preview-dialog";
-import { resolveDocumentAccessUrl } from "~/lib/documents/access";
-import { isNew } from "~/lib/utils";
+import DeleteDocumentButton from "#/features/documents/components/delete-document-button";
+import DeleteCandidateDocumentButton from "#/components/shared/delete-candidate-document-button";
+import DocumentPreviewDialog from "#/components/shared/document-preview-dialog";
+import { resolveDocumentAccessUrl } from "#/lib/documents/access";
+import { isNew } from "#/lib/utils";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "~/components/ui/tooltip";
+} from "#/components/ui/tooltip";
 import { toast } from "sonner";
 import type { UnifiedDocumentListItem } from "@workspace/db/document-list-filters";
 

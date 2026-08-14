@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
+import { serverFnAuthGuard } from "#/lib/middleware/auth-guard";
 import { getInterviewAiAnalysesByBundleId } from "@workspace/db/repositories/interview-repository";
 import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
 import { getInterviewById, getApplicationWithInterviews } from "@workspace/db/repositories/interview-repository";
@@ -13,15 +13,22 @@ import {
   getBundleRounds,
 } from "@workspace/db/repositories/interview-bundle-repository";
 
+type InterviewEvaluation = NonNullable<
+  Awaited<ReturnType<typeof getEvaluationBySessionId>>
+> & {
+  strengths: any;
+  risks: any;
+  dimensionScores: any;
+  perQuestionFeedback: any;
+};
+
 export type InterviewDetailData = {
   interview: Awaited<ReturnType<typeof getInterviewById>>;
   application: Awaited<ReturnType<typeof getApplicationWithInterviews>>;
   candidate: Awaited<ReturnType<typeof getCandidateById>>;
   session: Awaited<ReturnType<typeof getSessionByInterviewId>> | null;
   responses: Awaited<ReturnType<typeof getResponsesBySessionId>>;
-  evaluation:
-    | Awaited<ReturnType<typeof getEvaluationBySessionId>>
-    | null;
+  evaluation: InterviewEvaluation | null;
 };
 
 export type InterviewBundleDetailData = {
@@ -32,7 +39,7 @@ export type InterviewBundleDetailData = {
   roundDetails: Array<{
     round: Awaited<ReturnType<typeof getBundleRounds>>[number];
     responses: Awaited<ReturnType<typeof getResponsesBySessionId>>;
-    evaluation: Awaited<ReturnType<typeof getEvaluationBySessionId>> | null;
+    evaluation: InterviewEvaluation | null;
   }>;
 };
 
@@ -127,7 +134,7 @@ export const loadInterviewBundleById = createServerFn({ method: "GET" })
       candidate,
       rounds,
       roundDetails,
-    } satisfies InterviewBundleDetailData;
+    } as InterviewBundleDetailData;
   });
 
 export const loadBundleAiAnalyses = createServerFn({ method: "GET" })
@@ -135,5 +142,13 @@ export const loadBundleAiAnalyses = createServerFn({ method: "GET" })
   .validator((data: string) => data)
   .handler(async ({ data: bundleId }) => {
     const analyses = await getInterviewAiAnalysesByBundleId(bundleId);
-    return { analyses };
+    return {
+      analyses,
+    } as {
+      analyses: Array<
+        Awaited<ReturnType<typeof getInterviewAiAnalysesByBundleId>>[number] & {
+          structuredData: any;
+        }
+      >;
+    };
   });

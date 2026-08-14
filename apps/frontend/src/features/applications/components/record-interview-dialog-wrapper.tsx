@@ -1,5 +1,5 @@
 import { useState, cloneElement, isValidElement } from "react";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import { Plus } from "lucide-react";
 import RecordInterviewDialog from "./record-interview-dialog";
 

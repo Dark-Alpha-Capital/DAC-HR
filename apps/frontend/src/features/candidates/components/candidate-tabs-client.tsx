@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Tabs } from "~/components/ui/tabs";
+import { Tabs } from "#/components/ui/tabs";
 
 export default function CandidateTabsClient({
   children,

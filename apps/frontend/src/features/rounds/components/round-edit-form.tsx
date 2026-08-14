@@ -2,24 +2,24 @@ import * as React from "react";
 import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "~/components/ui/field";
-import { Input } from "~/components/ui/input";
+} from "#/components/ui/field";
+import { Input } from "#/components/ui/input";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupText,
   InputGroupTextarea,
-} from "~/components/ui/input-group";
-import { roundEditFormSchema } from "~/lib/schemas/round-form-schema";
+} from "#/components/ui/input-group";
+import { roundEditFormSchema } from "#/features/rounds/schemas";
 import { Loader2 } from "lucide-react";
-import { updateRound } from "~/lib/actions/update-round";
+import { updateRound } from "#/features/rounds/server/mutations/update-round";
 import { useRouter } from "@tanstack/react-router";
 import type { RoundTemplate } from "@workspace/db/schema";
 
@@ -50,7 +50,7 @@ const RoundEditForm = ({ round }: RoundEditFormProps) => {
             },
           ],
         });
-        if (result.success) {
+        if ("success" in result && result.success) {
           toast.success("Round updated successfully", {
             position: "bottom-right",
             action: {

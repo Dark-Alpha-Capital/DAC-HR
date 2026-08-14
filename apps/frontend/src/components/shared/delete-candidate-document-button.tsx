@@ -1,9 +1,9 @@
 import React, { useTransition } from "react";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
-import { useAppSession } from "~/hooks/use-app-session";
+import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
+import { useAppSession } from "#/hooks/use-app-session";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "~/components/ui/alert-dialog";
+} from "#/components/ui/alert-dialog";
 
 const DeleteCandidateDocumentButton = ({
   documentId,
@@ -44,7 +44,7 @@ const DeleteCandidateDocumentButton = ({
           },
         );
 
-        const result = await response.json();
+        const result = (await response.json()) as { error?: unknown };
 
         if (!response.ok) {
           toast.error(

@@ -5,9 +5,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "~/components/ui/table";
+} from "#/components/ui/table";
 import { Link } from "@tanstack/react-router";
-import { Badge } from "~/components/ui/badge";
+import { Badge } from "#/components/ui/badge";
 
 interface Position {
   id: string;

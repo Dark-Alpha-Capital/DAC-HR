@@ -6,8 +6,8 @@ import {
   type MeetConferenceInput,
   type StoredAttendanceRow,
 } from "@workspace/db/repositories/meet-attendance-repository";
-import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
-import { getGoogleAccessToken } from "~/lib/attendance/meet-auth";
+import { serverFnAuthGuard } from "#/lib/middleware/auth-guard";
+import { getGoogleAccessToken } from "#/features/attendance/meet-auth";
 import {
   ATTENDANCE_SYNC_CHUNK_SIZE,
   buildConferenceDetail,
@@ -18,7 +18,7 @@ import {
   type AttendanceSyncSeed,
   type MeetAttendanceConference,
   type MeetConferenceSummary,
-} from "~/lib/attendance/meet-attendance";
+} from "#/features/attendance/meet-attendance";
 
 export { ATTENDANCE_SYNC_CHUNK_SIZE };
 export type { AttendanceSyncSeed };
@@ -319,3 +319,54 @@ function toConferenceInput(
     })),
   };
 }
+
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
+import { queryKeys } from "#/lib/query/query-keys";
+import { toOptionalString, toPageNumber } from "#/lib/parse-search";
+import { defineEntityQueries } from "#/lib/query/options";
+import type { ConferencesSearch } from "#/features/attendance/conferences-search";
+import { conferencesFilterInput } from "#/features/attendance/conferences-search";
+
+export function meetingsQueryOptions(deps: ConferencesSearch) {
+  return queryOptions({
+    queryKey: queryKeys.attendance.meetings(deps),
+    queryFn: async () =>
+      getMeetConferences({ data: conferencesFilterInput(deps) }),
+  });
+}
+
+export function attendanceDetailQueryOptions(conferenceId: string) {
+  return queryOptions({
+    queryKey: queryKeys.attendance.detail(conferenceId),
+    queryFn: async () => getMeetConferenceDetail({ data: { conferenceId } }),
+  });
+}
+
+const PAGE_SIZE = 50;
+
+type StoredAttendanceData = Awaited<ReturnType<typeof getStoredAttendance>>;
+
+export function parseMeetingAttendanceSearch(
+  search: Record<string, unknown>,
+) {
+  return {
+    date: toOptionalString(search.date),
+    page:
+      search.page !== undefined
+        ? toPageNumber(search.page)
+        : (undefined as number | undefined),
+  };
+}
+
+export type MeetingAttendanceSearch = ReturnType<
+  typeof parseMeetingAttendanceSearch
+>;
+
+export const storedAttendanceQueries = defineEntityQueries(
+  queryKeys.attendance.stored,
+  (deps: MeetingAttendanceSearch): Promise<StoredAttendanceData> =>
+    getStoredAttendance({ data: deps }),
+  { placeholderData: keepPreviousData },
+);
+
+export { PAGE_SIZE };

@@ -1,11 +1,11 @@
 import { queryOptions } from "@tanstack/react-query";
-import type { BundleRoundSummary } from "~/components/interview/BundleRoundsOverview";
+import type { BundleRoundSummary } from "#/features/voice-interview/components/bundle-rounds-overview";
 import type { DeliveryMode, RoundDeliveryMode } from "@workspace/db/enums";
-import { queryKeys } from "~/lib/query/query-keys";
+import { queryKeys } from "#/lib/query/query-keys";
 import {
   toSessionMode,
   type SessionMode,
-} from "~/lib/interview-flow";
+} from "#/features/voice-interview/interview-flow";
 
 export interface InterviewQuestion {
   id: string;

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSession } from "~/lib/get-session";
-import { describeOpenAIKeySources } from "~/lib/server/openai-api-key";
-import { pingOpenAIRealtime } from "~/lib/server/openai-ping";
+import { getSession } from "#/lib/get-session";
+import { describeOpenAIKeySources } from "#/lib/server/openai-api-key";
+import { pingOpenAIRealtime } from "#/lib/server/openai-ping";
 
 export const Route = createFileRoute("/api/debug/openai-ping")({
   server: {

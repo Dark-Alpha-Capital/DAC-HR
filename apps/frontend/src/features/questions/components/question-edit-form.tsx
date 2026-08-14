@@ -2,31 +2,31 @@ import * as React from "react";
 import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "~/components/ui/field";
+} from "#/components/ui/field";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupText,
   InputGroupTextarea,
-} from "~/components/ui/input-group";
-import { Badge } from "~/components/ui/badge";
+} from "#/components/ui/input-group";
+import { Badge } from "#/components/ui/badge";
 import {
   questionEditFormSchema,
   type QuestionEditFormSchema,
-} from "~/lib/schemas/question-form-schema";
+} from "#/features/questions/schemas";
 import { Loader2 } from "lucide-react";
-import { patchQuestion } from "~/lib/actions/patch-question";
+import { patchQuestion } from "#/features/questions/server/mutations/patch-question";
 import { useRouter } from "@tanstack/react-router";
 import type { Question } from "@workspace/db/schema";
-import { McqOptionsField } from "~/components/forms/mcq-options-field";
-import { getQuestionTypeLabel } from "~/lib/question-type-label";
+import { McqOptionsField } from "#/components/shared/mcq-options-field";
+import { getQuestionTypeLabel } from "#/features/questions/helpers";
 
 interface QuestionEditFormProps {
   question: Question;
@@ -78,7 +78,7 @@ const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
             formData: parsed.data,
           },
         });
-        if (result.success) {
+        if ("success" in result && result.success) {
           toast.success("Question updated successfully", {
             position: "bottom-right",
             action: {

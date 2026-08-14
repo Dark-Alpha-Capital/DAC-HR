@@ -1,15 +1,15 @@
-import { Badge } from "~/components/ui/badge";
+import { Badge } from "#/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "~/components/ui/card";
+} from "#/components/ui/card";
 import type { DeliveryMode } from "@workspace/db/enums";
 import { CheckCircle2, ClipboardList, Mic } from "lucide-react";
 import { useEffect } from "react";
-import { logInterview } from "~/lib/interview-debug-log";
+import { logInterview } from "#/features/voice-interview/interview-debug-log";
 
 export interface BundleRoundSummary {
   roundName: string;

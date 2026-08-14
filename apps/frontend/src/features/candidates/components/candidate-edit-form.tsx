@@ -2,38 +2,38 @@ import * as React from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "~/components/ui/field";
-import { Input } from "~/components/ui/input";
-import { PhoneInput } from "~/components/ui/phone-input";
-import { US_STATES } from "~/lib/location";
+} from "#/components/ui/field";
+import { Input } from "#/components/ui/input";
+import { PhoneInput } from "#/components/ui/phone-input";
+import { US_STATES } from "#/lib/location";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupText,
   InputGroupTextarea,
-} from "~/components/ui/input-group";
+} from "#/components/ui/input-group";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
-import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
+import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
 import {
   candidateFormSchema,
   type CandidateFormSchema,
-} from "~/lib/schemas/candidate-form-schema";
+} from "#/features/candidates/schemas";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "~/components/ui/select";
-import { updateCandidate } from "~/lib/actions/update-candidate";
+} from "#/components/ui/select";
+import { updateCandidate } from "#/features/candidates/server/mutations/update-candidate";
 import type { Candidate } from "@workspace/db/schema";
 
 interface CandidateEditFormProps {
@@ -55,18 +55,11 @@ const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
 
   const updateMutation = useMutation({
     mutationFn: async (value: CandidateFormSchema) => {
-      console.log(
-        "[candidate-edit-form] updateCandidate called",
-        JSON.stringify({ candidateId: candidate.id, value }),
-      );
       const result = await updateCandidate({
         data: [candidate.id, value],
       });
-      console.log(
-        "[candidate-edit-form] updateCandidate result",
-        JSON.stringify(result),
-      );
-      if (result.error) {
+
+      if (result.error !== undefined) {
         throw new Error(
           typeof result.error === "string"
             ? result.error
@@ -76,10 +69,6 @@ const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
       return result.data;
     },
     onSuccess: async (data) => {
-      console.log(
-        "[candidate-edit-form] updateCandidate succeeded",
-        JSON.stringify({ id: data?.id }),
-      );
       toast.success("Candidate updated successfully", {
         position: "bottom-right",
         description: "The candidate has been updated successfully.",

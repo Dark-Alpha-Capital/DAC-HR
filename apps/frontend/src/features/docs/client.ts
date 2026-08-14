@@ -2,7 +2,7 @@ import { createClient } from "@prismicio/client";
 import {
   getPrismicAccessToken,
   getPrismicRepositoryName,
-} from "~/lib/prismic/config";
+} from "#/features/docs/config";
 
 export function createPrismicClient() {
   const repositoryName = getPrismicRepositoryName();

@@ -1,7 +1,7 @@
 import { useTransition } from "react";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
-import { deleteScreenerAction } from "~/lib/actions/delete-screener";
+import { deleteScreenerAction } from "#/features/screeners/server/mutations/delete-screener";
 import { toast } from "sonner";
 import { useRouter } from "@tanstack/react-router";
 import {
@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "~/components/ui/alert-dialog";
+} from "#/components/ui/alert-dialog";
 
 export default function DeleteScreenerButton({
   screenerId,

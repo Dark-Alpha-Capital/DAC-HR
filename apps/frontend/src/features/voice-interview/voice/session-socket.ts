@@ -1,5 +1,5 @@
 import { nextBackoffDelayMs } from "@workspace/interview-realtime/session-rules";
-import { logInterview } from "~/lib/interview-debug-log";
+import { logInterview } from "#/features/voice-interview/interview-debug-log";
 
 /** Close code the DO uses to supersede a connection opened in another tab. */
 export const WS_CLOSE_SUPERSEDED = 4001;

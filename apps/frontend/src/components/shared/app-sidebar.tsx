@@ -17,13 +17,13 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import type { AppSession } from "~/lib/auth-session";
+import type { AppSession } from "#/lib/auth-session";
 
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "~/components/ui/collapsible";
+} from "#/components/ui/collapsible";
 import {
   Sidebar,
   SidebarContent,
@@ -35,7 +35,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "~/components/ui/sidebar";
+} from "#/components/ui/sidebar";
 
 type NavLink = {
   href: string;

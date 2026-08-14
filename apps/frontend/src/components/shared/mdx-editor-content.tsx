@@ -37,7 +37,7 @@ import {
 } from "@mdxeditor/editor";
 import "@mdxeditor/editor/style.css";
 import "./mdx-editor.css";
-import { cn } from "~/lib/utils";
+import { cn } from "#/lib/utils";
 
 interface MarkdownEditorContentProps {
   value: string;

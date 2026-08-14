@@ -13,7 +13,7 @@ import { createNextcloudClient, downloadFile } from "@workspace/nextcloud";
 import { db } from "@workspace/db/db";
 import { candidateDocument } from "@workspace/db/schema";
 import { eq } from "@workspace/db";
-import { extractTextFromDocument } from "~/lib/document-text-extraction";
+import { extractTextFromDocument } from "#/lib/document-text-extraction";
 
 type Env = {
   NEXTCLOUD_URL: string;

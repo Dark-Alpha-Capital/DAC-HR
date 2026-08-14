@@ -1,9 +1,9 @@
 import React, { useTransition } from "react";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "@tanstack/react-router";
-import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
+import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,8 +14,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "~/components/ui/alert-dialog";
-import { useAppSession } from "~/hooks/use-app-session";
+} from "#/components/ui/alert-dialog";
+import { useAppSession } from "#/hooks/use-app-session";
 
 const DeleteCandidateButton = ({ candidateId }: { candidateId: string }) => {
   const router = useRouter();
@@ -37,7 +37,7 @@ const DeleteCandidateButton = ({ candidateId }: { candidateId: string }) => {
           method: "DELETE",
         });
 
-        const result = await response.json();
+        const result = (await response.json()) as { error?: string };
 
         if (!response.ok) {
           throw new Error(result.error || "Failed to delete candidate");

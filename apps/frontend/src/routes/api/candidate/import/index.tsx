@@ -1,8 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { env } from "cloudflare:workers";
-import { eq, desc } from "@workspace/db";
-import { db } from "@workspace/db/db";
-import { candidateImport } from "@workspace/db/schema";
 import {
   detectBulkUploadTypeFromFilename,
   importLog,
@@ -11,13 +8,17 @@ import {
   buildImportFolderPath,
   uploadFile as uploadToNextcloud,
 } from "@workspace/nextcloud";
-import { getServerNextcloudClient } from "~/lib/nextcloud-server";
-import { getSession } from "~/lib/get-session";
+import { getServerNextcloudClient } from "#/lib/nextcloud-server";
+import { getSession } from "#/lib/get-session";
 import {
   createCandidateImportRecord,
   updateCandidateImportStatus,
 } from "@workspace/db/repositories/candidate-import-repository";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
+import {
+  updateImportOriginalFileUrl,
+  listRecentCandidateImports,
+} from "#/features/candidates/candidates-service";
 
 const MAX_IMPORT_SIZE = 500 * 1024 * 1024;
 
@@ -118,12 +119,12 @@ export const Route = createFileRoute("/api/candidate/import/")({
             downloadUrl: uploadResult.downloadUrl,
           });
 
-          await db
-            .update(candidateImport)
-            .set({ originalFileUrl: uploadResult.downloadUrl })
-            .where(eq(candidateImport.id, importRecord.id));
+          await updateImportOriginalFileUrl(
+            importRecord.id,
+            uploadResult.downloadUrl,
+          );
 
-          const workflow = (env as Record<string, unknown>)
+          const workflow = (env)
             .CANDIDATE_IMPORT_WORKFLOW as
             | {
                 create: (opts: {
@@ -203,11 +204,7 @@ export const Route = createFileRoute("/api/candidate/import/")({
             return Response.json({ error: "Unauthorized" }, { status: 401 });
           }
 
-          const imports = await db
-            .select()
-            .from(candidateImport)
-            .orderBy(desc(candidateImport.createdAt))
-            .limit(20);
+          const imports = await listRecentCandidateImports();
 
           return Response.json({ imports }, { status: 200 });
         } catch (error) {

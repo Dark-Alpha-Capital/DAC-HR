@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -11,18 +11,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "~/components/ui/dialog";
-import { Label } from "~/components/ui/label";
+} from "#/components/ui/dialog";
+import { Label } from "#/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "~/components/ui/select";
-import { createApplication } from "~/lib/actions/create-application";
-import { loadPositionOptions } from "~/lib/loaders/positions";
-import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
+} from "#/components/ui/select";
+import { createApplication } from "#/features/applications/server/mutations/applications";
+import { loadPositionOptions } from "#/features/positions/server/queries/positions";
+import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
 
 interface CreateApplicationDialogProps {
   candidateId: string;

@@ -1,14 +1,14 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import {
   ATTENDANCE_SYNC_CHUNK_SIZE,
   prepareAttendanceSync,
   syncAttendanceChunk,
   type AttendanceSyncSeed,
-} from "~/lib/actions/sync-meet-attendance";
-import { queryKeys } from "~/lib/query/query-keys";
+} from "#/features/attendance/server/meet-attendance";
+import { queryKeys } from "#/lib/query/query-keys";
 
 function chunkArray<T>(items: T[], size: number): T[][] {
   const chunks: T[][] = [];

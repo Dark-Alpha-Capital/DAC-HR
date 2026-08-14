@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { handleRecordingUpload } from "~/lib/interview-recording-upload";
+import { handleRecordingUpload } from "#/features/voice-interview/interview-recording-upload";
 
 /**
  * The recording upload is normally handled in server.ts with `ctx.waitUntil`

@@ -6,8 +6,8 @@ import {
   updateSessionVoiceMetadata,
 } from "@workspace/db/repositories/interview-session-repository";
 import { advanceBundleRound } from "@workspace/db/repositories/interview-bundle-repository";
-import { resolveInterviewToken } from "~/lib/interview-token";
-import { autoRunBundleAiAnalysis } from "~/lib/interview/run-bundle-ai-analysis";
+import { resolveInterviewToken } from "#/features/interviews/interview-token";
+import { autoRunBundleAiAnalysis } from "#/features/interviews/run-bundle-ai-analysis";
 import {
   interviewServerLog,
   truncateId,
@@ -16,7 +16,7 @@ import {
 const COMPONENT = "complete-api";
 
 function triggerEvaluationWorkflow(sessionId: string) {
-  const workflow = (env as Record<string, unknown>)
+  const workflow = (env)
     .INTERVIEW_EVALUATION_WORKFLOW as
     | { create: (input: { params: Record<string, unknown> }) => Promise<unknown> }
     | undefined;

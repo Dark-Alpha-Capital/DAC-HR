@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { env } from "cloudflare:workers";
-import { getSession } from "~/lib/get-session";
+import { getSession } from "#/lib/get-session";
 import { saveCandidateAiScreening } from "@workspace/db/repositories/candidate-repository";
 import { getCandidateWithApplications } from "@workspace/db/repositories/candidate-repository";
 import { getOpenAIProvider, generateEmbedding } from "@workspace/ai-config";
 import { generateText, Output } from "ai";
-import { candidateAiScreeningSchema } from "~/lib/schemas/candidate-ai-screening-schema";
+import { candidateAiScreeningSchema } from "#/features/applications/schemas";
 
 export const Route = createFileRoute("/api/candidate/$id/ai-analysis")({
   server: {
@@ -81,10 +81,10 @@ Provide concise markdown analysis: background, skills, experience fit, culture f
             : undefined;
 
           const matches = await (
-            env as Record<string, unknown>
-          ).VECTORIZE && typeof (env as Record<string, unknown>).VECTORIZE === "object"
+            env
+          ).VECTORIZE && typeof (env).VECTORIZE === "object"
             ? await (
-                (env as Record<string, unknown>).VECTORIZE as {
+                (env).VECTORIZE as {
                   query: (
                     vector: number[],
                     opts: {

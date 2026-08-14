@@ -1,10 +1,6 @@
-import {
-  createFileRoute,
-  redirect,
-  type SearchSchemaInput,
-} from "@tanstack/react-router";
-import { fetchSession } from "~/lib/auth-session";
-import EmailSignUpForm from "~/components/email-signup-form";
+import { createFileRoute, redirect, type SearchSchemaInput } from "@tanstack/react-router";
+import { fetchSession } from "#/lib/auth-session";
+import { SignUpPage } from "#/features/auth/components/signup-page";
 
 export const Route = createFileRoute("/_auth/signup")({
   head: () => ({
@@ -22,27 +18,3 @@ export const Route = createFileRoute("/_auth/signup")({
   },
   component: SignUpPage,
 });
-
-function SignUpPage() {
-  const { redirect: callbackURL } = Route.useSearch();
-
-  return (
-    <>
-      <div className="space-y-3 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Create your account
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Sign up with your @darkalphacapital.com work email to access DAC
-          Recruiting.
-        </p>
-      </div>
-
-      <EmailSignUpForm callbackURL={callbackURL} />
-
-      <p className="text-center text-xs text-muted-foreground">
-        Access is limited to Dark Alpha Capital team members.
-      </p>
-    </>
-  );
-}

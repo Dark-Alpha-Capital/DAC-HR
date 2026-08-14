@@ -1,9 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSession } from "~/lib/get-session";
-import { db } from "@workspace/db/db";
-import { eq } from "@workspace/db";
-import { candidateDocument as candidateDocumentSchema } from "@workspace/db/schema";
-import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
+import { getSession } from "#/lib/get-session";
+import { deleteCandidateDocument } from "#/features/candidates/candidates-service";
 
 export const Route = createFileRoute(
   "/api/candidate/$id/documents/$documentId",
@@ -30,43 +27,17 @@ export const Route = createFileRoute(
               { status: 400 },
             );
 
-          const [documentData] = await db
-            .select()
-            .from(candidateDocumentSchema)
-            .where(eq(candidateDocumentSchema.id, documentId))
-            .limit(1);
+          const result = await deleteCandidateDocument(
+            candidateId,
+            documentId,
+            user,
+          );
 
-          if (!documentData)
-            return Response.json(
-              { error: "Document not found" },
-              { status: 404 },
-            );
-          if (documentData.candidateId !== candidateId) {
-            return Response.json(
-              { error: "Document does not belong to this candidate" },
-              { status: 403 },
-            );
+          if (result.error) {
+            const status =
+              result.error === "Document not found" ? 404 : 403;
+            return Response.json({ error: result.error }, { status });
           }
-
-          await db
-            .delete(candidateDocumentSchema)
-            .where(eq(candidateDocumentSchema.id, documentId));
-
-          insertAuditLog({
-            userId: user.id,
-            action: "delete_candidate_document",
-            entityType: "candidate_document",
-            entityId: documentId,
-            details: {
-              candidateDocument: {
-                id: documentData.id,
-                candidateId: documentData.candidateId,
-                name: documentData.name,
-              },
-              deletedBy: { id: user.id, email: user.email, name: user.name },
-              metadata: { timestamp: new Date().toISOString() },
-            },
-          }).catch((err) => console.error("Audit log error:", err));
 
           return Response.json({ success: true }, { status: 200 });
         } catch (error) {

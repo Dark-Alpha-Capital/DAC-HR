@@ -1,9 +1,9 @@
 import ViewToggle from "./view-toggle";
 import CandidateContainer from "./candidate-container";
 import CandidateKanbanBoard from "./candidate-kanban-board";
-import CandidatesPaginationControls from "~/components/candidates-pagination-controls";
-import type { CandidateViewMode } from "~/lib/parse-search";
-import type { KanbanFilters } from "~/lib/kanban/types";
+import CandidatesPaginationControls from "#/features/candidates/components/candidates-pagination-controls";
+import type { CandidateViewMode } from "#/lib/parse-search";
+import type { KanbanFilters } from "#/features/candidates/kanban-types";
 
 type Candidate = {
   id: string;

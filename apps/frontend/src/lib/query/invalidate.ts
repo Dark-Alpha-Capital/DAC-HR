@@ -1,5 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
-import { queryKeys } from "~/lib/query/query-keys";
+import { queryKeys } from "#/lib/query/query-keys";
 
 export async function invalidateCandidateLists(queryClient: QueryClient) {
   await queryClient.invalidateQueries({ queryKey: queryKeys.candidates.all });

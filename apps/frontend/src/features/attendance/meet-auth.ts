@@ -4,7 +4,7 @@
  */
 
 import { getRequest } from "@tanstack/react-start/server";
-import { auth } from "~/auth";
+import { auth } from "#/lib/auth";
 
 const MEET_SCOPE = "https://www.googleapis.com/auth/meetings.space.readonly";
 

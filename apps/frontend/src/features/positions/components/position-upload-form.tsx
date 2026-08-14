@@ -3,15 +3,15 @@ import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import * as z from "zod";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "~/components/ui/field";
-import { Input } from "~/components/ui/input";
+} from "#/components/ui/field";
+import { Input } from "#/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -19,13 +19,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
+} from "#/components/ui/dropdown-menu";
 import {
   positionFormSchema,
   hireLevelEnum,
   positionStatusEnum,
-} from "~/lib/schemas/position-form-schema";
-import { departmentEnum } from "~/lib/schemas/employee-form-schema";
+} from "#/features/positions/schemas";
+import { departmentEnum } from "#/features/employees/schemas";
 import { Loader2, ChevronDown } from "lucide-react";
 import {
   Select,
@@ -33,11 +33,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "~/components/ui/select";
-import { createPosition } from "~/lib/actions/create-position";
+} from "#/components/ui/select";
+import { createPosition } from "#/features/positions/server/mutations/create-position";
 import { useRouter } from "@tanstack/react-router";
-import { MarkdownEditor } from "~/components/markdown-editor";
-import { cn } from "~/lib/utils";
+import { MarkdownEditor } from "#/components/shared/markdown-editor";
+import { cn } from "#/lib/utils";
 const departmentLabels: Record<z.infer<typeof departmentEnum>, string> = {
   management: "Management",
   "capital-markets": "Capital Markets",
@@ -83,7 +83,7 @@ const PositionUploadForm = () => {
     onSubmit: async ({ value }) => {
       startTransition(async () => {
         const result = await createPosition({ data: value });
-        if (result.success) {
+        if ("success" in result && result.success) {
           toast("Position uploaded successfully", {
             position: "bottom-right",
             action: {

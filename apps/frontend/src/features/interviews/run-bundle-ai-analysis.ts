@@ -12,10 +12,10 @@ import {
   getScreenerById,
   getScreenerByPositionId,
 } from "@workspace/db/repositories/screener-repository";
-import { getAiModel } from "~/lib/ai/models";
+import { getAiModel } from "#/lib/ai/models";
 import { generateText, Output } from "ai";
-import { interviewAiAnalysisSchema } from "~/lib/schemas/interview-ai-analysis-schema";
-import { buildBundleInterviewAnalysisPrompt } from "~/lib/interview-analysis-prompt";
+import { interviewAiAnalysisSchema } from "#/features/interviews/schemas";
+import { buildBundleInterviewAnalysisPrompt } from "#/features/interviews/interview-analysis-prompt";
 
 export type BundleAnalysisResult = {
   analysis?: unknown;

@@ -2,8 +2,8 @@ import {
   applicationStatuses,
   type ApplicationStatus,
 } from "@workspace/db/application-status";
-import CandidateKanbanColumn from "~/components/candidate-kanban-column";
-import type { KanbanFilters } from "~/lib/kanban/types";
+import CandidateKanbanColumn from "#/features/candidates/components/candidate-kanban-column";
+import type { KanbanFilters } from "#/features/candidates/kanban-types";
 
 interface CandidateKanbanBoardProps {
   filters: KanbanFilters;

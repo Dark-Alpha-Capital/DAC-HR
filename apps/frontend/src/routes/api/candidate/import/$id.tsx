@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { env } from "cloudflare:workers";
-import { getSession } from "~/lib/get-session";
+import { getSession } from "#/lib/get-session";
 import {
   cancelCandidateImport,
   getCandidateImportById,
@@ -80,7 +80,7 @@ export const Route = createFileRoute("/api/candidate/import/$id")({
             );
           }
 
-          const workflow = (env as Record<string, unknown>)
+          const workflow = (env)
             .CANDIDATE_IMPORT_WORKFLOW as
             | {
                 get: (id: string) => Promise<{ terminate: () => Promise<void> }>;

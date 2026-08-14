@@ -1,21 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { Calendar, Clock, Loader2 } from "lucide-react";
-import { Badge } from "~/components/ui/badge";
-import { ScrollArea } from "~/components/ui/scroll-area";
-import { Separator } from "~/components/ui/separator";
+import { Badge } from "#/components/ui/badge";
+import { ScrollArea } from "#/components/ui/scroll-area";
+import { Separator } from "#/components/ui/separator";
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "~/components/ui/sheet";
-import { EditRoundDialog } from "~/components/dialogs/edit-round-dialog";
-import DeleteRoundButton from "~/components/delete-round-button";
-import { RoundQuestionsSection } from "~/components/round-questions-section";
-import { loadRoundById } from "~/lib/loaders/rounds";
-import { queryKeys } from "~/lib/query/query-keys";
-import { formatDate } from "~/lib/utils";
+} from "#/components/ui/sheet";
+import { EditRoundDialog } from "#/features/positions/components/edit-round-dialog";
+import DeleteRoundButton from "#/components/shared/delete-round-button";
+import { RoundQuestionsSection } from "#/components/shared/round-questions-section";
+import { loadRoundById } from "#/features/rounds/server/queries/rounds";
+import { queryKeys } from "#/lib/query/query-keys";
+import { formatDate } from "#/lib/utils";
 
 type RoundSummary = {
   id: string;

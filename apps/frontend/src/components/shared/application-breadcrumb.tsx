@@ -6,7 +6,7 @@ import {
   BreadcrumbLink,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "~/components/ui/breadcrumb";
+} from "#/components/ui/breadcrumb";
 
 interface ApplicationBreadcrumbProps {
   candidateId?: string;

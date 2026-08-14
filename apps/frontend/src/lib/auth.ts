@@ -13,7 +13,7 @@ import { createAuthMiddleware, APIError } from "better-auth/api";
 import {
   isAllowedEmail,
   UNAUTHORIZED_DOMAIN_MESSAGE,
-} from "~/lib/auth-domain";
+} from "#/features/auth/helpers";
 
 const ADMIN_EMAILS: string[] = [
   "rahul@darkalphacapital.com",

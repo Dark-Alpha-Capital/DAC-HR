@@ -7,8 +7,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "~/components/ui/table";
-import InlineApplicationStatusEditor from "~/components/inline-application-status-editor";
+} from "#/components/ui/table";
+import InlineApplicationStatusEditor from "#/features/applications/components/inline-application-status-editor";
 import type { ApplicationStatus } from "@workspace/db/application-status";
 type Application = {
   id: string;

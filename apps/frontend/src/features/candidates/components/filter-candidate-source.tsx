@@ -1,4 +1,4 @@
-import { useUrlSearchParams } from "~/lib/hooks/use-url-search-params";
+import { useUrlSearchParams } from "#/lib/hooks/use-url-search-params";
 
 import React, { useOptimistic, useTransition } from "react";
 import {
@@ -8,8 +8,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
-import { Button } from "~/components/ui/button";
+} from "#/components/ui/dropdown-menu";
+import { Button } from "#/components/ui/button";
 import { Filter } from "lucide-react";
 import { candidateSourceOptions } from "@workspace/db/candidate-list-filters";
 

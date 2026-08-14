@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
+import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
 import { Plus } from "lucide-react";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -11,9 +11,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "~/components/ui/dialog";
-import { ScrollArea } from "~/components/ui/scroll-area";
-import CandidateDocumentUploadForm from "~/components/forms/candidate-document-upload-form";
+} from "#/components/ui/dialog";
+import { ScrollArea } from "#/components/ui/scroll-area";
+import CandidateDocumentUploadForm from "#/features/candidates/components/candidate-document-upload-form";
 
 interface CandidateAddDocumentDialogProps {
   candidateId: string;

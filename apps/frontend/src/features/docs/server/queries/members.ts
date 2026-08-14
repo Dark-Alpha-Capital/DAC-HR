@@ -1,15 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
-import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
-import { createPrismicClient } from "~/lib/prismic/client";
+import { serverFnAuthGuard } from "#/lib/middleware/auth-guard";
+import { createPrismicClient } from "#/features/docs/client";
 import {
   getOperatingMemberType,
   getTeamMemberType,
-} from "~/lib/prismic/config";
+} from "#/features/docs/config";
 import {
   toPrismicMember,
   type PrismicMember,
   type PrismicMemberKind,
-} from "~/lib/prismic/member";
+} from "#/features/docs/member";
 
 export type PrismicMemberFilter = "all" | PrismicMemberKind;
 
@@ -85,3 +85,56 @@ export const loadPrismicMember = createServerFn({ method: "GET" })
       member: toPrismicMember(document, data.kind),
     };
   });
+
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
+import { queryKeys } from "#/lib/query/query-keys";
+import { toOptionalString } from "#/lib/parse-search";
+
+export function parseEmployeesSearch(search: Record<string, unknown>) {
+  const memberType = search.memberType;
+  const parsedMemberType: PrismicMemberFilter =
+    memberType === "team" || memberType === "operating" ? memberType : "all";
+
+  return {
+    memberType: parsedMemberType,
+    name: toOptionalString(search.name),
+  };
+}
+
+export type EmployeesIndexSearch = ReturnType<typeof parseEmployeesSearch>;
+export type PrismicMembersData = Awaited<ReturnType<typeof loadPrismicMembers>>;
+
+export function prismicMembersQueryOptions(deps: EmployeesIndexSearch) {
+  return queryOptions({
+    queryKey: queryKeys.prismic.members(deps),
+    queryFn: async (): Promise<PrismicMembersData> =>
+      loadPrismicMembers({ data: deps }),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function parseMemberSearch(search: Record<string, unknown>): {
+  kind: PrismicMemberKind;
+  memberType: PrismicMemberFilter;
+  name: string | undefined;
+} {
+  const kind: PrismicMemberKind =
+    search.kind === "operating" ? "operating" : "team";
+  const memberType: PrismicMemberFilter =
+    search.memberType === "team" || search.memberType === "operating"
+      ? search.memberType
+      : "all";
+
+  return {
+    kind,
+    memberType,
+    name: typeof search.name === "string" ? search.name : undefined,
+  };
+}
+
+export function prismicMemberQueryOptions(uid: string, kind: PrismicMemberKind) {
+  return queryOptions({
+    queryKey: queryKeys.prismic.member(uid, kind),
+    queryFn: () => loadPrismicMember({ data: { uid, kind } }),
+  });
+}

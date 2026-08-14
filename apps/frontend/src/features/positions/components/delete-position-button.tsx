@@ -1,9 +1,9 @@
 import React from "react";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
-import { deletePosition } from "~/lib/actions/delete-position";
-import { useServerMutation } from "~/hooks/use-server-mutation";
-import { queryKeys } from "~/lib/query/query-keys";
+import { deletePosition } from "#/features/positions/server/mutations/delete-position";
+import { useServerMutation } from "#/hooks/use-server-mutation";
+import { queryKeys } from "#/lib/query/query-keys";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,12 +14,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "~/components/ui/alert-dialog";
+} from "#/components/ui/alert-dialog";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "~/components/ui/tooltip";
+} from "#/components/ui/tooltip";
 
 const DeletePositionButton = ({ positionId }: { positionId: string }) => {
   const mutation = useServerMutation(deletePosition, {

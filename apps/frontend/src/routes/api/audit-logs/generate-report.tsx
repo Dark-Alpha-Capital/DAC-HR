@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSession } from "~/lib/get-session";
+import { getSession } from "#/lib/get-session";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const Route = createFileRoute("/api/audit-logs/generate-report")({
@@ -12,7 +12,12 @@ export const Route = createFileRoute("/api/audit-logs/generate-report")({
             return Response.json({ error: "Unauthorized" }, { status: 401 });
           const { user } = authSession;
 
-          const body = await request.json();
+          const body = (await request.json()) as {
+            action?: string;
+            entityType?: string;
+            entityId?: string;
+            details?: unknown;
+          };
           const { action, entityType, entityId, details } = body;
 
           if (!action || !entityType || !entityId) {
@@ -27,7 +32,7 @@ export const Route = createFileRoute("/api/audit-logs/generate-report")({
             action,
             entityType,
             entityId,
-            details: details || {},
+            details: (details || {}) as Record<string, unknown>,
           });
 
           return Response.json(

@@ -32,6 +32,7 @@ export function describeOpenAIKeySources(): {
   processLast4?: string;
   resolvedSource: "binding" | "process" | "none";
   keysMatch: boolean;
+  keysMismatchWarning?: string;
 } {
   const fromBinding = trimKey(env.OPENAI_API_KEY);
   const fromProcess = trimKey(process.env.OPENAI_API_KEY);

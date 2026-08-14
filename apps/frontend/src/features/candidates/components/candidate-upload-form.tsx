@@ -2,9 +2,9 @@ import * as React from "react";
 import { useTransition, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
-import { useUrlSearchParams } from "~/lib/hooks/use-url-search-params";
+import { useUrlSearchParams } from "#/lib/hooks/use-url-search-params";
 import * as z from "zod";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import {
   Field,
   FieldDescription,
@@ -12,26 +12,26 @@ import {
   FieldContent,
   FieldGroup,
   FieldLabel,
-} from "~/components/ui/field";
-import { Input } from "~/components/ui/input";
-import { PhoneInput } from "~/components/ui/phone-input";
-import { US_STATES } from "~/lib/location";
+} from "#/components/ui/field";
+import { Input } from "#/components/ui/input";
+import { PhoneInput } from "#/components/ui/phone-input";
+import { US_STATES } from "#/lib/location";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupText,
   InputGroupTextarea,
-} from "~/components/ui/input-group";
-import { Checkbox } from "~/components/ui/checkbox";
-import { Label } from "~/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Separator } from "~/components/ui/separator";
+} from "#/components/ui/input-group";
+import { Checkbox } from "#/components/ui/checkbox";
+import { Label } from "#/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
+import { Separator } from "#/components/ui/separator";
 import { Loader2, Copy, Check, Sparkles } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import {
   candidateFormSchema,
   type CandidateFormSchema,
-} from "~/lib/schemas/candidate-form-schema";
+} from "#/features/candidates/schemas";
 import {
   Select,
   SelectContent,
@@ -39,9 +39,9 @@ import {
   SelectSeparator,
   SelectTrigger,
   SelectValue,
-} from "~/components/ui/select";
+} from "#/components/ui/select";
 import { Session } from "better-auth";
-import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
+import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
 
 type Round = { roundTemplateId: string; name: string };
 

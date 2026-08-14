@@ -4,13 +4,13 @@ import {
   openAIKeyFingerprint,
   sha256Hex,
 } from "@workspace/ai-config";
-import { getServerOpenAIApiKey } from "~/lib/server/openai-api-key";
+import { getServerOpenAIApiKey } from "#/lib/server/openai-api-key";
 import { getQuestionsForInterviewSession } from "@workspace/db/modules/positions";
 import { updateSessionStatus } from "@workspace/db/repositories/interview-session-repository";
 import { startBundleRound } from "@workspace/db/repositories/interview-bundle-repository";
 import { PRACTICE_QUESTIONS } from "@workspace/interview-realtime";
 import { buildRealtimeInstructions } from "@workspace/interview-realtime/prompts";
-import { resolveInterviewToken } from "~/lib/interview-token";
+import { resolveInterviewToken } from "#/features/interviews/interview-token";
 import {
   interviewServerLog,
   truncateId,

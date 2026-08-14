@@ -1,9 +1,9 @@
-import { useUrlSearchParams } from "~/lib/hooks/use-url-search-params";
+import { useUrlSearchParams } from "#/lib/hooks/use-url-search-params";
 
-import { resetListPageParam } from "~/lib/parse-search";
+import { resetListPageParam } from "#/lib/parse-search";
 
 import React from "react";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import { X } from "lucide-react";
 
 const ClearQuestionFiltersButton = () => {

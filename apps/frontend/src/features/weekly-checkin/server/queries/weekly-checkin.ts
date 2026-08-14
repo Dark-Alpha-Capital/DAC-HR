@@ -1,8 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
-import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
+import { serverFnAuthGuard } from "#/lib/middleware/auth-guard";
 import { getPositions } from "@workspace/db/modules/positions";
 import { getWeeklyCheckins } from "@workspace/db/modules/dashboard";
-import { hasWeeklyCheckinViewerAccess } from "~/lib/config/weekly-checkin-access";
+import { hasWeeklyCheckinViewerAccess } from "#/features/weekly-checkin/constants";
 
 export const loadWeeklyCheckinForm = createServerFn({ method: "GET" })
   .middleware([serverFnAuthGuard])
@@ -60,3 +60,36 @@ export const loadWeeklyCheckinRecords = createServerFn({ method: "GET" })
       positionMap,
     };
   });
+
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
+import { queryKeys } from "#/lib/query/query-keys";
+import { toPageNumber } from "#/lib/parse-search";
+
+export function parseWeeklyCheckinRecordsSearch(
+  search: Record<string, unknown>,
+) {
+  return {
+    page:
+      search.page !== undefined
+        ? toPageNumber(search.page)
+        : (undefined as number | undefined),
+  };
+}
+
+export type WeeklyCheckinRecordsSearch = ReturnType<
+  typeof parseWeeklyCheckinRecordsSearch
+>;
+export type WeeklyCheckinRecordsData = Awaited<
+  ReturnType<typeof loadWeeklyCheckinRecords>
+>;
+
+export function weeklyCheckinRecordsQueryOptions(
+  deps: WeeklyCheckinRecordsSearch,
+) {
+  return queryOptions({
+    queryKey: queryKeys.weeklyCheckin.records(deps),
+    queryFn: async (): Promise<WeeklyCheckinRecordsData> =>
+      loadWeeklyCheckinRecords({ data: deps }),
+    placeholderData: keepPreviousData,
+  });
+}

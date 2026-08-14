@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useTransition } from "react";
-import { Button } from "~/components/ui/button";
-import { Checkbox } from "~/components/ui/checkbox";
-import { Input } from "~/components/ui/input";
-import { updateOnboardingTasks } from "~/lib/actions/update-onboarding";
-import { updateChecklistItems } from "~/lib/actions/update-checklist";
+import { Button } from "#/components/ui/button";
+import { Checkbox } from "#/components/ui/checkbox";
+import { Input } from "#/components/ui/input";
+import { updateOnboardingTasks } from "#/features/candidates/server/mutations/onboarding";
+import { updateChecklistItems } from "#/features/candidates/server/mutations/checklist";
 import { toast } from "sonner";
 import {
   FileSignature,
@@ -16,7 +16,7 @@ import {
   X,
   CircleDot,
 } from "lucide-react";
-import { cn } from "~/lib/utils";
+import { cn } from "#/lib/utils";
 
 type ChecklistItem = {
   id: string;

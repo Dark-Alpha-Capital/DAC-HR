@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Download, Eye, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
+import { Button } from "#/components/ui/button";
+import { Badge } from "#/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -10,12 +10,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "~/components/ui/table";
+} from "#/components/ui/table";
 import type { CandidateDocument } from "@workspace/db/schema";
-import DeleteCandidateDocumentButton from "./delete-candidate-document-button";
-import { resolveDocumentAccessUrl } from "~/lib/documents/access";
-import DocumentPreviewDialog from "./document-preview-dialog";
-import { isNew } from "~/lib/utils";
+import DeleteCandidateDocumentButton from "#/components/shared/delete-candidate-document-button";
+import { resolveDocumentAccessUrl } from "#/lib/documents/access";
+import DocumentPreviewDialog from "#/components/shared/document-preview-dialog";
+import { isNew } from "#/lib/utils";
 
 interface CandidateDocumentTableProps {
   documents: CandidateDocument[];

@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { downloadFile } from "@workspace/nextcloud";
 import { getSessionById } from "@workspace/db/repositories/interview-session-repository";
-import { getSession } from "~/lib/get-session";
-import { getServerNextcloudClient } from "~/lib/nextcloud-server";
+import { getSession } from "#/lib/get-session";
+import { getServerNextcloudClient } from "#/lib/nextcloud-server";
 
 export const Route = createFileRoute(
   "/api/interview-sessions/$sessionId/recording",

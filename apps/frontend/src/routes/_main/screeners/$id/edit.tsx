@@ -1,11 +1,10 @@
-import { FormPageSkeleton } from "~/components/route-skeletons/form-page-skeleton";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Button } from "~/components/ui/button";
-import ScreenerEditForm from "~/components/forms/screener-edit-form";
+import { createFileRoute } from "@tanstack/react-router";
+import { FormPageSkeleton } from "#/components/shared/form-page-skeleton";
+import { ScreenerEditPage } from "#/features/screeners/components/screener-edit-page";
 import {
   loadScreenerEdit,
   loadScreenerFormOptions,
-} from "~/lib/loaders/screeners";
+} from "#/features/screeners/server/queries/screeners";
 
 export const Route = createFileRoute("/_main/screeners/$id/edit")({
   head: () => ({
@@ -18,34 +17,6 @@ export const Route = createFileRoute("/_main/screeners/$id/edit")({
     ]);
     return { ...screenerData, ...options };
   },
-  component: EditScreenerPage,
+  component: ScreenerEditPage,
   pendingComponent: () => <FormPageSkeleton />,
 });
-
-function EditScreenerPage() {
-  const { screener, positions } = Route.useLoaderData();
-
-  if (!screener) {
-    return (
-      <div className="container mx-auto py-8 text-center">
-        <h1 className="text-xl font-medium">Screener not found</h1>
-        <Button asChild className="mt-4">
-          <Link to="/screeners">Back to Screeners</Link>
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="container mx-auto py-8 space-y-6">
-      <Button asChild variant="secondary">
-        <Link to="/screeners">Back to Screeners</Link>
-      </Button>
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Edit Screener</h1>
-        <p className="text-muted-foreground mt-1">{screener.name}</p>
-      </div>
-      <ScreenerEditForm screener={screener} positions={positions} />
-    </div>
-  );
-}

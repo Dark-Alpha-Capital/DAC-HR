@@ -5,9 +5,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "~/components/ui/select";
-import { updateApplication } from "~/lib/actions/update-application";
-import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
+} from "#/components/ui/select";
+import { updateApplication } from "#/features/applications/server/mutations/applications";
+import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
 import { toast } from "sonner";
 
 type Personality =

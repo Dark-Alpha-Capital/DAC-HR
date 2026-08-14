@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSession } from "~/lib/get-session";
-import { createDocumentRecord } from "~/lib/documents/create-document-record";
-import { uploadFile } from "~/lib/storage";
+import { getSession } from "#/lib/get-session";
+import { createDocumentRecord } from "#/features/documents/documents-service";
+import { uploadFile } from "#/lib/storage";
 
 const VIDEO_TYPES = [
   "video/mp4",
@@ -81,12 +81,12 @@ export const Route = createFileRoute("/api/documents/upload")({
             return Response.json({ url }, { status: 200 });
           }
 
+          const descriptionValue = formData.get("description");
+
           const result = await createDocumentRecord({
             name,
             description:
-              typeof formData.get("description") === "string"
-                ? formData.get("description")
-                : "",
+              typeof descriptionValue === "string" ? descriptionValue : "",
             categoryIds: parseStringArray(formData.get("categoryIds")),
             tags: parseStringArray(formData.get("tags")),
             url,

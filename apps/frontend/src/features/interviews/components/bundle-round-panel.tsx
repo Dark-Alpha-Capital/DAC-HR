@@ -2,13 +2,13 @@ import {
   buildNamedEntityFolderPath,
   formatPersonName,
 } from "@workspace/nextcloud/paths";
-import { Badge } from "~/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "#/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "~/components/ui/collapsible";
+} from "#/components/ui/collapsible";
 import {
   CheckCircle2,
   ChevronDown,
@@ -19,15 +19,15 @@ import {
   ShieldAlert,
   TrendingUp,
 } from "lucide-react";
-import { InterviewSessionRecording } from "~/components/interview-session-recording";
-import { getOptionLabel } from "~/lib/question-options";
+import { InterviewSessionRecording } from "#/features/interviews/components/interview-session-recording";
+import { getOptionLabel } from "#/features/questions/helpers";
 import type { QuestionOption } from "@workspace/db/question-types";
 import type { CheatingSummary } from "@workspace/db/enums";
 import type {
   InterviewBundleDetailData,
   InterviewResponse,
-} from "~/lib/loaders/interviews";
-import { cn, formatDate } from "~/lib/utils";
+} from "#/features/interviews/server/queries/interviews";
+import { cn, formatDate } from "#/lib/utils";
 
 type BundleRoundDetail = InterviewBundleDetailData["roundDetails"][number];
 

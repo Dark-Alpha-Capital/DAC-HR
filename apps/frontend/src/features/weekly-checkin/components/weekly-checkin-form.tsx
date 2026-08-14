@@ -2,29 +2,29 @@ import * as React from "react";
 import { useTransition, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "~/components/ui/tabs";
+} from "#/components/ui/tabs";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "~/components/ui/field";
-import { Input } from "~/components/ui/input";
+} from "#/components/ui/field";
+import { Input } from "#/components/ui/input";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupText,
   InputGroupTextarea,
-} from "~/components/ui/input-group";
-import { Checkbox } from "~/components/ui/checkbox";
-import { Label } from "~/components/ui/label";
+} from "#/components/ui/input-group";
+import { Checkbox } from "#/components/ui/checkbox";
+import { Label } from "#/components/ui/label";
 import {
   Calendar,
   Users,
@@ -38,8 +38,8 @@ import {
   weeklyCheckinFormSchema,
   sourcingChannels,
   sourcingChannelLabels,
-} from "~/lib/schemas/weekly-checkin-form-schema";
-import { createWeeklyCheckin } from "~/lib/actions/create-weekly-checkin";
+} from "#/features/weekly-checkin/schemas";
+import { createWeeklyCheckin } from "#/features/weekly-checkin/server/mutations/create-weekly-checkin";
 
 interface WeeklyCheckinFormProps {
   positions: {

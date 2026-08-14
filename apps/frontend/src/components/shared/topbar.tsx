@@ -8,11 +8,11 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "~/components/ui/breadcrumb";
-import { Separator } from "~/components/ui/separator";
-import { SidebarTrigger } from "~/components/ui/sidebar";
-import { UserNav } from "~/components/user-nav";
-import type { AppSession } from "~/lib/auth-session";
+} from "#/components/ui/breadcrumb";
+import { Separator } from "#/components/ui/separator";
+import { SidebarTrigger } from "#/components/ui/sidebar";
+import { UserNav } from "#/components/shared/user-nav";
+import type { AppSession } from "#/lib/auth-session";
 
 const ROUTE_LABELS: Record<string, string> = {
   dashboard: "Dashboard",

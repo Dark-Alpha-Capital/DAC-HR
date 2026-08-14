@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSession } from "~/lib/get-session";
+import { getSession } from "#/lib/get-session";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import { deleteCandidateWithAssets } from "~/lib/application/candidate-service";
+import { deleteCandidateWithAssets } from "#/features/candidates/candidates-service";
 
 export const Route = createFileRoute("/api/candidate/$id/")({
   server: {

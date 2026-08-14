@@ -13,7 +13,7 @@ import {
   invalidateQuestionLists,
   invalidateRoundLists,
   invalidateWeeklyCheckinRecords,
-} from "~/lib/query/invalidate";
+} from "#/lib/query/invalidate";
 
 export function useQueryInvalidation() {
   const queryClient = useQueryClient();

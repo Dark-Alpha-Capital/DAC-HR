@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSession } from "~/lib/get-session";
+import { getSession } from "#/lib/get-session";
 import {
   isApplicationStatus,
   type ApplicationStatus,

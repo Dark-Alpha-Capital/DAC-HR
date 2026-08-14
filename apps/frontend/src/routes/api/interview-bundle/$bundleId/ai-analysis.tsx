@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSession } from "~/lib/get-session";
+import { getSession } from "#/lib/get-session";
 import { getInterviewAiAnalysesByBundleId } from "@workspace/db/repositories/interview-repository";
 import { deleteInterviewAiAnalysisForBundle } from "@workspace/db/repositories/interview-repository";
-import { runBundleAiAnalysisWithScreener } from "~/lib/interview/run-bundle-ai-analysis";
+import { runBundleAiAnalysisWithScreener } from "#/features/interviews/run-bundle-ai-analysis";
 
 export const Route = createFileRoute(
   "/api/interview-bundle/$bundleId/ai-analysis",

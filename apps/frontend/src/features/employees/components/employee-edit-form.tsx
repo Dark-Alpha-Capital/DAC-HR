@@ -2,15 +2,15 @@ import * as React from "react";
 import { useTransition, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
-import { Button } from "~/components/ui/button";
+import { Button } from "#/components/ui/button";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "~/components/ui/field";
-import { Input } from "~/components/ui/input";
+} from "#/components/ui/field";
+import { Input } from "#/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -18,26 +18,26 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
+} from "#/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "~/components/ui/select";
+} from "#/components/ui/select";
 import { Loader2, ChevronDown } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import {
   employeeFormSchema,
   type EmployeeFormSchema,
   departmentEnum,
-} from "~/lib/schemas/employee-form-schema";
-import { updateEmployee } from "~/lib/actions/update-employee";
+} from "#/features/employees/schemas";
+import { updateEmployee } from "#/features/employees/server/mutations/update-employee";
 import * as z from "zod";
-import EmployeeProfileImage from "../employee-profile-image";
-import { MarkdownEditor } from "~/components/markdown-editor";
-import { cn } from "~/lib/utils";
+import EmployeeProfileImage from "./employee-profile-image";
+import { MarkdownEditor } from "#/components/shared/markdown-editor";
+import { cn } from "#/lib/utils";
 
 interface EmployeeEditFormProps {
   employee: {
@@ -103,11 +103,15 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
             });
 
             if (!uploadResponse.ok) {
-              const errorData = await uploadResponse.json();
+              const errorData = (await uploadResponse.json()) as {
+                error?: string;
+              };
               throw new Error(errorData.error || "Failed to upload image");
             }
 
-            const { url: fileUrl } = await uploadResponse.json();
+            const { url: fileUrl } = (await uploadResponse.json()) as {
+              url: string;
+            };
             finalImageUrl = fileUrl;
           }
 

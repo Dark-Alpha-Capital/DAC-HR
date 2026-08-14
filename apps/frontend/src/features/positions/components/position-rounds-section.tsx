@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { Eye, ClipboardList } from "lucide-react";
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
-import { Separator } from "~/components/ui/separator";
-import { CreateRoundDialog } from "~/components/dialogs/create-round-dialog";
-import { EditRoundDialog } from "~/components/dialogs/edit-round-dialog";
-import DeleteRoundButton from "~/components/delete-round-button";
-import { PositionRoundSheet } from "~/components/position-round-sheet";
-import { useQueryInvalidation } from "~/hooks/use-query-invalidation";
+import { Badge } from "#/components/ui/badge";
+import { Button } from "#/components/ui/button";
+import { Separator } from "#/components/ui/separator";
+import { CreateRoundDialog } from "#/features/positions/components/create-round-dialog";
+import { EditRoundDialog } from "#/features/positions/components/edit-round-dialog";
+import DeleteRoundButton from "#/components/shared/delete-round-button";
+import { PositionRoundSheet } from "#/features/positions/components/position-round-sheet";
+import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
 
 type PositionRound = {
   id: string;

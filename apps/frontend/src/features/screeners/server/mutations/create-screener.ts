@@ -1,10 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
-import { serverFnAuthGuard } from "~/lib/middleware/auth-guard";
+import { serverFnAuthGuard } from "#/lib/middleware/auth-guard";
 import { createScreener } from "@workspace/db/repositories/screener-repository";
 import {
   screenerFormSchema,
   type ScreenerFormSchema,
-} from "../schemas/screener-form-schema";
+} from "#/features/screeners/schemas";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 
 export const createScreenerAction = createServerFn({ method: "POST" })

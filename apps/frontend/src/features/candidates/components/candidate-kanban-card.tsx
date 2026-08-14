@@ -1,8 +1,8 @@
 import { memo } from "react";
 import { Link } from "@tanstack/react-router";
-import { getApplicationStatusCardBorderClass } from "~/components/application-status-badge";
-import { formatDate, isNew } from "~/lib/utils";
-import { Badge } from "~/components/ui/badge";
+import { getApplicationStatusCardBorderClass } from "#/components/shared/application-status-badge";
+import { formatDate, isNew } from "#/lib/utils";
+import { Badge } from "#/components/ui/badge";
 import CopyButton from "./copy-button";
 
 type CandidateKanbanCardProps = {

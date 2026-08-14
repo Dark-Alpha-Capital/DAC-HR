@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSession } from "~/lib/get-session";
+import { getSession } from "#/lib/get-session";
 import {
   getApplicationById,
   saveInterviewAiAnalysis,
@@ -11,10 +11,10 @@ import {
 } from "@workspace/db/repositories/interview-repository";
 import { getScreenerById } from "@workspace/db/repositories/screener-repository";
 import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
-import { getAiModel } from "~/lib/ai/models";
+import { getAiModel } from "#/lib/ai/models";
 import { generateText, Output } from "ai";
-import { interviewAiAnalysisSchema } from "~/lib/schemas/interview-ai-analysis-schema";
-import { buildInterviewAnalysisPrompt } from "~/lib/interview-analysis-prompt";
+import { interviewAiAnalysisSchema } from "#/features/interviews/schemas";
+import { buildInterviewAnalysisPrompt } from "#/features/interviews/interview-analysis-prompt";
 
 export const Route = createFileRoute("/api/interview/$id/ai-analysis")({
   server: {
