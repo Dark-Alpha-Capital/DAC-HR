@@ -31,6 +31,15 @@ import { candidateImport } from "@workspace/db/schema";
 /** Cloudflare Workflows non-stream step result limit */
 const MAX_STEP_RESULT_BYTES = 1024 * 1024;
 
+/** A cancelled import's terminal counters when no partial progress exists. */
+const EMPTY_PROCESS_RESULT: ProcessImportResult = {
+  total: 0,
+  created: 0,
+  updated: 0,
+  skipped: 0,
+  failed: 0,
+};
+
 type Env = {
   NEXTCLOUD_URL: string;
   NEXTCLOUD_USER: string;
@@ -292,48 +301,50 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
               step: "workflow.cancelled",
               importId,
             });
-            throw new ImportCancelledError(importId);
+            return EMPTY_PROCESS_RESULT;
           }
 
-          const fileBuffer = await downloadImportFile(this.env, importRecord);
+          try {
+            const fileBuffer = await downloadImportFile(this.env, importRecord);
 
-          log("log", "Processor starting", {
-            step: "workflow.process.start",
-            importId,
-            fileType: importRecord.type,
-            bufferBytes: fileBuffer.byteLength,
-          });
+            log("log", "Processor starting", {
+              step: "workflow.process.start",
+              importId,
+              fileType: importRecord.type,
+              bufferBytes: fileBuffer.byteLength,
+            });
 
-          const result = await processImportBuffer(
-            this.env,
-            importRecord,
-            fileBuffer,
-          );
+            const result = await processImportBuffer(
+              this.env,
+              importRecord,
+              fileBuffer,
+            );
 
-          log("log", "Processor returned", {
-            step: "workflow.process.returned",
-            importId,
-            fileType: importRecord.type,
-            ...result,
-          });
+            log("log", "Processor returned", {
+              step: "workflow.process.returned",
+              importId,
+              fileType: importRecord.type,
+              ...result,
+            });
 
-          return result;
+            return result;
+          } catch (error) {
+            // A cancelled import is a terminal outcome, not a step failure:
+            // throwing here would trigger the step retry policy, which would
+            // re-download the file and lose the processor's partial result.
+            if (error instanceof ImportCancelledError) {
+              log("log", "Import cancelled during processing", {
+                step: "workflow.cancelled",
+                importId,
+                hasPartialResult: Boolean(error.partialResult),
+              });
+              return error.partialResult ?? EMPTY_PROCESS_RESULT;
+            }
+            throw error;
+          }
         },
       )
       .catch(async (error: unknown) => {
-        const current = await getCandidateImportById(importId);
-        if (current?.status === "cancelled") {
-          log("log", "Import cancelled during processing", {
-            step: "workflow.cancelled",
-            importId,
-          });
-          return (
-            error instanceof ImportCancelledError
-              ? error.partialResult
-              : undefined
-          ) ?? { total: 0, created: 0, updated: 0, skipped: 0, failed: 0 };
-        }
-
         const message =
           error instanceof Error ? error.message : "Import processing failed";
         const stack = error instanceof Error ? error.stack : undefined;
