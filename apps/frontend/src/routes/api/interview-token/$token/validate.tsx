@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { assertInterviewTokenValid } from "@workspace/db/repositories/interview-session-repository";
+import { assertInterviewTokenValid } from "@workspace/db/repositories/interview-bundle-repository";
 import { resolveSessionFromToken } from "@workspace/db/repositories/interview-bundle-repository";
 import {
   interviewServerLog,
@@ -17,7 +17,10 @@ export const Route = createFileRoute("/api/interview-token/$token/validate")({
 
           if (!token) {
             interviewServerLog.warn("validate", COMPONENT, "token_missing");
-            return Response.json({ valid: false, error: "Token is required" }, { status: 400 });
+            return Response.json(
+              { valid: false, error: "Token is required" },
+              { status: 400 },
+            );
           }
 
           interviewServerLog.info("validate", COMPONENT, "validate_start", {

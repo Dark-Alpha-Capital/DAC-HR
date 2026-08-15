@@ -25,80 +25,10 @@ import {
   position,
   roundTemplate,
 } from "../schema";
-
-export const getLegacySessionByToken = async (token: string) => {
-  const [row] = await db
-    .select({
-      session: interviewSession,
-      application: {
-        id: application.id,
-        status: application.status,
-      },
-      candidate: {
-        id: candidate.id,
-        firstName: candidate.firstName,
-        lastName: candidate.lastName,
-        email: candidate.email,
-      },
-      position: {
-        id: position.id,
-        name: position.name,
-      },
-      round: {
-        id: roundTemplate.id,
-        name: roundTemplate.name,
-      },
-    })
-    .from(interviewSession)
-    .innerJoin(
-      application,
-      eq(interviewSession.applicationId, application.id),
-    )
-    .innerJoin(candidate, eq(application.candidateId, candidate.id))
-    .innerJoin(position, eq(application.positionId, position.id))
-    .innerJoin(roundTemplate, eq(interviewSession.roundId, roundTemplate.id))
-    .where(eq(interviewSession.token, token))
-    .limit(1);
-
-  return row ?? null;
-};
-
-const getSessionByIdInternal = async (id: string) => {
-  const [row] = await db
-    .select({
-      session: interviewSession,
-      application: {
-        id: application.id,
-        status: application.status,
-      },
-      candidate: {
-        id: candidate.id,
-        firstName: candidate.firstName,
-        lastName: candidate.lastName,
-        email: candidate.email,
-      },
-      position: {
-        id: position.id,
-        name: position.name,
-      },
-      round: {
-        id: roundTemplate.id,
-        name: roundTemplate.name,
-      },
-    })
-    .from(interviewSession)
-    .innerJoin(
-      application,
-      eq(interviewSession.applicationId, application.id),
-    )
-    .innerJoin(candidate, eq(application.candidateId, candidate.id))
-    .innerJoin(position, eq(application.positionId, position.id))
-    .innerJoin(roundTemplate, eq(interviewSession.roundId, roundTemplate.id))
-    .where(eq(interviewSession.id, id))
-    .limit(1);
-
-  return row ?? null;
-};
+import {
+  getSessionById,
+  getSessionByToken,
+} from "./interview-session-repository";
 
 export type RoundConfig = {
   roundId: string;
@@ -460,7 +390,7 @@ export type TokenValidationResult =
   | {
       ok: true;
       type: "legacy";
-      row: NonNullable<Awaited<ReturnType<typeof getLegacySessionByToken>>>;
+      row: NonNullable<Awaited<ReturnType<typeof getSessionByToken>>>;
     }
   | {
       ok: false;
@@ -507,7 +437,7 @@ export const assertInterviewTokenValid = async (
     };
   }
 
-  const row = await getLegacySessionByToken(token);
+  const row = await getSessionByToken(token);
 
   if (!row) {
     return { ok: false, status: 404, error: "Interview not found" };
@@ -561,7 +491,7 @@ export const resolveSessionFromToken = async (token: string) => {
     };
   }
 
-  const sessionRow = await getSessionByIdInternal(activeRound.session.id);
+  const sessionRow = await getSessionById(activeRound.session.id);
   if (!sessionRow) {
     return {
       ok: false as const,

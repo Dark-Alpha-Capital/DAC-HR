@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, type SQL } from "drizzle-orm";
 import { db } from "@workspace/db/db";
 import type {
   AgentConfig,
@@ -124,114 +124,62 @@ export const updateSessionStatus = async (
   return row;
 };
 
-export const getSessionByToken = async (token: string) => {
-  const [row] = await db
-    .select({
-      session: interviewSession,
-      application: {
-        id: application.id,
-        status: application.status,
-      },
-      candidate: {
-        id: candidate.id,
-        firstName: candidate.firstName,
-        lastName: candidate.lastName,
-        email: candidate.email,
-      },
-      position: {
-        id: position.id,
-        name: position.name,
-      },
-      round: {
-        id: roundTemplate.id,
-        name: roundTemplate.name,
-      },
-    })
+const sessionContextSelect = {
+  session: interviewSession,
+  application: {
+    id: application.id,
+    status: application.status,
+  },
+  candidate: {
+    id: candidate.id,
+    firstName: candidate.firstName,
+    lastName: candidate.lastName,
+    email: candidate.email,
+  },
+  position: {
+    id: position.id,
+    name: position.name,
+  },
+  round: {
+    id: roundTemplate.id,
+    name: roundTemplate.name,
+  },
+} as const;
+
+/**
+ * Single four-table session+context join shared by every session lookup.
+ * The old getters each re-declared this identical select/join chain.
+ */
+function buildSessionContextQuery(where?: SQL, limit?: number) {
+  const base = db
+    .select(sessionContextSelect)
     .from(interviewSession)
-    .innerJoin(
-      application,
-      eq(interviewSession.applicationId, application.id),
-    )
+    .innerJoin(application, eq(interviewSession.applicationId, application.id))
     .innerJoin(candidate, eq(application.candidateId, candidate.id))
     .innerJoin(position, eq(application.positionId, position.id))
-    .innerJoin(roundTemplate, eq(interviewSession.roundId, roundTemplate.id))
-    .where(eq(interviewSession.token, token))
-    .limit(1);
+    .innerJoin(roundTemplate, eq(interviewSession.roundId, roundTemplate.id));
+  const filtered = where ? base.where(where) : base;
+  return limit !== undefined ? filtered.limit(limit) : filtered;
+}
 
+export const getSessionByToken = async (token: string) => {
+  const [row] = await buildSessionContextQuery(
+    eq(interviewSession.token, token),
+    1,
+  );
   return row ?? null;
 };
 
 export const getSessionById = async (id: string) => {
-  const [row] = await db
-    .select({
-      session: interviewSession,
-      application: {
-        id: application.id,
-        status: application.status,
-      },
-      candidate: {
-        id: candidate.id,
-        firstName: candidate.firstName,
-        lastName: candidate.lastName,
-        email: candidate.email,
-      },
-      position: {
-        id: position.id,
-        name: position.name,
-      },
-      round: {
-        id: roundTemplate.id,
-        name: roundTemplate.name,
-      },
-    })
-    .from(interviewSession)
-    .innerJoin(
-      application,
-      eq(interviewSession.applicationId, application.id),
-    )
-    .innerJoin(candidate, eq(application.candidateId, candidate.id))
-    .innerJoin(position, eq(application.positionId, position.id))
-    .innerJoin(roundTemplate, eq(interviewSession.roundId, roundTemplate.id))
-    .where(eq(interviewSession.id, id))
-    .limit(1);
-
+  const [row] = await buildSessionContextQuery(eq(interviewSession.id, id), 1);
   return row ?? null;
 };
 
 export const getSessionByInterviewId = async (interviewId: string) => {
-  const [row] = await db
-    .select({
-      session: interviewSession,
-      application: {
-        id: application.id,
-        status: application.status,
-      },
-      candidate: {
-        id: candidate.id,
-        firstName: candidate.firstName,
-        lastName: candidate.lastName,
-        email: candidate.email,
-      },
-      position: {
-        id: position.id,
-        name: position.name,
-      },
-      round: {
-        id: roundTemplate.id,
-        name: roundTemplate.name,
-      },
-    })
-    .from(interviewSession)
-    .innerJoin(
-      application,
-      eq(interviewSession.applicationId, application.id),
-    )
-    .innerJoin(candidate, eq(application.candidateId, candidate.id))
-    .innerJoin(position, eq(application.positionId, position.id))
-    .innerJoin(roundTemplate, eq(interviewSession.roundId, roundTemplate.id))
-    .where(eq(interviewSession.interviewId, interviewId))
-    .limit(1);
-
+  const [row] = await buildSessionContextQuery(
+    eq(interviewSession.interviewId, interviewId),
+    1,
+  );
   return row ?? null;
 };
 
@@ -256,36 +204,9 @@ export const getSessionsByApplicationId = async (applicationId: string) => {
 };
 
 export const getAllSessions = async () => {
-  const rows = await db
-    .select({
-      session: interviewSession,
-      application: {
-        id: application.id,
-      },
-      candidate: {
-        id: candidate.id,
-        firstName: candidate.firstName,
-        lastName: candidate.lastName,
-        email: candidate.email,
-      },
-      position: {
-        id: position.id,
-        name: position.name,
-      },
-      round: {
-        id: roundTemplate.id,
-        name: roundTemplate.name,
-      },
-    })
-    .from(interviewSession)
-    .innerJoin(
-      application,
-      eq(interviewSession.applicationId, application.id),
-    )
-    .innerJoin(candidate, eq(application.candidateId, candidate.id))
-    .innerJoin(position, eq(application.positionId, position.id))
-    .innerJoin(roundTemplate, eq(interviewSession.roundId, roundTemplate.id))
-    .orderBy(interviewSession.createdAt);
+  const rows = await buildSessionContextQuery(undefined, undefined).orderBy(
+    interviewSession.createdAt,
+  );
 
   return rows.map((r) => ({
     ...r.session,
@@ -380,10 +301,7 @@ export const upsertResponse = async (data: {
       updatedAt: new Date(),
     })
     .onConflictDoUpdate({
-      target: [
-        interviewResponse.sessionId,
-        interviewResponse.questionId,
-      ],
+      target: [interviewResponse.sessionId, interviewResponse.questionId],
       set: {
         answerText: data.answerText ?? null,
         selectedOptionId: data.selectedOptionId ?? null,
@@ -554,12 +472,6 @@ export const upsertEvaluation = async (data: {
 
   return row;
 };
-
-export {
-  assertInterviewTokenValid,
-  assertInterviewTokenValidForRecordingUpload,
-  resolveSessionFromToken,
-} from "./interview-bundle-repository";
 
 export const getEvaluationBySessionId = async (sessionId: string) => {
   const [row] = await db

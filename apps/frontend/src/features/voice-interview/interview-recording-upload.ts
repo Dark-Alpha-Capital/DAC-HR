@@ -4,10 +4,8 @@ import {
   uploadFile as uploadToNextcloud,
 } from "@workspace/nextcloud";
 import { getServerNextcloudClient } from "#/lib/nextcloud-server";
-import {
-  assertInterviewTokenValidForRecordingUpload,
-  updateSessionVoiceMetadata,
-} from "@workspace/db/repositories/interview-session-repository";
+import { assertInterviewTokenValidForRecordingUpload } from "@workspace/db/repositories/interview-bundle-repository";
+import { updateSessionVoiceMetadata } from "@workspace/db/repositories/interview-session-repository";
 
 const ALLOWED_RECORDING_TYPES = [
   "video/webm",
@@ -81,9 +79,7 @@ export async function handleRecordingUpload(
 
     const contentType =
       fileEntry.type ||
-      (fileName.endsWith(".webm")
-        ? "video/webm"
-        : "application/octet-stream");
+      (fileName.endsWith(".webm") ? "video/webm" : "application/octet-stream");
 
     if (!ALLOWED_RECORDING_TYPES.includes(contentType)) {
       return Response.json(
@@ -120,14 +116,11 @@ export async function handleRecordingUpload(
       });
 
       if (!uploadResult.success || !uploadResult.downloadUrl) {
-        console.error(
-          "Nextcloud upload failed for interview recording:",
-          {
-            code: uploadResult.code,
-            error: uploadResult.error,
-            sessionId,
-          },
-        );
+        console.error("Nextcloud upload failed for interview recording:", {
+          code: uploadResult.code,
+          error: uploadResult.error,
+          sessionId,
+        });
         return;
       }
 
