@@ -10,10 +10,8 @@ import {
   getPositions,
   getRoundsByPositionId,
 } from "@workspace/db/modules/positions";
-import {
-  parseCandidateSortOption,
-  type CandidateSortOption,
-} from "@workspace/db/candidate-list-filters";
+import { parseCandidateSortOption } from "@workspace/db/candidate-list-filters";
+import type { CandidateFilters } from "#/features/candidates/kanban-types";
 import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
 import { getChecklistItemsByCandidateId } from "@workspace/db/repositories/candidate-checklist-repository";
 import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
@@ -60,13 +58,7 @@ export type CandidateDetailData = {
   initialApplicationId?: string;
 };
 
-type CandidatesIndexInput = {
-  name?: string;
-  email?: string;
-  position?: string[];
-  status?: string[];
-  source?: string[];
-  sort?: CandidateSortOption;
+type CandidatesIndexInput = CandidateFilters & {
   page?: number;
   view?: "table" | "kanban";
 };

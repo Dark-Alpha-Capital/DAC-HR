@@ -24,7 +24,11 @@ export type KanbanPage = {
   totalCount?: number;
 };
 
-export type KanbanFilters = {
+/**
+ * Shared candidate list-filter shape — used by the candidates index route
+ * (plus `page`/`view`), the kanban URL builder, and the kanban columns.
+ */
+export type CandidateFilters = {
   name?: string;
   email?: string;
   position?: string[];
@@ -32,6 +36,8 @@ export type KanbanFilters = {
   source?: string[];
   sort?: CandidateSortOption;
 };
+
+export type KanbanFilters = CandidateFilters;
 
 export type KanbanColumnParams = {
   status: ApplicationStatus;

@@ -46,36 +46,15 @@ import type { Position } from "@workspace/db/schema";
 import { MarkdownEditor } from "#/components/shared/markdown-editor";
 import { cn } from "#/lib/utils";
 import * as z from "zod";
+import {
+  departmentLabels,
+  hireLevelLabels,
+  statusLabels,
+} from "#/features/positions/position-metadata";
 
 interface PositionEditFormProps {
   position: Position;
 }
-
-const departmentLabels: Record<z.infer<typeof departmentEnum>, string> = {
-  management: "Management",
-  "capital-markets": "Capital Markets",
-  "deal-team": "Deal Team",
-  legal: "Legal",
-  operations: "Operations",
-  origination: "Origination",
-  pipe: "PIPE",
-  "public-markets": "Public Markets",
-};
-
-const hireLevelLabels: Record<z.infer<typeof hireLevelEnum>, string> = {
-  "managing-director": "Managing Director",
-  "vice-president": "Vice President",
-  associate: "Associate",
-  analyst: "Analyst",
-  intern: "Intern",
-};
-
-const statusLabels: Record<z.infer<typeof positionStatusEnum>, string> = {
-  active: "Active",
-  hold: "Hold",
-  passed: "Passed",
-  upcoming: "Upcoming",
-};
 
 const PositionEditForm = ({ position }: PositionEditFormProps) => {
   const router = useRouter();

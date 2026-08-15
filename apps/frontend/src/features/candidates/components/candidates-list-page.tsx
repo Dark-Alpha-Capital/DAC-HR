@@ -53,15 +53,6 @@ export function CandidatesListPage() {
 
   const viewMode = search.view ?? "kanban";
 
-  const kanbanFilters = {
-    name: search.name,
-    email: search.email,
-    position: search.position,
-    status: search.status,
-    source: search.source,
-    sort: search.sort,
-  };
-
   return (
     <div className="space-y-6 w-full min-w-0">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 min-w-0">
@@ -96,7 +87,7 @@ export function CandidatesListPage() {
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           candidates={candidates}
-          kanbanFilters={kanbanFilters}
+          kanbanFilters={search}
           currentPage={currentPage}
           limit={limit}
           totalCount={totalCount}

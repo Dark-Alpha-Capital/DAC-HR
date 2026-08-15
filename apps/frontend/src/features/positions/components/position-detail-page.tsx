@@ -16,6 +16,11 @@ import DeletePositionButton from "#/features/positions/components/delete-positio
 import PositionTabsClient from "#/features/positions/components/position-tabs-client";
 import { PositionRoundsSection } from "#/features/positions/components/position-rounds-section";
 import { Markdown } from "#/components/shared/markdown";
+import {
+  hireLevelLabels,
+  statusBadgeClass,
+  statusLabels,
+} from "#/features/positions/position-metadata";
 
 export function PositionDetailPage() {
   const { position, rounds, candidates, screener } = useLoaderData({
@@ -49,32 +54,14 @@ export function PositionDetailPage() {
               {position.status ? (
                 <Badge
                   variant="secondary"
-                  className={`text-xs ${
-                    position.status === "active"
-                      ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
-                      : position.status === "hold"
-                        ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800"
-                        : position.status === "passed"
-                          ? "bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800"
-                          : position.status === "upcoming"
-                            ? "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800"
-                            : ""
-                  }`}
+                  className={`text-xs ${statusBadgeClass(position.status)}`}
                 >
-                  {position.status === "active" && "Active"}
-                  {position.status === "hold" && "Hold"}
-                  {position.status === "passed" && "Passed"}
-                  {position.status === "upcoming" && "Upcoming"}
+                  {statusLabels[position.status] ?? position.status}
                 </Badge>
               ) : null}
               {position.hireLevel ? (
                 <Badge variant="secondary" className="text-xs">
-                  {position.hireLevel === "managing-director" &&
-                    "Managing Director"}
-                  {position.hireLevel === "vice-president" && "Vice President"}
-                  {position.hireLevel === "associate" && "Associate"}
-                  {position.hireLevel === "analyst" && "Analyst"}
-                  {position.hireLevel === "intern" && "Intern"}
+                  {hireLevelLabels[position.hireLevel] ?? position.hireLevel}
                 </Badge>
               ) : null}
             </div>
@@ -136,13 +123,8 @@ export function PositionDetailPage() {
                     {position.hireLevel ? (
                       <p className="text-xs text-muted-foreground">
                         <span className="font-medium">Hire Level:</span>{" "}
-                        {position.hireLevel === "managing-director" &&
-                          "Managing Director"}
-                        {position.hireLevel === "vice-president" &&
-                          "Vice President"}
-                        {position.hireLevel === "associate" && "Associate"}
-                        {position.hireLevel === "analyst" && "Analyst"}
-                        {position.hireLevel === "intern" && "Intern"}
+                        {hireLevelLabels[position.hireLevel] ??
+                          position.hireLevel}
                       </p>
                     ) : null}
                   </div>
