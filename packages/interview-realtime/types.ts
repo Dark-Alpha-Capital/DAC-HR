@@ -11,11 +11,7 @@ export interface InterviewQuestion {
 }
 
 export type VoiceInterviewPhase =
-  | "intro"
-  | "awaiting_ready"
-  | "questions"
-  | "closing"
-  | "awaiting_end";
+  "intro" | "awaiting_ready" | "questions" | "closing" | "awaiting_end";
 
 export type InterviewSessionDoStatus = "active" | "paused" | "completed";
 
@@ -63,32 +59,11 @@ export interface InterviewState {
 export type ClientToDoMessage =
   | { type: "CALL_STARTED"; callId: string; clientSecret: string }
   | { type: "REALTIME_EVENT"; event: string | Record<string, unknown> }
-  | { type: "CHEATING_EVENT"; eventType: string; metadata?: Record<string, unknown> }
+  | {
+      type: "CHEATING_EVENT";
+      eventType: string;
+      metadata?: Record<string, unknown>;
+    }
   | { type: "FULLSCREEN_STATE"; isFullscreen: boolean }
   | { type: "END_INTERVIEW" }
   | { type: "PING" };
-
-export type DoToClientMessage =
-  | {
-      type: "CONNECTED";
-      state: Pick<
-        InterviewState,
-        | "currentQuestionIndex"
-        | "status"
-        | "questions"
-        | "voicePhase"
-        | "conversationHistory"
-      >;
-    }
-  | { type: "INTRO_STARTED" }
-  | { type: "QUESTION_CHANGED"; index: number; questionId: string; question?: InterviewQuestion }
-  | { type: "ALL_QUESTIONS_ASKED" }
-  | { type: "TRANSCRIPT"; role: "user" | "assistant"; text: string }
-  | { type: "TRANSCRIPT_DELTA"; role: "user" | "assistant"; delta: string }
-  | { type: "ANSWER_SAVED"; questionId: string; transcript: string }
-  | { type: "INTERVIEW_COMPLETED" }
-  | { type: "PRACTICE_ENDED" }
-  | { type: "SESSION_TIME_LIMIT" }
-  | { type: "QUESTION_TIMED_OUT"; questionId: string }
-  | { type: "ERROR"; message: string }
-  | { type: "PONG" };

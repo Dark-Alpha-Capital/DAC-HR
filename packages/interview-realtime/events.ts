@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { cheatingEventTypes } from "@workspace/db/enums";
-import type { ClientToDoMessage, DoToClientMessage } from "./types";
+import type { ClientToDoMessage } from "./types";
 
 const cheatingEventTypeSchema = z.enum(cheatingEventTypes);
 
@@ -50,26 +50,92 @@ export function serializeDoMessage(message: Record<string, unknown>): string {
   return JSON.stringify(message);
 }
 
-const doMessageTypes = new Set<string>([
-  "CONNECTED",
-  "INTRO_STARTED",
-  "QUESTION_CHANGED",
-  "ALL_QUESTIONS_ASKED",
-  "TRANSCRIPT",
-  "TRANSCRIPT_DELTA",
-  "ANSWER_SAVED",
-  "INTERVIEW_COMPLETED",
-  "PRACTICE_ENDED",
-  "SESSION_TIME_LIMIT",
-  "QUESTION_TIMED_OUT",
-  "ERROR",
-  "PONG",
+const conversationEntrySchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string(),
+  timestamp: z.string(),
+});
+
+const questionOptionSchema = z
+  .object({
+    id: z.string(),
+    text: z.string(),
+  })
+  .passthrough();
+
+const interviewQuestionSchema = z
+  .object({
+    id: z.string(),
+    questionText: z.string(),
+    questionType: z.string(),
+    category: z.string().nullable(),
+    timeLimitSeconds: z.number().int().nullable().optional(),
+    options: z.array(questionOptionSchema).nullable().optional(),
+  })
+  .passthrough();
+
+const voiceInterviewPhaseSchema = z.enum([
+  "intro",
+  "awaiting_ready",
+  "questions",
+  "closing",
+  "awaiting_end",
 ]);
+
+const connectedStateSchema = z
+  .object({
+    currentQuestionIndex: z.number().int().optional(),
+    status: z.string().optional(),
+    questions: z.array(interviewQuestionSchema).optional(),
+    voicePhase: voiceInterviewPhaseSchema.optional(),
+    conversationHistory: z.array(conversationEntrySchema).optional(),
+  })
+  .passthrough();
+
+/**
+ * Single source of truth for DO→client messages. The client dispatches on
+ * `type` and reads the narrowed payload from the parsed result; malformed
+ * payloads fail fast (null) instead of surfacing as typed-but-undefined fields.
+ */
+export const doToClientMessageSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("CONNECTED"), state: connectedStateSchema }),
+  z.object({ type: z.literal("INTRO_STARTED") }),
+  z.object({
+    type: z.literal("QUESTION_CHANGED"),
+    index: z.number().int(),
+    questionId: z.string(),
+    question: interviewQuestionSchema.optional(),
+  }),
+  z.object({ type: z.literal("ALL_QUESTIONS_ASKED") }),
+  z.object({
+    type: z.literal("TRANSCRIPT"),
+    role: z.enum(["user", "assistant"]),
+    text: z.string(),
+  }),
+  z.object({
+    type: z.literal("TRANSCRIPT_DELTA"),
+    role: z.enum(["user", "assistant"]),
+    delta: z.string(),
+  }),
+  z.object({
+    type: z.literal("ANSWER_SAVED"),
+    questionId: z.string(),
+    transcript: z.string(),
+  }),
+  z.object({ type: z.literal("INTERVIEW_COMPLETED") }),
+  z.object({ type: z.literal("PRACTICE_ENDED") }),
+  z.object({ type: z.literal("SESSION_TIME_LIMIT") }),
+  z.object({ type: z.literal("QUESTION_TIMED_OUT"), questionId: z.string() }),
+  z.object({ type: z.literal("ERROR"), message: z.string() }),
+  z.object({ type: z.literal("PONG") }),
+]);
+
+export type DoToClientMessage = z.infer<typeof doToClientMessageSchema>;
 
 /**
  * Client-safe parser for DO→client WebSocket messages. Returns the message
- * (narrowed by the `DoToClientMessage` union) or null when the payload isn't a
- * known message. This is the single seam the client should dispatch on.
+ * (narrowed by the schema) or null when the payload isn't a valid message.
+ * This is the single seam the client should dispatch on.
  */
 export function parseDoMessage(
   raw: string | ArrayBuffer,
@@ -77,14 +143,8 @@ export function parseDoMessage(
   try {
     const text = typeof raw === "string" ? raw : new TextDecoder().decode(raw);
     const json: unknown = JSON.parse(text);
-    if (!json || typeof json !== "object") {
-      return null;
-    }
-    const type = (json as { type?: unknown }).type;
-    if (typeof type !== "string" || !doMessageTypes.has(type)) {
-      return null;
-    }
-    return json as DoToClientMessage;
+    const parsed = doToClientMessageSchema.safeParse(json);
+    return parsed.success ? parsed.data : null;
   } catch {
     return null;
   }
@@ -103,10 +163,7 @@ export interface DoMessageSocket {
   send(data: string): void;
 }
 
-export function sendDoMessage(
-  ws: DoMessageSocket,
-  message: ClientToDoMessage,
-) {
+export function sendDoMessage(ws: DoMessageSocket, message: ClientToDoMessage) {
   if (ws.readyState !== WebSocket.OPEN) {
     return;
   }
