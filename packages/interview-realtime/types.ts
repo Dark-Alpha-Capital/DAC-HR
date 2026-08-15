@@ -45,6 +45,16 @@ export interface InterviewState {
   voicePhase?: VoiceInterviewPhase;
   /** True once the welcome intro response completed or was interrupted. */
   welcomeIntroSent?: boolean;
+  /**
+   * Persisted sideband descriptor so a waking DO can reattach its orphaned
+   * voice engine after hibernation. Cleared on intentional close.
+   */
+  sideband?: {
+    callId: string;
+    clientSecret: string;
+    reconnectAttempt: number;
+    status: "connecting" | "open" | "closed";
+  };
   awaitingAnswerForIndex?: number | null;
   /** questionId → answer transcript (excludes intro / chit-chat) */
   questionAnswers?: Record<string, string>;

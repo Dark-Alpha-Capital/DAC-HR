@@ -182,6 +182,8 @@ export class InterviewSessionDO implements DurableObject {
       await this.ensureState(sessionId, token);
     });
 
+    await this.maybeRestoreSideband();
+
     // A new connection cancels a pending interrupt-grace alarm: the candidate
     // reattached (transient drop / reload), so the session lives on.
     await this.durableState.storage
@@ -288,6 +290,8 @@ export class InterviewSessionDO implements DurableObject {
       if (!this.interviewState) {
         return;
       }
+
+      await this.maybeRestoreSideband();
 
       this.logTranscript("websocket_message_received", { type: parsed.type });
 
@@ -412,6 +416,26 @@ export class InterviewSessionDO implements DurableObject {
         questionFollowUpCounts: stored.questionFollowUpCounts ?? {},
       };
     }
+  }
+
+  /**
+   * After a hibernation wake the outbound sideband socket is gone (its event
+   * listeners died with the instance). If the persisted descriptor says the
+   * voice engine was open, reattach it via the existing reconnect path so the
+   * session's voice flow resumes instead of silently stalling.
+   */
+  private async maybeRestoreSideband() {
+    if (this.sideband || !this.interviewState?.sideband) {
+      return;
+    }
+    const { callId, clientSecret, status } = this.interviewState.sideband;
+    if (status !== "open" || !callId || !clientSecret) {
+      return;
+    }
+    this.logTranscript("sideband_restored_after_wake", {
+      callId: truncateId(callId),
+    });
+    await this.connectSideband(callId, clientSecret, { isReconnect: true });
   }
 
   private async ensureState(sessionId: string, token: string) {
@@ -1078,6 +1102,13 @@ export class InterviewSessionDO implements DurableObject {
       });
 
       this.sidebandCredentials = { callId, clientSecret };
+      this.interviewState.sideband = {
+        callId,
+        clientSecret,
+        reconnectAttempt: this.sidebandReconnectAttempt,
+        status: "connecting",
+      };
+      await this.persistState();
 
       if (!isReconnect) {
         this.interviewState.callId = callId;
@@ -1108,6 +1139,11 @@ export class InterviewSessionDO implements DurableObject {
           this.sideband = result.sideband;
           this.attachSidebandListeners(result.sideband, callId);
           this.sidebandReconnectAttempt = 0;
+          if (this.interviewState.sideband) {
+            this.interviewState.sideband.status = "open";
+            this.interviewState.sideband.reconnectAttempt = 0;
+          }
+          await this.persistState();
           await this.onSidebandConnected(callId, isReconnect);
           return;
         }
@@ -1146,6 +1182,8 @@ export class InterviewSessionDO implements DurableObject {
       this.sidebandCredentials = null;
       this.sidebandReconnectAttempt = 0;
       this.pendingResponseMetric = null;
+      delete this.interviewState?.sideband;
+      void this.persistState();
 
       if (this.welcomeIntroFallbackTimer) {
         clearTimeout(this.welcomeIntroFallbackTimer);
