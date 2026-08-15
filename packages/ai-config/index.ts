@@ -3,6 +3,7 @@ export {
   formatOpenAIApiError,
   formatRealtimeCallsError,
   openAIKeyFingerprint,
+  parseOpenAIError,
 } from "./openai-api-error";
 export { getOpenAIProvider, getOpenAIModel } from "./ai-sdk-provider";
 export {

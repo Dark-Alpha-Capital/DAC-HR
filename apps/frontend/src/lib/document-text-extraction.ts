@@ -6,7 +6,13 @@ import { generateText } from "ai";
 import { getOpenAIModel } from "@workspace/ai-config";
 
 export type DocumentFormat =
-  "pdf" | "docx" | "xlsx" | "text" | "legacy-doc" | "image" | "unknown";
+  | "pdf"
+  | "docx"
+  | "xlsx"
+  | "text"
+  | "legacy-doc"
+  | "image"
+  | "unknown";
 
 export type DocumentExtractionOptions = {
   openAiApiKey?: string;
@@ -230,13 +236,15 @@ async function extractDocxText(
   return null;
 }
 
-function extractPlainText(
-  buffer: Buffer,
+async function extractPlainText(
+  buffer: Buffer | Uint8Array,
   fileName: string,
   startTime: number,
   log: DocumentExtractionLogger,
-): string | null {
-  const rawText = new TextDecoder("utf-8", { fatal: false }).decode(buffer);
+): Promise<string | null> {
+  const rawText = new TextDecoder("utf-8", { fatal: false }).decode(
+    toBuffer(buffer),
+  );
   if (!rawText.trim()) return null;
 
   const truncated = rawText.slice(0, 50000);
@@ -372,6 +380,32 @@ async function extractImageText(
   return null;
 }
 
+type Extractor = (
+  buffer: Buffer | Uint8Array,
+  fileName: string,
+  startTime: number,
+  log: DocumentExtractionLogger,
+  openAiApiKey?: string,
+) => Promise<string | null>;
+
+/** Known-format extractors, keyed by the detected format. */
+const EXTRACTORS: Record<Exclude<DocumentFormat, "unknown">, Extractor> = {
+  pdf: extractPdfText,
+  docx: extractDocxText,
+  xlsx: extractXlsxText,
+  "legacy-doc": extractLegacyDocText,
+  image: extractImageText,
+  text: extractPlainText,
+};
+
+/**
+ * Ordered fallback for mis-detected files: try each extractor tolerantly.
+ * Matches the legacy inline chain exactly (no legacy-doc in the fallback).
+ */
+const UNKNOWN_FALLBACK: Array<
+  Exclude<DocumentFormat, "unknown" | "legacy-doc">
+> = ["pdf", "docx", "xlsx", "image", "text"];
+
 export async function extractTextFromDocument(
   buffer: Buffer | Uint8Array,
   fileName: string,
@@ -385,86 +419,26 @@ export async function extractTextFromDocument(
   log("log", "Detecting document format", { fileName, format });
 
   try {
-    switch (format) {
-      case "pdf": {
-        const text = await extractPdfText(bytes, fileName, startTime, log);
-        if (text) return text;
-        break;
-      }
-      case "docx": {
-        const text = await extractDocxText(bytes, fileName, startTime, log);
-        if (text) return text;
-        break;
-      }
-      case "xlsx": {
-        const text = await extractXlsxText(bytes, fileName, startTime, log);
-        if (text) return text;
-        break;
-      }
-      case "legacy-doc": {
-        const text = await extractLegacyDocText(
-          bytes,
-          fileName,
-          startTime,
-          log,
-        );
-        if (text) return text;
-        break;
-      }
-      case "image": {
-        const text = await extractImageText(
-          bytes,
-          fileName,
-          startTime,
-          log,
-          options.openAiApiKey,
-        );
-        if (text) return text;
-        break;
-      }
-      case "text": {
-        const text = extractPlainText(bytes, fileName, startTime, log);
-        if (text) return text;
-        break;
-      }
-      case "unknown": {
-        const pdfText = await extractPdfText(
-          bytes,
-          fileName,
-          startTime,
-          log,
-        ).catch(() => null);
-        if (pdfText) return pdfText;
-
-        const docxText = await extractDocxText(
-          bytes,
-          fileName,
-          startTime,
-          log,
-        ).catch(() => null);
-        if (docxText) return docxText;
-
-        const xlsxText = await extractXlsxText(
-          bytes,
-          fileName,
-          startTime,
-          log,
-        ).catch(() => null);
-        if (xlsxText) return xlsxText;
-
-        const imageText = await extractImageText(
+    if (format === "unknown") {
+      for (const candidate of UNKNOWN_FALLBACK) {
+        const text = await EXTRACTORS[candidate](
           bytes,
           fileName,
           startTime,
           log,
           options.openAiApiKey,
         ).catch(() => null);
-        if (imageText) return imageText;
-
-        const plainText = extractPlainText(bytes, fileName, startTime, log);
-        if (plainText) return plainText;
-        break;
+        if (text) return text;
       }
+    } else {
+      const text = await EXTRACTORS[format](
+        bytes,
+        fileName,
+        startTime,
+        log,
+        options.openAiApiKey,
+      );
+      if (text) return text;
     }
   } catch (err) {
     log("warn", "Text extraction failed", {

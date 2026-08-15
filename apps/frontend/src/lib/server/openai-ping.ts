@@ -1,6 +1,6 @@
 import {
-  formatOpenAIApiError,
   openAIKeyFingerprint,
+  parseOpenAIError,
   REALTIME_MODEL,
 } from "@workspace/ai-config";
 import {
@@ -25,20 +25,23 @@ export async function pingOpenAIRealtime(): Promise<OpenAIPingResult> {
   const apiKey = getServerOpenAIApiKey();
   const keyLast4 = openAIKeyFingerprint(apiKey)?.replace("…", "");
 
-  const response = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      session: {
-        type: "realtime",
-        model: REALTIME_MODEL,
-        audio: { output: { voice: "alloy" } },
+  const response = await fetch(
+    "https://api.openai.com/v1/realtime/client_secrets",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
       },
-    }),
-  });
+      body: JSON.stringify({
+        session: {
+          type: "realtime",
+          model: REALTIME_MODEL,
+          audio: { output: { voice: "alloy" } },
+        },
+      }),
+    },
+  );
 
   const bodyText = await response.text();
   let errorType: string | undefined;
@@ -46,18 +49,10 @@ export async function pingOpenAIRealtime(): Promise<OpenAIPingResult> {
   let errorMessage: string | undefined;
 
   if (!response.ok) {
-    const formatted = formatOpenAIApiError(response.status, bodyText);
-    errorMessage = formatted;
-    try {
-      const parsed = JSON.parse(bodyText) as {
-        error?: { type?: string; code?: string; message?: string };
-      };
-      errorType = parsed.error?.type;
-      errorCode = parsed.error?.code;
-      errorMessage = parsed.error?.message ?? formatted;
-    } catch {
-      // keep formatted message
-    }
+    const parsed = parseOpenAIError(response.status, bodyText);
+    errorType = parsed.type;
+    errorCode = parsed.code;
+    errorMessage = parsed.message ?? parsed.formatted;
   }
 
   return {

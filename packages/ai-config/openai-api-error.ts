@@ -9,7 +9,9 @@ type OpenAIErrorPayload = {
 };
 
 /** Last 4 chars of an API key for log correlation (never log full keys). */
-export function openAIKeyFingerprint(apiKey: string | undefined): string | undefined {
+export function openAIKeyFingerprint(
+  apiKey: string | undefined,
+): string | undefined {
   const trimmed = apiKey?.trim();
   if (!trimmed || trimmed.length < 8) {
     return undefined;
@@ -17,34 +19,71 @@ export function openAIKeyFingerprint(apiKey: string | undefined): string | undef
   return `…${trimmed.slice(-4)}`;
 }
 
-export function formatOpenAIApiError(status: number, bodyText: string): string {
+export type ParsedOpenAIError = {
+  formatted: string;
+  type?: string;
+  code?: string;
+  message?: string;
+};
+
+/**
+ * Single structured parser for OpenAI error responses. Every caller used to
+ * re-parse the body to pull `type`/`code`/`message`; this owns that contract.
+ */
+export function parseOpenAIError(
+  status: number,
+  bodyText: string,
+): ParsedOpenAIError {
   const trimmed = bodyText.trim();
   if (!trimmed) {
-    return `OpenAI request failed (HTTP ${status})`;
+    return { formatted: `OpenAI request failed (HTTP ${status})` };
   }
+
+  let type: string | undefined;
+  let code: string | undefined;
+  let message: string | undefined;
 
   try {
     const parsed = JSON.parse(trimmed) as OpenAIErrorPayload;
     const nested = parsed.error;
-    if (nested && typeof nested.message === "string") {
-      const parts = [`HTTP ${status}`];
-      if (nested.type) {
-        parts.push(`type=${nested.type}`);
+    if (nested) {
+      type = nested.type;
+      code = nested.code;
+      if (typeof nested.message === "string") {
+        message = nested.message;
       }
-      if (nested.code) {
-        parts.push(`code=${nested.code}`);
-      }
-      parts.push(nested.message);
-      return parts.join(" · ");
     }
-    if (typeof parsed.message === "string") {
-      return `HTTP ${status} · ${parsed.message}`;
+    if (typeof parsed.message === "string" && message === undefined) {
+      message = parsed.message;
     }
   } catch {
     // Plain-text body (e.g. SDP errors).
   }
 
-  return `HTTP ${status} · ${trimmed.length <= 400 ? trimmed : `${trimmed.slice(0, 400)}…`}`;
+  if (message !== undefined) {
+    const parts = [`HTTP ${status}`];
+    if (type) {
+      parts.push(`type=${type}`);
+    }
+    if (code) {
+      parts.push(`code=${code}`);
+    }
+    parts.push(message);
+    return { formatted: parts.join(" · "), type, code, message };
+  }
+
+  return {
+    formatted: `HTTP ${status} · ${
+      trimmed.length <= 400 ? trimmed : `${trimmed.slice(0, 400)}…`
+    }`,
+    type,
+    code,
+    message,
+  };
+}
+
+export function formatOpenAIApiError(status: number, bodyText: string): string {
+  return parseOpenAIError(status, bodyText).formatted;
 }
 
 const REALTIME_CALLS_QUOTA_HELP =
@@ -54,18 +93,15 @@ const REALTIME_CALLS_QUOTA_HELP =
   "See https://platform.openai.com/docs/guides/error-codes/api-errors";
 
 /** User-facing error for browser POST /v1/realtime/calls (SDP exchange). */
-export function formatRealtimeCallsError(status: number, bodyText: string): string {
-  const base = formatOpenAIApiError(status, bodyText);
+export function formatRealtimeCallsError(
+  status: number,
+  bodyText: string,
+): string {
+  const { formatted, type, code } = parseOpenAIError(status, bodyText);
 
-  try {
-    const parsed = JSON.parse(bodyText.trim()) as OpenAIErrorPayload;
-    const code = parsed.error?.code ?? parsed.error?.type;
-    if (code === "insufficient_quota") {
-      return `${base} — ${REALTIME_CALLS_QUOTA_HELP}`;
-    }
-  } catch {
-    // non-JSON body
+  if ((code ?? type) === "insufficient_quota") {
+    return `${formatted} — ${REALTIME_CALLS_QUOTA_HELP}`;
   }
 
-  return base;
+  return formatted;
 }
