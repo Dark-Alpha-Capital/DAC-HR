@@ -8,7 +8,7 @@ export const Route = createFileRoute("/_auth/signup")({
   }),
   validateSearch: (search: { redirect?: string } & SearchSchemaInput) => ({
     redirect:
-      typeof search.redirect === "string" && search.redirect.startsWith("/")
+      search.redirect && search.redirect.startsWith("/")
         ? search.redirect
         : "/dashboard",
   }),

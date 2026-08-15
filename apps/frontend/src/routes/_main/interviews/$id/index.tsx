@@ -1,9 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DetailPageSkeleton } from "#/components/shared/detail-page-skeleton";
-import {
-  loadInterviewById,
-  type InterviewDetailData,
-} from "#/features/interviews/server/queries/interviews";
+import { loadInterviewById } from "#/features/interviews/server/queries/interviews";
 import { InterviewDetailPage } from "#/features/interviews/components/interview-detail-page";
 
 export const Route = createFileRoute("/_main/interviews/$id/")({
@@ -12,7 +9,7 @@ export const Route = createFileRoute("/_main/interviews/$id/")({
   }),
   loader: async ({ params }) => {
     const result = await loadInterviewById({ data: params.id });
-    return result as InterviewDetailData;
+    return result;
   },
   component: InterviewDetailPage,
   pendingComponent: () => <DetailPageSkeleton container tabs showBreadcrumb showActions />,

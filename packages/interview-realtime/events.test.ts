@@ -4,6 +4,7 @@ import {
   parseDoMessage,
   sendDoMessage,
   serializeDoMessage,
+  type DoMessageSocket,
 } from "./events";
 
 test("parseClientMessage accepts valid inbound messages and rejects unknown", () => {
@@ -90,12 +91,12 @@ test("parseDoMessage accepts every message shape the DO emits", () => {
 
 test("sendDoMessage writes a serialized typed payload", () => {
   let sent = "";
-  const ws = {
+  const ws: DoMessageSocket = {
     readyState: 1,
     send: (data: string) => {
       sent = data;
     },
-  } as unknown as WebSocket;
+  };
 
   sendDoMessage(ws, { type: "PING" });
   expect(sent).toBe(JSON.stringify({ type: "PING" }));

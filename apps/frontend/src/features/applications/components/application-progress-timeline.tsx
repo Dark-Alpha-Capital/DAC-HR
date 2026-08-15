@@ -50,12 +50,12 @@ import type {
   InterviewBundleStatus,
   InterviewMode,
   RoundDeliveryMode,
-} from "@workspace/db/enums";
+} from "#/lib/enums";
 import { deleteInterview } from "#/features/interviews/server/mutations/interviews";
 import { removeInterviewBundle } from "#/features/interviews/server/mutations/interviews";
 import { toast } from "sonner";
 import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
-import type { ApplicationProgress } from "#/features/applications/server/queries/applications";
+import type { ApplicationProgress } from "#/features/applications/types";
 
 type TimeFilter = "all" | "7d" | "30d";
 type SortDir = "newest" | "oldest";
@@ -116,7 +116,11 @@ function InterviewFilterControls({
     <div className="flex items-center gap-2">
       <Select
         value={value.time}
-        onValueChange={(v) => onChange({ ...value, time: v as TimeFilter })}
+        onValueChange={(v) =>
+          // SAFETY: the TIME_FILTER_OPTIONS <SelectItem> values are exactly the
+          // TimeFilter literals ("all", "7d", "30d").
+          onChange({ ...value, time: v as TimeFilter })
+        }
       >
         <SelectTrigger className="h-8 w-[130px] text-xs">
           <SelectValue />
@@ -131,7 +135,11 @@ function InterviewFilterControls({
       </Select>
       <Select
         value={value.sort}
-        onValueChange={(v) => onChange({ ...value, sort: v as SortDir })}
+        onValueChange={(v) =>
+          // SAFETY: the SORT_OPTIONS <SelectItem> values are exactly the SortDir
+          // literals ("newest", "oldest").
+          onChange({ ...value, sort: v as SortDir })
+        }
       >
         <SelectTrigger className="h-8 w-[140px] text-xs">
           <SelectValue />
@@ -292,13 +300,11 @@ const getStatusBadge = (status: string) => {
 
 function BundleCard({
   item,
-  applicationId,
   onDelete,
   deleting,
   isLatest,
 }: {
   item: InterviewBundleItem;
-  applicationId?: string;
   onDelete: (id: string) => void;
   deleting: boolean;
   isLatest?: boolean;
@@ -307,10 +313,9 @@ function BundleCard({
   const completedCount = item.rounds.filter(
     (r) => r.bundleRound.status === "completed",
   ).length;
-  const link =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/interview/${item.bundle.token}`
-      : `/interview/${item.bundle.token}`;
+  const link = globalThis.location?.origin
+    ? `${globalThis.location.origin}/interview/${item.bundle.token}`
+    : `/interview/${item.bundle.token}`;
 
   const handleCopy = async () => {
     try {
@@ -393,7 +398,10 @@ function BundleCard({
               )}
             </Button>
             <Button variant="secondary" size="icon" asChild>
-              <Link to={`/interviews/bundle/${item.bundle.id}` as any}>
+              <Link
+                to="/interviews/bundle/$bundleId"
+                params={{ bundleId: item.bundle.id }}
+              >
                 <Eye className="h-4 w-4" />
               </Link>
             </Button>
@@ -631,7 +639,6 @@ export default function ApplicationProgressTimeline({
                 <BundleCard
                   key={item.bundle.id}
                   item={item}
-                  applicationId={applicationId}
                   onDelete={handleDeleteBundleClick}
                   deleting={deletingBundleId === item.bundle.id}
                   isLatest={aiFilter.sort === "newest" && index === 0}
@@ -787,7 +794,8 @@ export default function ApplicationProgressTimeline({
                                     asChild
                                   >
                                     <Link
-                                      to={`/interviews/${interview.id}` as any}
+                                      to="/interviews/$id"
+                                      params={{ id: interview.id }}
                                     >
                                       <Eye className="h-4 w-4" />
                                     </Link>

@@ -1,14 +1,40 @@
+import type { JsonObject } from "./types";
+
 export type ImportFileType = "csv" | "zip" | "pdf";
 
 export type ImportLogLevel = "log" | "warn" | "error";
 
+/**
+ * Structured log context. The fixed fields below cover the keys the logger
+ * formats; anything else a caller attaches lands in the JsonObject index and
+ * is stringified as-is.
+ */
 export type ImportLogContext = {
   step: string;
   importId?: string;
   fileType?: ImportFileType;
   rowIndex?: number;
-  [key: string]: unknown;
-};
+  status?: string;
+  filename?: string;
+  name?: string;
+  email?: string;
+  rowCount?: number;
+  pdfCount?: number;
+  pageCount?: number;
+  matchedCount?: number;
+  total?: number;
+  totalPdfs?: number;
+  created?: number;
+  skipped?: number;
+  failed?: number;
+  bufferBytes?: number;
+  contentLength?: number;
+  fileSize?: number;
+  limitBytes?: number;
+  elapsedMs?: number;
+  attempt?: number;
+  error?: string | null;
+} & JsonObject;
 
 const VERBOSE_STEPS = new Set([
   "unified.start",
@@ -32,8 +58,8 @@ function shortId(id?: string): string {
   return id.length > 8 ? `${id.slice(0, 8)}…` : id;
 }
 
-function formatBytes(bytes: unknown): string | null {
-  if (typeof bytes !== "number" || Number.isNaN(bytes)) return null;
+function formatBytes(bytes: number | null | undefined): string | null {
+  if (bytes == null || Number.isNaN(bytes)) return null;
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -172,7 +198,7 @@ function buildDetailParts(
     parts.push(`${context.elapsedMs}ms`);
   }
 
-  if (typeof context.attempt === "number" && context.attempt > 1) {
+  if (context.attempt != null && context.attempt > 1) {
     parts.push(`retry #${context.attempt}`);
   }
 
@@ -180,11 +206,7 @@ function buildDetailParts(
     parts.push(`limit ${formatBytes(context.limitBytes)}`);
   }
 
-  if (
-    context.status &&
-    typeof context.step === "string" &&
-    context.step.startsWith("workflow.")
-  ) {
+  if (context.status && context.step.startsWith("workflow.")) {
     parts.push(`status=${String(context.status)}`);
   }
 

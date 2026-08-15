@@ -7,18 +7,20 @@ import {
 import { ListPageSkeleton } from "#/components/shared/list-page-skeleton";
 import { useSearch } from "@tanstack/react-router";
 import { AdminUsersClient } from "#/features/admin/components/admin-users-client";
-import { fetchNonAdminUsers, type AdminUser } from "#/features/admin/server/queries/users";
+import {
+  fetchNonAdminUsers,
+  type AdminUser,
+} from "#/features/admin/server/queries/users";
 import { queryKeys } from "#/lib/query/query-keys";
 import { toOptionalString, toPageNumber } from "#/lib/parse-search";
 
-function parseAdminUsersSearch(search: Record<string, unknown>) {
+function parseAdminUsersSearch(
+  search: Record<string, string | string[] | undefined>,
+) {
   return {
     name: toOptionalString(search.name),
     email: toOptionalString(search.email),
-    page:
-      search.page !== undefined
-        ? toPageNumber(search.page)
-        : (undefined as number | undefined),
+    page: search.page !== undefined ? toPageNumber(search.page) : undefined,
   };
 }
 

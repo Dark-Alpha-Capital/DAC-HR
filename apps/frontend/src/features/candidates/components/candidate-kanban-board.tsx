@@ -1,7 +1,7 @@
 import {
   applicationStatuses,
   type ApplicationStatus,
-} from "@workspace/db/application-status";
+} from "#/lib/application-status";
 import CandidateKanbanColumn from "#/features/candidates/components/candidate-kanban-column";
 import type { KanbanFilters } from "#/features/candidates/kanban-types";
 

@@ -1,4 +1,3 @@
-import { DetailPageSkeleton } from "#/components/shared/detail-page-skeleton";
 import { Link, useLoaderData } from "@tanstack/react-router";
 import { Button } from "#/components/ui/button";
 import {
@@ -36,7 +35,12 @@ export function QuestionDetailPage() {
           </CardContent>
           <CardFooter>
             <Button asChild>
-              <Link to="/questions" search={{} as never}>Back to Questions</Link>
+              <Link
+                to="/questions"
+                search={{ search: "", position: [], round: [], page: undefined }}
+              >
+                Back to Questions
+              </Link>
             </Button>
           </CardFooter>
         </Card>

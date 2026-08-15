@@ -85,6 +85,8 @@ export default function InterviewAiAnalysisTab({
       });
 
       if (!response.ok) {
+        // SAFETY: the ai-analysis API returns { error?: string } on non-OK
+        // responses (its handlers serialize the failure message this way).
         const error = (await response.json()) as { error?: string };
         throw new Error(error.error || "Failed to run analysis");
       }

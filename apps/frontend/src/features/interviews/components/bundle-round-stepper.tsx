@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import type { InterviewBundleDetailData } from "#/features/interviews/server/queries/interviews";
+import type { InterviewBundleDetailData } from "#/features/interviews/types";
 import { cn } from "#/lib/utils";
 
 type BundleRoundDetail = InterviewBundleDetailData["roundDetails"][number];

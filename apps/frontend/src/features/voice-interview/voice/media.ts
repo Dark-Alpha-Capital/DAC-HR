@@ -7,16 +7,23 @@ import { logInterview } from "#/features/voice-interview/interview-debug-log";
  */
 
 export function isIOSDevice(): boolean {
-  if (typeof navigator === "undefined") {
+  if (globalThis.navigator === undefined) {
     return false;
   }
   const ua = navigator.userAgent;
-  return /iPad|iPhone|iPod/.test(ua) && !(window as { MSStream?: unknown }).MSStream;
+  // SAFETY: `window.MSStream` is a legacy IE/Edge-only property absent from
+  // the Window type; the cast reads that optional legacy field.
+  return (
+    /iPad|iPhone|iPod/.test(ua) && !(window as { MSStream?: unknown }).MSStream
+  );
 }
 
 /** iOS Safari / older browsers lack screen capture entirely. */
 export function supportsScreenCapture(): boolean {
-  return typeof navigator !== "undefined" && Boolean(navigator.mediaDevices?.getDisplayMedia);
+  return (
+    globalThis.navigator !== undefined &&
+    Boolean(navigator.mediaDevices?.getDisplayMedia)
+  );
 }
 
 export interface MediaPreflight {
@@ -47,7 +54,7 @@ export function getRecordingMimeType(audioOnly = false): string {
   const candidates = audioOnly
     ? AUDIO_ONLY_MIME_CANDIDATES
     : RECORDING_MIME_CANDIDATES;
-  if (typeof MediaRecorder === "undefined") {
+  if (globalThis.MediaRecorder === undefined) {
     return audioOnly ? "audio/webm" : "video/webm";
   }
   for (const mimeType of candidates) {
@@ -68,7 +75,10 @@ export async function requestDisplayMedia(): Promise<MediaStream | null> {
     return null;
   }
 
-  const advanced: DisplayMediaStreamOptions = {
+  // SAFETY: preferCurrentTab / selfBrowserSurface / monitorTypeSurfaces are
+  // standard getDisplayMedia constraint options in current Chrome/Edge but are
+  // not yet present in TS's lib.dom DisplayMediaStreamOptions type.
+  const advanced = {
     video: {
       displaySurface: "browser",
       width: { ideal: 1920 },
@@ -120,7 +130,7 @@ export function buildRecordingStream(
   screenStream: MediaStream | null,
   micStream: MediaStream,
   audioContext: AudioContext | null,
-): { stream: MediaStream; audioContext: AudioContext | null } {
+) {
   const videoTracks = screenStream?.getVideoTracks() ?? [];
   const micTracks = micStream.getAudioTracks();
   const screenAudioTracks = screenStream?.getAudioTracks() ?? [];

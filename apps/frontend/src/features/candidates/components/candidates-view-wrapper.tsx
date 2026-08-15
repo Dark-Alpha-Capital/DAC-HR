@@ -2,9 +2,9 @@ import ViewToggle from "./view-toggle";
 import CandidateContainer from "./candidate-container";
 import CandidateKanbanBoard from "./candidate-kanban-board";
 import PaginationControls from "#/components/shared/pagination-controls";
-import type { CandidateViewMode } from "#/lib/parse-search";
+import type { CandidateViewMode } from "#/features/candidates/helpers";
 import type { KanbanFilters } from "#/features/candidates/kanban-types";
-import type { ApplicationStatus } from "@workspace/db/application-status";
+import type { ApplicationStatus } from "#/lib/application-status";
 
 type Candidate = {
   id: string;

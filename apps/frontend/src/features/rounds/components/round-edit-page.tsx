@@ -10,7 +10,7 @@ export function RoundEditPage() {
   return (
     <div className="container mx-auto py-8 space-y-6">
       <Button asChild>
-        <Link to="/rounds" search={{} as never}>
+        <Link to="/rounds" search={{ type: undefined, page: undefined }}>
           Back to Rounds
         </Link>
       </Button>
@@ -22,7 +22,7 @@ export function RoundEditPage() {
             The round you&apos;re looking for doesn&apos;t exist.
           </p>
           <Button asChild>
-            <Link to="/rounds" search={{} as never}>
+            <Link to="/rounds" search={{ type: undefined, page: undefined }}>
               Back to Rounds
             </Link>
           </Button>

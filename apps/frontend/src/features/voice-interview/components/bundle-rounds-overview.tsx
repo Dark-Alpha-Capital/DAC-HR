@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "#/components/ui/card";
-import type { DeliveryMode } from "@workspace/db/enums";
+import type { DeliveryMode } from "#/lib/enums";
 import { CheckCircle2, ClipboardList, Mic } from "lucide-react";
 import { useEffect } from "react";
 import { logInterview } from "#/features/voice-interview/interview-debug-log";

@@ -10,9 +10,7 @@ import {
   EMBEDDING_DIMENSIONS,
 } from "@workspace/ai-config";
 import { createNextcloudClient, downloadFile } from "@workspace/nextcloud";
-import { db } from "@workspace/db/db";
-import { candidateDocument } from "@workspace/db/schema";
-import { eq } from "@workspace/db";
+import { candidatesService } from "#/features/candidates/server/candidates-service";
 import { extractTextFromDocument } from "#/lib/document-text-extraction";
 
 type Env = {
@@ -51,19 +49,7 @@ export class DocumentIndexingWorkflow extends WorkflowEntrypoint<Env, Params> {
     const { candidateId, name, category, url } = await step.do(
       "load document",
       async () => {
-        const [row] = await db
-          .select({
-            candidateId: candidateDocument.candidateId,
-            name: candidateDocument.name,
-            category: candidateDocument.category,
-            url: candidateDocument.url,
-          })
-          .from(candidateDocument)
-          .where(eq(candidateDocument.id, documentId))
-          .limit(1);
-        if (!row) {
-          throw new Error(`Candidate document ${documentId} not found`);
-        }
+        const row = await candidatesService.getDocumentForIndexing(documentId);
         return row;
       },
     );
@@ -232,10 +218,7 @@ export class DocumentIndexingWorkflow extends WorkflowEntrypoint<Env, Params> {
 
     // Step 7: Update database
     await step.do("update database", async () => {
-      await db
-        .update(candidateDocument)
-        .set({ vectorizeNamespace: namespace })
-        .where(eq(candidateDocument.id, documentId));
+      await candidatesService.setDocumentVectorizeNamespace(documentId, namespace);
 
       log("log", "Step completed: update database", {
         documentId,

@@ -1,4 +1,12 @@
 import type { CandidateImportDuplicatePolicy } from "@workspace/db/enums";
+import { z } from "zod";
+
+/**
+ * An arbitrary JSON object (metadata carried through the import pipeline and
+ * persisted as-is). Parsed with zod at the import boundary.
+ */
+export const jsonObjectSchema = z.record(z.string(), z.unknown());
+export type JsonObject = z.infer<typeof jsonObjectSchema>;
 
 export type ResumeFields = {
   firstName: string;
@@ -68,7 +76,7 @@ export type ImportCandidateInput = {
   importId: string;
   rowIndex: number;
   duplicatePolicy: CandidateImportDuplicatePolicy;
-  metadata?: Record<string, unknown>;
+  metadata?: JsonObject;
 };
 
 export type ImportCandidateResult = {

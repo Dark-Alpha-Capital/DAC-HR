@@ -26,7 +26,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
           <Loader2Icon className="size-4 animate-spin" />
         ),
       }}
-      style={
+      style={/* SAFETY: sonner's toaster reads these CSS custom properties;
+        React.CSSProperties has no slot for them. */
         {
           "--normal-bg": "var(--popover)",
           "--normal-text": "var(--popover-foreground)",

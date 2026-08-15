@@ -1,5 +1,6 @@
-import type { InterviewQuestion } from "./types";
+import type { InterviewQuestion, JsonObject } from "./types";
 import { interviewServerLog } from "./debug-log";
+import { z } from "zod";
 
 /**
  * Max consecutive unclear-audio/noise follow-ups before the interview advances
@@ -19,7 +20,7 @@ const EVAL_COMPONENT = "answer-evaluation";
 
 function logEvaluation(
   action: string,
-  data: Record<string, unknown> = {},
+  data: JsonObject = {},
   level: "info" | "warn" | "error" = "info",
 ): void {
   interviewServerLog[level]("eval", EVAL_COMPONENT, action, data);
@@ -57,6 +58,8 @@ async function parseChatCompletionsResponse(
   }
 
   try {
+    // SAFETY: chat completions responses are JSON with the documented
+    // `choices[].message.content` shape; the cast narrows the parsed body.
     return JSON.parse(bodyText) as ChatCompletionsPayload;
   } catch (error) {
     logEvaluation("response_json_parse_failed", {
@@ -174,34 +177,27 @@ export function looksLikeNoise(text: string): boolean {
   return false;
 }
 
+const answerEvaluationSchema = z.object({
+  sufficient: z.boolean(),
+  relevance: z.enum([
+    "on_topic",
+    "partial",
+    "off_topic",
+    "refusal",
+    "unclear",
+    "noise",
+  ]),
+  followUpInstruction: z.string().nullable().catch(null),
+  combinedAnswer: z
+    .string()
+    .catch("")
+    .transform((s) => s.trim()),
+});
+
 function parseEvaluationJson(raw: string): AnswerEvaluationResult | null {
   try {
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    const relevance = parsed.relevance;
-    const validRelevance =
-      relevance === "on_topic" ||
-      relevance === "partial" ||
-      relevance === "off_topic" ||
-      relevance === "refusal" ||
-      relevance === "unclear" ||
-      relevance === "noise";
-
-    if (!validRelevance || typeof parsed.sufficient !== "boolean") {
-      return null;
-    }
-
-    return {
-      sufficient: parsed.sufficient,
-      relevance,
-      followUpInstruction:
-        typeof parsed.followUpInstruction === "string"
-          ? parsed.followUpInstruction
-          : null,
-      combinedAnswer:
-        typeof parsed.combinedAnswer === "string"
-          ? parsed.combinedAnswer.trim()
-          : "",
-    };
+    const parsed = answerEvaluationSchema.safeParse(JSON.parse(raw));
+    return parsed.success ? parsed.data : null;
   } catch {
     return null;
   }
@@ -488,26 +484,17 @@ export async function evaluateIntroUtterance(options: {
   }
 
   try {
-    const parsed = JSON.parse(content) as Record<string, unknown>;
-    const relevance = parsed.relevance;
-    const validRelevance =
-      relevance === "ready" ||
-      relevance === "unclear" ||
-      relevance === "noise" ||
-      relevance === "other";
-
-    if (!validRelevance || typeof parsed.ready !== "boolean") {
+    const introEvaluationSchema = z.object({
+      ready: z.boolean(),
+      relevance: z.enum(["ready", "unclear", "noise", "other"]),
+      followUpInstruction: z.string().nullable().catch(null),
+    });
+    const parsed = introEvaluationSchema.safeParse(JSON.parse(content));
+    if (!parsed.success) {
       return fallbackIntroEvaluation(trimmed);
     }
 
-    const introResult: IntroEvaluationResult = {
-      ready: parsed.ready,
-      relevance,
-      followUpInstruction:
-        typeof parsed.followUpInstruction === "string"
-          ? parsed.followUpInstruction
-          : null,
-    };
+    const introResult: IntroEvaluationResult = parsed.data;
     interviewServerLog.success("eval", EVAL_COMPONENT, "intro_evaluated", {
       ready: introResult.ready,
       relevance: introResult.relevance,

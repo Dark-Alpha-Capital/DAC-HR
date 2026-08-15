@@ -16,7 +16,7 @@ import PaginationControls from "#/components/shared/pagination-controls";
 import {
   documentsIndexQueryOptions,
   type DocumentsIndexData,
-} from "#/features/documents/server/queries/documents";
+} from "#/features/documents/query-options";
 
 export function DocumentsListPage() {
   const search = useSearch({ from: "/_main/documents/" });
@@ -57,7 +57,7 @@ export function DocumentsListPage() {
           </p>
         </div>
         <Button asChild>
-          <Link to="/documents/new" search={{} as never}>
+          <Link to="/documents/new" search={{}}>
             New Document
           </Link>
         </Button>
@@ -93,7 +93,7 @@ export function DocumentsListPage() {
               </p>
               {scope === "firm" ? (
                 <Button asChild className="mt-4">
-                  <Link to="/documents/new" search={{} as never}>
+                  <Link to="/documents/new" search={{}}>
                     Add your first document
                   </Link>
                 </Button>

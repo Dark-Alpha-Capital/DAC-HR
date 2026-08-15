@@ -1,20 +1,9 @@
 /// <reference types="@cloudflare/workers-types" />
 
 import { getRealtimeSidebandHttpUrl, sha256Hex } from "@workspace/ai-config";
-import { getQuestionsForInterviewSession } from "@workspace/db/modules/positions";
-import type { CheatingEventType, CheatingSummary } from "@workspace/db/enums";
-import {
-  getSessionById,
-  insertCheatingEvents,
-  syncVoiceResponsesForSession,
-  updateSessionStatus,
-  updateSessionVoiceMetadata,
-  upsertVoiceResponse,
-} from "@workspace/db/repositories/interview-session-repository";
-import {
-  advanceBundleRound,
-  resolveSessionFromToken,
-} from "@workspace/db/repositories/interview-bundle-repository";
+import { z } from "zod";
+import type { CheatingEventType, CheatingSummary } from "#/lib/enums";
+import { interviewsService } from "#/features/interviews/server/interviews-service";
 import {
   interviewServerLog,
   truncateId,
@@ -61,17 +50,189 @@ import {
 import type {
   ConversationEntry,
   InterviewQuestion,
+  InterviewSessionDoStatus,
   InterviewState,
   VoiceInterviewPhase,
 } from "@workspace/interview-realtime/types";
 
+/** Params accepted by the InterviewEvaluationWorkflow binding. */
+interface EvaluationWorkflowParams {
+  sessionId: string;
+}
+
 interface WorkflowBinding {
-  create: (input: { params: Record<string, unknown> }) => Promise<unknown>;
+  create: (input: {
+    params: EvaluationWorkflowParams;
+  }) => Promise<WorkflowInstance>;
+}
+
+/** JSON-serializable primitives (log and forwarded payload values). */
+type JsonPrimitive = string | number | boolean | null;
+/** JSON-serializable value; used for log fields and opaque forwarded payloads. */
+type JsonValue =
+  | JsonPrimitive
+  | JsonValue[]
+  | { [key: string]: JsonValue | undefined };
+
+/** Arbitrary structured debug fields forwarded to the structured logger. */
+type DoLogFields = Record<string, JsonValue | undefined>;
+
+/** Arbitrary client-reported cheating metadata forwarded to the DB verbatim. */
+type CheatingEventMetadata = Record<string, JsonValue>;
+
+/** Token usage reported by the OpenAI Realtime API on `response.done`. */
+interface RealtimeUsage {
+  input_tokens?: number;
+  output_tokens?: number;
+  total_tokens?: number;
+  cached_tokens?: number;
+  input_token_details?: {
+    cached_tokens?: number;
+  };
+}
+
+/** OpenAI Realtime conversation item fields this DO reads. */
+interface RealtimeConversationItem {
+  call_id?: string;
+  name?: string;
+  role?: string;
+  type?: string;
+  content?: JsonValue;
+}
+
+/** Subset of an OpenAI Realtime server event this DO consumes. */
+interface RealtimeEvent {
+  type: string;
+  event_id?: string;
+  response?: {
+    id?: string;
+    status?: string;
+    output?: JsonValue;
+    usage?: RealtimeUsage | null;
+  };
+  item?: RealtimeConversationItem;
+  part?: {
+    type?: string;
+    transcript?: string;
+  };
+  delta?: string;
+  transcript?: string;
+  output_index?: number;
+  content_index?: number;
+  response_id?: string;
+  error?: {
+    code?: string;
+    message?: string;
+    type?: string;
+  };
+}
+
+/** Normalized token counters used for response metrics. */
+interface TokenUsage {
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+  cachedTokens?: number;
+}
+
+/** Outbound `response.create` event sent to the realtime API. */
+interface ResponseCreateEvent {
+  type: string;
+  response: {
+    instructions?: string | string[];
+    max_output_tokens?: number;
+    modalities?: JsonValue;
+  };
+}
+
+/** Outbound DO→client message (the client validates the shape via zod). */
+interface DoClientMessage {
+  type: string;
+  state?: {
+    currentQuestionIndex?: number;
+    voicePhase?: VoiceInterviewPhase;
+    status?: InterviewSessionDoStatus;
+    questions?: InterviewQuestion[];
+    conversationHistory?: ConversationEntry[];
+  };
+  index?: number;
+  questionId?: string;
+  question?: InterviewQuestion;
+  message?: string;
+  role?: "user" | "assistant";
+  text?: string;
+  delta?: string;
+  transcript?: string;
 }
 
 interface InterviewSessionEnv {
   OPENAI_API_KEY: string;
   INTERVIEW_EVALUATION_WORKFLOW?: WorkflowBinding;
+}
+
+const realtimeEventSchema = z
+  .object({
+    type: z.string(),
+    event_id: z.string().optional(),
+    response: z
+      .object({
+        id: z.string().optional(),
+        status: z.string().optional(),
+        output: z.custom<JsonValue>().optional(),
+        usage: z
+          .object({
+            input_tokens: z.number().optional(),
+            output_tokens: z.number().optional(),
+            total_tokens: z.number().optional(),
+            cached_tokens: z.number().optional(),
+            input_token_details: z
+              .object({ cached_tokens: z.number().optional() })
+              .optional(),
+          })
+          .nullish(),
+      })
+      .optional(),
+    item: z
+      .object({
+        call_id: z.string().optional(),
+        name: z.string().optional(),
+        role: z.string().optional(),
+        type: z.string().optional(),
+        content: z.custom<JsonValue>().optional(),
+      })
+      .optional(),
+    part: z
+      .object({
+        type: z.string().optional(),
+        transcript: z.string().optional(),
+      })
+      .optional(),
+    delta: z.string().optional(),
+    transcript: z.string().optional(),
+    output_index: z.number().optional(),
+    content_index: z.number().optional(),
+    response_id: z.string().optional(),
+    error: z
+      .object({
+        code: z.string().optional(),
+        message: z.string().optional(),
+        type: z.string().optional(),
+      })
+      .optional(),
+  })
+  .passthrough();
+
+/** Client-supplied cheating metadata; forwarded verbatim to the DB. */
+const cheatingEventMetadataSchema = z.record(z.string(), z.custom<JsonValue>());
+
+/** Parse an OpenAI Realtime server event from the wire; null when invalid. */
+function parseRealtimeEvent(raw: string): RealtimeEvent | null {
+  try {
+    const parsed = realtimeEventSchema.safeParse(JSON.parse(raw));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
 }
 
 declare const WebSocketPair: {
@@ -137,10 +298,7 @@ export class InterviewSessionDO implements DurableObject {
     this.env = env;
   }
 
-  private logTranscript(
-    action: string,
-    data: Record<string, unknown> = {},
-  ): void {
+  private logTranscript(action: string, data: DoLogFields = {}): void {
     interviewServerLog.info("ws", DO_COMPONENT, action, {
       sessionId: truncateId(this.interviewState?.sessionId),
       voicePhase: this.interviewState?.voicePhase,
@@ -150,14 +308,14 @@ export class InterviewSessionDO implements DurableObject {
 
   private logError(
     action: string,
-    error: unknown,
-    data: Record<string, unknown> = {},
+    cause: unknown,
+    data: DoLogFields = {},
   ): void {
     interviewServerLog.error("ws", DO_COMPONENT, action, {
       sessionId: truncateId(this.interviewState?.sessionId),
       voicePhase: this.interviewState?.voicePhase,
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
+      error: cause instanceof Error ? cause.message : String(cause),
+      stack: cause instanceof Error ? cause.stack : undefined,
       ...data,
     });
   }
@@ -275,9 +433,9 @@ export class InterviewSessionDO implements DurableObject {
       if (!parsed) {
         this.logTranscript("websocket_message_unparsed", {
           messagePreview:
-            typeof message === "string"
-              ? previewText(message, 80)
-              : `ArrayBuffer(${message.byteLength})`,
+            message instanceof ArrayBuffer
+              ? `ArrayBuffer(${message.byteLength})`
+              : previewText(message, 80),
         });
         return;
       }
@@ -312,16 +470,23 @@ export class InterviewSessionDO implements DurableObject {
           await this.connectSideband(parsed.callId, parsed.clientSecret);
           break;
         case "REALTIME_EVENT": {
-          const raw =
-            typeof parsed.event === "string"
-              ? parsed.event
-              : JSON.stringify(parsed.event);
+          const stringEvent = z.string().safeParse(parsed.event);
+          const raw = stringEvent.success
+            ? stringEvent.data
+            : (JSON.stringify(parsed.event) ?? "");
           await this.handleRealtimeEvent(raw, "client_dc");
           break;
         }
-        case "CHEATING_EVENT":
-          await this.recordCheatingEvent(parsed.eventType, parsed.metadata);
+        case "CHEATING_EVENT": {
+          const parsedMetadata = cheatingEventMetadataSchema.safeParse(
+            parsed.metadata,
+          );
+          await this.recordCheatingEvent(
+            parsed.eventType,
+            parsedMetadata.success ? parsedMetadata.data : undefined,
+          );
           break;
+        }
         case "FULLSCREEN_STATE":
           this.interviewState.isFullscreen = parsed.isFullscreen;
           if (!parsed.isFullscreen) {
@@ -389,8 +554,8 @@ export class InterviewSessionDO implements DurableObject {
     this.closeSideband({ intentional: true });
   }
 
-  async webSocketError(ws: WebSocket, error: unknown) {
-    this.logError("client_websocket_error", error);
+  async webSocketError(ws: WebSocket, cause: unknown) {
+    this.logError("client_websocket_error", cause);
     try {
       ws.close(1011, "websocket error");
     } catch {
@@ -454,12 +619,12 @@ export class InterviewSessionDO implements DurableObject {
       return;
     }
 
-    const row = await getSessionById(sessionId);
+    const row = await interviewsService.getSessionById(sessionId);
     if (!row) {
       throw new Error("Invalid interview session");
     }
 
-    const resolved = await resolveSessionFromToken(token);
+    const resolved = await interviewsService.resolveLegacySession(token);
     if (!resolved.ok || resolved.session.id !== sessionId) {
       this.logError("ensure_state_invalid_token", new Error("Token mismatch"), {
         sessionId,
@@ -470,7 +635,7 @@ export class InterviewSessionDO implements DurableObject {
       throw new Error("Invalid interview session");
     }
 
-    const questions = await getQuestionsForInterviewSession(
+    const questions = await interviewsService.getSessionQuestions(
       row.session.roundId,
     );
 
@@ -513,7 +678,7 @@ export class InterviewSessionDO implements DurableObject {
     };
 
     if (row.session.status === "pending" || row.session.status === "invited") {
-      await updateSessionStatus(sessionId, "in_progress", {
+      await interviewsService.updateSessionStatus(sessionId, "in_progress", {
         startedAt: new Date(),
       });
     }
@@ -582,8 +747,8 @@ export class InterviewSessionDO implements DurableObject {
     }
 
     const purpose =
-      ((await this.durableState.storage.get("alarmPurpose")) as
-        string | undefined) ?? ALARM_SESSION_LIMIT;
+      (await this.durableState.storage.get("alarmPurpose")) ??
+      ALARM_SESSION_LIMIT;
 
     if (purpose === ALARM_INTERRUPT_GRACE) {
       await this.durableState.storage
@@ -812,9 +977,9 @@ export class InterviewSessionDO implements DurableObject {
   }
 
   private dispatchResponseCreate(
-    payload: Record<string, unknown>,
+    payload: ResponseCreateEvent,
     reason: string,
-    extra: Record<string, unknown> = {},
+    extra: DoLogFields = {},
   ) {
     if (!this.sideband) {
       this.logTranscript("response_create_skipped_no_sideband", { reason });
@@ -826,20 +991,11 @@ export class InterviewSessionDO implements DurableObject {
     this.logTranscript("response_create_sent", {
       reason,
       payloadType: payload.type,
-      responseModalities:
-        payload.response && typeof payload.response === "object"
-          ? (payload.response as Record<string, unknown>).modalities
-          : undefined,
-      responseInstructions:
-        payload.response && typeof payload.response === "object"
-          ? previewText(
-              String(
-                (payload.response as Record<string, unknown>).instructions ??
-                  "",
-              ),
-              200,
-            )
-          : undefined,
+      responseModalities: payload.response.modalities,
+      responseInstructions: previewText(
+        String(payload.response.instructions ?? ""),
+        200,
+      ),
       ...extra,
     });
   }
@@ -849,14 +1005,14 @@ export class InterviewSessionDO implements DurableObject {
    * on silence/background noise without speaking. Completes the function call
    * with empty output and does NOT create a spoken response.
    */
-  private maybeAutoReplyWaitForUser(item: Record<string, unknown>): void {
+  private maybeAutoReplyWaitForUser(item: RealtimeConversationItem): void {
     if (item.type !== "function_call") {
       return;
     }
     if (item.name !== "wait_for_user") {
       return;
     }
-    const callId = typeof item.call_id === "string" ? item.call_id : "";
+    const callId = item.call_id ?? "";
     if (!callId) {
       return;
     }
@@ -899,7 +1055,7 @@ export class InterviewSessionDO implements DurableObject {
     });
   }
 
-  private logResponseMetrics(usage?: Record<string, unknown>) {
+  private logResponseMetrics(usage?: RealtimeUsage) {
     if (!this.pendingResponseMetric) {
       return;
     }
@@ -916,27 +1072,16 @@ export class InterviewSessionDO implements DurableObject {
     this.pendingResponseMetric = null;
   }
 
-  private extractTokenUsage(
-    usage: Record<string, unknown>,
-  ): Record<string, number> | null {
-    const inputTokens =
-      typeof usage.input_tokens === "number" ? usage.input_tokens : undefined;
-    const outputTokens =
-      typeof usage.output_tokens === "number" ? usage.output_tokens : undefined;
-    const totalTokens =
-      typeof usage.total_tokens === "number" ? usage.total_tokens : undefined;
+  private extractTokenUsage(usage: RealtimeUsage): TokenUsage | null {
+    const inputTokens = usage.input_tokens;
+    const outputTokens = usage.output_tokens;
+    const totalTokens = usage.total_tokens;
 
     let cachedTokens: number | undefined;
-    if (typeof usage.cached_tokens === "number") {
+    if (usage.cached_tokens !== undefined) {
       cachedTokens = usage.cached_tokens;
-    } else if (
-      usage.input_token_details &&
-      typeof usage.input_token_details === "object"
-    ) {
-      const details = usage.input_token_details as Record<string, unknown>;
-      if (typeof details.cached_tokens === "number") {
-        cachedTokens = details.cached_tokens;
-      }
+    } else if (usage.input_token_details) {
+      cachedTokens = usage.input_token_details.cached_tokens;
     }
 
     if (
@@ -947,7 +1092,7 @@ export class InterviewSessionDO implements DurableObject {
       return null;
     }
 
-    const result: Record<string, number> = {};
+    const result: TokenUsage = {};
     if (inputTokens !== undefined) {
       result.inputTokens = inputTokens;
     }
@@ -964,17 +1109,9 @@ export class InterviewSessionDO implements DurableObject {
   }
 
   private extractResponseUsage(
-    event: Record<string, unknown>,
-  ): Record<string, unknown> | undefined {
-    const response = event.response;
-    if (!response || typeof response !== "object") {
-      return undefined;
-    }
-    const usage = (response as Record<string, unknown>).usage;
-    if (!usage || typeof usage !== "object") {
-      return undefined;
-    }
-    return usage as Record<string, unknown>;
+    event: RealtimeEvent,
+  ): RealtimeUsage | undefined {
+    return event.response?.usage ?? undefined;
   }
 
   private sendPhaseSessionUpdate(phase: VoiceInterviewPhase) {
@@ -1035,21 +1172,8 @@ export class InterviewSessionDO implements DurableObject {
     this.logTranscript("session_update_sending", {
       questionCount: this.interviewState.questions.length,
       outputModalities: sessionUpdate.session.output_modalities,
-      voice:
-        sessionUpdate.session.audio &&
-        typeof sessionUpdate.session.audio === "object" &&
-        "output" in sessionUpdate.session.audio
-          ? (sessionUpdate.session.audio as Record<string, unknown>).output
-          : undefined,
-      turnDetection:
-        sessionUpdate.session.audio &&
-        typeof sessionUpdate.session.audio === "object" &&
-        "input" in sessionUpdate.session.audio
-          ? (
-              (sessionUpdate.session.audio as Record<string, unknown>)
-                .input as Record<string, unknown>
-            )?.turn_detection
-          : undefined,
+      voice: sessionUpdate.session.audio.output,
+      turnDetection: sessionUpdate.session.audio.input?.turn_detection,
       instructionsLength: instructions.length,
     });
     this.sideband.send(JSON.stringify(sessionUpdate));
@@ -1113,7 +1237,7 @@ export class InterviewSessionDO implements DurableObject {
       if (!isReconnect) {
         this.interviewState.callId = callId;
         this.interviewState.realtimeSessionId = callId;
-        await updateSessionVoiceMetadata(this.interviewState.sessionId, {
+        await interviewsService.updateSessionVoiceMetadata(this.interviewState.sessionId, {
           realtimeSessionId: callId,
         });
       }
@@ -1236,17 +1360,8 @@ export class InterviewSessionDO implements DurableObject {
     await this.persistState();
   }
 
-  private extractResponseStatus(
-    event: Record<string, unknown>,
-  ): string | undefined {
-    const response = event.response;
-    if (response && typeof response === "object") {
-      const status = (response as Record<string, unknown>).status;
-      if (typeof status === "string") {
-        return status;
-      }
-    }
-    return undefined;
+  private extractResponseStatus(event: RealtimeEvent): string | undefined {
+    return event.response?.status;
   }
 
   private async handleWelcomeInterrupted(responseStatus?: string) {
@@ -1301,10 +1416,8 @@ export class InterviewSessionDO implements DurableObject {
         return;
       }
 
-      let event: Record<string, unknown>;
-      try {
-        event = JSON.parse(raw) as Record<string, unknown>;
-      } catch {
+      const event = parseRealtimeEvent(raw);
+      if (!event) {
         this.logTranscript("realtime_event_parse_failed", {
           source,
           rawPreview: previewText(raw, 80),
@@ -1312,7 +1425,7 @@ export class InterviewSessionDO implements DurableObject {
         return;
       }
 
-      const type = typeof event.type === "string" ? event.type : "";
+      const type = event.type;
 
       this.recordFirstAudioByte(type);
 
@@ -1321,24 +1434,15 @@ export class InterviewSessionDO implements DurableObject {
         source,
         eventType: type,
         eventKeys: Object.keys(event),
-        responseStatus:
-          event.response && typeof event.response === "object"
-            ? (event.response as Record<string, unknown>).status
-            : undefined,
-        itemRole:
-          event.item && typeof event.item === "object"
-            ? (event.item as Record<string, unknown>).role
-            : undefined,
-        itemType:
-          event.item && typeof event.item === "object"
-            ? (event.item as Record<string, unknown>).type
-            : undefined,
+        responseStatus: event.response?.status,
+        itemRole: event.item?.role,
+        itemType: event.item?.type,
         deltaPreview:
-          typeof event.delta === "string"
+          event.delta !== undefined
             ? previewText(event.delta, 80)
             : undefined,
         transcriptPreview:
-          typeof event.transcript === "string"
+          event.transcript !== undefined
             ? previewText(event.transcript, 120)
             : undefined,
       });
@@ -1349,7 +1453,7 @@ export class InterviewSessionDO implements DurableObject {
       }
 
       if (type === "conversation.item.input_audio_transcription.delta") {
-        const delta = typeof event.delta === "string" ? event.delta : "";
+        const delta = event.delta ?? "";
         if (delta.trim()) {
           this.broadcastTranscriptDelta("user", delta);
         }
@@ -1357,13 +1461,9 @@ export class InterviewSessionDO implements DurableObject {
       }
 
       if (type === "conversation.item.input_audio_transcription.completed") {
-        const transcript =
-          typeof event.transcript === "string" ? event.transcript : "";
+        const transcript = event.transcript ?? "";
         if (transcript.trim()) {
-          await this.saveUserTranscript(
-            transcript,
-            typeof event.event_id === "string" ? event.event_id : undefined,
-          );
+          await this.saveUserTranscript(transcript, event.event_id);
         }
         return;
       }
@@ -1372,7 +1472,7 @@ export class InterviewSessionDO implements DurableObject {
         type === "response.output_audio_transcript.delta" ||
         type === "response.audio_transcript.delta"
       ) {
-        const delta = typeof event.delta === "string" ? event.delta : "";
+        const delta = event.delta ?? "";
         if (delta.trim()) {
           this.broadcastTranscriptDelta("assistant", delta);
         }
@@ -1383,8 +1483,7 @@ export class InterviewSessionDO implements DurableObject {
         type === "response.output_audio_transcript.done" ||
         type === "response.audio_transcript.done"
       ) {
-        const transcript =
-          typeof event.transcript === "string" ? event.transcript : "";
+        const transcript = event.transcript ?? "";
         if (transcript.trim()) {
           this.appendConversation("assistant", transcript);
           this.broadcastTranscript("assistant", transcript);
@@ -1395,18 +1494,9 @@ export class InterviewSessionDO implements DurableObject {
 
       if (type === "response.created") {
         this.logTranscript("response_created", {
-          responseId:
-            event.response && typeof event.response === "object"
-              ? (event.response as Record<string, unknown>).id
-              : undefined,
-          responseStatus:
-            event.response && typeof event.response === "object"
-              ? (event.response as Record<string, unknown>).status
-              : undefined,
-          responseOutput:
-            event.response && typeof event.response === "object"
-              ? (event.response as Record<string, unknown>).output
-              : undefined,
+          responseId: event.response?.id,
+          responseStatus: event.response?.status,
+          responseOutput: event.response?.output,
         });
         return;
       }
@@ -1414,18 +1504,9 @@ export class InterviewSessionDO implements DurableObject {
       if (type === "response.output_item.added") {
         this.logTranscript("response_output_item_added", {
           outputIndex: event.output_index,
-          itemRole:
-            event.item && typeof event.item === "object"
-              ? (event.item as Record<string, unknown>).role
-              : undefined,
-          itemType:
-            event.item && typeof event.item === "object"
-              ? (event.item as Record<string, unknown>).type
-              : undefined,
-          itemContent:
-            event.item && typeof event.item === "object"
-              ? (event.item as Record<string, unknown>).content
-              : undefined,
+          itemRole: event.item?.role,
+          itemType: event.item?.type,
+          itemContent: event.item?.content,
         });
         return;
       }
@@ -1433,17 +1514,11 @@ export class InterviewSessionDO implements DurableObject {
       if (type === "response.output_item.done") {
         this.logTranscript("response_output_item_done", {
           outputIndex: event.output_index,
-          itemRole:
-            event.item && typeof event.item === "object"
-              ? (event.item as Record<string, unknown>).role
-              : undefined,
-          itemType:
-            event.item && typeof event.item === "object"
-              ? (event.item as Record<string, unknown>).type
-              : undefined,
+          itemRole: event.item?.role,
+          itemType: event.item?.type,
         });
-        if (event.item && typeof event.item === "object") {
-          this.maybeAutoReplyWaitForUser(event.item as Record<string, unknown>);
+        if (event.item) {
+          this.maybeAutoReplyWaitForUser(event.item);
         }
         return;
       }
@@ -1452,14 +1527,8 @@ export class InterviewSessionDO implements DurableObject {
         this.logTranscript("response_content_part_added", {
           outputIndex: event.output_index,
           contentIndex: event.content_index,
-          partType:
-            event.part && typeof event.part === "object"
-              ? (event.part as Record<string, unknown>).type
-              : undefined,
-          partTranscript:
-            event.part && typeof event.part === "object"
-              ? (event.part as Record<string, unknown>).transcript
-              : undefined,
+          partType: event.part?.type,
+          partTranscript: event.part?.transcript,
         });
         return;
       }
@@ -1468,10 +1537,7 @@ export class InterviewSessionDO implements DurableObject {
         this.logTranscript("response_content_part_done", {
           outputIndex: event.output_index,
           contentIndex: event.content_index,
-          partType:
-            event.part && typeof event.part === "object"
-              ? (event.part as Record<string, unknown>).type
-              : undefined,
+          partType: event.part?.type,
         });
         return;
       }
@@ -1481,7 +1547,7 @@ export class InterviewSessionDO implements DurableObject {
           responseId: event.response_id,
           outputIndex: event.output_index,
           contentIndex: event.content_index,
-          deltaLength: typeof event.delta === "string" ? event.delta.length : 0,
+          deltaLength: event.delta?.length ?? 0,
         });
         return;
       }
@@ -1500,14 +1566,8 @@ export class InterviewSessionDO implements DurableObject {
           eventType: type,
           voicePhase: this.interviewState?.voicePhase,
           responseStatus: this.extractResponseStatus(event),
-          errorCode:
-            event.error && typeof event.error === "object"
-              ? (event.error as Record<string, unknown>).code
-              : undefined,
-          errorMessage:
-            event.error && typeof event.error === "object"
-              ? (event.error as Record<string, unknown>).message
-              : undefined,
+          errorCode: event.error?.code,
+          errorMessage: event.error?.message,
         });
         if (this.interviewState?.voicePhase === "intro") {
           await this.handleWelcomeInterrupted(type);
@@ -1561,18 +1621,9 @@ export class InterviewSessionDO implements DurableObject {
       if (type === "error") {
         this.logTranscript("sideband_error_event", {
           eventType: type,
-          errorCode:
-            event.error && typeof event.error === "object"
-              ? (event.error as Record<string, unknown>).code
-              : undefined,
-          errorMessage:
-            event.error && typeof event.error === "object"
-              ? (event.error as Record<string, unknown>).message
-              : undefined,
-          errorType:
-            event.error && typeof event.error === "object"
-              ? (event.error as Record<string, unknown>).type
-              : undefined,
+          errorCode: event.error?.code,
+          errorMessage: event.error?.message,
+          errorType: event.error?.type,
         });
         return;
       }
@@ -1671,7 +1722,7 @@ export class InterviewSessionDO implements DurableObject {
     }
 
     try {
-      await syncVoiceResponsesForSession({
+      await interviewsService.syncVoiceResponsesForSession({
         sessionId: this.interviewState.sessionId,
         answers,
       });
@@ -1719,7 +1770,7 @@ export class InterviewSessionDO implements DurableObject {
     const selectedOptionId = this.matchMcqOption(question, combinedAnswer);
 
     try {
-      await upsertVoiceResponse({
+      await interviewsService.upsertVoiceResponse({
         sessionId: this.interviewState.sessionId,
         questionId: question.id,
         transcript: combinedAnswer,
@@ -2177,17 +2228,17 @@ export class InterviewSessionDO implements DurableObject {
       this.interviewState.status = "completed";
       const cheatingSummary = this.buildCheatingSummary();
 
-      await updateSessionVoiceMetadata(this.interviewState.sessionId, {
+      await interviewsService.updateSessionVoiceMetadata(this.interviewState.sessionId, {
         cheatingSummary,
         realtimeSessionId: this.interviewState.realtimeSessionId,
       });
 
-      const bundleAdvance = await advanceBundleRound(
+      const bundleAdvance = await interviewsService.advanceBundleRound(
         this.interviewState.sessionId,
       );
 
       if (!bundleAdvance) {
-        await updateSessionStatus(this.interviewState.sessionId, "completed", {
+        await interviewsService.updateSessionStatus(this.interviewState.sessionId, "completed", {
           completedAt: new Date(),
           tabSwitches: cheatingSummary.tabSwitches ?? 0,
         });
@@ -2228,7 +2279,7 @@ export class InterviewSessionDO implements DurableObject {
     await this.flushResponsesToDatabase();
 
     const cheatingSummary = this.buildCheatingSummary();
-    await updateSessionVoiceMetadata(this.interviewState.sessionId, {
+    await interviewsService.updateSessionVoiceMetadata(this.interviewState.sessionId, {
       cheatingSummary,
       interruptedAt: new Date(),
       realtimeSessionId: this.interviewState.realtimeSessionId,
@@ -2259,7 +2310,7 @@ export class InterviewSessionDO implements DurableObject {
 
   private async recordCheatingEvent(
     eventType: CheatingEventType,
-    metadata?: Record<string, unknown>,
+    metadata?: CheatingEventMetadata,
   ) {
     if (!this.interviewState) {
       return;
@@ -2286,7 +2337,7 @@ export class InterviewSessionDO implements DurableObject {
     this.interviewState.cheatingCounters[eventType] =
       (this.interviewState.cheatingCounters[eventType] ?? 0) + 1;
 
-    await insertCheatingEvents([
+    await interviewsService.insertCheatingEvents([
       {
         sessionId: this.interviewState.sessionId,
         eventType,
@@ -2310,10 +2361,9 @@ export class InterviewSessionDO implements DurableObject {
     this.interviewState.conversationHistory.push(entry);
   }
 
-  private broadcast(message: Record<string, unknown>) {
+  private broadcast(message: DoClientMessage) {
     const clients = this.durableState.getWebSockets();
-    const messageType =
-      typeof message.type === "string" ? message.type : "unknown";
+    const messageType = message.type;
 
     if (
       messageType === "TRANSCRIPT" ||
@@ -2325,11 +2375,11 @@ export class InterviewSessionDO implements DurableObject {
         clientCount: clients.length,
         role: message.role,
         textPreview:
-          typeof message.text === "string"
+          message.text !== undefined
             ? previewText(message.text, 80)
             : undefined,
         deltaPreview:
-          typeof message.delta === "string"
+          message.delta !== undefined
             ? previewText(message.delta, 40)
             : undefined,
       });
@@ -2348,7 +2398,7 @@ export class InterviewSessionDO implements DurableObject {
     this.broadcast({ type: "TRANSCRIPT_DELTA", role, delta });
   }
 
-  private sendToClient(ws: WebSocket, message: Record<string, unknown>) {
+  private sendToClient(ws: WebSocket, message: DoClientMessage) {
     try {
       ws.send(serializeDoMessage(message));
     } catch {

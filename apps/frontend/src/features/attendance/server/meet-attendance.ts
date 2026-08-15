@@ -1,12 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
-import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import {
-  listStoredAttendanceRows,
-  persistConferenceAttendance,
-  type MeetConferenceInput,
-  type StoredAttendanceRow,
-} from "@workspace/db/repositories/meet-attendance-repository";
-import { serverFnAuthGuard } from "#/lib/middleware/auth-guard";
+import { z } from "zod";
+import { serverFnAuthGuard } from "#/features/auth/server/auth-middleware";
+import { attendanceService, type StoredAttendanceRow } from "./attendance-service";
+import type { MeetConferenceInput } from "../types";
 import { getGoogleAccessToken } from "#/features/attendance/meet-auth";
 import {
   ATTENDANCE_SYNC_CHUNK_SIZE,
@@ -18,15 +14,42 @@ import {
   type AttendanceSyncSeed,
   type MeetAttendanceConference,
   type MeetConferenceSummary,
+  type RawConferenceFilter,
 } from "#/features/attendance/meet-attendance";
 
 export { ATTENDANCE_SYNC_CHUNK_SIZE };
 export type { AttendanceSyncSeed };
 
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+const dateSchema = z.string().regex(DATE_PATTERN);
+
+const conferenceIdInputSchema = z.object({ conferenceId: z.string() });
+const storedAttendanceObjectSchema = z.object({
+  date: z.unknown().optional(),
+  page: z.unknown().optional(),
+});
+const syncChunkObjectSchema = z.object({
+  conferences: z.unknown().optional(),
+});
+
+const syncSeedCoreSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  title: z.string(),
+});
+
+/** Raw `{ conferenceId }` payload (untrusted) before validation. */
+type RawConferenceIdInput = { conferenceId?: unknown };
+/** Raw stored-attendance filter payload (untrusted) before validation. */
+type RawStoredAttendanceInput = { date?: unknown; page?: unknown };
+/** Raw `{ conferences }` sync payload (untrusted) before validation. */
+type RawSyncChunkInput = { conferences?: unknown };
+
 /** Live Meet conferences for the signed-in Google account (list only). */
 export const getMeetConferences = createServerFn({ method: "GET" })
   .middleware([serverFnAuthGuard])
-  .validator((data: unknown) => parseConferenceFilter(data))
+  .validator((data: RawConferenceFilter) => parseConferenceFilter(data))
   .handler(
     async ({
       data,
@@ -51,15 +74,12 @@ export const getMeetConferences = createServerFn({ method: "GET" })
 /** Full attendance for one conference (detail page) + persisted to D1. */
 export const getMeetConferenceDetail = createServerFn({ method: "GET" })
   .middleware([serverFnAuthGuard])
-  .validator((data: unknown) => {
-    if (!data || typeof data !== "object") {
+  .validator((data: RawConferenceIdInput) => {
+    const parsed = conferenceIdInputSchema.safeParse(data);
+    if (!parsed.success || !parsed.data.conferenceId.trim()) {
       throw new Error("conferenceId is required");
     }
-    const conferenceId = (data as { conferenceId?: unknown }).conferenceId;
-    if (typeof conferenceId !== "string" || !conferenceId.trim()) {
-      throw new Error("conferenceId is required");
-    }
-    return { conferenceId: conferenceId.trim() };
+    return { conferenceId: parsed.data.conferenceId.trim() };
   })
   .handler(
     async ({
@@ -88,10 +108,10 @@ export const getMeetConferenceDetail = createServerFn({ method: "GET" })
       }
 
       try {
-        await persistConferenceAttendance({
-          conference: toConferenceInput(result.conference),
-          syncedByUserId: tokenResult.session.user.id,
-        });
+        await attendanceService.persistConference(
+          toConferenceInput(result.conference),
+          tokenResult.session.user.id,
+        );
       } catch (error) {
         console.error(
           "[meet-attendance] persist failed:",
@@ -109,27 +129,29 @@ export const getMeetConferenceDetail = createServerFn({ method: "GET" })
 /** Firm-wide attendance compiled in D1 (any signed-in user). */
 export const getStoredAttendance = createServerFn({ method: "GET" })
   .middleware([serverFnAuthGuard])
-  .validator((data: unknown) => {
-    if (!data || typeof data !== "object") {
-      return { date: undefined as string | undefined, page: undefined as number | undefined };
+  .validator((data: RawStoredAttendanceInput) => {
+    const parsed = storedAttendanceObjectSchema.safeParse(data);
+    if (!parsed.success) {
+      return { date: undefined, page: undefined };
     }
-    const raw = data as { date?: unknown; page?: unknown };
-    const date =
-      typeof raw.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw.date)
-        ? raw.date
-        : undefined;
-    const page =
-      typeof raw.page === "string"
-        ? Number.parseInt(raw.page, 10)
-        : typeof raw.page === "number"
-          ? raw.page
-          : undefined;
+    const dateResult = dateSchema.safeParse(parsed.data.date);
+    const pageNumberResult = z.number().safeParse(parsed.data.page);
+    let page: number | undefined;
+    if (pageNumberResult.success) {
+      const value = pageNumberResult.data;
+      page =
+        Number.isFinite(value) && value >= 1 ? Math.floor(value) : undefined;
+    } else {
+      const pageStringResult = z.string().safeParse(parsed.data.page);
+      if (pageStringResult.success) {
+        const value = Number.parseInt(pageStringResult.data, 10);
+        page =
+          Number.isFinite(value) && value >= 1 ? Math.floor(value) : undefined;
+      }
+    }
     return {
-      date,
-      page:
-        typeof page === "number" && Number.isFinite(page) && page >= 1
-          ? Math.floor(page)
-          : undefined,
+      date: dateResult.success ? dateResult.data : undefined,
+      page,
     };
   })
   .handler(
@@ -145,10 +167,7 @@ export const getStoredAttendance = createServerFn({ method: "GET" })
       error?: string;
     }> => {
       try {
-        const result = await listStoredAttendanceRows({
-          ...(data.date ? { date: data.date } : {}),
-          ...(data.page ? { page: data.page } : {}),
-        });
+        const result = await attendanceService.listStored(data);
         return {
           date: data.date ?? null,
           rows: result.rows,
@@ -176,7 +195,9 @@ export const getStoredAttendance = createServerFn({ method: "GET" })
 /** Discover Meet conferences to sync (≤3 pages × 50). */
 export const prepareAttendanceSync = createServerFn({ method: "POST" })
   .middleware([serverFnAuthGuard])
-  .validator((data: unknown) => parseConferenceFilter(data ?? { mode: "30d" }))
+  .validator((data: RawConferenceFilter | undefined) =>
+    parseConferenceFilter(data ?? { mode: "30d" }),
+  )
   .handler(
     async ({
       data,
@@ -197,11 +218,12 @@ export const prepareAttendanceSync = createServerFn({ method: "POST" })
 /** Persist a small chunk of conferences + participants to D1 (subrequest-safe). */
 export const syncAttendanceChunk = createServerFn({ method: "POST" })
   .middleware([serverFnAuthGuard])
-  .validator((data: unknown) => {
-    if (!data || typeof data !== "object") {
+  .validator((data: RawSyncChunkInput) => {
+    const parsed = syncChunkObjectSchema.safeParse(data);
+    if (!parsed.success) {
       throw new Error("conferences are required");
     }
-    const conferences = (data as { conferences?: unknown }).conferences;
+    const conferences = parsed.data.conferences;
     if (!Array.isArray(conferences) || conferences.length === 0) {
       throw new Error("conferences are required");
     }
@@ -211,27 +233,28 @@ export const syncAttendanceChunk = createServerFn({ method: "POST" })
       );
     }
 
-    const parsed: AttendanceSyncSeed[] = [];
+    const parsedSeeds: AttendanceSyncSeed[] = [];
     for (const item of conferences) {
-      if (!item || typeof item !== "object") continue;
-      const row = item as Partial<AttendanceSyncSeed>;
-      if (typeof row.id !== "string" || typeof row.name !== "string") continue;
-      if (typeof row.title !== "string") continue;
-      parsed.push({
-        id: row.id,
-        name: row.name,
-        title: row.title,
-        meetingCode:
-          typeof row.meetingCode === "string" ? row.meetingCode : null,
-        startTime: typeof row.startTime === "string" ? row.startTime : null,
-        endTime: typeof row.endTime === "string" ? row.endTime : null,
-        space: typeof row.space === "string" ? row.space : null,
+      const core = syncSeedCoreSchema.safeParse(item);
+      if (!core.success) continue;
+      const meetingCode = z.string().safeParse(item.meetingCode);
+      const startTime = z.string().safeParse(item.startTime);
+      const endTime = z.string().safeParse(item.endTime);
+      const space = z.string().safeParse(item.space);
+      parsedSeeds.push({
+        id: core.data.id,
+        name: core.data.name,
+        title: core.data.title,
+        meetingCode: meetingCode.success ? meetingCode.data : null,
+        startTime: startTime.success ? startTime.data : null,
+        endTime: endTime.success ? endTime.data : null,
+        space: space.success ? space.data : null,
       });
     }
-    if (parsed.length === 0) {
+    if (parsedSeeds.length === 0) {
       throw new Error("conferences are required");
     }
-    return { conferences: parsed };
+    return { conferences: parsedSeeds };
   })
   .handler(
     async ({
@@ -265,10 +288,10 @@ export const syncAttendanceChunk = createServerFn({ method: "POST" })
             continue;
           }
 
-          await persistConferenceAttendance({
-            conference: toConferenceInput(result),
-            syncedByUserId: tokenResult.session.user.id,
-          });
+          await attendanceService.persistConference(
+            toConferenceInput(result),
+            tokenResult.session.user.id,
+          );
           synced += 1;
         } catch (error) {
           failed += 1;
@@ -281,7 +304,7 @@ export const syncAttendanceChunk = createServerFn({ method: "POST" })
       }
 
       if (synced > 0) {
-        insertAuditLog({
+        attendanceService.insertAudit({
           userId: tokenResult.session.user.id,
           action: "sync_meet_attendance",
           entityType: "attendance",
@@ -319,54 +342,3 @@ function toConferenceInput(
     })),
   };
 }
-
-import { keepPreviousData, queryOptions } from "@tanstack/react-query";
-import { queryKeys } from "#/lib/query/query-keys";
-import { toOptionalString, toPageNumber } from "#/lib/parse-search";
-import { defineEntityQueries } from "#/lib/query/options";
-import type { ConferencesSearch } from "#/features/attendance/conferences-search";
-import { conferencesFilterInput } from "#/features/attendance/conferences-search";
-
-export function meetingsQueryOptions(deps: ConferencesSearch) {
-  return queryOptions({
-    queryKey: queryKeys.attendance.meetings(deps),
-    queryFn: async () =>
-      getMeetConferences({ data: conferencesFilterInput(deps) }),
-  });
-}
-
-export function attendanceDetailQueryOptions(conferenceId: string) {
-  return queryOptions({
-    queryKey: queryKeys.attendance.detail(conferenceId),
-    queryFn: async () => getMeetConferenceDetail({ data: { conferenceId } }),
-  });
-}
-
-const PAGE_SIZE = 50;
-
-type StoredAttendanceData = Awaited<ReturnType<typeof getStoredAttendance>>;
-
-export function parseMeetingAttendanceSearch(
-  search: Record<string, unknown>,
-) {
-  return {
-    date: toOptionalString(search.date),
-    page:
-      search.page !== undefined
-        ? toPageNumber(search.page)
-        : (undefined as number | undefined),
-  };
-}
-
-export type MeetingAttendanceSearch = ReturnType<
-  typeof parseMeetingAttendanceSearch
->;
-
-export const storedAttendanceQueries = defineEntityQueries(
-  queryKeys.attendance.stored,
-  (deps: MeetingAttendanceSearch): Promise<StoredAttendanceData> =>
-    getStoredAttendance({ data: deps }),
-  { placeholderData: keepPreviousData },
-);
-
-export { PAGE_SIZE };

@@ -12,10 +12,7 @@ import {
   Users,
   FileText,
   CircleDot,
-  HelpCircle,
   Calendar,
-  Folders,
-  Building2,
   Sparkles,
   ArrowRight,
   Route as RouteIcon,
@@ -23,6 +20,11 @@ import {
   ArrowDown,
   RefreshCcw,
 } from "lucide-react";
+
+// SAFETY: the docs layout serves nested guide pages such as
+// /docs/workflows/hiring; the `to` cast is only to bypass tanstack's
+// static route union, which lists top-level docs routes.
+const hiringWorkflowPath = "/docs/workflows/hiring" as "/docs";
 
 const quickLinks = [
   {
@@ -351,7 +353,7 @@ export function DocsPage() {
             </li>
             <li>
               <Link
-                to={"/docs/workflows/hiring" as "/docs"}
+                to={hiringWorkflowPath}
                 className="text-primary hover:underline"
               >
                 Follow the complete hiring workflow guide

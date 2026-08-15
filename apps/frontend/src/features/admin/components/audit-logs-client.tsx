@@ -44,7 +44,9 @@ export type AuditLog = {
   action: string;
   entityType: string;
   entityId: string;
-  details: Record<string, unknown> | null;
+  // Audit log details are a JSON payload recorded at audit time with only
+  // JSON primitive values (string, number, boolean, null).
+  details: Record<string, string | number | boolean | null> | null;
   createdAt: string;
   updatedAt: string;
 };

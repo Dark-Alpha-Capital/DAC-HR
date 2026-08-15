@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DetailPageSkeleton } from "#/components/shared/detail-page-skeleton";
-import type { InterviewBundleDetailData } from "#/features/interviews/server/queries/interviews";
 import {
   interviewBundleDetailQueryOptions,
   interviewBundleScreeningsQueryOptions,
@@ -22,7 +21,7 @@ export const Route = createFileRoute("/_main/interviews/bundle/$bundleId/")({
         interviewBundleScreeningsQueryOptions(params.bundleId),
       ),
     ]);
-    return (detail as InterviewBundleDetailData | null) ?? null;
+    return detail ?? null;
   },
   component: InterviewBundleDetailPage,
   pendingComponent: () => (

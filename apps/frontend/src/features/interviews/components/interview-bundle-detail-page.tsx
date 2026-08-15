@@ -1,10 +1,8 @@
 import { Link, useParams } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { isServer, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DetailPageSkeleton } from "#/components/shared/detail-page-skeleton";
-import type { InterviewBundleDetailData } from "#/features/interviews/server/queries/interviews";
 import {
   interviewBundleDetailQueryOptions,
-  interviewBundleScreeningsQueryOptions,
   screenersListQueryOptions,
 } from "#/features/interviews/interview-queries";
 import { queryKeys } from "#/lib/query/query-keys";
@@ -73,7 +71,16 @@ export function InterviewBundleDetailPage() {
       <div className="container mx-auto py-6 max-w-4xl text-center">
         <h1 className="text-xl font-medium">Interview not found</h1>
         <Button asChild variant="secondary" className="mt-4">
-          <Link to="/applications" search={{} as never}>
+          <Link
+            to="/applications"
+            search={{
+              name: undefined,
+              email: undefined,
+              position: undefined,
+              status: undefined,
+              page: undefined,
+            }}
+          >
             View Applications
           </Link>
         </Button>
@@ -81,16 +88,14 @@ export function InterviewBundleDetailPage() {
     );
   }
 
-  const { bundle, application, candidate, roundDetails } =
-    data as InterviewBundleDetailData;
+  const { bundle, application, candidate, roundDetails } = data;
   const candidateName = candidate
     ? `${candidate.firstName} ${candidate.lastName}`
     : undefined;
   const positionName = application?.position?.name;
-  const interviewLink =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/interview/${bundle.token}`
-      : `/interview/${bundle.token}`;
+  const interviewLink = isServer
+    ? `/interview/${bundle.token}`
+    : `${window.location.origin}/interview/${bundle.token}`;
 
   const completedRounds = roundDetails.filter(
     (r) => r.round.bundleRound.status === "completed",
@@ -136,6 +141,8 @@ export function InterviewBundleDetailPage() {
   };
 
   const handleTabChange = (tab: string) => {
+    // SAFETY: the Tabs only render the three BundleDetailTab triggers, so
+    // the callback value is always one of them.
     setActiveTab(tab as BundleDetailTab);
   };
 

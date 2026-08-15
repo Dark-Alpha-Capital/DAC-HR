@@ -9,7 +9,7 @@ import {
 import { updateApplication } from "#/features/applications/server/mutations/applications";
 import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
 import { toast } from "sonner";
-import type { Personality } from "@workspace/db/enums";
+import type { Personality } from "#/lib/enums";
 
 interface ApplicationPersonalitySelectorProps {
   applicationId: string;
@@ -46,6 +46,8 @@ export default function ApplicationPersonalitySelector({
 
   const handleValueChange = (newValue: string) => {
     setValue(newValue);
+    // SAFETY: the Select only offers values from `personalityOptions` plus
+    // NONE_VALUE, so any other selection is one of the Personality literals.
     const personalityValue =
       newValue === NONE_VALUE ? null : (newValue as Personality);
 

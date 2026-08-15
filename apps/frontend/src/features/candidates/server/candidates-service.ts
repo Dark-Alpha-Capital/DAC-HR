@@ -1,5 +1,5 @@
 import { db } from "@workspace/db/db";
-import { eq, and, inArray, desc } from "@workspace/db";
+import { eq, desc } from "@workspace/db";
 import {
   application,
   candidate,
@@ -19,6 +19,37 @@ import {
   getChecklistItemsByCandidateId,
   updateChecklistItem,
 } from "@workspace/db/repositories/candidate-checklist-repository";
+import {
+  getCandidateAiScreenings,
+  getLatestCandidateAiScreening,
+  getOrCreateCandidateOnboarding,
+  getUsers,
+  saveCandidateAiScreening,
+} from "@workspace/db/repositories/candidate-repository";
+import {
+  getCandidateImportById,
+  getCandidateImportRows,
+  getCandidateImportWorkflowId,
+  createCandidateImportRecord,
+  cancelCandidateImport,
+  updateCandidateImportStatus,
+} from "@workspace/db/repositories/candidate-import-repository";
+import {
+  getPositions,
+  getRoundsByPositionId,
+} from "@workspace/db/modules/positions";
+import { getApplicationWithInterviews } from "@workspace/db/repositories/interview-repository";
+import {
+  getKanbanFilteredTotalCount,
+  getKanbanColumnCandidates as getKanbanColumnCandidatesFn,
+} from "@workspace/db/kanban-queries";
+import {
+  getCandidateWithApplications,
+  getCandidatesWithPositionsFiltered,
+} from "@workspace/db/repositories/candidate-repository";
+import { parseCandidateSortOption } from "@workspace/db/candidate-list-filters";
+import type { CandidateFilters } from "../kanban-types";
+import type { Session } from "better-auth";
 import { deleteFile } from "#/lib/storage";
 
 export type CreateCandidateWithPositionsInput = {
@@ -77,14 +108,19 @@ export const createCandidateWithPositions = async (
     }),
   );
 
+  // SAFETY: every element is a Drizzle SQLite insert statement, which is part of
+  // the BatchItem<"sqlite"> union that db.batch accepts; the tuple is always
+  // non-empty because candidateInsert is unconditionally present.
   const statements = [
     candidateInsert,
     ...applicationInserts,
     ...candidatePositionInserts,
-  ] as unknown as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]];
+  ] as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]];
 
   const results = await db.batch(statements);
 
+  // SAFETY: results[0] is the .returning() result of candidateInsert, so it is
+  // exactly the Candidate[] matching the newly inserted row.
   const [newCandidate] = results[0] as Candidate[];
 
   if (!newCandidate) {
@@ -434,7 +470,11 @@ export const updateChecklistItems = async (
 ) => {
   try {
     const keptIds = new Set(
-      items.filter((item) => item.id).map((item) => item.id as string),
+      items
+        .filter((item): item is ChecklistItemInput & { id: string } =>
+          Boolean(item.id),
+        )
+        .map((item) => item.id),
     );
 
     const existing = await getChecklistItemsByCandidateId(candidateId);
@@ -595,3 +635,345 @@ export const listRecentCandidateImports = async () => {
     .orderBy(desc(candidateImport.createdAt))
     .limit(20);
 };
+
+// ---- Read-side (queries) ----
+
+type CandidatesIndexInput = CandidateFilters & {
+  page?: number;
+  view?: "table" | "kanban";
+};
+
+type ActorSession = {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role?: string | null;
+    image?: string | null;
+  };
+  session: Session;
+};
+
+export type CandidateDetailData = {
+  candidate: Awaited<ReturnType<typeof getCandidateWithApplications>>;
+  users: Awaited<ReturnType<typeof getUsers>>;
+  session: Session;
+  currentUser: {
+    id: string;
+    name: string;
+    email: string;
+    role?: string | null;
+    image?: string | null;
+  };
+  documents: Awaited<ReturnType<typeof getDocumentsByCandidateId>>;
+  screenings: Array<
+    Awaited<ReturnType<typeof getCandidateAiScreenings>>[number] & {
+      structuredData: any;
+    }
+  >;
+  onboardingData: OnboardingTasks;
+  checklistItems: Array<{
+    id: string;
+    label: string;
+    checked: boolean;
+  }>;
+  applicationDetails: Awaited<
+    ReturnType<typeof getApplicationWithInterviews>
+  >[];
+  initialApplicationId?: string;
+};
+
+export const candidatesService = {
+  createWithPositions: createCandidateWithPositions,
+  deleteWithAssets: deleteCandidateWithAssets,
+  update: updateCandidate,
+  toggleOnboardingTask,
+  updateOnboardingTasks,
+  updateChecklistItems,
+  createDocument: createCandidateDocument,
+  deleteDocument: deleteCandidateDocument,
+  updateImportOriginalFileUrl,
+  listRecentImports: listRecentCandidateImports,
+
+  async listIndex(deps: CandidatesIndexInput) {
+    const limit = 50;
+    const currentPage = deps.page ?? 1;
+    const sort = parseCandidateSortOption(deps.sort);
+    const isKanbanView = deps.view === "kanban";
+
+    const hasFilters = Boolean(
+      deps.name ||
+      deps.email ||
+      deps.position?.length ||
+      deps.status?.length ||
+      deps.source?.length ||
+      (deps.sort && deps.sort !== "newest"),
+    );
+
+    if (isKanbanView) {
+      const [{ positions }, totalCount] = await Promise.all([
+        getPositions(),
+        getKanbanFilteredTotalCount({
+          name: deps.name,
+          email: deps.email,
+          position: deps.position,
+          status: deps.status,
+          source: deps.source,
+          sort,
+        }),
+      ]);
+
+      return {
+        positions: positions.map((p) => ({ id: p.id, name: p.name })),
+        candidates: [],
+        currentPage: 1,
+        limit,
+        totalCount,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+        hasFilters,
+      };
+    }
+
+    const [{ positions }, candidatesResult] = await Promise.all([
+      getPositions(),
+      getCandidatesWithPositionsFiltered(
+        deps.name,
+        deps.email,
+        deps.position,
+        currentPage,
+        limit,
+        deps.status,
+        deps.source,
+        sort,
+      ),
+    ]);
+
+    const { candidates, total: totalCount } = candidatesResult;
+    const totalPages = Math.max(1, Math.ceil(totalCount / limit));
+
+    return {
+      positions: positions.map((p) => ({ id: p.id, name: p.name })),
+      candidates,
+      currentPage,
+      limit,
+      totalCount,
+      totalPages,
+      hasNextPage: currentPage < totalPages,
+      hasPreviousPage: currentPage > 1,
+      hasFilters,
+    };
+  },
+
+  async getNewOptions(session: ActorSession) {
+    const { positions } = await getPositions();
+
+    const positionRounds: Record<
+      string,
+      Array<{ roundTemplateId: string; name: string }>
+    > = {};
+    await Promise.all(
+      positions.map(async (p) => {
+        const rounds = await getRoundsByPositionId(p.id);
+        positionRounds[p.id] = rounds.map((r) => ({
+          roundTemplateId: r.id,
+          name: r.name,
+        }));
+      }),
+    );
+
+    return {
+      positions: positions.map((p) => ({ id: p.id, name: p.name })),
+      positionRounds,
+      userSession: session.session,
+    };
+  },
+
+  async getDetail(
+    data: { uid: string; application?: string },
+    session: ActorSession,
+  ): Promise<CandidateDetailData> {
+    const [users, candidate, documents, screenings] = await Promise.all([
+      getUsers(),
+      getCandidateWithApplications(data.uid),
+      getDocumentsByCandidateId(data.uid),
+      getCandidateAiScreenings(data.uid),
+    ]);
+
+    if (!candidate) {
+      return {
+        candidate: null,
+        users: [],
+        session: session.session,
+        currentUser: session.user,
+        documents: [],
+        screenings: [],
+        onboardingData: {
+          contractSigned: false,
+          emailProvided: false,
+          onboardingPacketSent: false,
+          companyEmailActivate: false,
+        },
+        checklistItems: [],
+        applicationDetails: [],
+        initialApplicationId: data.application,
+      };
+    }
+
+    const [applicationDetails, rawOnboarding, checklistItems] =
+      await Promise.all([
+        Promise.all(
+          candidate.applications.map((app) =>
+            getApplicationWithInterviews(app.id),
+          ),
+        ),
+        getOrCreateCandidateOnboarding(candidate.id),
+        getChecklistItemsByCandidateId(candidate.id),
+      ]);
+
+    const onboardingData = {
+      contractSigned: rawOnboarding.contractSigned ?? false,
+      emailProvided: rawOnboarding.emailProvided ?? false,
+      onboardingPacketSent: rawOnboarding.onboardingPacketSent ?? false,
+      companyEmailActivate: rawOnboarding.companyEmailActivate ?? false,
+    };
+
+    return {
+      candidate,
+      users,
+      session: session.session,
+      currentUser: session.user,
+      documents,
+      screenings,
+      onboardingData,
+      checklistItems,
+      applicationDetails,
+      initialApplicationId: data.application,
+    };
+  },
+
+  async getEdit(uid: string) {
+    const candidate = await getCandidateById(uid);
+    return { candidate };
+  },
+
+  async getDocumentEdit(uid: string, documentId: string) {
+    const documents = await getDocumentsByCandidateId(uid);
+    const document = documents.find((doc) => doc.id === documentId);
+    return { document };
+  },
+
+  async listDocuments(candidateId: string) {
+    const documents = await getDocumentsByCandidateId(candidateId);
+    return { documents };
+  },
+
+  async getDocumentForIndexing(documentId: string) {
+    const [row] = await db
+      .select({
+        candidateId: candidateDocument.candidateId,
+        name: candidateDocument.name,
+        category: candidateDocument.category,
+        url: candidateDocument.url,
+      })
+      .from(candidateDocument)
+      .where(eq(candidateDocument.id, documentId))
+      .limit(1);
+    if (!row) {
+      throw new Error(`Candidate document ${documentId} not found`);
+    }
+    return row;
+  },
+
+  async setDocumentVectorizeNamespace(documentId: string, namespace: string) {
+    await db
+      .update(candidateDocument)
+      .set({ vectorizeNamespace: namespace })
+      .where(eq(candidateDocument.id, documentId));
+  },
+
+  async insertAudit(input: Parameters<typeof insertAuditLog>[0]) {
+    return insertAuditLog(input);
+  },
+
+  async getCandidateWithApplications(uid: string) {
+    return getCandidateWithApplications(uid);
+  },
+
+  async getKanbanColumnCandidates(
+    columnStatus: import("@workspace/db/application-status").ApplicationStatus,
+    filters: import("@workspace/db/kanban-queries").KanbanColumnFilters,
+    cursor?: string,
+    limit?: number,
+  ) {
+    return getKanbanColumnCandidatesFn(columnStatus, filters, cursor, limit);
+  },
+
+  async getAiScreenings(candidateId: string, positionId?: string) {
+    return getCandidateAiScreenings(candidateId, positionId);
+  },
+
+  async getLatestAiScreening(candidateId: string, positionId?: string) {
+    return getLatestCandidateAiScreening(candidateId, positionId);
+  },
+
+  async saveAiScreening(
+    params: Parameters<typeof saveCandidateAiScreening>[0],
+  ) {
+    return saveCandidateAiScreening(params);
+  },
+
+  async getImportById(importId: string) {
+    return getCandidateImportById(importId);
+  },
+
+  async createImportRecord(
+    input: Parameters<typeof createCandidateImportRecord>[0],
+  ) {
+    return createCandidateImportRecord(input);
+  },
+
+  async getImportRows(importId: string) {
+    return getCandidateImportRows(importId);
+  },
+
+  getImportWorkflowId(importId: string) {
+    return getCandidateImportWorkflowId(importId);
+  },
+
+  async cancelImport(importId: string) {
+    return cancelCandidateImport(importId);
+  },
+
+  async updateImportStatus(
+    importId: string,
+    status: Parameters<typeof updateCandidateImportStatus>[1],
+    updates?: Parameters<typeof updateCandidateImportStatus>[2],
+  ) {
+    return updateCandidateImportStatus(importId, status, updates);
+  },
+
+  async updateImportProgress(
+    importId: string,
+    data: {
+      totalCandidates?: number;
+      processedCandidates?: number;
+    },
+  ) {
+    const updates: Partial<typeof candidateImport.$inferInsert> = {};
+    if (data.totalCandidates !== undefined) {
+      updates.totalCandidates = data.totalCandidates;
+    }
+    if (data.processedCandidates !== undefined) {
+      updates.processedCandidates = data.processedCandidates;
+    }
+    return db
+      .update(candidateImport)
+      .set(updates)
+      .where(eq(candidateImport.id, importId));
+  },
+};
+export type CandidatesIndexData = Awaited<
+  ReturnType<typeof candidatesService.listIndex>
+>;

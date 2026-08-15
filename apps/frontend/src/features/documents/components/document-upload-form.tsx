@@ -20,7 +20,7 @@ import {
 import { Checkbox } from "#/components/ui/checkbox";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
-import type { DocumentCategory } from "@workspace/db/schema";
+import type { DocumentCategory } from "#/features/documents/types";
 import { documentUploadInputSchema } from "#/features/documents/schemas";
 
 const formValidationSchema = documentUploadInputSchema;
@@ -39,7 +39,9 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
     defaultValues: {
       name: "",
       description: "",
+      // SAFETY: the form schema requires string[] category/tag selections.
       categoryIds: [] as string[],
+      // SAFETY: the form schema requires string[] category/tag selections.
       tags: [] as string[],
     },
     validators: {
@@ -77,6 +79,7 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
             body: formData,
           });
 
+          // SAFETY: the upload API returns `{ error, success }` JSON.
           const result = (await uploadResponse.json()) as {
             error?: string;
             success?: boolean;
@@ -92,7 +95,16 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
               action: {
                 label: "View Documents",
                 onClick: () => {
-                  router.navigate({ to: "/documents", search: {} as any });
+                  router.navigate({
+                    to: "/documents",
+                    search: {
+                      scope: undefined,
+                      category: undefined,
+                      name: undefined,
+                      candidateId: undefined,
+                      page: undefined,
+                    },
+                  });
                 },
               },
             });
@@ -100,6 +112,8 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
             setFile(null);
             setTagsInput("");
             // Clear file input
+            // SAFETY: the file input is rendered with id="file-upload" by
+            // this form, so getElementById returns the input element.
             const fileInput = document.getElementById(
               "file-upload",
             ) as HTMLInputElement;
@@ -107,16 +121,20 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
               fileInput.value = "";
             }
 
-            router.navigate({ to: "/documents", search: {} as any });
-          } else {
-            toast.error(
-              typeof result.error === "string"
-                ? result.error
-                : "Failed to upload document",
-              {
-                position: "bottom-right",
+            router.navigate({
+              to: "/documents",
+              search: {
+                scope: undefined,
+                category: undefined,
+                name: undefined,
+                candidateId: undefined,
+                page: undefined,
               },
-            );
+            });
+          } else {
+            toast.error(result.error || "Failed to upload document", {
+              position: "bottom-right",
+            });
           }
         } catch (error) {
           toast.error(
@@ -184,6 +202,8 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
               setFile(null);
               setTagsInput("");
               // Clear file input
+              // SAFETY: the file input is rendered with id="file-upload" by
+              // this form, so getElementById returns the input element.
               const fileInput = document.getElementById(
                 "file-upload",
               ) as HTMLInputElement;

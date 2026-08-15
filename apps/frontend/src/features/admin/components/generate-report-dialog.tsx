@@ -58,6 +58,9 @@ export default function GenerateReportDialog() {
       });
 
       if (!response.ok) {
+        // SAFETY: /api/audit-logs/generate-report always returns { error?: string }
+        // on non-OK responses (its handlers return Response.json({ error }) for
+        // every failure path).
         const error = (await response.json()) as { error?: string };
         throw new Error(error.error || "Failed to generate report");
       }
@@ -108,7 +111,11 @@ export default function GenerateReportDialog() {
             <Label htmlFor="reportType">Report Type</Label>
             <Select
               value={reportType}
-              onValueChange={(value) => setReportType(value as ReportType)}
+              onValueChange={(value) =>
+                // SAFETY: the <SelectItem> values above are exactly the ReportType
+                // literals ("full", "last3days", "lastWeek", "lastMonth", "custom").
+                setReportType(value as ReportType)
+              }
             >
               <SelectTrigger id="reportType">
                 <SelectValue placeholder="Select report type" />

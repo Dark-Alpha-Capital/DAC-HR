@@ -22,14 +22,22 @@ import {
   TooltipTrigger,
 } from "#/components/ui/tooltip";
 import { toast } from "sonner";
-import type { UnifiedDocumentListItem } from "@workspace/db/document-list-filters";
+import type { UnifiedDocumentListItem } from "#/features/documents/types";
 
-const candidateCategoryLabels: Record<string, string> = {
+const candidateCategoryLabels = {
   resume: "Resume",
   "cover-letter": "Cover Letter",
   portfolio: "Portfolio",
   other: "Other",
-};
+} satisfies Record<string, string>;
+
+/** Safe lookup that falls back to `undefined` for unknown keys. */
+function categoryLabel(
+  labels: Record<string, string>,
+  key: string,
+): string | undefined {
+  return labels[key];
+}
 
 interface DocumentContainerProps {
   documents: UnifiedDocumentListItem[];
@@ -87,7 +95,8 @@ const DocumentContainer = ({
   const renderCategory = (document: UnifiedDocumentListItem) => {
     if (document.scope === "candidate") {
       const label =
-        candidateCategoryLabels[document.candidateCategory] ?? "Other";
+        categoryLabel(candidateCategoryLabels, document.candidateCategory) ??
+        "Other";
       return <Badge variant="secondary">{label}</Badge>;
     }
 

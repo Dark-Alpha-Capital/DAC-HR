@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { db } from "@workspace/db/db";
 import {
   application,
@@ -10,7 +10,7 @@ import {
   position,
   user,
 } from "../schema";
-import { ilike, jsonArrayOverlap } from "../sqlite-helpers";
+import { ilike } from "../sqlite-helpers";
 import {
   parseCandidateSortOption,
   type CandidateSortOption,
@@ -18,10 +18,7 @@ import {
 import type { ApplicationStatus } from "../application-status";
 import { normalizeApplicationStatus } from "../application-status";
 import { getInterviewsByApplicationId } from "./interview-repository";
-import {
-  sortCandidateListItems,
-  type CandidateListItem,
-} from "../candidate-list-sort";
+import { sortCandidateListItems } from "../candidate-list-sort";
 
 export const getCandidateById = async (id: string) => {
   try {
@@ -51,7 +48,7 @@ export const getCandidateById = async (id: string) => {
 };
 
 export const getCandidateWithApplications = async (id: string) => {
-  if (!id || typeof id !== "string" || id.trim().length === 0) {
+  if (!id || id.trim().length === 0) {
     console.error("Invalid candidate ID provided:", id);
     return null;
   }
@@ -125,6 +122,8 @@ async function getCandidateIdsMatchingApplicationFilters(
   }
 
   const appConditions = [
+    // SAFETY: statuses come from validated query params; casting the string
+    // array to the enum type lets drizzle type the column in `inArray`.
     inArray(application.status, statuses as ApplicationStatus[]),
   ];
 
@@ -241,11 +240,15 @@ export const getApplicationsFiltered = async (
 
     if (statuses && statuses.length > 0) {
       conditions.push(
+        // SAFETY: statuses come from validated query params; casting the
+        // string array to the enum type lets drizzle type the inArray column.
         inArray(application.status, statuses as ApplicationStatus[]),
       );
     }
 
     if (conditions.length > 0) {
+      // SAFETY: where() returns the same select query builder type; the
+      // reassignment needs the self-reference cast.
       query = query.where(and(...conditions)) as typeof query;
     }
 
@@ -423,6 +426,8 @@ export const getCandidatesWithPositionsFiltered = async (
 
     // Apply conditions if any
     if (conditions.length > 0) {
+      // SAFETY: where() returns the same select query builder type; the
+      // reassignment needs the self-reference cast.
       query = query.where(and(...conditions)) as typeof query;
     }
 

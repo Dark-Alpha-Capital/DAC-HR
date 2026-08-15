@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "@tanstack/react-router";
+import { z } from "zod";
 import { Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "#/components/ui/button";
@@ -69,10 +70,9 @@ export function EditRoundDialog({
       });
 
       if (result.error) {
+        const parsedError = z.string().safeParse(result.error);
         toast.error(
-          typeof result.error === "string"
-            ? result.error
-            : "Failed to update round",
+          parsedError.success ? parsedError.data : "Failed to update round",
         );
         return;
       }

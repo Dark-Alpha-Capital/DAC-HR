@@ -1,15 +1,13 @@
 import { useState } from "react";
 import { FileText, Link as LinkIcon, Mail, MapPin, Phone } from "lucide-react";
-import { getCandidateWithApplications } from "@workspace/db/repositories/candidate-repository";
-import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
+import type {
+  CandidateWithApplications,
+  CandidateDocuments,
+} from "#/features/candidates/types";
 import DocumentPreviewDialog from "#/components/shared/document-preview-dialog";
 import { Button } from "#/components/ui/button";
 import { displayPhone } from "#/components/ui/phone-input";
 
-type Candidate = NonNullable<
-  Awaited<ReturnType<typeof getCandidateWithApplications>>
->;
-type Documents = Awaited<ReturnType<typeof getDocumentsByCandidateId>>;
 
 export function formatCandidateLocation(candidate: {
   location: string | null;
@@ -28,8 +26,8 @@ export function CandidateOverviewTab({
   candidate,
   documents,
 }: {
-  candidate: Candidate;
-  documents: Documents;
+  candidate: CandidateWithApplications;
+  documents: CandidateDocuments;
 }) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const resumeDocument = documents.find((doc) => doc.category === "resume");

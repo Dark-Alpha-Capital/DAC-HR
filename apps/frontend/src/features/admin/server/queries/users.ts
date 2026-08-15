@@ -1,9 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
-import { serverFnAdminGuard } from "#/lib/middleware/auth-guard";
+import { serverFnAdminGuard } from "#/features/auth/server/auth-middleware";
 import {
-  queryNonAdminUsers,
+  adminService,
   type AdminUser,
-} from "#/features/admin/admin-service";
+} from "../admin-service";
 
 export type { AdminUser };
 
@@ -17,11 +17,11 @@ type FetchNonAdminUsersInput = {
 export const fetchNonAdminUsers = createServerFn({ method: "GET" })
   .middleware([serverFnAdminGuard])
   .validator((data: FetchNonAdminUsersInput) => data)
-  .handler(async ({ data }) => {
-    return queryNonAdminUsers(
+  .handler(async ({ data }) =>
+    adminService.queryUsers(
       data.name,
       data.email,
       data.page ?? 1,
       data.limit ?? 10,
-    );
-  });
+    ),
+  );

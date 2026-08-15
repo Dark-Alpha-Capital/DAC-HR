@@ -1,10 +1,8 @@
 import React from "react";
 import { Button } from "#/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { useRouter } from "@tanstack/react-router";
 
 const BackButton = () => {
-  const router = useRouter();
   const handleBack = () => {
     window.history.back();
   };

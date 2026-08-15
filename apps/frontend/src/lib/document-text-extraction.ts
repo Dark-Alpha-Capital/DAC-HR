@@ -3,6 +3,7 @@ import mammoth from "mammoth";
 import WordExtractor from "word-extractor";
 import * as XLSX from "xlsx";
 import { generateText } from "ai";
+import { z } from "zod";
 import { getOpenAIModel } from "@workspace/ai-config";
 
 export type DocumentFormat =
@@ -18,10 +19,17 @@ export type DocumentExtractionOptions = {
   openAiApiKey?: string;
 };
 
+type JsonPrimitive = string | number | boolean | null;
+/** JSON-serializable value; used for structured extraction log fields. */
+type JsonValue =
+  | JsonPrimitive
+  | JsonValue[]
+  | { [key: string]: JsonValue | undefined };
+
 export type DocumentExtractionLogger = (
   level: "log" | "warn" | "error",
   message: string,
-  data?: Record<string, unknown>,
+  data?: Record<string, JsonValue | undefined>,
 ) => void;
 
 const TEXT_EXTENSIONS = new Set([
@@ -64,7 +72,8 @@ export function toBuffer(data: Buffer | Uint8Array | ArrayBuffer): Buffer {
   if (data instanceof Uint8Array) return Buffer.from(data);
   if (data instanceof ArrayBuffer) return Buffer.from(data);
 
-  // Workflow step results may deserialize buffers as plain objects
+  // SAFETY: workflow step results may deserialize Node Buffers as plain
+  // `{ type: "Buffer", data: number[] }` objects; this reads that shape.
   const maybeSerialized = data as { type?: string; data?: number[] };
   if (
     maybeSerialized?.type === "Buffer" &&
@@ -73,6 +82,8 @@ export function toBuffer(data: Buffer | Uint8Array | ArrayBuffer): Buffer {
     return Buffer.from(maybeSerialized.data);
   }
 
+  // SAFETY: the remaining value is a deserialized byte container; Buffer.from
+  // accepts any ArrayBufferView / array-like of bytes for these shapes.
   return Buffer.from(data as Uint8Array);
 }
 
@@ -180,23 +191,25 @@ async function extractPdfText(
 ): Promise<string | null> {
   const result = await unpdfExtract(toUint8Array(buffer), { mergePages: true });
 
-  if (typeof result?.text === "string" && result.text.trim().length > 0) {
+  const singleText = z.string().safeParse(result?.text);
+  if (singleText.success && singleText.data.trim().length > 0) {
     log("log", "PDF text extracted", {
       fileName,
-      textLength: result.text.length,
+      textLength: singleText.data.length,
       totalPages: result.totalPages,
       elapsedMs: Date.now() - startTime,
     });
-    return result.text;
+    return singleText.data;
   }
 
-  if (Array.isArray(result?.text) && result.text.length > 0) {
-    const joined = result.text.filter(Boolean).join("\n");
+  const multiPageText = z.array(z.string()).safeParse(result?.text);
+  if (multiPageText.success && multiPageText.data.length > 0) {
+    const joined = multiPageText.data.filter(Boolean).join("\n");
     if (joined.trim().length > 0) {
       log("log", "PDF text extracted (multi-page)", {
         fileName,
         textLength: joined.length,
-        pageCount: result.text.length,
+        pageCount: multiPageText.data.length,
         elapsedMs: Date.now() - startTime,
       });
       return joined;
@@ -389,14 +402,14 @@ type Extractor = (
 ) => Promise<string | null>;
 
 /** Known-format extractors, keyed by the detected format. */
-const EXTRACTORS: Record<Exclude<DocumentFormat, "unknown">, Extractor> = {
+const EXTRACTORS = {
   pdf: extractPdfText,
   docx: extractDocxText,
   xlsx: extractXlsxText,
   "legacy-doc": extractLegacyDocText,
   image: extractImageText,
   text: extractPlainText,
-};
+} satisfies Record<Exclude<DocumentFormat, "unknown">, Extractor>;
 
 /**
  * Ordered fallback for mis-detected files: try each extractor tolerantly.

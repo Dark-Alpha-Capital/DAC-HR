@@ -2,6 +2,7 @@ import * as React from "react";
 import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
+import { z } from "zod";
 import { Button } from "#/components/ui/button";
 import {
   Field,
@@ -24,12 +25,11 @@ import {
 import { Loader2 } from "lucide-react";
 import { patchQuestion } from "#/features/questions/server/mutations/patch-question";
 import { useRouter } from "@tanstack/react-router";
-import type { Question } from "@workspace/db/schema";
+import type { Question } from "#/features/questions/types";
 import { McqOptionsField } from "#/components/shared/mcq-options-field";
 import { getQuestionTypeLabel } from "#/features/questions/helpers";
 import {
   buildQuestionEditPayload,
-  defaultMcqOptions,
   initialOptionsFrom,
 } from "#/features/questions/question-draft";
 
@@ -82,9 +82,8 @@ const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
           router.navigate({ to: `/questions/${result.data?.id}` });
         } else {
           toast.error(
-            typeof result.error === "string"
-              ? result.error
-              : "Failed to update question",
+            z.string().safeParse(result.error).data ||
+              "Failed to update question",
             {
               position: "bottom-right",
             },

@@ -19,13 +19,19 @@ export function getDb(): Database {
   return cachedDb;
 }
 
-export const db = new Proxy({} as Database, {
-  get(_target, prop) {
-    const database = getDb();
-    const value = database[prop as keyof Database];
-    if (typeof value === "function") {
-      return value.bind(database);
-    }
-    return value;
+export const db = new Proxy(
+  // SAFETY: the proxy target is never read directly; every `get` forwards to
+  // the lazily-initialized `getDb()` instance.
+  {} as Database,
+  {
+    get(_target, prop) {
+      const database = getDb();
+      const value = database[
+        // SAFETY: `prop` is a property name read through the proxy; it is
+        // widened to the Database key set for the member lookup below.
+        prop as keyof Database
+      ];
+      return value instanceof Function ? value.bind(database) : value;
+    },
   },
-});
+);

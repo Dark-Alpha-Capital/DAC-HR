@@ -1,31 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
-import { serverFnAuthGuard } from "#/lib/middleware/auth-guard";
-import { getPositions } from "@workspace/db/modules/positions";
-import {
-  getAllScreeners,
-  getScreenerById,
-} from "@workspace/db/repositories/screener-repository";
+import { serverFnAuthGuard } from "#/features/auth/server/auth-middleware";
+import { screenersService } from "../screeners-service";
 
 export const loadScreenersIndex = createServerFn({ method: "GET" })
   .middleware([serverFnAuthGuard])
-  .handler(async () => {
-    const screeners = await getAllScreeners();
-    return { screeners };
-  });
+  .handler(() => screenersService.list());
 
 export const loadScreenerFormOptions = createServerFn({ method: "GET" })
   .middleware([serverFnAuthGuard])
-  .handler(async () => {
-    const { positions } = await getPositions();
-    return {
-      positions: positions.map((p) => ({ id: p.id, name: p.name })),
-    };
-  });
+  .handler(() => screenersService.getFormOptions());
 
 export const loadScreenerEdit = createServerFn({ method: "GET" })
   .middleware([serverFnAuthGuard])
   .validator((data: string) => data)
-  .handler(async ({ data: id }) => {
-    const screener = await getScreenerById(id);
-    return { screener };
-  });
+  .handler(({ data: id }) => screenersService.getById(id));

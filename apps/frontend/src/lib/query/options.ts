@@ -2,6 +2,8 @@ import { queryOptions } from "@tanstack/react-query";
 
 type LoaderFn<Deps, Result> = (deps: Deps) => Promise<Result>;
 
+type PlaceholderData = <T>(previousData: T | undefined) => T | undefined;
+
 /**
  * Defines a typed query-options pair for one entity list/detail loader.
  *
@@ -16,15 +18,15 @@ type LoaderFn<Deps, Result> = (deps: Deps) => Promise<Result>;
 export function defineEntityQueries<Deps, Result>(
   key: (deps: Deps) => readonly unknown[],
   load: LoaderFn<Deps, Result>,
-  extra?: { placeholderData?: unknown },
+  extra?: { placeholderData?: PlaceholderData },
 ) {
   return {
     key,
     options: (deps: Deps) =>
       queryOptions({
-        queryKey: key(deps) as string[],
+        queryKey: key(deps),
         queryFn: () => load(deps),
-        placeholderData: extra?.placeholderData as never,
+        placeholderData: extra?.placeholderData,
       }),
   };
 }

@@ -86,7 +86,7 @@ export function MultiSelectFilter({
               <DropdownMenuCheckboxItem
                 key={option.value}
                 checked={selected.includes(option.value)}
-                onCheckedChange={(checked) => toggle(option.value)}
+                onCheckedChange={(_checked) => toggle(option.value)}
               >
                 {option.label}
               </DropdownMenuCheckboxItem>

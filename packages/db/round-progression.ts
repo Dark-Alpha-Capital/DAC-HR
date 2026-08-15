@@ -30,7 +30,7 @@ function byRoundOrder<T extends RoundProgress>(rounds: T[]): T[] {
 }
 
 /** Only `"voice"` survives as voice; everything else is a written form. */
-export function coerceDeliveryMode(mode: unknown): RoundDeliveryMode {
+export function coerceDeliveryMode(mode: string | null | undefined): RoundDeliveryMode {
   return mode === "voice" ? "voice" : "form";
 }
 

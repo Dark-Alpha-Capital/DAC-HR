@@ -1,16 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
+import { interviewsService } from "#/features/interviews/server/interviews-service";
 import {
   createRealtimeEphemeralSession,
   openAIKeyFingerprint,
   sha256Hex,
 } from "@workspace/ai-config";
 import { getServerOpenAIApiKey } from "#/lib/server/openai-api-key";
-import { getQuestionsForInterviewSession } from "@workspace/db/modules/positions";
-import { updateSessionStatus } from "@workspace/db/repositories/interview-session-repository";
-import { startBundleRound } from "@workspace/db/repositories/interview-bundle-repository";
 import { PRACTICE_QUESTIONS } from "@workspace/interview-realtime";
 import { buildRealtimeInstructions } from "@workspace/interview-realtime/prompts";
-import { resolveInterviewToken } from "#/features/interviews/interview-token";
 import {
   interviewServerLog,
   truncateId,
@@ -74,10 +72,12 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
               );
             }
 
-            const body = (await request.json().catch(() => null)) as {
-              practice?: boolean;
-            } | null;
-            const isPractice = body?.practice === true;
+            const parsedBody = z
+              .object({ practice: z.boolean().optional() })
+              .safeParse(await request.json().catch(() => undefined));
+            const isPractice = parsedBody.success
+              ? parsedBody.data.practice === true
+              : false;
 
             const openaiApiKey = getServerOpenAIApiKey();
 
@@ -87,7 +87,7 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
               openaiKey: openAIKeyFingerprint(openaiApiKey),
             });
 
-            const resolved = await resolveInterviewToken(token);
+            const resolved = await interviewsService.resolveToken(token);
             if (!resolved.ok) {
               interviewServerLog.warn(
                 "voice",
@@ -131,7 +131,7 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
             const candidateName = `${candidate.firstName} ${candidate.lastName}`;
             const questions = isPractice
               ? PRACTICE_QUESTIONS
-              : await getQuestionsForInterviewSession(session.roundId);
+              : await interviewsService.getSessionQuestions(session.roundId);
 
             if (!isPractice && questions.length === 0) {
               interviewServerLog.warn(
@@ -156,10 +156,10 @@ export const Route = createFileRoute("/api/interview-token/$token/start-voice")(
                   (r) => r.session.id === session.id,
                 );
                 if (activeRound) {
-                  await startBundleRound(activeRound.bundleRound.id);
+                  await interviewsService.startBundleRound(activeRound.bundleRound.id);
                 }
               } else {
-                await updateSessionStatus(session.id, "in_progress", {
+                await interviewsService.updateSessionStatus(session.id, "in_progress", {
                   startedAt: new Date(),
                 });
               }

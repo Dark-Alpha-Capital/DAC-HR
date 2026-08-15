@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers";
 
-function trimKey(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
+function trimKey(value: string | undefined): string {
+  return value?.trim() ?? "";
 }
 
 /**
@@ -27,13 +27,15 @@ export function getServerOpenAIApiKey(): string {
   );
 }
 
-export function describeOpenAIKeySources(): {
+export type OpenAIKeySourcesInfo = {
   bindingLast4?: string;
   processLast4?: string;
   resolvedSource: "binding" | "process" | "none";
   keysMatch: boolean;
   keysMismatchWarning?: string;
-} {
+};
+
+export function describeOpenAIKeySources(): OpenAIKeySourcesInfo {
   const fromBinding = trimKey(env.OPENAI_API_KEY);
   const fromProcess = trimKey(process.env.OPENAI_API_KEY);
   const fingerprint = (key: string) =>

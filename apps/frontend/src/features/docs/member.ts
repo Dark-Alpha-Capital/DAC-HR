@@ -3,9 +3,12 @@ import {
   asLink,
   asText,
   isFilled,
+  type AnyRegularField,
+  type GroupField,
   type ImageField,
   type KeyTextField,
   type LinkField,
+  type NumberField,
   type PrismicDocument,
   type RichTextField,
   type SliceZone,
@@ -35,27 +38,33 @@ export type PrismicMember = {
   calendlyUrl: string | null;
 };
 
+/**
+ * Prismic document `data` map. Field values are heterogeneous per custom
+ * type; the `isFilled` guards narrow each representation before use.
+ */
 type MemberData = Record<
   string,
-  | RichTextField
-  | KeyTextField
-  | ImageField
-  | LinkField
-  | SliceZone
-  | unknown
+  AnyRegularField | GroupField | SliceZone
 >;
 
 function readText(data: MemberData, keys: string[]): string | null {
   for (const key of keys) {
     const value = data[key];
-    if (typeof value === "string" && value.trim()) {
-      return value.trim();
+    // SAFETY: these keys hold a Prismic KeyTextField when the guard passes.
+    const keyText = value as KeyTextField;
+    if (isFilled.keyText(keyText)) {
+      const text = keyText.trim();
+      if (text) return text;
     }
-    if (typeof value === "number" && Number.isFinite(value)) {
-      return String(value);
+    // SAFETY: a number-representation of the field is a NumberField.
+    const numberField = value as NumberField;
+    if (isFilled.number(numberField)) {
+      if (Number.isFinite(numberField)) return String(numberField);
     }
-    if (isFilled.richText(value as RichTextField)) {
-      const text = asText(value as RichTextField).trim();
+    // SAFETY: a rich-text representation of the field is a RichTextField.
+    const richTextField = value as RichTextField;
+    if (isFilled.richText(richTextField)) {
+      const text = asText(richTextField).trim();
       if (text) return text;
     }
   }
@@ -65,8 +74,10 @@ function readText(data: MemberData, keys: string[]): string | null {
 function readImageUrl(data: MemberData, keys: string[]): string | null {
   for (const key of keys) {
     const value = data[key];
-    if (isFilled.image(value as ImageField)) {
-      const src = asImageSrc(value as ImageField);
+    // SAFETY: these keys hold a Prismic ImageField; `isFilled.image` confirms it.
+    const imageField = value as ImageField;
+    if (isFilled.image(imageField)) {
+      const src = asImageSrc(imageField);
       if (src) return src;
     }
   }
@@ -76,8 +87,10 @@ function readImageUrl(data: MemberData, keys: string[]): string | null {
 function readLinkUrl(data: MemberData, keys: string[]): string | null {
   for (const key of keys) {
     const value = data[key];
-    if (isFilled.link(value as LinkField)) {
-      const href = asLink(value as LinkField);
+    // SAFETY: these keys hold a Prismic LinkField; `isFilled.link` confirms it.
+    const linkField = value as LinkField;
+    if (isFilled.link(linkField)) {
+      const href = asLink(linkField);
       if (href) return href;
     }
   }
@@ -87,11 +100,13 @@ function readLinkUrl(data: MemberData, keys: string[]): string | null {
 /** When top-level description is empty, fall back to slice primary.description. */
 function readBioFromSlices(data: MemberData): string | null {
   const slices = data.slices;
-  if (!Array.isArray(slices)) return null;
+  // SAFETY: when populated, the `slices` key holds a Prismic SliceZone.
+  const sliceZone = slices as SliceZone;
+  if (!isFilled.sliceZone(sliceZone)) return null;
 
-  for (const slice of slices) {
-    if (!slice || typeof slice !== "object") continue;
-    const primary = (slice as { primary?: MemberData }).primary;
+  for (const slice of sliceZone) {
+    if (!slice) continue;
+    const primary = slice.primary;
     if (!primary) continue;
     const text = readText(primary, ["description", "bio", "summary"]);
     if (text) return text;
@@ -104,6 +119,7 @@ export function toPrismicMember(
   document: PrismicDocument,
   kind: PrismicMemberKind,
 ): PrismicMember {
+  // SAFETY: Prismic documents carry their custom-type fields in `data`.
   const data = document.data as MemberData;
 
   const level = readText(data, ["level"]);

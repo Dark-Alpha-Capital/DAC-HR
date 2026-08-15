@@ -14,7 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { DetailPageSkeleton } from "#/components/shared/detail-page-skeleton";
-import { prismicMemberQueryOptions } from "#/features/docs/server/queries/members";
+import { prismicMemberQueryOptions } from "#/features/docs/query-options";
 
 const NOT_SPECIFIED = "Not specified";
 

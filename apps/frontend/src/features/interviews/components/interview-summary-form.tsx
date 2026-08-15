@@ -1,4 +1,5 @@
 import { useState, useTransition } from "react";
+import { z } from "zod";
 import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
 import { Button } from "#/components/ui/button";
 import { Label } from "#/components/ui/label";
@@ -13,7 +14,7 @@ import { Textarea } from "#/components/ui/textarea";
 import { updateInterview } from "#/features/interviews/server/mutations/interviews";
 import { toast } from "sonner";
 import { CheckCircle, XCircle, Clock, Circle, Loader2 } from "lucide-react";
-import type { InterviewStatus } from "@workspace/db/enums";
+import type { InterviewStatus } from "#/lib/enums";
 
 type EditableInterviewStatus = Exclude<InterviewStatus, "completed">;
 
@@ -73,9 +74,7 @@ export default function InterviewSummaryForm({
 
       if (result.error) {
         toast.error(
-          typeof result.error === "string"
-            ? result.error
-            : "Failed to update interview",
+          z.string().safeParse(result.error).data || "Failed to update interview",
         );
         return;
       }

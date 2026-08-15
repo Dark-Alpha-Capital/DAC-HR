@@ -21,13 +21,14 @@ import {
 } from "lucide-react";
 import { InterviewSessionRecording } from "#/features/interviews/components/interview-session-recording";
 import { getOptionLabel } from "#/features/questions/helpers";
-import type { QuestionOption } from "@workspace/db/question-types";
-import type { CheatingSummary } from "@workspace/db/enums";
+import type { QuestionOption } from "#/features/questions/types";
+import type { CheatingSummary } from "#/lib/enums";
 import type {
   InterviewBundleDetailData,
   InterviewResponse,
-} from "#/features/interviews/server/queries/interviews";
+} from "#/features/interviews/types";
 import { cn, formatDate } from "#/lib/utils";
+import { z } from "zod";
 
 type BundleRoundDetail = InterviewBundleDetailData["roundDetails"][number];
 
@@ -48,6 +49,8 @@ function formatResponseAnswer(response: InterviewResponse): string {
   if (response.question?.questionType === "mcq") {
     return (
       getOptionLabel(
+        // SAFETY: mcq questions always carry their QuestionOption[] options
+        // (the `options` column is populated for mcq question types).
         response.question.options as QuestionOption[],
         response.selectedOptionId,
       ) ??
@@ -58,9 +61,15 @@ function formatResponseAnswer(response: InterviewResponse): string {
   return response.answerText || "No answer";
 }
 
-function asStringList(value: unknown): string[] {
+/** Opaque JSON column value (strengths/risks) normalized at this boundary. */
+const jsonValueSchema = z.unknown();
+type JsonValue = z.infer<typeof jsonValueSchema>;
+
+function asStringList(value: JsonValue): string[] {
   if (!Array.isArray(value)) return [];
-  return value.filter((v): v is string => typeof v === "string");
+  return value.filter(
+    (item): item is string => z.string().safeParse(item).success,
+  );
 }
 
 function RoundStatusBadges({

@@ -62,11 +62,7 @@ export default function InterviewQuestionFeedbackForm({
       });
 
       if (result.error) {
-        toast.error(
-          typeof result.error === "string"
-            ? result.error
-            : "Failed to save feedback",
-        );
+        toast.error(result.error ?? "Failed to save feedback");
         return;
       }
 

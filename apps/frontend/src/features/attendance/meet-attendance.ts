@@ -9,7 +9,8 @@ const CALENDAR_API = "https://www.googleapis.com/calendar/v3";
 
 export const ATTENDANCE_SYNC_CHUNK_SIZE = 12;
 
-import type { MeetParticipantKind } from "@workspace/db/repositories/meet-attendance-repository";
+import { z } from "zod";
+import type { MeetParticipantKind } from "#/features/attendance/types";
 
 export type { MeetParticipantKind };
 
@@ -122,10 +123,7 @@ export function conferenceRecordName(id: string): string {
 }
 
 /** Local-day bounds for a `YYYY-MM-DD` string in the caller's timezone. */
-export function localDayBounds(date: string): {
-  startIso: string;
-  endIso: string;
-} {
+export function localDayBounds(date: string) {
   const start = new Date(`${date}T00:00:00`);
   const end = new Date(`${date}T00:00:00`);
   end.setDate(end.getDate() + 1);
@@ -165,31 +163,46 @@ function meetingCodeFromHangoutLink(
   }
 }
 
-export function parseConferenceFilter(data: unknown): MeetConferenceFilter {
-  if (!data || typeof data !== "object") {
+/** Raw conference filter payload (untrusted query params) before validation. */
+export type RawConferenceFilter = {
+  mode?: unknown;
+  date?: unknown;
+  startIso?: unknown;
+  endIso?: unknown;
+};
+
+const conferenceFilterObjectSchema = z.object({
+  mode: z.unknown().optional(),
+  date: z.unknown().optional(),
+  startIso: z.unknown().optional(),
+  endIso: z.unknown().optional(),
+});
+
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+const dateSchema = z.string().regex(DATE_PATTERN);
+const isoSchema = z.string().refine((s) => !Number.isNaN(Date.parse(s)));
+
+export function parseConferenceFilter(
+  data: RawConferenceFilter,
+): MeetConferenceFilter {
+  const parsed = conferenceFilterObjectSchema.safeParse(data);
+  if (!parsed.success) {
     return { mode: "30d" };
   }
-  const raw = data as MeetConferenceFilter;
-  const mode = raw.mode === "date" ? "date" : "30d";
-  const date =
-    typeof raw.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw.date)
-      ? raw.date
-      : undefined;
-  const startIso =
-    typeof raw.startIso === "string" && !Number.isNaN(Date.parse(raw.startIso))
-      ? raw.startIso
-      : undefined;
-  const endIso =
-    typeof raw.endIso === "string" && !Number.isNaN(Date.parse(raw.endIso))
-      ? raw.endIso
-      : undefined;
-  return { mode, date, startIso, endIso };
+  const mode = parsed.data.mode === "date" ? "date" : "30d";
+  const dateResult = dateSchema.safeParse(parsed.data.date);
+  const startResult = isoSchema.safeParse(parsed.data.startIso);
+  const endResult = isoSchema.safeParse(parsed.data.endIso);
+  return {
+    mode,
+    date: dateResult.success ? dateResult.data : undefined,
+    startIso: startResult.success ? startResult.data : undefined,
+    endIso: endResult.success ? endResult.data : undefined,
+  };
 }
 
-export function resolveTimeWindow(filter: MeetConferenceFilter): {
-  startIso: string;
-  endIso: string;
-} {
+export function resolveTimeWindow(filter: MeetConferenceFilter) {
   if (filter.mode === "date") {
     if (filter.startIso && filter.endIso) {
       return { startIso: filter.startIso, endIso: filter.endIso };
@@ -521,7 +534,7 @@ function resolveTitle(
   startTime: string | null,
   endTime: string | null,
   index: CalendarMeetIndex,
-): { title: string; meetingCode: string | null } {
+) {
   const match = pickBestCalendarTitle(index.all, startTime, endTime);
   if (match) {
     return { title: match.title, meetingCode: match.meetingCode };

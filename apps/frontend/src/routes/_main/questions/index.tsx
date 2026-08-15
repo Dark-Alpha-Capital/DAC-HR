@@ -4,7 +4,7 @@ import { QuestionsListPage } from "#/features/questions/components/questions-lis
 import {
   parseQuestionsSearch,
   questionsIndexQueryOptions,
-} from "#/features/questions/server/queries/questions";
+} from "#/features/questions/query-options";
 
 export const Route = createFileRoute("/_main/questions/")({
   head: () => ({
@@ -12,9 +12,7 @@ export const Route = createFileRoute("/_main/questions/")({
   }),
   validateSearch: parseQuestionsSearch,
   loader: async ({ context: { queryClient }, location }) => {
-    const search = parseQuestionsSearch(
-      location.search as Record<string, unknown>,
-    );
+    const search = parseQuestionsSearch(location.search);
     await queryClient.ensureQueryData(questionsIndexQueryOptions(search));
   },
   pendingComponent: () => <ListPageSkeleton />,

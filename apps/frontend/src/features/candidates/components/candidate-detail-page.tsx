@@ -20,7 +20,7 @@ import { CandidateOverviewTab } from "#/features/candidates/components/candidate
 import { CandidateApplicationsTab } from "#/features/candidates/components/candidate-applications-tab";
 import { CandidateDocumentsTab } from "#/features/candidates/components/candidate-documents-tab";
 import OnboardingCard from "#/features/candidates/components/onboarding-card";
-import { candidateDetailQueryOptions } from "#/features/candidates/server/queries/candidates";
+import { candidateDetailQueryOptions } from "#/features/candidates/query-options";
 
 export function CandidateDetailPage() {
   const { uid } = useParams({ from: "/_main/candidates/$uid/" });
@@ -45,7 +45,19 @@ export function CandidateDetailPage() {
           removed.
         </p>
         <Button variant="secondary" asChild>
-          <Link to="/candidates" search={{} as never}>
+          <Link
+            to="/candidates"
+            search={{
+              name: undefined,
+              email: undefined,
+              position: undefined,
+              status: undefined,
+              source: undefined,
+              sort: undefined,
+              view: "kanban",
+              page: undefined,
+            }}
+          >
             Back to candidates
           </Link>
         </Button>

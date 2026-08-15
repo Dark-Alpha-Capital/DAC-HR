@@ -14,7 +14,7 @@ import PaginationControls from "#/components/shared/pagination-controls";
 import {
   questionsIndexQueryOptions,
   type QuestionsIndexData,
-} from "#/features/questions/server/queries/questions";
+} from "#/features/questions/query-options";
 
 export function QuestionsListPage() {
   const search = useSearch({ from: "/_main/questions/" });

@@ -1,9 +1,7 @@
 import { Link, useLoaderData } from "@tanstack/react-router";
-import { DetailPageSkeleton } from "#/components/shared/detail-page-skeleton";
-import {
-  type InterviewDetailData,
-  type InterviewResponse,
-} from "#/features/interviews/server/queries/interviews";
+import type {
+  InterviewResponse,
+} from "#/features/interviews/types";
 import { Button } from "#/components/ui/button";
 import { Badge } from "#/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
@@ -35,7 +33,12 @@ import { InterviewSessionRecording } from "#/features/interviews/components/inte
 import ApplicationBreadcrumb from "#/components/shared/application-breadcrumb";
 import { useState } from "react";
 import { getOptionLabel } from "#/features/questions/helpers";
-import type { QuestionOption } from "@workspace/db/question-types";
+import type { QuestionOption } from "#/lib/question-types";
+
+// SAFETY: the applications route's validateSearch fills in defaults for all
+// search params, so an empty search object is a valid navigation target;
+// `never` only satisfies tanstack's required-search typing.
+const emptyApplicationsSearch = {} as never;
 
 const statusConfig = {
   move_forward: {
@@ -82,6 +85,8 @@ function formatResponseAnswer(response: InterviewResponse): string {
   if (response.question?.questionType === "mcq") {
     return (
       getOptionLabel(
+        // SAFETY: mcq questions always carry their QuestionOption[] options
+        // (the `options` column is populated for mcq question types).
         response.question.options as QuestionOption[],
         response.selectedOptionId,
       ) ??
@@ -90,6 +95,15 @@ function formatResponseAnswer(response: InterviewResponse): string {
     );
   }
   return response.answerText || "No answer";
+}
+
+/** Returns the page origin on the client, or "" during server rendering. */
+function getClientOrigin(): string {
+  try {
+    return window.location.origin;
+  } catch {
+    return "";
+  }
 }
 
 export function InterviewDetailPage() {
@@ -105,7 +119,7 @@ export function InterviewDetailPage() {
           This interview doesn&apos;t exist or has been removed.
         </p>
         <Button asChild variant="secondary" className="mt-4">
-          <Link to="/applications" search={{} as never}>
+          <Link to="/applications" search={emptyApplicationsSearch}>
             View Applications
           </Link>
         </Button>
@@ -116,6 +130,8 @@ export function InterviewDetailPage() {
   const isAiSessionResolved = interview.mode === "ai_session";
 
   const config =
+    // SAFETY: interview.status is one of the interviewStatuses values, which
+    // map exactly onto the statusConfig keys; fallback covers unknown values.
     statusConfig[interview.status as keyof typeof statusConfig] ||
     statusConfig.pending;
   const StatusIcon = config.icon;
@@ -126,7 +142,7 @@ export function InterviewDetailPage() {
   const positionName = application?.position?.name;
 
   const interviewLink = session?.session?.token
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/interview/${session.session.token}`
+    ? `${getClientOrigin()}/interview/${session.session.token}`
     : "";
   const hasSessionRecording = Boolean(
     session?.session?.sessionAudioUrl || session?.session?.sessionAudioPath,
@@ -446,6 +462,8 @@ export function InterviewDetailPage() {
               <InterviewSummaryForm
                 interview={{
                   id: interview.id,
+                  // SAFETY: the summary form is only rendered for non-AI
+                  // interviews whose status is one of these four values.
                   status: interview.status as
                     | "pending"
                     | "move_forward"

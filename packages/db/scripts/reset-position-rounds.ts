@@ -49,6 +49,8 @@ function executeD1(sql: string) {
     throw new Error(`wrangler d1 execute failed (${target})`);
   }
 
+  // SAFETY: `wrangler d1 execute --json` emits an array of result objects,
+  // each carrying a `success` boolean flag.
   const parsed = JSON.parse(result.stdout || "[]") as Array<{
     success: boolean;
   }>;
@@ -63,7 +65,7 @@ function runStatements(statements: string[]) {
   }
 }
 
-function queryD1<T extends Record<string, unknown>>(sql: string): T[] {
+function queryD1<T extends object>(sql: string): T[] {
   const target = remote ? "--remote" : "--local";
   const result = spawnSync(
     "bunx",
@@ -86,6 +88,8 @@ function queryD1<T extends Record<string, unknown>>(sql: string): T[] {
     );
   }
 
+  // SAFETY: `wrangler d1 execute --json` emits an array of result objects,
+  // each carrying `results` and `success` fields; we read the first result set.
   const parsed = JSON.parse(result.stdout) as Array<{
     results: T[];
     success: boolean;

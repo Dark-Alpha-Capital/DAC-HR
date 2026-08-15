@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export function toStringArray(
   value: string | string[] | undefined,
 ): string[] | undefined {
@@ -7,44 +9,39 @@ export function toStringArray(
   return cleaned.length > 0 ? cleaned : undefined;
 }
 
-export function toOptionalString(value: unknown): string | undefined {
-  if (typeof value === "string") return value || undefined;
-  if (Array.isArray(value) && typeof value[0] === "string") {
-    return value[0] || undefined;
-  }
-  return undefined;
+/**
+ * Coerces an unvalidated search-param value to a single optional string.
+ * The value is parsed at this boundary; a string is used as-is, and an array
+ * whose first element is a string contributes that element. Anything else
+ * yields undefined.
+ */
+export function toOptionalString<T>(value: T): string | undefined {
+  const asString = z.string().safeParse(value);
+  if (asString.success) return asString.data || undefined;
+
+  const asArray = z.array(z.unknown()).safeParse(value);
+  if (!asArray.success) return undefined;
+  const first = z.string().safeParse(asArray.data[0]);
+  if (!first.success) return undefined;
+  return first.data || undefined;
 }
 
-import {
-  isCandidateSortOption,
-  type CandidateSortOption,
-} from "@workspace/db/candidate-list-filters";
-
-export function toCandidateSort(
-  value: unknown,
-): CandidateSortOption | undefined {
-  if (typeof value === "string" && isCandidateSortOption(value)) {
-    return value;
-  }
-  return undefined;
-}
-
-export function toPageNumber(value: unknown, fallback = 1): number {
-  const page =
-    typeof value === "string"
-      ? Number.parseInt(value, 10)
-      : typeof value === "number"
-        ? value
-        : fallback;
+/**
+ * Coerces an unvalidated search-param value to a page number. Strings are
+ * parsed with parseInt, numbers are used as-is, and anything else (or an
+ * out-of-range result) falls back to `fallback`.
+ */
+export function toPageNumber<T>(value: T, fallback = 1): number {
+  const stringValue = z.string().safeParse(value);
+  const numberValue = z.number().safeParse(value);
+  const page = stringValue.success
+    ? Number.parseInt(stringValue.data, 10)
+    : numberValue.success
+      ? numberValue.data
+      : fallback;
 
   if (!Number.isFinite(page) || page < 1) return fallback;
   return page;
-}
-
-export type CandidateViewMode = "table" | "kanban";
-
-export function toCandidateView(value: unknown): CandidateViewMode {
-  return value === "table" ? "table" : "kanban";
 }
 
 export function resetListPageParam(params: URLSearchParams) {

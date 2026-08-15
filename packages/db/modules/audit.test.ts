@@ -15,9 +15,8 @@ function seedUser(db: Database, id: string) {
 
 test("insertAuditLog writes a row and returns it", async () => {
   const { db } = createTestDb();
-  const testDb = db as unknown as Database;
 
-  await seedUser(testDb, "user-1");
+  await seedUser(db, "user-1");
 
   const entry = await insertAuditLog(
     {
@@ -27,14 +26,14 @@ test("insertAuditLog writes a row and returns it", async () => {
       entityId: "2026-08-05",
       details: { count: 3 },
     },
-    testDb,
+    db,
   );
 
   expect(entry).not.toBeNull();
   expect(entry!.userId).toBe("user-1");
   expect(entry!.action).toBe("save_attendance");
 
-  const { logs, total } = await listAuditLogs({}, testDb);
+  const { logs, total } = await listAuditLogs({}, db);
   expect(total).toBe(1);
   expect(logs[0]!.details).toEqual({ count: 3 });
   expect(logs[0]!.userEmail).toBe("test@darkalphacapital.com");
@@ -42,24 +41,23 @@ test("insertAuditLog writes a row and returns it", async () => {
 
 test("listAuditLogs filters by action and paginates", async () => {
   const { db } = createTestDb();
-  const testDb = db as unknown as Database;
 
-  await seedUser(testDb, "user-1");
+  await seedUser(db, "user-1");
 
   await insertAuditLog(
     { userId: "user-1", action: "create_candidate", entityType: "candidate", entityId: "c-1", details: {} },
-    testDb,
+    db,
   );
   await insertAuditLog(
     { userId: "user-1", action: "delete_candidate", entityType: "candidate", entityId: "c-2", details: {} },
-    testDb,
+    db,
   );
 
-  const filtered = await listAuditLogs({ action: "delete" }, testDb);
+  const filtered = await listAuditLogs({ action: "delete" }, db);
   expect(filtered.total).toBe(1);
   expect(filtered.logs[0]!.action).toBe("delete_candidate");
 
-  const paged = await listAuditLogs({ page: 1, limit: 1 }, testDb);
+  const paged = await listAuditLogs({ page: 1, limit: 1 }, db);
   expect(paged.logs).toHaveLength(1);
   expect(paged.total).toBe(2);
 });

@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { assertInterviewTokenValid } from "@workspace/db/repositories/interview-bundle-repository";
-import { resolveSessionFromToken } from "@workspace/db/repositories/interview-bundle-repository";
+import { interviewsService } from "#/features/interviews/server/interviews-service";
 import {
   interviewServerLog,
   truncateId,
@@ -27,7 +26,7 @@ export const Route = createFileRoute("/api/interview-token/$token/validate")({
             token: truncateId(token),
           });
 
-          const validation = await assertInterviewTokenValid(token);
+          const validation = await interviewsService.validateToken(token);
 
           if (!validation.ok) {
             interviewServerLog.warn("validate", COMPONENT, "token_invalid", {
@@ -80,7 +79,7 @@ export const Route = createFileRoute("/api/interview-token/$token/validate")({
             });
           }
 
-          const resolved = await resolveSessionFromToken(token);
+          const resolved = await interviewsService.resolveLegacySession(token);
           if (!resolved.ok || resolved.type !== "legacy") {
             interviewServerLog.warn("validate", COMPONENT, "legacy_not_found", {
               token: truncateId(token),

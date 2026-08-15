@@ -4,7 +4,7 @@ import { ApplicationsListPage } from "#/features/applications/components/applica
 import {
   parseApplicationsSearch,
   applicationsIndexQueryOptions,
-} from "#/features/applications/server/queries/applications";
+} from "#/features/applications/query-options";
 
 export const Route = createFileRoute("/_main/applications/")({
   head: () => ({
@@ -12,9 +12,7 @@ export const Route = createFileRoute("/_main/applications/")({
   }),
   validateSearch: parseApplicationsSearch,
   loader: async ({ context: { queryClient }, location }) => {
-    const search = parseApplicationsSearch(
-      location.search as Record<string, unknown>,
-    );
+    const search = parseApplicationsSearch(location.search);
     await queryClient.ensureQueryData(applicationsIndexQueryOptions(search));
   },
   pendingComponent: () => (

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { fetchSession as getSession } from "#/lib/auth-session";
-import { getAllScreeners } from "@workspace/db/repositories/screener-repository";
+import { screenersService } from "#/features/screeners/server/screeners-service";
 
 export const Route = createFileRoute("/api/screeners")({
   server: {
@@ -12,7 +12,7 @@ export const Route = createFileRoute("/api/screeners")({
             return Response.json({ error: "Unauthorized" }, { status: 401 });
           }
 
-          const screeners = await getAllScreeners();
+          const { screeners } = await screenersService.list();
           return Response.json(
             {
               screeners: screeners.map((s) => ({

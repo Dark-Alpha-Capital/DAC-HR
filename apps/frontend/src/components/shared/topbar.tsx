@@ -14,7 +14,7 @@ import { SidebarTrigger } from "#/components/ui/sidebar";
 import { UserNav } from "#/components/shared/user-nav";
 import type { AppSession } from "#/lib/auth-session";
 
-const ROUTE_LABELS: Record<string, string> = {
+const ROUTE_LABELS = {
   dashboard: "Dashboard",
   candidates: "Candidates",
   applications: "Applications",
@@ -28,14 +28,16 @@ const ROUTE_LABELS: Record<string, string> = {
   admin: "Admin",
   docs: "Docs",
   "weekly-checkin": "Weekly check-in",
-};
+} satisfies Record<string, string>;
 
 function isOpaqueId(segment: string) {
   return /^[0-9a-f-]{8,}$/i.test(segment);
 }
 
 function labelForSegment(segment: string) {
-  const mapped = ROUTE_LABELS[segment];
+  // SAFETY: ROUTE_LABELS maps only known top-level route keys; unknown
+  // segments yield undefined here and fall through to the fallback label.
+  const mapped = ROUTE_LABELS[segment as keyof typeof ROUTE_LABELS];
   if (mapped) return mapped;
   if (isOpaqueId(segment)) return "Details";
   return segment
@@ -72,10 +74,10 @@ export function MainSiteTopbar({ session }: { session: AppSession }) {
   const secondaryLabel = second ? labelForSegment(second) : undefined;
 
   const interviewMatch = matches.find((match) =>
-    INTERVIEW_DETAIL_ROUTE_IDS.includes(
-      match.id as (typeof INTERVIEW_DETAIL_ROUTE_IDS)[number],
-    ),
+    INTERVIEW_DETAIL_ROUTE_IDS.some((routeId) => routeId === match.id),
   );
+  // SAFETY: the interview detail route loaders both resolve an `application`
+  // (with an optional `position`) that this breadcrumb reads.
   const applicationData = interviewMatch?.loaderData as
     | InterviewRouteLoaderData
     | undefined;
@@ -108,7 +110,16 @@ export function MainSiteTopbar({ session }: { session: AppSession }) {
                     </BreadcrumbLink>
                   ) : (
                     <BreadcrumbLink asChild>
-                      <Link to="/applications" search={{} as any}>
+                      <Link
+                        to="/applications"
+                        search={{
+                          name: undefined,
+                          email: undefined,
+                          position: undefined,
+                          status: undefined,
+                          page: undefined,
+                        }}
+                      >
                         <span className="truncate">{applicationLabel}</span>
                       </Link>
                     </BreadcrumbLink>

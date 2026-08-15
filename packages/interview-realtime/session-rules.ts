@@ -24,7 +24,7 @@
  *   pause to think without prematurely ending the turn. Recommended for
  *   interviews where thinking pauses are expected.
  */
-export const VAD_MODE = "semantic_vad" as "semantic_vad" | "server_vad";
+export const VAD_MODE: "semantic_vad" | "server_vad" = "semantic_vad";
 
 /** Only used by `server_vad`. */
 export const VAD_SILENCE_DURATION_MS = 1600;
@@ -32,7 +32,7 @@ export const VAD_THRESHOLD = 0.6;
 export const VAD_PREFIX_PADDING_MS = 400;
 
 /** Only used by `semantic_vad`; `low` lets the speaker take their time. */
-export const VAD_EAGERNESS = "low" as "auto" | "low" | "medium" | "high";
+export const VAD_EAGERNESS: "auto" | "low" | "medium" | "high" = "low";
 
 // ---------------------------------------------------------------------------
 // Timeouts

@@ -4,7 +4,7 @@ import { PrismicMemberDetailPage } from "#/features/employees/components/prismic
 import {
   parseMemberSearch,
   prismicMemberQueryOptions,
-} from "#/features/docs/server/queries/members";
+} from "#/features/docs/query-options";
 
 export const Route = createFileRoute("/_main/employees/member/$uid")({
   head: () => ({
@@ -12,9 +12,7 @@ export const Route = createFileRoute("/_main/employees/member/$uid")({
   }),
   validateSearch: parseMemberSearch,
   loader: async ({ context: { queryClient }, params, location }) => {
-    const { kind } = parseMemberSearch(
-      location.search as Record<string, unknown>,
-    );
+    const { kind } = parseMemberSearch(location.search);
     await queryClient.ensureQueryData(
       prismicMemberQueryOptions(params.uid, kind),
     );

@@ -8,13 +8,13 @@ export const candidateSortOptions = [
 
 export type CandidateSortOption = (typeof candidateSortOptions)[number];
 
-export const candidateSortLabels: Record<CandidateSortOption, string> = {
+export const candidateSortLabels = {
   newest: "Newest first",
   oldest: "Oldest first",
   name_asc: "Name (A–Z)",
   name_desc: "Name (Z–A)",
   updated: "Recently updated",
-};
+} satisfies Record<CandidateSortOption, string>;
 
 export const candidateSourceOptions = [
   "LinkedIn",
@@ -31,6 +31,8 @@ export type CandidateSourceOption = (typeof candidateSourceOptions)[number];
 export function isCandidateSortOption(
   value: string,
 ): value is CandidateSortOption {
+  // SAFETY: `candidateSortOptions` is a string-literal array; widening to
+  // `readonly string[]` lets us search it with an arbitrary string value.
   return (candidateSortOptions as readonly string[]).includes(value);
 }
 

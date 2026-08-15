@@ -59,6 +59,11 @@ const MINIMAL_OFFER_SDP = [
   "a=ssrc:1234567890 msid:- local-audio",
 ].join("\r\n");
 
+type ClientSecretsPayload = {
+  value?: string;
+  client_secret?: { value: string };
+};
+
 async function mintClientSecret(apiKey: string) {
   const response = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
     method: "POST",
@@ -75,9 +80,11 @@ async function mintClientSecret(apiKey: string) {
     }),
   });
   const bodyText = await response.text();
-  let parsed: { value?: string; client_secret?: { value: string } } = {};
+  let parsed = {} satisfies ClientSecretsPayload;
   try {
-    parsed = JSON.parse(bodyText) as typeof parsed;
+    // SAFETY: the client_secrets endpoint returns JSON with the documented
+    // `value` / `client_secret.value` fields.
+    parsed = JSON.parse(bodyText) as ClientSecretsPayload;
   } catch {
     // plain text
   }
@@ -104,6 +111,8 @@ async function postRealtimeCalls(auth: string, label: string) {
   const bodyText = await response.text();
   let errorCode: string | undefined;
   try {
+    // SAFETY: error responses from /v1/realtime/calls are JSON with the
+    // documented `error.code` / `error.type` fields.
     const parsed = JSON.parse(bodyText) as { error?: { code?: string; type?: string } };
     errorCode = parsed.error?.code;
   } catch {

@@ -80,6 +80,8 @@ export async function uploadRecording(
       body: formData,
     });
     if (!response.ok) {
+      // SAFETY: the upload-audio API returns `{ error: string }` on failure;
+      // JSON parse may return null, which the optional chain handles.
       const body = (await response.json().catch(() => null)) as
         | { error?: string }
         | null;

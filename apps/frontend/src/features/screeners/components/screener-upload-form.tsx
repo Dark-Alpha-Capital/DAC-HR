@@ -46,11 +46,7 @@ export default function ScreenerUploadForm({
       startTransition(async () => {
         const result = await createScreenerAction({ data: value });
         if (result.error) {
-          toast.error(
-            typeof result.error === "string"
-              ? result.error
-              : "Failed to create screener",
-          );
+          toast.error(result.error);
         } else {
           toast.success("Screener created successfully");
           router.navigate({

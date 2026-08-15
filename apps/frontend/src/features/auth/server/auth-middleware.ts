@@ -1,5 +1,5 @@
 import { createMiddleware } from "@tanstack/react-start";
-import { getSession } from "#/lib/server/session.server";
+import { getSession } from "./get-session-user";
 
 /** Function middleware for authenticated server functions. */
 export const serverFnAuthGuard = createMiddleware({ type: "function" }).server(

@@ -1,4 +1,4 @@
-import type { QuestionType } from "@workspace/db/enums";
+import type { QuestionType } from "#/features/questions/types";
 
 export function getQuestionTypeLabel(questionType: QuestionType | string): string {
   switch (questionType) {
@@ -14,7 +14,7 @@ export function getQuestionTypeLabel(questionType: QuestionType | string): strin
       return questionType;
   }
 }
-import type { QuestionOption } from "@workspace/db/question-types";
+import type { QuestionOption } from "#/features/questions/types";
 
 export function normalizeMcqOptions(
   options: Array<{ id?: string; text: string }>,

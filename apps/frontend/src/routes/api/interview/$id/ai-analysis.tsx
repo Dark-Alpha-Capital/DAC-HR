@@ -1,10 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
+import { interviewsService } from "#/features/interviews/server/interviews-service";
 import { fetchSession as getSession } from "#/lib/auth-session";
-import {
-  getInterviewAiAnalysesByInterviewId,
-  deleteInterviewAiAnalysisForInterview,
-} from "@workspace/db/repositories/interview-repository";
-import { runAiAnalysis } from "#/features/interviews/run-ai-analysis";
+
+const aiAnalysisBodySchema = z.object({
+  screenerId: z.string().optional(),
+  customPrompt: z.string().optional(),
+});
+
+const deleteAnalysisBodySchema = z.object({
+  analysisId: z.string().optional(),
+});
 
 export const Route = createFileRoute("/api/interview/$id/ai-analysis")({
   server: {
@@ -14,7 +20,7 @@ export const Route = createFileRoute("/api/interview/$id/ai-analysis")({
           const authSession = await getSession();
           if (!authSession?.user)
             return Response.json({ error: "Unauthorized" }, { status: 401 });
-          const analyses = await getInterviewAiAnalysesByInterviewId(params.id);
+          const { analyses } = await interviewsService.getInterviewAnalyses(params.id);
           return Response.json({ analyses }, { status: 200 });
         } catch (error) {
           return Response.json(
@@ -43,13 +49,12 @@ export const Route = createFileRoute("/api/interview/$id/ai-analysis")({
               { status: 400 },
             );
 
-          let body: { screenerId?: string; customPrompt?: string } = {};
-          try {
-            body = await request.json();
-          } catch {
-            /* ignore */
-          }
-          const { screenerId, customPrompt } = body;
+          const parsedBody = aiAnalysisBodySchema.safeParse(
+            await request.json().catch(() => undefined),
+          );
+          const { screenerId, customPrompt } = parsedBody.success
+            ? parsedBody.data
+            : {};
 
           if (!screenerId?.trim()) {
             return Response.json(
@@ -58,7 +63,7 @@ export const Route = createFileRoute("/api/interview/$id/ai-analysis")({
             );
           }
 
-          const result = await runAiAnalysis({
+          const result = await interviewsService.runSingleAiAnalysis({
             scope: { kind: "interview", id: interviewId },
             screenerId,
             customPrompt,
@@ -94,12 +99,15 @@ export const Route = createFileRoute("/api/interview/$id/ai-analysis")({
           const authSession = await getSession();
           if (!authSession?.user)
             return Response.json({ error: "Unauthorized" }, { status: 401 });
-          const body = (await request.json().catch(() => ({}))) as {
-            analysisId?: string;
-          };
-          await deleteInterviewAiAnalysisForInterview(
+          const parsedDeleteBody = deleteAnalysisBodySchema.safeParse(
+            await request.json().catch(() => undefined),
+          );
+          const analysisId = parsedDeleteBody.success
+            ? parsedDeleteBody.data.analysisId
+            : undefined;
+          await interviewsService.deleteInterviewAnalysis(
             params.id,
-            body.analysisId || "",
+            analysisId || "",
           );
           return Response.json({ success: true }, { status: 200 });
         } catch (error) {

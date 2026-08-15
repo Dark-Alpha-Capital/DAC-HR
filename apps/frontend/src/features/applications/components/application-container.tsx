@@ -1,5 +1,4 @@
 import React from "react";
-import { Eye } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -9,7 +8,7 @@ import {
   TableRow,
 } from "#/components/ui/table";
 import InlineApplicationStatusEditor from "#/features/applications/components/inline-application-status-editor";
-import type { ApplicationStatus } from "@workspace/db/application-status";
+import type { ApplicationStatus } from "#/lib/application-status";
 type Application = {
   id: string;
   status: string;
@@ -82,6 +81,8 @@ const ApplicationContainer = ({
                 <InlineApplicationStatusEditor
                   application={{
                     id: application.id,
+                    // SAFETY: the application status column is only ever written with
+                    // ApplicationStatus literals (domain invariant enforced at write time).
                     status: application.status as ApplicationStatus,
                   }}
                   candidateId={application.candidate.id}

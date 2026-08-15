@@ -1,7 +1,4 @@
-import {
-  useQuery,
-  type UseQueryResult,
-} from "@tanstack/react-query";
+import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { AttendanceDataTable } from "#/features/attendance/components/attendance-data-table";
 import { SyncAttendanceButton } from "#/features/attendance/components/sync-attendance-button";
@@ -11,16 +8,18 @@ import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { Skeleton } from "#/components/ui/skeleton";
+import { getStoredAttendance } from "#/features/attendance/server/meet-attendance";
 import {
-  getStoredAttendance,
   storedAttendanceQueries,
   PAGE_SIZE,
-} from "#/features/attendance/server/meet-attendance";
+} from "#/features/attendance/query-options";
 
 type StoredAttendanceData = Awaited<ReturnType<typeof getStoredAttendance>>;
 
 export function MeetingAttendancePage() {
-  const search = useSearch({ from: "/_main/employees/attendance/meeting-attendance" });
+  const search = useSearch({
+    from: "/_main/employees/attendance/meeting-attendance",
+  });
   const navigate = useNavigate();
 
   const { data, isLoading, isFetching }: UseQueryResult<StoredAttendanceData> =
@@ -43,11 +42,12 @@ export function MeetingAttendancePage() {
 
   const handleDateChange = (nextDate: string) => {
     void navigate({
+      to: "/employees/attendance/meeting-attendance",
       search: {
         ...search,
         date: nextDate || undefined,
         page: undefined,
-      } as never,
+      },
     });
   };
 
@@ -107,7 +107,9 @@ export function MeetingAttendancePage() {
           </Button>
         ) : null}
         <p className="text-xs text-muted-foreground sm:ml-auto">
-          {isFetching ? "Refreshing…" : `${data.total} attendee record${data.total === 1 ? "" : "s"}`}
+          {isFetching
+            ? "Refreshing…"
+            : `${data.total} attendee record${data.total === 1 ? "" : "s"}`}
         </p>
       </div>
 

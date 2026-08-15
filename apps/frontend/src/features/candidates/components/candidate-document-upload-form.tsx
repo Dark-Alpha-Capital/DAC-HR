@@ -1,5 +1,6 @@
 import { useRef, useTransition, useState } from "react";
 import { useForm } from "@tanstack/react-form";
+import { z } from "zod";
 import { toast } from "sonner";
 import { Button } from "#/components/ui/button";
 import {
@@ -26,6 +27,8 @@ import {
 import { Loader2 } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 
+type DocumentCategory = "resume" | "cover-letter" | "portfolio" | "other";
+
 const CandidateDocumentUploadForm = ({
   candidateId,
   compact = false,
@@ -45,7 +48,11 @@ const CandidateDocumentUploadForm = ({
     defaultValues: {
       name: "",
       description: "",
-      category: "other" as "resume" | "cover-letter" | "portfolio" | "other",
+      // SAFETY: the document category field is one of the four DocumentCategory
+      // literals; "other" is the default and a member of that union.
+      category: "other" as DocumentCategory,
+      // SAFETY: the tags field starts empty; this widens the literal `[]` to
+      // the string[] the field is meant to hold.
       tags: [] as string[],
     },
     onSubmit: async ({ value }) => {
@@ -75,18 +82,24 @@ const CandidateDocumentUploadForm = ({
             },
           );
 
+          // SAFETY: the candidate-documents API serializes { success?, error? }
+          // on every response; `error` is a string message or a validation
+          // object (parsed below with zod).
           const result = (await response.json()) as {
             success?: boolean;
             error?: unknown;
           };
 
           if (!response.ok) {
-            const errorMessage =
-              typeof result.error === "string"
-                ? result.error
-                : typeof result.error === "object"
-                  ? JSON.stringify(result.error)
-                  : "Failed to upload document";
+            const stringError = z.string().safeParse(result.error);
+            const objectError = z
+              .record(z.string(), z.unknown())
+              .safeParse(result.error);
+            const errorMessage = stringError.success
+              ? stringError.data
+              : objectError.success
+                ? JSON.stringify(objectError.data)
+                : "Failed to upload document";
             toast.error(errorMessage);
             return;
           }
@@ -105,10 +118,10 @@ const CandidateDocumentUploadForm = ({
               router.navigate({ to: `/candidates/${candidateId}` });
             }
           } else {
-            const errorMessage =
-              typeof result.error === "string"
-                ? result.error
-                : "Failed to upload document";
+            const parsedError = z.string().safeParse(result.error);
+            const errorMessage = parsedError.success
+              ? parsedError.data
+              : "Failed to upload document";
             toast.error(errorMessage);
           }
         } catch (error) {
@@ -276,13 +289,9 @@ const CandidateDocumentUploadForm = ({
                 <Select
                   value={field.state.value}
                   onValueChange={(value) =>
-                    field.handleChange(
-                      value as
-                        | "resume"
-                        | "cover-letter"
-                        | "portfolio"
-                        | "other",
-                    )
+                    // SAFETY: the <SelectItem> values below are exactly the
+                    // DocumentCategory literals.
+                    field.handleChange(value as DocumentCategory)
                   }
                 >
                   <SelectTrigger id={field.name} className="w-full">

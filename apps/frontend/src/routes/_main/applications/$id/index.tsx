@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DetailPageSkeleton } from "#/components/shared/detail-page-skeleton";
 import { ApplicationDetailPage } from "#/features/applications/components/application-detail-page";
-import { applicationDetailQueryOptions } from "#/features/applications/server/queries/applications";
+import { applicationDetailQueryOptions } from "#/features/applications/query-options";
 
 export const Route = createFileRoute("/_main/applications/$id/")({
   head: () => ({

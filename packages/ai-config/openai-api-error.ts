@@ -44,16 +44,16 @@ export function parseOpenAIError(
   let message: string | undefined;
 
   try {
+    // SAFETY: OpenAI error bodies are JSON matching the payload shape below;
+    // every field read is optional so malformed bodies degrade gracefully.
     const parsed = JSON.parse(trimmed) as OpenAIErrorPayload;
     const nested = parsed.error;
     if (nested) {
       type = nested.type;
       code = nested.code;
-      if (typeof nested.message === "string") {
-        message = nested.message;
-      }
+      message = nested.message;
     }
-    if (typeof parsed.message === "string" && message === undefined) {
+    if (parsed.message !== undefined && message === undefined) {
       message = parsed.message;
     }
   } catch {

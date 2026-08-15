@@ -1,6 +1,6 @@
 import React from "react";
 import { MultiSelectFilter } from "#/components/shared/multi-select-filter";
-import type { DocumentCategory } from "@workspace/db/schema";
+import type { DocumentCategory } from "#/features/documents/types";
 
 const FilterDocumentCategory = ({
   categories,

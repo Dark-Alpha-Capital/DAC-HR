@@ -10,8 +10,8 @@ import {
 import { Checkbox } from "#/components/ui/checkbox";
 import { useNavigate } from "@tanstack/react-router";
 import BulkDeleteCandidatesButton from "#/features/candidates/components/bulk-delete-candidates-button";
-import type { Candidate } from "@workspace/db/schema";
-import type { ApplicationStatus } from "@workspace/db/application-status";
+import type { Candidate } from "#/features/candidates/types";
+import type { ApplicationStatus } from "#/lib/application-status";
 import { ApplicationStatusBadge } from "#/components/shared/application-status-badge";
 import CopyButton from "#/features/candidates/components/copy-button";
 import { Badge } from "#/components/ui/badge";
@@ -31,8 +31,8 @@ interface CandidateContainerProps {
 
 const CandidateContainer = ({
   candidates,
-  currentPage = 1,
-  limit = 50,
+  currentPage: _currentPage = 1,
+  limit: _limit = 50,
 }: CandidateContainerProps) => {
   const navigate = useNavigate();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());

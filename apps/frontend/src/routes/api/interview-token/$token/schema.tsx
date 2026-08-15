@@ -1,12 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  updateSessionStatus,
-} from "@workspace/db/repositories/interview-session-repository";
-import {
-  startBundleRound,
-} from "@workspace/db/repositories/interview-bundle-repository";
-import { getQuestionsForInterviewSession } from "@workspace/db/modules/positions";
-import { resolveInterviewToken } from "#/features/interviews/interview-token";
+import { interviewsService } from "#/features/interviews/server/interviews-service";
 import {
   interviewServerLog,
   truncateId,
@@ -30,7 +23,7 @@ export const Route = createFileRoute("/api/interview-token/$token/schema")({
             token: truncateId(token),
           });
 
-          const resolved = await resolveInterviewToken(token);
+          const resolved = await interviewsService.resolveToken(token);
 
           if (!resolved.ok) {
             interviewServerLog.warn("form", COMPONENT, "token_resolve_failed", {
@@ -66,7 +59,7 @@ export const Route = createFileRoute("/api/interview-token/$token/schema")({
             );
           }
 
-          const questions = await getQuestionsForInterviewSession(
+          const questions = await interviewsService.getSessionQuestions(
             session.roundId,
           );
 
@@ -76,7 +69,7 @@ export const Route = createFileRoute("/api/interview-token/$token/schema")({
                 (r) => r.session.id === session.id,
               );
               if (activeRound) {
-                await startBundleRound(activeRound.bundleRound.id).catch((e) =>
+                await interviewsService.startBundleRound(activeRound.bundleRound.id).catch((e) =>
                   interviewServerLog.error("bundle", COMPONENT, "start_bundle_round_failed", {
                     bundleRoundId: truncateId(activeRound.bundleRound.id),
                     error: e instanceof Error ? e.message : String(e),
@@ -84,7 +77,7 @@ export const Route = createFileRoute("/api/interview-token/$token/schema")({
                 );
               }
             } else {
-              await updateSessionStatus(session.id, "in_progress", {
+              await interviewsService.updateSessionStatus(session.id, "in_progress", {
                 startedAt: new Date(),
               }).catch((e) =>
                 interviewServerLog.error("form", COMPONENT, "session_start_failed", {

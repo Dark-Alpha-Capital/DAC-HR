@@ -8,7 +8,7 @@ export const Route = createFileRoute("/_main/rounds/new")({
   head: () => ({
     meta: [{ title: "New Round" }],
   }),
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: { position?: unknown }) => ({
     position: toOptionalString(search.position) ?? "",
   }),
   loaderDeps: ({ search }) => search,

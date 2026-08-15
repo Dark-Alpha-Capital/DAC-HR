@@ -119,6 +119,8 @@ export default function WeeklyCheckinForm({
       weekStartDate: monday,
       weekEndDate: sunday,
       recruiterName: userName || "",
+      // SAFETY: TanStack form infers the field type from this initializer, so
+      // the empty array is annotated with its expected element type.
       positionsWorked: [] as string[],
       candidatesSourced: 0,
       candidatesScreened: 0,
@@ -127,6 +129,8 @@ export default function WeeklyCheckinForm({
       candidatesAdvanced3rdRound: 0,
       offersExtended: 0,
       offersAccepted: 0,
+      // SAFETY: TanStack form infers the field type from this initializer, so
+      // the empty array is annotated with its expected element type.
       bestPerformingChannels: [] as (typeof sourcingChannels)[number][],
       avgTimeToScreen: "",
       delaysOrBottlenecks: "",

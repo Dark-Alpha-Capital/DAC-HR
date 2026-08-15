@@ -7,9 +7,8 @@ import { useSearch } from "@tanstack/react-router";
 import { AuditLogsClient } from "#/features/admin/components/audit-logs-client";
 import {
   auditLogsIndexQueryOptions,
-  type AuditLogsIndexSearch,
-} from "#/features/admin/server/queries/audit-logs";
-import type { AuditLogsPageData } from "#/features/admin/server/queries/audit-logs";
+} from "#/features/admin/query-options";
+import type { AuditLogsPageData } from "#/features/admin/query-options";
 
 export function AuditLogsPage() {
   const search = useSearch({ from: "/_main/admin/audit-logs" });

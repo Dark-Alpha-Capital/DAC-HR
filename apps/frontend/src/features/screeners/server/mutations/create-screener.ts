@@ -1,51 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
-import { serverFnAuthGuard } from "#/lib/middleware/auth-guard";
-import { createScreener } from "@workspace/db/repositories/screener-repository";
-import {
-  screenerFormSchema,
-  type ScreenerFormSchema,
-} from "#/features/screeners/schemas";
-import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
+import { serverFnAuthGuard } from "#/features/auth/server/auth-middleware";
+import { screenersService } from "../screeners-service";
+import { screenerFormSchema } from "../../schemas";
 
 export const createScreenerAction = createServerFn({ method: "POST" })
   .middleware([serverFnAuthGuard])
-  .validator((data: ScreenerFormSchema) => data)
-  .handler(async ({ data, context: { session } }) => {
-    const result = screenerFormSchema.safeParse(data);
-    if (!result.success) {
-      return { error: result.error.flatten().fieldErrors };
-    }
-
-    const { name, content, positionId } = result.data;
-
-    try {
-      const newScreener = await createScreener({
-        name,
-        content,
-        positionId,
-        createdBy: session.user.id,
-      });
-
-      if (!newScreener) {
-        return { error: "Failed to create screener" };
-      }
-
-      insertAuditLog({
-        userId: session.user.id,
-        action: "create_screener",
-        entityType: "screener",
-        entityId: newScreener.id,
-        details: {
-          screener: { id: newScreener.id, name: newScreener.name },
-        },
-      }).catch((error) => console.error("Audit log error:", error));
-
-      return { data: newScreener };
-    } catch (error) {
-      console.error(error);
-      if (error instanceof Error) {
-        return { error: error.message };
-      }
-      return { error: "Failed to create screener" };
-    }
-  });
+  .validator(screenerFormSchema)
+  .handler(async ({ data, context: { session } }) =>
+    screenersService.create(session.user.id, data),
+  );

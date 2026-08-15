@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { fetchSession as getSession } from "#/lib/auth-session";
-import { deleteCandidateDocument } from "#/features/candidates/candidates-service";
+import { candidatesService } from "#/features/candidates/server/candidates-service";
 
 export const Route = createFileRoute(
   "/api/candidate/$id/documents/$documentId",
@@ -27,7 +27,7 @@ export const Route = createFileRoute(
               { status: 400 },
             );
 
-          const result = await deleteCandidateDocument(
+          const result = await candidatesService.deleteDocument(
             candidateId,
             documentId,
             user,

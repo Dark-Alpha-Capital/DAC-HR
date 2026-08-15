@@ -5,14 +5,11 @@ import { formatDate } from "#/lib/utils";
 import {
   getApplicationStatusLabel,
   applicationStatusBadgeVariants,
-} from "@workspace/db/application-status";
-import { getCandidateWithApplications } from "@workspace/db/repositories/candidate-repository";
+} from "#/lib/application-status";
+import type { CandidateWithApplications } from "#/features/candidates/types";
 import { CreateApplicationDialog } from "#/features/applications/components/create-application-dialog";
 
-type Candidate = NonNullable<
-  Awaited<ReturnType<typeof getCandidateWithApplications>>
->;
-
+type Candidate = CandidateWithApplications;
 export function CandidateApplicationsTab({
   candidate,
 }: {
@@ -62,7 +59,7 @@ export function CandidateApplicationsTab({
                     {app.position.name}
                   </h3>
                   <Badge
-                    variant={applicationStatusBadgeVariants[app.status] as any}
+                    variant={applicationStatusBadgeVariants[app.status]}
                     className="text-xs shrink-0"
                   >
                     {getApplicationStatusLabel(app.status)}

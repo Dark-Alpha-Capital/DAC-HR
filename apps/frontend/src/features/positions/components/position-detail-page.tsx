@@ -1,4 +1,3 @@
-import { DetailPageSkeleton } from "#/components/shared/detail-page-skeleton";
 import { Link, useLoaderData } from "@tanstack/react-router";
 import { Button } from "#/components/ui/button";
 import { Separator } from "#/components/ui/separator";
@@ -22,6 +21,11 @@ import {
   statusLabels,
 } from "#/features/positions/position-metadata";
 
+// SAFETY: the positions route's validateSearch fills in defaults for all
+// search params, so an empty search object is a valid navigation target;
+// `never` only satisfies tanstack's required-search typing.
+const emptyPositionsSearch = {} as never;
+
 export function PositionDetailPage() {
   const { position, rounds, candidates, screener } = useLoaderData({
     from: "/_main/positions/$slug/",
@@ -36,7 +40,7 @@ export function PositionDetailPage() {
           removed.
         </p>
         <Button variant="secondary" asChild>
-          <Link to="/positions" search={{} as never}>
+          <Link to="/positions" search={emptyPositionsSearch}>
             Back to positions
           </Link>
         </Button>
@@ -232,7 +236,7 @@ export function PositionDetailPage() {
                           <Link
                             to="/candidates/$uid"
                             params={{ uid: candidateData.id }}
-                            search={{} as never}
+                            search={{}}
                           >
                             <Eye className="h-3 w-3 mr-1" />
                             View

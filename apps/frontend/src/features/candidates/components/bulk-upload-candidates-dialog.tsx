@@ -35,6 +35,12 @@ import { Progress } from "#/components/ui/progress";
 import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
 import { queryKeys } from "#/lib/query/query-keys";
 
+type ImportRowMetadata = {
+  sourceFile?: string;
+  matchedHeader?: string;
+  action?: string;
+};
+
 type ImportStatus = {
   import: {
     id: string;
@@ -58,7 +64,7 @@ type ImportStatus = {
     status: string;
     error?: string | null;
     candidateId?: string | null;
-    metadata?: Record<string, unknown> | null;
+    metadata?: ImportRowMetadata | null;
   }>;
 };
 
@@ -106,6 +112,8 @@ export default function BulkUploadCandidatesDialog({
     ...importStatusQueryOptions(importId ?? ""),
     enabled: Boolean(importId) && open,
     refetchInterval: (query) => {
+      // SAFETY: react-query's state.data holds the ImportStatus fetched by
+      // this query once the first fetch resolves.
       const importStatus = (query.state.data as ImportStatus | undefined)
         ?.import.status;
       if (!importStatus || TERMINAL_IMPORT_STATUSES.has(importStatus)) {
@@ -193,6 +201,8 @@ export default function BulkUploadCandidatesDialog({
           body: formData,
         });
 
+        // SAFETY: the import API returns { importId } on success or
+        // { error } on failure.
         const data = (await response.json()) as {
           importId?: string;
           error?: string;
@@ -228,6 +238,8 @@ export default function BulkUploadCandidatesDialog({
           method: "DELETE",
         });
 
+        // SAFETY: the cancel API returns { error } on failure and nothing
+        // meaningful on success.
         const data = (await response.json()) as { error?: string };
 
         if (!response.ok) {
@@ -400,17 +412,10 @@ export default function BulkUploadCandidatesDialog({
                 <div className="max-h-48 overflow-y-auto rounded-md border text-xs">
                   {status.rows.map((row) => {
                     const sourceFile =
-                      row.metadata &&
-                      typeof row.metadata.sourceFile === "string"
-                        ? row.metadata.sourceFile
-                        : row.metadata &&
-                            typeof row.metadata.matchedHeader === "string"
-                          ? row.metadata.matchedHeader
-                          : `Row ${row.rowIndex}`;
-                    const action =
-                      row.metadata && typeof row.metadata.action === "string"
-                        ? row.metadata.action
-                        : null;
+                      row.metadata?.sourceFile ??
+                      row.metadata?.matchedHeader ??
+                      `Row ${row.rowIndex}`;
+                    const action = row.metadata?.action ?? null;
                     const actionLabel =
                       action === "created"
                         ? "created"
@@ -498,10 +503,7 @@ export default function BulkUploadCandidatesDialog({
                     .slice(0, 10)
                     .map((row) => {
                       const sourceFile =
-                        row.metadata &&
-                        typeof row.metadata.sourceFile === "string"
-                          ? row.metadata.sourceFile
-                          : `Row ${row.rowIndex}`;
+                        row.metadata?.sourceFile ?? `Row ${row.rowIndex}`;
                       return (
                         <div
                           key={row.rowIndex}

@@ -34,7 +34,10 @@ const DeleteEmployeeButton = ({ employeeId }: { employeeId: string }) => {
         toast.success("Employee deleted successfully");
         setOpen(false);
         void invalidate.employeeDetail(employeeId);
-        router.navigate({ to: "/employees", search: {} as any });
+        // SAFETY: the employees route's validateSearch fills in defaults for
+        // all search params, so an empty search object is valid; `never` only
+        // satisfies tanstack's required-search typing.
+        router.navigate({ to: "/employees", search: {} as never });
       }
     });
   };

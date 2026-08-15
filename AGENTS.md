@@ -116,22 +116,25 @@ import { eq, and, or, sql, asc, desc, inArray, count, gte, lte } from "@workspac
 
 ## Auth (better-auth)
 
-- Config: `apps/frontend/src/auth.ts`, Client: `apps/frontend/src/auth-client.ts`.
-- **Email domain restriction is currently DISABLED** — `src/lib/auth-domain.ts` sets `isAllowedEmail()` to always return `true` (all sign-ins allowed temporarily). The enforcement hooks are still in `auth.ts`; re-enable by uncommenting the `@darkalphacapital.com` suffix check.
-- Admin emails hardcoded in `src/auth.ts` (`rahul@`, `gaurav@`, `da@`); admin role is derived at session time via the `customSession` plugin (no admin flag column).
+- Config: `features/auth/server/auth-service.ts` (host re-exported from `lib/auth.ts`), Client: `features/auth/client.ts`.
+- **Email domain restriction is currently DISABLED** — `features/auth/helpers.ts` sets `isAllowedEmail()` to always return `true` (all sign-ins allowed temporarily). The enforcement hooks are still in `auth-service.ts`; re-enable by uncommenting the `@darkalphacapital.com` suffix check.
+- Admin emails hardcoded in `features/auth/server/auth-service.ts` (`rahul@`, `gaurav@`, `da@`); admin role is derived at session time via the `admin()` plugin (no admin flag column).
 - Google OAuth enabled with **Calendar + Meet scopes** (`calendar.readonly`, `meetings.space.readonly`), `accessType: "offline"`, and `account.skipStateCookieCheck: true` (OAuth consent can exceed the cookie TTL — do not revert without reason). Changing scopes requires users to re-consent.
 - Session helpers:
   - `fetchSession()` in `lib/auth-session.ts` — server function used in `beforeLoad` of layout routes.
-  - `getSession()` in `lib/get-session.ts` (thin wrapper over `fetchSession()`).
-  - `authGuard` / `adminGuard` in `lib/middleware/auth-guard.ts` — route-level middleware for server routes.
-  - `serverFnAuthGuard` / `serverFnAdminGuard` in `lib/middleware/auth-guard.ts` — function middleware for server functions.
+  - `getSession()` / `getSessionUser()` in `features/auth/server/get-session-user.ts` — centralized session resolver.
+  - `serverFnAuthGuard` / `serverFnAdminGuard` in `features/auth/server/auth-middleware.ts` — shared function middleware for server functions (the one place session auth lives).
   - `apiAuthGuard` in `lib/middleware/api-auth-guard.ts` — middleware for API route handlers.
 
 ## Server function / data access pattern
 
-- Mutations are `createServerFn` handlers in `apps/frontend/src/lib/actions/` (one file per entity/action, e.g. `sync-meet-attendance.ts`), wrapped with `.middleware([serverFnAuthGuard])` and Zod `.validator()`.
-- Reads use TanStack Query options in `apps/frontend/src/lib/query/` (query-keys, options per entity) + `hooks/queries`. Invalidate via `lib/query/invalidate.ts`.
-- API route conventions (for the `routes/api/*` handlers): Zod validation with `safeParse`, return 400 with `flatten().fieldErrors`; auth check via `getSession()` inline at the top; audit logs inserted inline with `.catch()` (fire-and-forget); structured JSON logging via `console.info(JSON.stringify({...}))`.
+- Every domain follows one shape: `features/<domain>/server/<domain>-service.ts` owns **all** persistence + business logic for the domain and is the only file importing `@workspace/db`. Export a plain object: `export const <domain>Service = { getX, createY, ... }`.
+- Reads/writes are thin `createServerFn` handlers under `features/<domain>/server/queries/` and `server/mutations/` (one file per action), wrapped with `.middleware([serverFnAuthGuard])`, optional Zod `.validator()`, and a handler that reads `context.user`/`context.session` and delegates to one `<domain>Service` method. No inline SQL, no business logic in server fns.
+- Schemas/types/constants live in the feature: `schemas.ts` (zod + inferred types), `constants.ts` (option lists/labels), `helpers.ts` (pure helpers), `types.ts` (entity types, re-exported from the db package). Components and server fns both import from these.
+- Client query options/parse helpers live in `features/<domain>/query-options.ts` (not in `server/queries/`).
+- Routes are shells: `createFileRoute` + optional `beforeLoad`/`loader` calling a server fn + a component that renders the feature component.
+- API routes (`routes/api/*`) delegate to `<domain>Service` methods — they never import `@workspace/db` directly. Audit logging lives inside service methods (fire-and-forget `.catch()`).
+- Cross-feature shared constants/types are promoted: `lib/application-status.ts`, `lib/enums.ts`, `lib/question-types.ts` re-export the db package's pure submodules. Sweep invariant: `rg 'from "@workspace/db'` in `apps/frontend/src` matches only `*-service.ts`, feature `types.ts`/`constants.ts`, and the three `lib/` hubs above.
 
 ## File storage
 

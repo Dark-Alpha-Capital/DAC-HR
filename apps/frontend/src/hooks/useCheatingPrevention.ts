@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
-import type { CheatingEventType } from "@workspace/db/enums";
+import type { CheatingEventType } from "#/lib/enums";
+import type { JsonObject } from "@workspace/interview-realtime/types";
 
 export function useCheatingPrevention(
-  sendToDO: (eventType: CheatingEventType, metadata?: Record<string, unknown>) => void,
+  sendToDO: (eventType: CheatingEventType, metadata?: JsonObject) => void,
   enabled: boolean,
 ) {
   const sendRef = useRef(sendToDO);

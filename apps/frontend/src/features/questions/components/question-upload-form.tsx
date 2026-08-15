@@ -1,4 +1,5 @@
 import { useTransition } from "react";
+import * as z from "zod";
 import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -51,6 +52,8 @@ const emptyFormValues = {
   questionText: "",
   positionId: "",
   roundTemplateId: "",
+  // SAFETY: "text" is the default question type; the union keeps the form
+  // field type fixed to the QuestionFormSchema questionType.
   questionType: "text" as "text" | "mcq",
   options: defaultMcqOptions(),
 };
@@ -174,9 +177,10 @@ const QuestionUploadForm = ({
         const result = await createQuestion({ data: parsed.data });
 
         if (result.error) {
+          const errorMessage = z.string().safeParse(result.error);
           toast.error(
-            typeof result.error === "string"
-              ? result.error
+            errorMessage.success
+              ? errorMessage.data
               : "Failed to create question",
             { position: "bottom-right" },
           );

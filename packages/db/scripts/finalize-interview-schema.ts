@@ -25,7 +25,7 @@ const remote = process.argv.includes("--remote");
  * Prefer --file over --command: wrangler/yargs often splits SQL with spaces
  * into unknown CLI args (e.g. "Unknown arguments: name, FROM, ...").
  */
-function runD1Sql(sql: string): { status: number | null; stdout: string; stderr: string } {
+function runD1Sql(sql: string) {
   const target = remote ? "--remote" : "--local";
   const dir = mkdtempSync(path.join(tmpdir(), "d1-sql-"));
   const file = path.join(dir, "query.sql");
@@ -74,7 +74,7 @@ function executeD1(sql: string) {
   }
 }
 
-function queryD1<T extends Record<string, unknown>>(sql: string): T[] {
+function queryD1<T extends object>(sql: string): T[] {
   const result = runD1Sql(sql);
 
   if (result.status !== 0) {
@@ -87,6 +87,8 @@ function queryD1<T extends Record<string, unknown>>(sql: string): T[] {
   const stdout = result.stdout.trim();
   const jsonStart = stdout.indexOf("[");
   const jsonText = jsonStart >= 0 ? stdout.slice(jsonStart) : stdout;
+  // SAFETY: `wrangler d1 execute --json` emits an array of result objects,
+  // each carrying `results`; we read the first result set.
   const parsed = JSON.parse(jsonText || "[]") as Array<{
     results: T[];
   }>;
@@ -118,14 +120,14 @@ function runSqlBatch(sqlite: Database, sql: string) {
 }
 
 function interviewHasLegacyColumn(
-  query: <T extends Record<string, unknown>>(sql: string) => T[],
+  query: <T extends object>(sql: string) => T[],
 ): boolean {
   const rows = query<{ name: string }>(`PRAGMA table_info(interview);`);
   return rows.some((row) => row.name === "position_round_template_id");
 }
 
 function junctionTableExists(
-  query: <T extends Record<string, unknown>>(sql: string) => T[],
+  query: <T extends object>(sql: string) => T[],
 ): boolean {
   const rows = query<{ name: string }>(
     `SELECT name FROM sqlite_master WHERE type='table' AND name='position_round_templates';`,
@@ -205,7 +207,9 @@ function finalizeViaWrangler() {
 function finalizeViaSqlite() {
   const sqlite = new Database(getLocalD1SqlitePath());
 
-  const query = <T extends Record<string, unknown>>(sql: string): T[] =>
+  // SAFETY: `.all()` rows are objects matching the caller's requested row
+  // shape (columns are the SQLite storage types).
+  const query = <T extends object>(sql: string): T[] =>
     sqlite.prepare(sql).all() as T[];
 
   if (!interviewHasLegacyColumn(query)) {

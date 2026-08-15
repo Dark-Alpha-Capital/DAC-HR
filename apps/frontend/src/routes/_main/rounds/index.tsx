@@ -4,7 +4,7 @@ import { RoundsListPage } from "#/features/rounds/components/rounds-list-page";
 import {
   parseRoundsSearch,
   roundsIndexQueryOptions,
-} from "#/features/rounds/server/queries/rounds";
+} from "#/features/rounds/query-options";
 
 export const Route = createFileRoute("/_main/rounds/")({
   head: () => ({
@@ -12,9 +12,7 @@ export const Route = createFileRoute("/_main/rounds/")({
   }),
   validateSearch: parseRoundsSearch,
   loader: async ({ context: { queryClient }, location }) => {
-    const search = parseRoundsSearch(
-      location.search as Record<string, unknown>,
-    );
+    const search = parseRoundsSearch(location.search);
     await queryClient.ensureQueryData(roundsIndexQueryOptions(search));
   },
   pendingComponent: () => <ListPageSkeleton />,

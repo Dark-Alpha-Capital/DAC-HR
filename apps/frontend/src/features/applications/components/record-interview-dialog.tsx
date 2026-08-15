@@ -21,11 +21,11 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
 import { createInterview } from "#/features/interviews/server/mutations/interviews";
 import { createInterviewSession } from "#/features/interviews/server/mutations/interviews";
-import type { RoundDeliveryMode } from "@workspace/db/enums";
+import type { RoundDeliveryMode } from "#/lib/enums";
 import { toast } from "sonner";
 import { Bot, Calendar, Check, Copy, Link2, Mic, Plus } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import type { ApplicationDetail } from "#/features/applications/server/queries/applications";
+import type { ApplicationDetail } from "#/features/applications/types";
 
 type DialogMode = "ai_link" | "manual";
 
@@ -65,9 +65,7 @@ export default function RecordInterviewDialog({
   const [roundModes, setRoundModes] = useState<
     Record<string, RoundDeliveryMode>
   >(() =>
-    Object.fromEntries(
-      application.rounds.map((r) => [r.id, "form" as RoundDeliveryMode]),
-    ),
+    Object.fromEntries(application.rounds.map((r) => [r.id, "form" as const])),
   );
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -128,11 +126,7 @@ export default function RecordInterviewDialog({
       });
 
       if (result.error) {
-        toast.error(
-          typeof result.error === "string"
-            ? result.error
-            : "Failed to record interview",
-        );
+        toast.error(result.error ?? "Failed to record interview");
       } else {
         toast.success("Interview recorded successfully");
         handleOpenChange(false);
@@ -167,11 +161,7 @@ export default function RecordInterviewDialog({
       });
 
       if (result.error) {
-        toast.error(
-          typeof result.error === "string"
-            ? result.error
-            : "Failed to generate interview link",
-        );
+        toast.error(result.error ?? "Failed to generate interview link");
       } else if (result.data?.token) {
         const link = `${window.location.origin}/interview/${result.data.token}`;
         setGeneratedLink(link);
@@ -253,7 +243,11 @@ export default function RecordInterviewDialog({
         ) : (
           <Tabs
             value={mode}
-            onValueChange={(v) => setMode(v as DialogMode)}
+            onValueChange={(v) =>
+              // SAFETY: the TabsTrigger values below are exactly the DialogMode
+              // literals ("ai_link", "manual").
+              setMode(v as DialogMode)
+            }
             className="w-full"
           >
             <TabsList className="grid w-full grid-cols-2">
@@ -289,6 +283,8 @@ export default function RecordInterviewDialog({
                         <Select
                           value={roundModes[round.id] ?? "form"}
                           onValueChange={(value) =>
+                            // SAFETY: the <SelectItem> values are exactly the
+                            // RoundDeliveryMode literals ("form", "voice").
                             setRoundMode(round.id, value as RoundDeliveryMode)
                           }
                         >

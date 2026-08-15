@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { Button } from "#/components/ui/button";
 import {
   Dialog,
@@ -93,9 +94,10 @@ export function AddRoundQuestionDialog({
       const result = await createQuestion({ data: parsed.data });
 
       if (result.error) {
+        const errorMessage = z.string().safeParse(result.error);
         toast.error(
-          typeof result.error === "string"
-            ? result.error
+          errorMessage.success
+            ? errorMessage.data
             : "Failed to create question",
         );
         return;

@@ -5,13 +5,16 @@ export async function extractPerPageText(
   buffer: Uint8Array,
 ): Promise<string[]> {
   const result = await extractText(buffer, { mergePages: false });
+  // SAFETY: unpdf's `mergePages: false` overload types `text` as `string[]`,
+  // but a single-string payload is possible in the wild; the cast keeps the
+  // defensive string branch below.
   const text = result.text as string | string[] | undefined;
 
   if (Array.isArray(text)) {
     return text.map((page) => String(page ?? "").trim());
   }
 
-  if (typeof text === "string" && text.trim()) {
+  if (text && text.trim()) {
     return text.split(/\f+/).map((page: string) => page.trim());
   }
 

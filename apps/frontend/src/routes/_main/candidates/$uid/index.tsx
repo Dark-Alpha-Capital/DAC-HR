@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DetailPageSkeleton } from "#/components/shared/detail-page-skeleton";
 import { CandidateDetailPage } from "#/features/candidates/components/candidate-detail-page";
-import { candidateDetailQueryOptions } from "#/features/candidates/server/queries/candidates";
+import { candidateDetailQueryOptions } from "#/features/candidates/query-options";
 
 export const Route = createFileRoute("/_main/candidates/$uid/")({
   head: () => ({

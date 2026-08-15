@@ -49,6 +49,7 @@ function exportTable(
   table: string,
   where?: string,
 ): string {
+  // SAFETY: PRAGMA table_info returns one row per column with a `name` field.
   const columns = sqlite
     .prepare(`PRAGMA table_info(${table})`)
     .all() as Array<{ name: string }>;
@@ -56,11 +57,13 @@ function exportTable(
   if (columns.length === 0) return "";
 
   const colNames = columns.map((c) => c.name);
+  // SAFETY: bun:sqlite `.all()` returns row objects whose column values are
+  // the SQLite storage types (string | number | bigint | null | Uint8Array).
   const rows = sqlite
     .prepare(
       `SELECT ${colNames.join(", ")} FROM ${table}${where ? ` WHERE ${where}` : ""}`,
     )
-    .all() as Array<Record<string, unknown>>;
+    .all() as Array<Record<string, string | number | bigint | null | Uint8Array>>;
 
   if (rows.length === 0) return "";
 
@@ -94,6 +97,7 @@ export function exportSeedDataSql(sqlite: Database): string {
   ].filter(Boolean);
 
   const exportedTables = SEED_TABLES_IN_INSERT_ORDER.filter((table) => {
+    // SAFETY: COUNT(*) returns a single row with a numeric `count` column.
     const count = sqlite
       .prepare(`SELECT COUNT(*) as count FROM ${table}`)
       .get() as { count: number };

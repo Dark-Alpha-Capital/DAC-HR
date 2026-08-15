@@ -4,7 +4,7 @@ import { DocumentsListPage } from "#/features/documents/components/documents-lis
 import {
   parseDocumentsSearch,
   documentsIndexQueryOptions,
-} from "#/features/documents/server/queries/documents";
+} from "#/features/documents/query-options";
 
 export const Route = createFileRoute("/_main/documents/")({
   head: () => ({
@@ -12,9 +12,7 @@ export const Route = createFileRoute("/_main/documents/")({
   }),
   validateSearch: parseDocumentsSearch,
   loader: async ({ context: { queryClient }, location }) => {
-    const search = parseDocumentsSearch(
-      location.search as Record<string, unknown>,
-    );
+    const search = parseDocumentsSearch(location.search);
     await queryClient.ensureQueryData(documentsIndexQueryOptions(search));
   },
   pendingComponent: () => <ListPageSkeleton />,

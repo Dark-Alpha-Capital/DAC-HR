@@ -2,7 +2,7 @@ import { Badge } from "#/components/ui/badge";
 import { EditRoundQuestionDialog } from "#/components/shared/edit-round-question-dialog";
 import DeleteQuestionButton from "#/features/questions/components/delete-question-button";
 import { getQuestionTypeLabel } from "#/features/questions/helpers";
-import type { QuestionOption } from "@workspace/db/question-types";
+import type { QuestionOption } from "#/lib/question-types";
 
 export type RoundSheetQuestion = {
   id: string;

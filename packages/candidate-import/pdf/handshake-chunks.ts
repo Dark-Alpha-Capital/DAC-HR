@@ -241,11 +241,7 @@ export function extractHandshakeResumeChunks(
 export function matchHandshakeExport(
   chunks: ResumeChunk[],
   roster: HandshakeRosterEntry[],
-): {
-  matched: MatchedResume[];
-  unmatchedRoster: HandshakeRosterEntry[];
-  unmatchedChunks: ResumeChunk[];
-} {
+) {
   const matched: MatchedResume[] = [];
   const usedRosterEmails = new Set<string>();
   const usedChunkKeys = new Set<string>();

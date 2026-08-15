@@ -5,10 +5,7 @@ import {
   positionStatusEnum,
 } from "#/features/positions/schemas";
 
-export const departmentLabels: Record<
-  z.infer<typeof departmentEnum>,
-  string
-> = {
+export const departmentLabels = {
   management: "Management",
   "capital-markets": "Capital Markets",
   "deal-team": "Deal Team",
@@ -17,25 +14,22 @@ export const departmentLabels: Record<
   origination: "Origination",
   pipe: "PIPE",
   "public-markets": "Public Markets",
-};
+} satisfies Record<z.infer<typeof departmentEnum>, string>;
 
-export const hireLevelLabels: Record<z.infer<typeof hireLevelEnum>, string> = {
+export const hireLevelLabels = {
   "managing-director": "Managing Director",
   "vice-president": "Vice President",
   associate: "Associate",
   analyst: "Analyst",
   intern: "Intern",
-};
+} satisfies Record<z.infer<typeof hireLevelEnum>, string>;
 
-export const statusLabels: Record<
-  z.infer<typeof positionStatusEnum>,
-  string
-> = {
+export const statusLabels = {
   active: "Active",
   hold: "Hold",
   passed: "Passed",
   upcoming: "Upcoming",
-};
+} satisfies Record<z.infer<typeof positionStatusEnum>, string>;
 
 /** Status badge classes shared by the list, detail, and form screens. */
 export function statusBadgeClass(status: string | null | undefined): string {

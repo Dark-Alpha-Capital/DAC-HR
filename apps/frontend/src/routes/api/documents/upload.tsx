@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
 import { fetchSession as getSession } from "#/lib/auth-session";
-import { createDocumentRecord } from "#/features/documents/documents-service";
+import { documentsService } from "#/features/documents/server/documents-service";
 import { uploadFile } from "#/lib/storage";
 
 const VIDEO_TYPES = [
@@ -17,14 +18,16 @@ const VIDEO_TYPES = [
 ];
 
 function parseStringArray(value: FormDataEntryValue | null): string[] {
-  if (typeof value !== "string" || value.trim() === "") {
+  if (value instanceof File || value === null || value.trim() === "") {
     return [];
   }
 
   try {
-    const parsed: unknown = JSON.parse(value);
-    return Array.isArray(parsed)
-      ? parsed.filter((item): item is string => typeof item === "string")
+    const parsed = z.array(z.unknown()).safeParse(JSON.parse(value));
+    return parsed.success
+      ? parsed.data.filter(
+          (item): item is string => z.string().safeParse(item).success,
+        )
       : [];
   } catch {
     return [];
@@ -43,6 +46,8 @@ export const Route = createFileRoute("/api/documents/upload")({
 
           const { user } = authSession;
           const formData = await request.formData();
+          // SAFETY: the file input submits a File; when absent, FormData
+          // returns null for the "file" field.
           const file = formData.get("file") as File | null;
 
           if (!file) {
@@ -77,16 +82,18 @@ export const Route = createFileRoute("/api/documents/upload")({
           }
 
           const name = formData.get("name");
-          if (typeof name !== "string" || name.trim() === "") {
+          if (name instanceof File || name === null || name.trim() === "") {
             return Response.json({ url }, { status: 200 });
           }
 
           const descriptionValue = formData.get("description");
 
-          const result = await createDocumentRecord({
+          const result = await documentsService.createRecord({
             name,
             description:
-              typeof descriptionValue === "string" ? descriptionValue : "",
+              descriptionValue instanceof File
+                ? ""
+                : (descriptionValue ?? ""),
             categoryIds: parseStringArray(formData.get("categoryIds")),
             tags: parseStringArray(formData.get("tags")),
             url,
@@ -98,12 +105,12 @@ export const Route = createFileRoute("/api/documents/upload")({
           });
 
           if (!result.success) {
+            const errorMessage = z.string().safeParse(result.error);
             return Response.json(
               {
-                error:
-                  typeof result.error === "string"
-                    ? result.error
-                    : "Failed to create document",
+                error: errorMessage.success
+                  ? errorMessage.data
+                  : "Failed to create document",
               },
               { status: 400 },
             );

@@ -1,7 +1,7 @@
 import type { CsvRow } from "../types";
 import { splitFullName } from "../dedup/normalize-name";
 
-const HEADER_ALIASES: Record<string, string[]> = {
+const HEADER_ALIASES = {
   firstName: [
     "first name",
     "firstname",
@@ -37,7 +37,7 @@ const HEADER_ALIASES: Record<string, string[]> = {
     "year",
     "student graduation date",
   ],
-};
+} satisfies Record<string, string[]>;
 
 function normalizeHeader(header: string): string {
   return header.trim().toLowerCase();

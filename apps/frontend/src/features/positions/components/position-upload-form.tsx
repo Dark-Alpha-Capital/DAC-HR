@@ -52,13 +52,25 @@ const PositionUploadForm = () => {
     defaultValues: {
       name: "",
       description: "",
+      // SAFETY: the department field starts empty but must hold the schema's
+      // department array type so the dropdown can write any department.
       department: [] as z.infer<typeof positionFormSchema>["department"],
+      // SAFETY: the hireLevel field starts unset but must hold the schema's
+      // optional hireLevel type so the Select can write any hire level.
       hireLevel: undefined as z.infer<typeof positionFormSchema>["hireLevel"],
+      // SAFETY: "active" is a member of the schema's status enum; widening to
+      // the field type lets the Select write any status literal.
       status: "active" as z.infer<typeof positionFormSchema>["status"],
     },
 
     validators: {
-      onSubmit: positionFormSchema as any,
+      onSubmit: ({ value }) => {
+        const result = positionFormSchema.safeParse(value);
+        if (!result.success) {
+          return result.error.format();
+        }
+        return undefined;
+      },
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
@@ -76,7 +88,7 @@ const PositionUploadForm = () => {
           form.reset();
           router.navigate({ to: `/positions/${result.data?.slug}` });
         } else {
-          toast((result.error as string) || "Failed to upload position", {
+          toast(result.error || "Failed to upload position", {
             position: "bottom-right",
           });
         }
@@ -140,7 +152,7 @@ const PositionUploadForm = () => {
                   <Input
                     id={field.name}
                     name={field.name}
-                    value={field.state.value as string}
+                    value={field.state.value}
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
                     aria-invalid={isInvalid}
@@ -253,9 +265,14 @@ const PositionUploadForm = () => {
                   <FieldLabel htmlFor={field.name}>Hire Level</FieldLabel>
                   <Select
                     value={field.state.value}
-                    onValueChange={(value) =>
-                      field.handleChange(value as z.infer<typeof hireLevelEnum>)
-                    }
+                    onValueChange={(value) => {
+                      // SAFETY: the <SelectItem> values are
+                      // hireLevelEnum.options, so the selected value is a
+                      // hireLevelEnum literal.
+                      field.handleChange(
+                        value as z.infer<typeof hireLevelEnum>,
+                      );
+                    }}
                   >
                     <SelectTrigger
                       id={field.name}
@@ -289,11 +306,14 @@ const PositionUploadForm = () => {
                   <FieldLabel htmlFor={field.name}>Status</FieldLabel>
                   <Select
                     value={field.state.value || "active"}
-                    onValueChange={(value) =>
+                    onValueChange={(value) => {
+                      // SAFETY: the <SelectItem> values are
+                      // positionStatusEnum.options, so the selected value is a
+                      // positionStatusEnum literal.
                       field.handleChange(
                         value as z.infer<typeof positionStatusEnum>,
-                      )
-                    }
+                      );
+                    }}
                   >
                     <SelectTrigger id={field.name} aria-invalid={isInvalid}>
                       <SelectValue placeholder="Select status" />

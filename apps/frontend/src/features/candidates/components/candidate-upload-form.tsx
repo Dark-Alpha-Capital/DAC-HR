@@ -9,7 +9,6 @@ import {
   Field,
   FieldDescription,
   FieldError,
-  FieldContent,
   FieldGroup,
   FieldLabel,
 } from "#/components/ui/field";
@@ -28,15 +27,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
 import { Separator } from "#/components/ui/separator";
 import { Loader2, Copy, Check, Sparkles } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
-import {
-  candidateFormSchema,
-  type CandidateFormSchema,
-} from "#/features/candidates/schemas";
+import { candidateFormSchema } from "#/features/candidates/schemas";
 import {
   Select,
   SelectContent,
   SelectItem,
-  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "#/components/ui/select";
@@ -44,6 +39,8 @@ import { Session } from "better-auth";
 import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
 
 type Round = { roundTemplateId: string; name: string };
+
+type CandidateSource = "LinkedIn" | "Upwork" | "Handshake" | "Indeed";
 
 type CreateCandidateResponse = {
   success?: boolean;
@@ -80,7 +77,6 @@ const CandidateUploadForm = ({
 
   // AI session generation state
   const [generateAiSession, setGenerateAiSession] = useState(false);
-  const [selectedRoundId, setSelectedRoundId] = useState("");
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
 
@@ -103,8 +99,10 @@ const CandidateUploadForm = ({
       location: "",
       locationCity: "",
       locationState: "",
-      source: undefined as
-        "LinkedIn" | "Upwork" | "Handshake" | "Indeed" | undefined,
+      // SAFETY: the source field begins unset; widening `undefined` to
+      // CandidateSource | undefined lets the field hold either a selected
+      // source or none.
+      source: undefined as CandidateSource | undefined,
       sourceUrl: "",
       note: "",
       positionIds: defaultPositionId ? [defaultPositionId] : [],
@@ -137,19 +135,18 @@ const CandidateUploadForm = ({
             body: JSON.stringify(value),
           });
 
+          // SAFETY: /api/candidate (POST) serializes the CreateCandidateResponse
+          // shape on every response path.
           const result = (await response.json()) as CreateCandidateResponse;
 
           if (!response.ok) {
-            toast.error(
-              typeof result.error === "string"
-                ? result.error
-                : typeof result.error === "object"
-                  ? JSON.stringify(result.error)
-                  : "Failed to create candidate",
-              {
-                position: "bottom-right",
-              },
-            );
+            const stringError = z.string().safeParse(result.error);
+            const errorMessage = stringError.success
+              ? stringError.data
+              : (JSON.stringify(result.error) ?? "Failed to create candidate");
+            toast.error(errorMessage, {
+              position: "bottom-right",
+            });
             return;
           }
 
@@ -204,6 +201,8 @@ const CandidateUploadForm = ({
               });
 
               if (sessionResponse.ok) {
+                // SAFETY: /api/interview-sessions (POST) serializes the
+                // CreateInterviewSessionResponse shape on success.
                 const sessionResult =
                   (await sessionResponse.json()) as CreateInterviewSessionResponse;
                 setGeneratedLink(sessionResult.interviewLink ?? null);
@@ -235,7 +234,8 @@ const CandidateUploadForm = ({
           setSelectedSource(undefined);
           setResumeFile(null);
           setGenerateAiSession(false);
-          setSelectedRoundId("");
+          // SAFETY: the only element with id "resume-upload" is this component's
+          // file <input>, so getElementById returns that HTMLInputElement.
           const fileInput = document.getElementById(
             "resume-upload",
           ) as HTMLInputElement;
@@ -288,8 +288,10 @@ const CandidateUploadForm = ({
               setSelectedSource(undefined);
               setResumeFile(null);
               setGenerateAiSession(false);
-              setSelectedRoundId("");
               setGeneratedLink(null);
+              // SAFETY: the only element with id "resume-upload" is this
+              // component's file <input>, so getElementById returns that
+              // HTMLInputElement.
               const fileInput = document.getElementById(
                 "resume-upload",
               ) as HTMLInputElement;
@@ -538,11 +540,10 @@ const CandidateUploadForm = ({
                   <Select
                     value={field.state.value || ""}
                     onValueChange={(value) => {
+                      // SAFETY: the <SelectItem> values below are exactly the
+                      // CandidateSource literals, so the selected value is one of them.
                       const newSource =
-                        value === ""
-                          ? undefined
-                          : (value as
-                              "LinkedIn" | "Upwork" | "Handshake" | "Indeed");
+                        value === "" ? undefined : (value as CandidateSource);
                       field.handleChange(newSource);
                       setSelectedSource(newSource);
                       if (value === "") {
@@ -621,7 +622,6 @@ const CandidateUploadForm = ({
                     value={selectedId}
                     onValueChange={(value) => {
                       field.handleChange(value ? [value] : []);
-                      setSelectedRoundId("");
                     }}
                   >
                     <SelectTrigger

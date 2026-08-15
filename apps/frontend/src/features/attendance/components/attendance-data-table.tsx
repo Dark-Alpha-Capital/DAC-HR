@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "#/components/ui/table";
 import type { MeetParticipantKind } from "#/features/attendance/meet-attendance";
-import type { StoredAttendanceRow } from "@workspace/db/repositories/meet-attendance-repository";
+import type { StoredAttendanceRow } from "#/features/attendance/types";
 import { formatDateTime, formatMMDD } from "#/lib/utils";
 
 function formatDuration(ms: number | null) {

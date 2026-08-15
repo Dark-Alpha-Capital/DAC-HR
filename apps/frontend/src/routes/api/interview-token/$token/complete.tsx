@@ -1,13 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { interviewsService } from "#/features/interviews/server/interviews-service";
 import { z } from "zod";
 import { env } from "cloudflare:workers";
-import {
-  updateSessionStatus,
-  updateSessionVoiceMetadata,
-} from "@workspace/db/repositories/interview-session-repository";
-import { advanceBundleRound } from "@workspace/db/repositories/interview-bundle-repository";
-import { resolveInterviewToken } from "#/features/interviews/interview-token";
-import { autoRunBundleAiAnalysis } from "#/features/interviews/run-bundle-ai-analysis";
 import {
   interviewServerLog,
   truncateId,
@@ -16,10 +10,7 @@ import {
 const COMPONENT = "complete-api";
 
 function triggerEvaluationWorkflow(sessionId: string) {
-  const workflow = (env)
-    .INTERVIEW_EVALUATION_WORKFLOW as
-    | { create: (input: { params: Record<string, unknown> }) => Promise<unknown> }
-    | undefined;
+  const workflow = env.INTERVIEW_EVALUATION_WORKFLOW;
 
   if (!workflow) {
     return;
@@ -65,7 +56,7 @@ export const Route = createFileRoute("/api/interview-token/$token/complete")({
             token: truncateId(token),
           });
 
-          const resolved = await resolveInterviewToken(token);
+          const resolved = await interviewsService.resolveToken(token);
 
           if (!resolved.ok) {
             interviewServerLog.warn("api", COMPONENT, "token_resolve_failed", {
@@ -155,16 +146,16 @@ export const Route = createFileRoute("/api/interview-token/$token/complete")({
             tabSwitches: parsed.data.tabSwitches,
           };
 
-          await updateSessionVoiceMetadata(session.id, {
+          await interviewsService.updateSessionVoiceMetadata(session.id, {
             cheatingSummary,
           });
 
           let advanceResult = null;
 
           if (resolved.type === "bundle") {
-            advanceResult = await advanceBundleRound(session.id);
+            advanceResult = await interviewsService.advanceBundleRound(session.id);
           } else {
-            await updateSessionStatus(session.id, "completed", {
+            await interviewsService.updateSessionStatus(session.id, "completed", {
               completedAt: new Date(),
               tabSwitches: parsed.data.tabSwitches,
             });
@@ -175,7 +166,7 @@ export const Route = createFileRoute("/api/interview-token/$token/complete")({
             advanceResult?.allCompleted &&
             session.bundleId
           ) {
-            const autoResult = await autoRunBundleAiAnalysis(session.bundleId);
+            const autoResult = await interviewsService.autoRunBundleAiAnalysis(session.bundleId);
             interviewServerLog.info(
               "api",
               COMPONENT,

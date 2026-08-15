@@ -87,7 +87,9 @@ export default function MarkdownEditorContent({
         className,
         error && "rounded-lg ring-2 ring-destructive ring-offset-1",
       )}
-      style={{ "--mdx-min-height": minHeight } as React.CSSProperties}
+      style={/* SAFETY: --mdx-min-height is a CSS custom property consumed by
+        the .mdx-editor styles; React.CSSProperties has no slot for it. */
+        { "--mdx-min-height": minHeight } as React.CSSProperties}
     >
       <MDXEditor
         ref={editorRef}

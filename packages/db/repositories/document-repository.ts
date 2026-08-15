@@ -69,6 +69,8 @@ export async function getDocuments(
     }
 
     if (conditions.length > 0) {
+      // SAFETY: where() returns the same select query builder type; the
+      // reassignment needs the self-reference cast.
       query = query.where(and(...conditions)) as typeof query;
     }
 
@@ -145,6 +147,8 @@ export async function getCandidateDocumentsList(
     }
 
     if (conditions.length > 0) {
+      // SAFETY: where() returns the same select query builder type; the
+      // reassignment needs the self-reference cast.
       query = query.where(and(...conditions)) as typeof query;
     }
 

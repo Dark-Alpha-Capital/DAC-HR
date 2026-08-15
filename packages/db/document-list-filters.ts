@@ -2,13 +2,15 @@ export const documentScopeOptions = ["firm", "candidates", "all"] as const;
 
 export type DocumentScope = (typeof documentScopeOptions)[number];
 
-export const documentScopeLabels: Record<DocumentScope, string> = {
+export const documentScopeLabels = {
   firm: "Firm",
   candidates: "Candidates",
   all: "All",
-};
+} satisfies Record<DocumentScope, string>;
 
 export function isDocumentScope(value: string): value is DocumentScope {
+  // SAFETY: `documentScopeOptions` is a string-literal array; widening to
+  // `readonly string[]` lets us search it with an arbitrary string value.
   return (documentScopeOptions as readonly string[]).includes(value);
 }
 

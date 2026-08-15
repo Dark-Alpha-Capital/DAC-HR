@@ -1,5 +1,5 @@
-import type { ApplicationStatus } from "@workspace/db/application-status";
-import type { CandidateSortOption } from "@workspace/db/candidate-list-filters";
+import type { ApplicationStatus } from "#/lib/application-status";
+import type { CandidateSortOption } from "#/features/candidates/constants";
 
 export type KanbanCard = {
   id: string;

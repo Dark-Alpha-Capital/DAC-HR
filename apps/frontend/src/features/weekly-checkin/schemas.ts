@@ -11,10 +11,7 @@ export const sourcingChannels = [
   "other",
 ] as const;
 
-export const sourcingChannelLabels: Record<
-  (typeof sourcingChannels)[number],
-  string
-> = {
+export const sourcingChannelLabels = {
   linkedin: "LinkedIn",
   indeed: "Indeed",
   upwork: "Upwork",
@@ -23,7 +20,7 @@ export const sourcingChannelLabels: Record<
   "university-portals": "University Portals",
   agency: "Agency",
   other: "Other",
-};
+} satisfies Record<(typeof sourcingChannels)[number], string>;
 
 export const weeklyCheckinFormSchema = z.object({
   // Tab 1: This Week's Information

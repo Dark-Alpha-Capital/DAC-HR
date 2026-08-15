@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Database } from "bun:sqlite";
-import { eq, inArray } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import type { Department, HireLevel, PositionStatus } from "./enums";
 import { position } from "./schema";
@@ -292,17 +292,20 @@ function exportInsertedSql(sqlite: Database, positionIds: string[]): string {
 
   const placeholders = positionIds.map((id) => sqlValue(id)).join(", ");
   const exportTable = (table: string, where: string) => {
+    // SAFETY: PRAGMA table_info returns one row per column with a `name` field.
     const columns = sqlite
       .prepare(`PRAGMA table_info(${table})`)
       .all() as Array<{ name: string }>;
     if (columns.length === 0) return "";
 
     const colNames = columns.map((c) => c.name);
+    // SAFETY: bun:sqlite `.all()` returns row objects whose column values are
+    // the SQLite storage types (string | number | bigint | null | Uint8Array).
     const rows = sqlite
       .prepare(
         `SELECT ${colNames.join(", ")} FROM ${table} WHERE ${where}`,
       )
-      .all() as Array<Record<string, unknown>>;
+      .all() as Array<Record<string, string | number | bigint | null | Uint8Array>>;
 
     return rows
       .map((row) => {

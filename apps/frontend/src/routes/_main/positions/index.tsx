@@ -4,7 +4,7 @@ import { PositionsListPage } from "#/features/positions/components/positions-lis
 import {
   parsePositionsSearch,
   positionsIndexQueryOptions,
-} from "#/features/positions/server/queries/positions";
+} from "#/features/positions/query-options";
 
 export const Route = createFileRoute("/_main/positions/")({
   head: () => ({
@@ -12,9 +12,7 @@ export const Route = createFileRoute("/_main/positions/")({
   }),
   validateSearch: parsePositionsSearch,
   loader: async ({ context: { queryClient }, location }) => {
-    const search = parsePositionsSearch(
-      location.search as Record<string, unknown>,
-    );
+    const search = parsePositionsSearch(location.search);
     await queryClient.ensureQueryData(positionsIndexQueryOptions(search));
   },
   pendingComponent: () => <ListPageSkeleton />,

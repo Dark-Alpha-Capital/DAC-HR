@@ -25,7 +25,7 @@ type ThemeProviderState = {
 const ThemeProviderContext = createContext<ThemeProviderState | null>(null);
 
 function resolveTheme(theme: Theme): "dark" | "light" {
-  if (typeof window === "undefined") {
+  if (!globalThis.document) {
     return "light";
   }
 

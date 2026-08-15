@@ -19,14 +19,7 @@ import {
   type ImportServices,
   type ProcessImportResult,
 } from "@workspace/candidate-import";
-import {
-  getCandidateImportById,
-  updateCandidateImportStatus,
-} from "@workspace/db/repositories/candidate-import-repository";
-import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import { eq } from "@workspace/db";
-import { db } from "@workspace/db/db";
-import { candidateImport } from "@workspace/db/schema";
+import { candidatesService } from "#/features/candidates/server/candidates-service";
 
 /** Cloudflare Workflows non-stream step result limit */
 const MAX_STEP_RESULT_BYTES = 1024 * 1024;
@@ -59,7 +52,7 @@ type Params = {
 };
 
 type ImportRecord = NonNullable<
-  Awaited<ReturnType<typeof getCandidateImportById>>
+  Awaited<ReturnType<typeof candidatesService.getImportById>>
 >;
 
 function log(level: string, message: string, data?: Record<string, unknown>) {
@@ -173,13 +166,10 @@ function buildImportServices(env: Env): ImportServices {
       totalCandidates,
       processedCandidates,
     }) => {
-      await db
-        .update(candidateImport)
-        .set({
-          ...(totalCandidates !== undefined ? { totalCandidates } : {}),
-          ...(processedCandidates !== undefined ? { processedCandidates } : {}),
-        })
-        .where(eq(candidateImport.id, importId));
+      await candidatesService.updateImportProgress(importId, {
+        totalCandidates,
+        processedCandidates,
+      });
     },
   };
 }
@@ -253,7 +243,7 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
           attempt: ctx.attempt,
         });
 
-        const record = await getCandidateImportById(importId);
+        const record = await candidatesService.getImportById(importId);
         if (!record) {
           throw new Error(`Import job not found: ${importId}`);
         }
@@ -275,7 +265,7 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
         });
 
         if (record.status === "pending") {
-          await updateCandidateImportStatus(importId, "processing");
+          await candidatesService.updateImportStatus(importId, "processing");
           log("log", "Status → processing", {
             step: "workflow.status_processing",
             importId,
@@ -304,7 +294,7 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
             attempt: ctx.attempt,
           });
 
-          const cancelled = await getCandidateImportById(importId);
+          const cancelled = await candidatesService.getImportById(importId);
           if (cancelled?.status === "cancelled") {
             log("log", "Import cancelled before processing", {
               step: "workflow.cancelled",
@@ -365,7 +355,7 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
           error: message,
           stack: stack?.split("\n").slice(0, 3).join(" | "),
         });
-        await updateCandidateImportStatus(importId, "failed", {
+        await candidatesService.updateImportStatus(importId, "failed", {
           error: message,
         });
         throw error;
@@ -389,7 +379,7 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
         ...processResult,
       });
 
-      const current = await getCandidateImportById(importId);
+      const current = await candidatesService.getImportById(importId);
       if (current?.status === "cancelled") {
         log("log", "Skipped finalize — import cancelled", {
           step: "workflow.cancelled",
@@ -405,7 +395,7 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
         processResult.skipped +
         processResult.failed;
 
-      await updateCandidateImportStatus(importId, "completed", {
+      await candidatesService.updateImportStatus(importId, "completed", {
         totalCandidates: processResult.total,
         processedCandidates: processedCount,
         failedCandidates: failedCount,
@@ -422,7 +412,7 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
       });
     });
 
-    const finalRecord = await getCandidateImportById(importId);
+    const finalRecord = await candidatesService.getImportById(importId);
     if (finalRecord?.status === "cancelled") {
       log("log", "Workflow stopped — import cancelled", {
         step: "workflow.cancelled",
@@ -432,7 +422,7 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
     }
 
     await step.do("audit-log", async () => {
-      await insertAuditLog({
+      await candidatesService.insertAudit({
         userId: uploadedBy,
         action: "candidate_import_completed",
         entityType: "candidate_import",

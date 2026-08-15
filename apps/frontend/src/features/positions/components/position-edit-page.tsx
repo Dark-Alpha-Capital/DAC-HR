@@ -10,7 +10,12 @@ export function PositionEditPage() {
   return (
     <div className="container mx-auto py-8 space-y-6">
       <Button asChild>
-        <Link to="/positions" search={{} as never}>Back to Positions</Link>
+        <Link
+          to="/positions"
+          search={{ search: "", hireLevel: undefined, status: undefined, page: undefined }}
+        >
+          Back to Positions
+        </Link>
       </Button>
 
       {!position ? (
@@ -20,7 +25,12 @@ export function PositionEditPage() {
             The position you&apos;re looking for doesn&apos;t exist.
           </p>
           <Button asChild>
-            <Link to="/positions" search={{} as never}>Back to Positions</Link>
+            <Link
+              to="/positions"
+              search={{ search: "", hireLevel: undefined, status: undefined, page: undefined }}
+            >
+              Back to Positions
+            </Link>
           </Button>
         </div>
       ) : (

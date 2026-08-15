@@ -17,6 +17,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
+import { z } from "zod";
 import type { AppSession } from "#/lib/auth-session";
 
 import {
@@ -52,6 +53,14 @@ type NavSectionId =
   | "admin";
 
 const OPEN_SECTIONS_STORAGE_KEY = "hr-sidebar-open-sections";
+
+const openSectionsSchema = z.object({
+  recruiting: z.boolean().optional(),
+  configuration: z.boolean().optional(),
+  tutorial: z.boolean().optional(),
+  "people-ops": z.boolean().optional(),
+  admin: z.boolean().optional(),
+});
 
 const recruitingLinks: readonly NavLink[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -102,13 +111,12 @@ const adminLinks: readonly NavLink[] = [
 ];
 
 function readOpenSections(): Partial<Record<NavSectionId, boolean>> {
-  if (typeof window === "undefined") return {};
   try {
     const raw = sessionStorage.getItem(OPEN_SECTIONS_STORAGE_KEY);
     if (!raw) return {};
-    const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== "object") return {};
-    return parsed as Partial<Record<NavSectionId, boolean>>;
+    const parsed = openSectionsSchema.safeParse(JSON.parse(raw));
+    if (!parsed.success) return {};
+    return parsed.data;
   } catch {
     return {};
   }
@@ -162,7 +170,7 @@ function NavGroup({
                     tooltip={link.label}
                   >
                     {link.withEmptySearch ? (
-                      <Link to={link.href} search={{} as never}>
+                      <Link to={link.href} search={{}}>
                         <link.icon />
                         <span>{link.label}</span>
                       </Link>

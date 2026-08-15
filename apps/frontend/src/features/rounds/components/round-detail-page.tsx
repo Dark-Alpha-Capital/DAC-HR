@@ -1,4 +1,3 @@
-import { DetailPageSkeleton } from "#/components/shared/detail-page-skeleton";
 import { Link, useLoaderData } from "@tanstack/react-router";
 import { Button } from "#/components/ui/button";
 import BackButton from "#/components/shared/back-button";
@@ -23,7 +22,10 @@ export function RoundDetailPage() {
           removed.
         </p>
         <Button asChild>
-          <Link to="/rounds" search={{} as never}>
+          <Link
+            to="/rounds"
+            search={{ type: undefined, page: undefined }}
+          >
             Back to Rounds
           </Link>
         </Button>

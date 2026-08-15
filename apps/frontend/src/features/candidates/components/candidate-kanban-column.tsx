@@ -5,7 +5,7 @@ import CandidateKanbanCard from "#/features/candidates/components/candidate-kanb
 import { KanbanStatusHeader } from "#/components/shared/application-status-badge";
 import { Skeleton } from "#/components/ui/skeleton";
 import { Button } from "#/components/ui/button";
-import type { ApplicationStatus } from "@workspace/db/application-status";
+import type { ApplicationStatus } from "#/lib/application-status";
 import {
   buildKanbanCardsUrl,
   KANBAN_COLUMN_PAGE_SIZE,
@@ -18,12 +18,15 @@ async function fetchKanbanColumnPage(url: string): Promise<KanbanPage> {
   const response = await fetch(url);
 
   if (!response.ok) {
+    // SAFETY: the kanban API returns `{ error?: string }` on failure; JSON
+    // parse may return null, which the optional chain handles.
     const body = (await response.json().catch(() => null)) as {
       error?: string;
     } | null;
     throw new Error(body?.error ?? "Failed to load kanban column");
   }
 
+  // SAFETY: the kanban API returns a KanbanPage payload for a 200 response.
   return response.json() as Promise<KanbanPage>;
 }
 
@@ -34,6 +37,8 @@ function kanbanColumnQueryOptions(
 ) {
   return infiniteQueryOptions({
     queryKey: queryKeys.kanban.column(status, filters),
+    // SAFETY: the kanban API accepts an opaque string cursor for the next
+    // page; the first page has no cursor.
     initialPageParam: undefined as string | undefined,
     queryFn: ({ pageParam }) =>
       fetchKanbanColumnPage(

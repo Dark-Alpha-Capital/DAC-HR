@@ -4,7 +4,7 @@ import { CandidatesListPage } from "#/features/candidates/components/candidates-
 import {
   parseCandidatesSearch,
   candidatesIndexQueries,
-} from "#/features/candidates/server/queries/candidates";
+} from "#/features/candidates/query-options";
 
 export const Route = createFileRoute("/_main/candidates/")({
   head: () => ({
@@ -12,9 +12,7 @@ export const Route = createFileRoute("/_main/candidates/")({
   }),
   validateSearch: parseCandidatesSearch,
   loader: async ({ context: { queryClient }, location }) => {
-    const search = parseCandidatesSearch(
-      location.search as Record<string, unknown>,
-    );
+    const search = parseCandidatesSearch(location.search);
     await queryClient.ensureQueryData(candidatesIndexQueries.options(search));
   },
   pendingComponent: () => <ListPageSkeleton layout="cards" />,

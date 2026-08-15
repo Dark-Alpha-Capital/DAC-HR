@@ -27,7 +27,7 @@ import {
   applicationStatusLabels,
   isApplicationStatus,
   type ApplicationStatus,
-} from "@workspace/db/application-status";
+} from "#/lib/application-status";
 import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
 
 interface InlineApplicationStatusEditorProps {
@@ -62,11 +62,7 @@ export default function InlineApplicationStatusEditor({
       });
 
       if (result.error) {
-        throw new Error(
-          typeof result.error === "string"
-            ? result.error
-            : "Failed to update application status",
-        );
+        throw new Error(result.error);
       }
 
       return newStatus;

@@ -5,6 +5,11 @@ import CandidateEditForm from "#/features/candidates/components/candidate-edit-f
 import { FormLoadingFallback } from "#/components/shared/form-loading-skeleton";
 import BackButton from "#/components/shared/back-button";
 
+// SAFETY: the candidates route's validateSearch fills in defaults for all
+// search params, so an empty search object is a valid navigation target;
+// `never` only satisfies tanstack's required-search typing.
+const emptyCandidatesSearch = {} as never;
+
 export function CandidateEditPage() {
   const { candidate } = useLoaderData({ from: "/_main/candidates/$uid/edit" });
 
@@ -16,7 +21,7 @@ export function CandidateEditPage() {
           The candidate you&apos;re looking for doesn&apos;t exist.
         </p>
         <Button asChild>
-          <Link to="/candidates" search={{} as never}>
+          <Link to="/candidates" search={emptyCandidatesSearch}>
             Back to Candidates
           </Link>
         </Button>
@@ -32,7 +37,7 @@ export function CandidateEditPage() {
           <CandidateEditForm
             candidate={{
               ...candidate,
-              positionIds: (candidate as any).positionIds || [],
+              positionIds: candidate.positionIds || [],
             }}
           />
         </Suspense>

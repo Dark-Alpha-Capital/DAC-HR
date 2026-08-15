@@ -4,7 +4,7 @@ import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Badge } from "#/components/ui/badge";
 import { Skeleton } from "#/components/ui/skeleton";
 import { getMeetConferenceDetail } from "#/features/attendance/server/meet-attendance";
-import { attendanceDetailQueryOptions } from "#/features/attendance/server/meet-attendance";
+import { attendanceDetailQueryOptions } from "#/features/attendance/query-options";
 import type {
   MeetAttendanceParticipant,
   MeetParticipantKind,

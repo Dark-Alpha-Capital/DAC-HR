@@ -66,7 +66,6 @@ export function buildRealtimeInstructionBase(options: {
   questions: InterviewQuestion[];
   agentConfig?: AgentConfig;
 }): string {
-  const customInstructions = options.agentConfig?.instructions?.trim();
   const questionCount = options.questions.length;
 
   return [

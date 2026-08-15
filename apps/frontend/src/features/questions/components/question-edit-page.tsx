@@ -19,7 +19,12 @@ export function QuestionEditPage() {
             The question you&apos;re looking for doesn&apos;t exist.
           </p>
           <Button asChild>
-            <Link to="/questions" search={{} as never}>Back to Questions</Link>
+            <Link
+              to="/questions"
+              search={{ search: "", position: [], round: [], page: undefined }}
+            >
+              Back to Questions
+            </Link>
           </Button>
         </div>
       ) : (

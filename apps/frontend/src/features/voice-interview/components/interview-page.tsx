@@ -6,7 +6,6 @@ import { Textarea } from "#/components/ui/textarea";
 import { Badge } from "#/components/ui/badge";
 import {
   Card,
-  CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
@@ -766,6 +765,8 @@ export function InterviewPage() {
     });
 
     const isBundle = validation.type === "bundle";
+    // SAFETY: the stored value is a SessionMode serialized by the voice
+    // interview flow under this token's key; null when never persisted.
     const storedMode = sessionStorage.getItem(
       getModeStorageKey(token),
     ) as SessionMode | null;

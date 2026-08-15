@@ -1,14 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
-import { serverFnAuthGuard } from "#/lib/middleware/auth-guard";
-import { deleteRound as deleteRoundService } from "#/features/rounds/rounds-service";
+import { serverFnAuthGuard } from "#/features/auth/server/auth-middleware";
+import { roundsService } from "../rounds-service";
 
 export const deleteRound = createServerFn({ method: "POST" })
   .middleware([serverFnAuthGuard])
   .validator((data: string) => data)
-  .handler(async ({ data: id, context: { session } }) => {
-    if (session.user.role !== "admin") {
-      return { error: "Only admins are allowed to delete rounds" };
-    }
-
-    return deleteRoundService(id, session.user);
-  });
+  .handler(async ({ data: id, context: { session } }) =>
+    roundsService.delete(id, session.user),
+  );

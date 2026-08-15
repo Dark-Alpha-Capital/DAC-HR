@@ -1,7 +1,4 @@
-import {
-  useQuery,
-  type UseQueryResult,
-} from "@tanstack/react-query";
+import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { ListPageSkeleton } from "#/components/shared/list-page-skeleton";
 import { Link, useSearch } from "@tanstack/react-router";
 import { Button } from "#/components/ui/button";
@@ -12,7 +9,7 @@ import PaginationControls from "#/components/shared/pagination-controls";
 import {
   roundsIndexQueryOptions,
   type RoundsIndexData,
-} from "#/features/rounds/server/queries/rounds";
+} from "#/features/rounds/query-options";
 
 export function RoundsListPage() {
   const search = useSearch({ from: "/_main/rounds/" });
@@ -42,7 +39,7 @@ export function RoundsListPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Rounds</h1>
         <Button asChild>
-          <Link to="/rounds/new" search={{} as never}>
+          <Link to="/rounds/new" search={{ position: "" }}>
             New Round
           </Link>
         </Button>
@@ -64,7 +61,7 @@ export function RoundsListPage() {
               : "No rounds found."}
           </p>
           <Button asChild className="mt-4">
-            <Link to="/rounds/new" search={{} as never}>
+            <Link to="/rounds/new" search={{ position: "" }}>
               Create your first round
             </Link>
           </Button>

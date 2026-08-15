@@ -1,6 +1,6 @@
 import React from "react";
 import { MultiSelectFilter } from "#/components/shared/multi-select-filter";
-import { candidateSourceOptions } from "@workspace/db/candidate-list-filters";
+import { candidateSourceOptions } from "#/features/candidates/constants";
 
 const FilterCandidateSource = () => (
   <MultiSelectFilter

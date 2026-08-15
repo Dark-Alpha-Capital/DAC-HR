@@ -4,9 +4,9 @@ import {
   getApplicationStatusLabel,
   normalizeApplicationStatus,
   type ApplicationStatus,
-} from "@workspace/db/application-status";
+} from "#/lib/application-status";
 
-const statusBadgeClasses: Record<ApplicationStatus, string> = {
+const statusBadgeClasses = {
   ai_screening:
     "bg-indigo-100 text-indigo-900 border-indigo-200 dark:bg-indigo-950 dark:text-indigo-100 dark:border-indigo-800",
   first_round:
@@ -21,9 +21,9 @@ const statusBadgeClasses: Record<ApplicationStatus, string> = {
     "bg-emerald-100 text-emerald-900 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-100 dark:border-emerald-800",
   rejected:
     "bg-red-100 text-red-900 border-red-200 dark:bg-red-950 dark:text-red-100 dark:border-red-800",
-};
+} satisfies Record<ApplicationStatus, string>;
 
-const statusKanbanHeaderClasses: Record<ApplicationStatus, string> = {
+const statusKanbanHeaderClasses = {
   ai_screening: "bg-indigo-500",
   first_round: "bg-blue-500",
   offer_agreement: "bg-amber-500",
@@ -31,9 +31,9 @@ const statusKanbanHeaderClasses: Record<ApplicationStatus, string> = {
   contract_offer: "bg-green-500",
   onboarding: "bg-emerald-500",
   rejected: "bg-red-500",
-};
+} satisfies Record<ApplicationStatus, string>;
 
-const statusCardBorderClasses: Record<ApplicationStatus, string> = {
+const statusCardBorderClasses = {
   ai_screening: "border-l-indigo-500",
   first_round: "border-l-blue-500",
   offer_agreement: "border-l-amber-500",
@@ -41,7 +41,7 @@ const statusCardBorderClasses: Record<ApplicationStatus, string> = {
   contract_offer: "border-l-green-500",
   onboarding: "border-l-emerald-500",
   rejected: "border-l-red-500",
-};
+} satisfies Record<ApplicationStatus, string>;
 
 export function getApplicationStatusCardBorderClass(status: string): string {
   const normalized = normalizeApplicationStatus(status);
@@ -87,7 +87,9 @@ export function KanbanStatusHeader({
   totalCount,
 }: KanbanStatusHeaderProps) {
   const countLabel =
-    typeof totalCount === "number" ? `${count} / ${totalCount}` : String(count);
+    totalCount !== undefined
+      ? `${count} / ${totalCount}`
+      : String(count);
 
   return (
     <div

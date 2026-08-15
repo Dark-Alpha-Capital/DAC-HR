@@ -104,6 +104,7 @@ async function migrateSharedRounds(sqlite: Database) {
     return;
   }
 
+  // SAFETY: PRAGMA table_info returns one row per column with a `name` field.
   const positionIdColumn = sqlite
     .prepare("PRAGMA table_info(round_template)")
     .all() as Array<{ name: string }>;
@@ -114,6 +115,7 @@ async function migrateSharedRounds(sqlite: Database) {
     );
   }
 
+  // SAFETY: COUNT(*) returns a single row with a numeric `count` column.
   const unmigratedRounds = sqlite
     .prepare(
       "SELECT COUNT(*) as count FROM round_template WHERE position_id IS NULL",
@@ -126,6 +128,7 @@ async function migrateSharedRounds(sqlite: Database) {
     return;
   }
 
+  // SAFETY: the junction table's rows always carry the three selected columns.
   const junctionRows = sqlite
     .prepare("SELECT id, position_id, round_template_id FROM position_round_templates")
     .all() as PositionRoundTemplateRow[];

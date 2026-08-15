@@ -2,6 +2,7 @@ import * as React from "react";
 import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
+import { z } from "zod";
 import { Button } from "#/components/ui/button";
 import {
   Field,
@@ -57,9 +58,7 @@ const RoundUploadForm = ({
         const result = await createRound({ data: value });
         if (result.error !== undefined) {
           toast.error(
-            typeof result.error === "string"
-              ? result.error
-              : "Failed to create round",
+            z.string().safeParse(result.error).data || "Failed to create round",
             {
               position: "bottom-right",
             },

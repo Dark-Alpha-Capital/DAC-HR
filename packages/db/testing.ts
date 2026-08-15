@@ -5,7 +5,8 @@
  * can be driven against this in-memory db (see modules/audit for the pattern).
  */
 import { Database } from "bun:sqlite";
-import { drizzle, type BetterSQLite3Database } from "drizzle-orm/bun-sqlite";
+import { drizzle } from "drizzle-orm/bun-sqlite";
+import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -36,10 +37,17 @@ export function createTestDb() {
     runSqlBatch(sqlite, content);
   }
 
-  const db = drizzle(sqlite, { schema }) as BetterSQLite3Database<
-    typeof schema
-  >;
+  const betterDb = drizzle(sqlite, { schema });
+  // SAFETY: the in-memory bun:sqlite and D1 drivers expose the same
+  // query-builder surface (D1's extra `batch` member is unused by tests), so
+  // the test db stands in for the app Database.
+  const widened: unknown = betterDb;
+  const db = (
+    // SAFETY: see the widening note above — the cast pins the test db to the
+    // app Database type used by modules and repositories.
+    widened as DrizzleD1Database<typeof schema>
+  );
   return { db, sqlite };
 }
 
-export type TestDb = BetterSQLite3Database<typeof schema>;
+export type TestDb = DrizzleD1Database<typeof schema>;

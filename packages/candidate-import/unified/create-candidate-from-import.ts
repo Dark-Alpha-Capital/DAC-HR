@@ -12,6 +12,7 @@ import type {
   ImportCandidateInput,
   ImportCandidateResult,
   ImportServices,
+  JsonObject,
 } from "../types";
 import { attachImportResume } from "./attach-import-resume";
 import { ensurePositionLink } from "./ensure-position-link";
@@ -26,7 +27,7 @@ async function upsertImportRow(args: {
   status: "pending" | "success" | "skipped" | "failed";
   candidateId?: string | null;
   error?: string | null;
-  metadata?: Record<string, unknown>;
+  metadata?: JsonObject;
 }) {
   const existing = await db
     .select({ id: candidateImportRow.id })

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull, or } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { db } from "@workspace/db/db";
 import {
   application,
@@ -326,6 +326,8 @@ export const saveInterviewAiAnalysis = async (params: {
         analysis: params.analysis,
         customPrompt: params.customPrompt || null,
         model: params.model || "gpt-4o-mini",
+        // SAFETY: structured_data is a JSON TEXT column; the nullable object
+        // is stored as-is when present, else NULL.
         structuredData: (params.structuredData ?? null) as Record<
           string,
           unknown

@@ -1,5 +1,13 @@
+import { z } from "zod";
 import type { AgentConfig, DeliveryMode } from "@workspace/db/enums";
 import type { QuestionOption } from "@workspace/db/question-types";
+
+/**
+ * An arbitrary JSON object. Parsed at the message boundary by the zod schemas
+ * in `events.ts`; kept opaque here because payloads are forward-sent as-is.
+ */
+export const jsonObjectSchema = z.record(z.string(), z.unknown());
+export type JsonObject = z.infer<typeof jsonObjectSchema>;
 
 export interface InterviewQuestion {
   id: string;
@@ -74,11 +82,11 @@ export interface InterviewState {
 
 export type ClientToDoMessage =
   | { type: "CALL_STARTED"; callId: string; clientSecret: string }
-  | { type: "REALTIME_EVENT"; event: string | Record<string, unknown> }
+  | { type: "REALTIME_EVENT"; event: string | JsonObject }
   | {
       type: "CHEATING_EVENT";
       eventType: string;
-      metadata?: Record<string, unknown>;
+      metadata?: JsonObject;
     }
   | { type: "FULLSCREEN_STATE"; isFullscreen: boolean }
   | { type: "END_INTERVIEW" }

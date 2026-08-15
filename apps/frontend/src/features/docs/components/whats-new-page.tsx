@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router";
 import { DocsBreadcrumb } from "#/features/docs/components/docs-breadcrumb";
 import {
   Card,
@@ -19,8 +18,6 @@ import {
   FileCode2,
   CheckCircle2,
 } from "lucide-react";
-
-
 
 export function WhatsNewDocsPage() {
   return (

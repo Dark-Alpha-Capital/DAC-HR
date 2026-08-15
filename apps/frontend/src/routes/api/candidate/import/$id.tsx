@@ -1,13 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { env } from "cloudflare:workers";
 import { fetchSession as getSession } from "#/lib/auth-session";
-import {
-  cancelCandidateImport,
-  getCandidateImportById,
-  getCandidateImportRows,
-  getCandidateImportWorkflowId,
-} from "@workspace/db/repositories/candidate-import-repository";
-import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
+import { candidatesService } from "#/features/candidates/server/candidates-service";
 
 export const Route = createFileRoute("/api/candidate/import/$id")({
   server: {
@@ -24,12 +18,12 @@ export const Route = createFileRoute("/api/candidate/import/$id")({
             return Response.json({ error: "Import ID is required" }, { status: 400 });
           }
 
-          const importJob = await getCandidateImportById(importId);
+          const importJob = await candidatesService.getImportById(importId);
           if (!importJob) {
             return Response.json({ error: "Import not found" }, { status: 404 });
           }
 
-          const rows = await getCandidateImportRows(importId);
+          const rows = await candidatesService.getImportRows(importId);
 
           return Response.json(
             {
@@ -67,12 +61,12 @@ export const Route = createFileRoute("/api/candidate/import/$id")({
             return Response.json({ error: "Import ID is required" }, { status: 400 });
           }
 
-          const importJob = await getCandidateImportById(importId);
+          const importJob = await candidatesService.getImportById(importId);
           if (!importJob) {
             return Response.json({ error: "Import not found" }, { status: 404 });
           }
 
-          const { cancelled } = await cancelCandidateImport(importId);
+          const { cancelled } = await candidatesService.cancelImport(importId);
           if (!cancelled) {
             return Response.json(
               { error: "Import cannot be cancelled in its current state" },
@@ -80,17 +74,12 @@ export const Route = createFileRoute("/api/candidate/import/$id")({
             );
           }
 
-          const workflow = (env)
-            .CANDIDATE_IMPORT_WORKFLOW as
-            | {
-                get: (id: string) => Promise<{ terminate: () => Promise<void> }>;
-              }
-            | undefined;
+          const workflow = env.CANDIDATE_IMPORT_WORKFLOW;
 
           if (workflow) {
             try {
               const instance = await workflow.get(
-                getCandidateImportWorkflowId(importId),
+                candidatesService.getImportWorkflowId(importId),
               );
               await instance.terminate();
             } catch (terminateError) {
@@ -107,7 +96,7 @@ export const Route = createFileRoute("/api/candidate/import/$id")({
             }
           }
 
-          await insertAuditLog({
+          await candidatesService.insertAudit({
             userId: authSession.user.id,
             action: "candidate_import_cancelled",
             entityType: "candidate_import",
@@ -115,7 +104,7 @@ export const Route = createFileRoute("/api/candidate/import/$id")({
             details: { importId, filename: importJob.filename },
           }).catch(() => {});
 
-          const updated = await getCandidateImportById(importId);
+          const updated = await candidatesService.getImportById(importId);
 
           return Response.json(
             { success: true, import: updated },

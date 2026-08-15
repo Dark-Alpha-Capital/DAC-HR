@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "#/components/ui/table";
-import type { CandidateDocument } from "@workspace/db/schema";
+import type { CandidateDocument } from "#/features/candidates/types";
 import DeleteCandidateDocumentButton from "#/components/shared/delete-candidate-document-button";
 import { resolveDocumentAccessUrl } from "#/lib/documents/access";
 import DocumentPreviewDialog from "#/components/shared/document-preview-dialog";

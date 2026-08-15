@@ -28,14 +28,13 @@ import { Input } from "#/components/ui/input";
 import {
   Field,
   FieldDescription,
-  FieldError,
   FieldLabel,
 } from "#/components/ui/field";
 import {
   InputGroup,
   InputGroupTextarea,
 } from "#/components/ui/input-group";
-import type { DocumentCategory } from "@workspace/db/schema";
+import type { DocumentCategory } from "#/features/documents/types";
 
 interface DocumentCategoriesManagerProps {
   categories: DocumentCategory[];
@@ -92,7 +91,7 @@ export default function DocumentCategoriesManager({
         } else {
           toast.error(result.error || "Failed to create category");
         }
-      } catch (error) {
+      } catch {
         toast.error("Failed to create category");
       }
     });
@@ -126,7 +125,7 @@ export default function DocumentCategoriesManager({
         } else {
           toast.error(result.error || "Failed to update category");
         }
-      } catch (error) {
+      } catch {
         toast.error("Failed to update category");
       }
     });
@@ -149,7 +148,7 @@ export default function DocumentCategoriesManager({
         } else {
           toast.error(result.error || "Failed to delete category");
         }
-      } catch (error) {
+      } catch {
         toast.error("Failed to delete category");
       }
     });

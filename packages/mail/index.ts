@@ -17,7 +17,7 @@ export interface EmailSender {
     subject: string;
     html?: string;
     text?: string;
-  }): Promise<unknown>;
+  }): Promise<void>;
 }
 
 export interface SendMailInput<T extends EmailTemplateName> {
@@ -33,6 +33,12 @@ export const DEFAULT_FROM: EmailAddress = {
   name: "Dark Alpha Capital",
 };
 
+type RenderedEmail = {
+  subject: string;
+  html: string;
+  text: string;
+};
+
 /**
  * Renders a named template and sends it via the Cloudflare Email Service
  * binding. Safe to call from server functions / workflows / DOs. Returns the
@@ -45,13 +51,21 @@ export async function sendMail<T extends EmailTemplateName>({
   from = DEFAULT_FROM,
   template,
   data,
-}: SendMailInput<T>): Promise<unknown> {
+}: SendMailInput<T>): Promise<void | false> {
   if (!sender) {
     return false;
   }
 
-  const definition = templates[template];
-  const rendered = definition.render(data as never);
+  const rendered = (
+    // SAFETY: the generic index keeps the selected template's render
+    // signature; the cast correlates it with `data`, which is already typed
+    // to that render's parameter.
+    templates[template] as {
+      render: (
+        data: Parameters<(typeof templates)[T]["render"]>[0],
+      ) => RenderedEmail;
+    }
+  ).render(data);
 
   return sender.send({
     to,

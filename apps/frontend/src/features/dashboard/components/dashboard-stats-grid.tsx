@@ -1,4 +1,4 @@
-import type { getDashboardStats } from "@workspace/db/modules/dashboard";
+import type { DashboardStatsData } from "#/features/dashboard/server/queries/stats";
 import {
   Card,
   CardContent,
@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "#/lib/utils";
 
-type DashboardStats = Awaited<ReturnType<typeof getDashboardStats>>;
+type DashboardStats = DashboardStatsData;
 
 function StatChange({
   value,

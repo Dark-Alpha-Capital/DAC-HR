@@ -75,7 +75,10 @@ const DeleteRoundButton = ({
                     if (onDeleted) {
                       await onDeleted();
                     } else {
-                      router.navigate({ to: "/rounds", search: {} as any });
+                      router.navigate({
+                        to: "/rounds",
+                        search: { type: undefined, page: undefined },
+                      });
                     }
                   }
                 });

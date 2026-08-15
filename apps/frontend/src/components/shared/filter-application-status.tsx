@@ -3,7 +3,7 @@ import { MultiSelectFilter } from "#/components/shared/multi-select-filter";
 import {
   applicationStatuses,
   applicationStatusLabels,
-} from "@workspace/db/application-status";
+} from "#/lib/application-status";
 
 const statuses = applicationStatuses.map((value) => ({
   value,

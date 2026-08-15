@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { auth } from "#/lib/auth";
-import { getSession } from "#/lib/server/session.server";
+import { getSession } from "#/features/auth/server/get-session-user";
 
 export type AppSession = Awaited<ReturnType<typeof auth.api.getSession>>;
 

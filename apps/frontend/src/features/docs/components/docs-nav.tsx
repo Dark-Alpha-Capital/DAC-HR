@@ -111,7 +111,7 @@ export function DocsNav() {
                   return (
                     <Link
                       key={subItem.href}
-                      to={subItem.href as any}
+                      to={subItem.href}
                       className={cn(
                         "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
                         isActive(subItem.href)
@@ -128,7 +128,7 @@ export function DocsNav() {
             </div>
           ) : (
             <Link
-              to={item.href as any}
+              to={item.href}
               className={cn(
                 "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
                 isActive(item.href)

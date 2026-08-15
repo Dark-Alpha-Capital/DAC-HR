@@ -98,7 +98,7 @@ function FilterAdminUserEmail() {
 
 export function AdminUsersClient({
   users: initialUsers,
-  total,
+  total: _total,
   currentPage,
   totalPages,
   hasNextPage,
@@ -361,7 +361,11 @@ export function AdminUsersClient({
 
         <Tabs
           value={view}
-          onValueChange={(value) => setView(value as "cards" | "table")}
+          onValueChange={(value) =>
+            // SAFETY: the only TabsTrigger values rendered below are "cards"
+            // and "table", so the callback value is always one of them.
+            setView(value as "cards" | "table")
+          }
         >
           <TabsList>
             <TabsTrigger value="cards">Card view</TabsTrigger>

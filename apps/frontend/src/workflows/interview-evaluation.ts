@@ -6,13 +6,7 @@ import {
 import { generateObject } from "ai";
 import { z } from "zod";
 import { getOpenAIProvider } from "@workspace/ai-config";
-import {
-  getResponsesBySessionId,
-  getSessionById,
-  upsertEvaluation,
-  updateSessionStatus,
-  getEvaluationBySessionId,
-} from "@workspace/db/repositories/interview-session-repository";
+import { interviewsService } from "#/features/interviews/server/interviews-service";
 
 type Env = {
   OPENAI_API_KEY: string;
@@ -48,7 +42,7 @@ export class InterviewEvaluationWorkflow extends WorkflowEntrypoint<
     const alreadyEvaluated = await step.do(
       "check-existing-evaluation",
       async () => {
-        return Boolean(await getEvaluationBySessionId(sessionId));
+        return Boolean(await interviewsService.getEvaluationBySessionId(sessionId));
       },
     );
 
@@ -57,12 +51,12 @@ export class InterviewEvaluationWorkflow extends WorkflowEntrypoint<
     }
 
     const context = await step.do("load-session-context", async () => {
-      const row = await getSessionById(sessionId);
+      const row = await interviewsService.getSessionById(sessionId);
       if (!row) {
         throw new Error(`Session not found: ${sessionId}`);
       }
 
-      const responses = await getResponsesBySessionId(sessionId);
+      const responses = await interviewsService.getResponsesBySessionId(sessionId);
       return { row, responses };
     });
 
@@ -105,7 +99,7 @@ export class InterviewEvaluationWorkflow extends WorkflowEntrypoint<
     });
 
     await step.do("persist-evaluation", async () => {
-      await upsertEvaluation({
+      await interviewsService.upsertEvaluation({
         sessionId,
         score: evaluation.score,
         recommendation: evaluation.recommendation,
@@ -116,7 +110,7 @@ export class InterviewEvaluationWorkflow extends WorkflowEntrypoint<
         perQuestionFeedback: evaluation.perQuestionFeedback,
       });
 
-      await updateSessionStatus(sessionId, "reviewed");
+      await interviewsService.updateSessionStatus(sessionId, "reviewed");
     });
   }
 }

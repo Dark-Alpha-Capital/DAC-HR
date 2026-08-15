@@ -117,11 +117,15 @@ const resolveFileName = (file: File | Blob, providedFileName?: string) => {
   return `upload-${Date.now()}.${extension}`;
 };
 
-const mapErrorCode = (error: unknown): NextcloudErrorCode => {
+const mapErrorCode = (
+  error: Error | { status?: unknown },
+): NextcloudErrorCode => {
   const message = error instanceof Error ? error.message : "";
   const status =
-    typeof error === "object" && error !== null && "status" in error
-      ? Number((error as { status?: number }).status)
+    "status" in error
+      ? // SAFETY: `status` may be a number or numeric string; Number()
+        // normalizes it for the 404 comparison below.
+        Number(error.status)
       : undefined;
 
   if (status === 404 || message.includes("404")) {
@@ -172,7 +176,9 @@ export const uploadFile = async ({
       fileName: resolvedFileName,
     };
   } catch (error) {
-    const code = mapErrorCode(error);
+    // SAFETY: thrown values are Error instances or status-bearing DAV
+    // objects; the cast narrows the catch payload to the accepted shapes.
+    const code = mapErrorCode(error as Error | { status?: unknown });
     return {
       success: false,
       code: code === "UNKNOWN" ? "UPLOAD_FAILED" : code,
@@ -224,9 +230,13 @@ export const downloadFile = async ({
     const contents = await client.getFileContents(filePath);
     const buffer = Buffer.isBuffer(contents)
       ? contents
-      : typeof contents === "string"
-        ? Buffer.from(contents)
-        : Buffer.from(new Uint8Array(contents as ArrayBuffer));
+      : contents instanceof ArrayBuffer
+        ? Buffer.from(new Uint8Array(contents))
+        : Buffer.from(
+            // SAFETY: non-Buffer/non-ArrayBuffer contents are the DAV text
+            // body; any other shape throws in Buffer.from as before.
+            contents as string,
+          );
 
     return {
       success: true,
@@ -234,7 +244,9 @@ export const downloadFile = async ({
       buffer,
     };
   } catch (error) {
-    const code = mapErrorCode(error);
+    // SAFETY: thrown values are Error instances or status-bearing DAV
+    // objects; the cast narrows the catch payload to the accepted shapes.
+    const code = mapErrorCode(error as Error | { status?: unknown });
     return {
       success: false,
       code: code === "UNKNOWN" ? "DOWNLOAD_FAILED" : code,
@@ -255,9 +267,12 @@ export const deleteFile = async ({
     await client.deleteFile(filePath);
     return { success: true };
   } catch (error) {
+    // SAFETY: thrown values are Error instances or status-bearing DAV
+    // objects; the cast narrows the catch payload to the accepted shapes.
+    const code = mapErrorCode(error as Error | { status?: unknown });
     return {
       success: false,
-      code: mapErrorCode(error) || "DELETE_FAILED",
+      code: code === "UNKNOWN" ? "DELETE_FAILED" : code,
       error: error instanceof Error ? error.message : "Failed to delete file",
     };
   }
@@ -273,6 +288,8 @@ export const listDirectoryFiles = async (
 
   const files = (Array.isArray(contents) ? contents : [contents]).map(
     (item) => {
+      // SAFETY: webdav directory entries expose the FileStat fields below;
+      // the cast narrows the DAV stat object to the fields we read.
       const file = item as {
         basename?: string;
         size?: number;

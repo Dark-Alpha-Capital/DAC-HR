@@ -12,7 +12,9 @@ export function RoundNewPage() {
   return (
     <div className="container mx-auto py-8 space-y-6">
       <Button asChild>
-        <Link to="/rounds" search={{} as never}>Back to Rounds</Link>
+        <Link to="/rounds" search={{ type: undefined, page: undefined }}>
+          Back to Rounds
+        </Link>
       </Button>
 
       <Suspense fallback={<FormLoadingFallback />}>

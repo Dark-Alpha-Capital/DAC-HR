@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { fetchSession as getSession } from "#/lib/auth-session";
-import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import { deleteCandidateWithAssets } from "#/features/candidates/candidates-service";
+import { candidatesService } from "#/features/candidates/server/candidates-service";
+
 
 export const Route = createFileRoute("/api/candidate/$id/")({
   server: {
     handlers: {
-      DELETE: async ({ request, params }) => {
+      DELETE: async ({ params }) => {
         const startTime = Date.now();
         try {
           const authSession = await getSession();
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/api/candidate/$id/")({
             );
           }
 
-          const deleteResult = await deleteCandidateWithAssets(candidateId);
+          const deleteResult = await candidatesService.deleteWithAssets(candidateId);
           if (!deleteResult) {
             return Response.json(
               { error: "Candidate not found" },
@@ -39,7 +39,7 @@ export const Route = createFileRoute("/api/candidate/$id/")({
             deletedDocuments: candidateDocuments,
           } = deleteResult;
 
-          insertAuditLog({
+          candidatesService.insertAudit({
             userId: user.id,
             action: "delete_candidate",
             entityType: "candidate",

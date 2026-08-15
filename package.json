@@ -11,6 +11,7 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "lint": "turbo lint",
+    "lint:oxlint": "oxlint",
     "test": "turbo run test",
     "test:watch": "turbo run test --watch",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
@@ -20,8 +21,10 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@oxlint/plugins": "1.78.0",
     "@workspace/eslint-config": "*",
     "@workspace/typescript-config": "*",
+    "oxlint": "1.78.0",
     "prettier": "^3.6.2",
     "shadcn": "^4.11.0",
     "turbo": "^2.5.5",

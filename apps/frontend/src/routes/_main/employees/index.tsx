@@ -4,7 +4,7 @@ import { EmployeesListPage } from "#/features/employees/components/employees-lis
 import {
   parseEmployeesSearch,
   prismicMembersQueryOptions,
-} from "#/features/docs/server/queries/members";
+} from "#/features/docs/query-options";
 
 export const Route = createFileRoute("/_main/employees/")({
   head: () => ({
@@ -12,9 +12,7 @@ export const Route = createFileRoute("/_main/employees/")({
   }),
   validateSearch: parseEmployeesSearch,
   loader: async ({ context: { queryClient }, location }) => {
-    const search = parseEmployeesSearch(
-      location.search as Record<string, unknown>,
-    );
+    const search = parseEmployeesSearch(location.search);
     await queryClient.ensureQueryData(prismicMembersQueryOptions(search));
   },
   pendingComponent: () => <ListPageSkeleton />,

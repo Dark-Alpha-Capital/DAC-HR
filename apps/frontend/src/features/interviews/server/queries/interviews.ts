@@ -1,154 +1,20 @@
 import { createServerFn } from "@tanstack/react-start";
-import { serverFnAuthGuard } from "#/lib/middleware/auth-guard";
-import { getInterviewAiAnalysesByBundleId } from "@workspace/db/repositories/interview-repository";
-import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
-import { getInterviewById, getApplicationWithInterviews } from "@workspace/db/repositories/interview-repository";
-import {
-  getSessionByInterviewId,
-  getResponsesBySessionId,
-  getEvaluationBySessionId,
-} from "@workspace/db/repositories/interview-session-repository";
-import {
-  getBundleById,
-  getBundleRounds,
-} from "@workspace/db/repositories/interview-bundle-repository";
-
-type InterviewEvaluation = NonNullable<
-  Awaited<ReturnType<typeof getEvaluationBySessionId>>
-> & {
-  strengths: any;
-  risks: any;
-  dimensionScores: any;
-  perQuestionFeedback: any;
-};
-
-export type InterviewDetailData = {
-  interview: Awaited<ReturnType<typeof getInterviewById>>;
-  application: Awaited<ReturnType<typeof getApplicationWithInterviews>>;
-  candidate: Awaited<ReturnType<typeof getCandidateById>>;
-  session: Awaited<ReturnType<typeof getSessionByInterviewId>> | null;
-  responses: Awaited<ReturnType<typeof getResponsesBySessionId>>;
-  evaluation: InterviewEvaluation | null;
-};
-
-export type InterviewBundleDetailData = {
-  bundle: NonNullable<Awaited<ReturnType<typeof getBundleById>>>;
-  application: Awaited<ReturnType<typeof getApplicationWithInterviews>>;
-  candidate: Awaited<ReturnType<typeof getCandidateById>>;
-  rounds: Awaited<ReturnType<typeof getBundleRounds>>;
-  roundDetails: Array<{
-    round: Awaited<ReturnType<typeof getBundleRounds>>[number];
-    responses: Awaited<ReturnType<typeof getResponsesBySessionId>>;
-    evaluation: InterviewEvaluation | null;
-  }>;
-};
-
-export type InterviewResponse = InterviewDetailData["responses"][number];
-
-export type InterviewQuestion = NonNullable<
-  InterviewDetailData["interview"]
->["questions"][number];
-
-const emptyInterviewDetail: InterviewDetailData = {
-  interview: null,
-  application: null,
-  candidate: null,
-  session: null,
-  responses: [],
-  evaluation: null,
-};
+import { serverFnAuthGuard } from "#/features/auth/server/auth-middleware";
+import { interviewsService } from "../interviews-service";
 
 export const loadInterviewById = createServerFn({ method: "GET" })
   .middleware([serverFnAuthGuard])
   .validator((data: string) => data)
-  .handler(async ({ data: id }) => {
-    const interview = await getInterviewById(id);
-
-    if (!interview) {
-      return emptyInterviewDetail;
-    }
-
-    const application = await getApplicationWithInterviews(
-      interview.applicationId,
-    );
-    const candidate = application
-      ? await getCandidateById(application.candidateId)
-      : null;
-
-    let session: InterviewDetailData["session"] = null;
-    let responses: InterviewDetailData["responses"] = [];
-    let evaluation: InterviewDetailData["evaluation"] = null;
-
-    if (interview.mode === "ai_session") {
-      session = await getSessionByInterviewId(interview.id).catch(() => null);
-      if (session) {
-        responses = await getResponsesBySessionId(session.session.id).catch(
-          () => [],
-        );
-        evaluation = await getEvaluationBySessionId(session.session.id).catch(
-          () => null,
-        );
-      }
-    }
-
-    return {
-      interview,
-      application,
-      candidate,
-      session,
-      responses,
-      evaluation,
-    } as InterviewDetailData;
-  });
+  .handler(async ({ data: id }) => interviewsService.getById(id));
 
 export const loadInterviewBundleById = createServerFn({ method: "GET" })
   .middleware([serverFnAuthGuard])
   .validator((data: string) => data)
-  .handler(async ({ data: bundleId }) => {
-    const bundle = await getBundleById(bundleId);
-
-    if (!bundle) {
-      return null;
-    }
-
-    const application = await getApplicationWithInterviews(bundle.applicationId);
-    const candidate = application
-      ? await getCandidateById(application.candidateId)
-      : null;
-
-    const rounds = await getBundleRounds(bundleId);
-
-    const roundDetails = await Promise.all(
-      rounds.map(async (round) => {
-        const [responses, evaluation] = await Promise.all([
-          getResponsesBySessionId(round.session.id).catch(() => []),
-          getEvaluationBySessionId(round.session.id).catch(() => null),
-        ]);
-        return { round, responses, evaluation };
-      }),
-    );
-
-    return {
-      bundle,
-      application,
-      candidate,
-      rounds,
-      roundDetails,
-    } as InterviewBundleDetailData;
-  });
+  .handler(async ({ data: bundleId }) => interviewsService.getBundleById(bundleId));
 
 export const loadBundleAiAnalyses = createServerFn({ method: "GET" })
   .middleware([serverFnAuthGuard])
   .validator((data: string) => data)
-  .handler(async ({ data: bundleId }) => {
-    const analyses = await getInterviewAiAnalysesByBundleId(bundleId);
-    return {
-      analyses,
-    } as {
-      analyses: Array<
-        Awaited<ReturnType<typeof getInterviewAiAnalysesByBundleId>>[number] & {
-          structuredData: any;
-        }
-      >;
-    };
-  });
+  .handler(async ({ data: bundleId }) =>
+    interviewsService.getBundleAiAnalyses(bundleId),
+  );

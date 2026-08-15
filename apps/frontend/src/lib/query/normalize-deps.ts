@@ -1,9 +1,8 @@
-export function normalizeListDeps<T extends Record<string, unknown>>(deps: T): T {
+export function normalizeListDeps<T extends object>(deps: T): T {
   const result = { ...deps };
-  for (const key of Object.keys(result)) {
-    const value = result[key];
+  for (const [key, value] of Object.entries(result)) {
     if (Array.isArray(value)) {
-      (result as Record<string, unknown>)[key] = [...value].sort();
+      Object.assign(result, { [key]: [...value].sort() });
     }
   }
   return result;

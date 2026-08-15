@@ -12,7 +12,6 @@ import {
   Plus,
   ArrowRight,
   CheckCircle2,
-  Settings,
   HelpCircle,
   Briefcase,
   Link as LinkIcon,

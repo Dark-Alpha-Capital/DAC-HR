@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import { Skeleton } from "#/components/ui/skeleton";
 import { getMeetConferences } from "#/features/attendance/server/meet-attendance";
-import { meetingsQueryOptions } from "#/features/attendance/server/meet-attendance";
+import { meetingsQueryOptions } from "#/features/attendance/query-options";
 
 export function MeetingsListPage() {
   const search = useSearch({ from: "/_main/employees/attendance/" });
@@ -44,7 +44,7 @@ export function MeetingsListPage() {
         <Button asChild variant="secondary" size="sm">
           <Link
             to="/employees/attendance/meeting-attendance"
-            search={{} as never}
+            search={{ date: undefined, page: undefined }}
           >
             <CalendarCheck className="size-4 mr-2" />
             Meeting Attendance

@@ -1,14 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
-import { serverFnAuthGuard } from "#/lib/middleware/auth-guard";
-import { deletePosition as deletePositionService } from "#/features/positions/positions-service";
+import { serverFnAuthGuard } from "#/features/auth/server/auth-middleware";
+import { positionsService } from "../positions-service";
 
 export const deletePosition = createServerFn({ method: "POST" })
   .middleware([serverFnAuthGuard])
   .validator((data: string) => data)
-  .handler(async ({ data: id, context: { session } }) => {
-    if (session.user.role !== "admin") {
-      return { error: "Only admins are allowed to delete positions" };
-    }
-
-    return deletePositionService(id, session.user);
-  });
+  .handler(async ({ data: id, context: { session } }) =>
+    positionsService.delete(id, session.user),
+  );

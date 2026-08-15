@@ -13,7 +13,7 @@ export function activeConferenceFilter(
 }
 
 export function parseConferencesSearch(
-  search: Record<string, unknown>,
+  search: { filter?: string; date?: string },
 ): ConferencesSearch {
   const filter =
     search.filter === "date"
@@ -22,13 +22,13 @@ export function parseConferencesSearch(
         ? "30d"
         : undefined;
   const date =
-    typeof search.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search.date)
+    search.date && /^\d{4}-\d{2}-\d{2}$/.test(search.date)
       ? search.date
       : undefined;
-  return {
-    ...(filter ? { filter } : {}),
-    ...(date ? { date } : {}),
-  };
+  const result: ConferencesSearch = {};
+  if (filter) result.filter = filter;
+  if (date) result.date = date;
+  return result;
 }
 
 export function conferencesFilterInput(search: ConferencesSearch) {

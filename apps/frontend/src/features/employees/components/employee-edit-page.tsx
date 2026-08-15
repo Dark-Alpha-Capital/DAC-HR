@@ -5,6 +5,11 @@ import { FormLoadingFallback } from "#/components/shared/form-loading-skeleton";
 import { Button } from "#/components/ui/button";
 import BackButton from "#/components/shared/back-button";
 
+// SAFETY: the employees route's validateSearch fills in defaults for all
+// search params, so an empty search object is a valid navigation target;
+// `never` only satisfies tanstack's required-search typing.
+const emptyEmployeesSearch = {} as never;
+
 export function EmployeeEditPage() {
   const { employee, positions } = useLoaderData({
     from: "/_main/employees/$id/edit",
@@ -19,7 +24,7 @@ export function EmployeeEditPage() {
           <div className="text-center py-12">
             <p className="text-muted-foreground">Employee not found.</p>
             <Button asChild className="mt-4">
-              <Link to="/employees" search={{} as never}>
+              <Link to="/employees" search={emptyEmployeesSearch}>
                 Back to Employees
               </Link>
             </Button>

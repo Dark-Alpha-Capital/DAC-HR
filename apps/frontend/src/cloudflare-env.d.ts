@@ -1,9 +1,24 @@
 declare module "cloudflare:workers" {
-  export const env: Record<string, unknown>;
+  /** JSON primitives stored in Vectorize vector metadata / filters. */
+  type JsonPrimitive = string | number | boolean | null;
+  /** Arbitrary JSON values stored in Vectorize metadata / filter operators. */
+  type JsonValue =
+    | JsonPrimitive
+    | JsonValue[]
+    | { [key: string]: JsonValue | undefined };
 
-  export class WorkflowEntrypoint<Env = Record<string, unknown>, Params = Record<string, unknown>> {
+  /** Opaque metadata / filters attached to Vectorize vectors. */
+  export type VectorMetadata = Record<string, JsonValue>;
+
+  export const env: Cloudflare.Env;
+
+  export class WorkflowEntrypoint<
+    Env = unknown,
+    Params = unknown,
+    Result = unknown,
+  > {
     protected env: Env;
-    run(event: WorkflowEvent<Params>, step: WorkflowStep): Promise<unknown>;
+    run(event: WorkflowEvent<Params>, step: WorkflowStep): Promise<Result>;
   }
 
   export interface WorkflowStep {
@@ -14,7 +29,7 @@ declare module "cloudflare:workers" {
     waitForEvent<T>(name: string, opts: { type: string; timeout: string }): Promise<T>;
   }
 
-  export interface WorkflowEvent<T = Record<string, unknown>> {
+  export interface WorkflowEvent<T = unknown> {
     payload: T;
     instanceId: string;
     timestamp: number;
@@ -38,7 +53,7 @@ declare module "cloudflare:workers" {
     id: string;
     values: number[];
     namespace?: string;
-    metadata?: Record<string, unknown>;
+    metadata?: VectorMetadata;
   }
 
   export interface VectorizeQueryOptions {
@@ -46,7 +61,7 @@ declare module "cloudflare:workers" {
     returnMetadata?: "none" | "indexed" | "all";
     returnValues?: boolean;
     namespace?: string;
-    filter?: Record<string, unknown>;
+    filter?: VectorMetadata;
   }
 
   export interface VectorizeMatches {
@@ -56,7 +71,7 @@ declare module "cloudflare:workers" {
   export interface VectorizeMatch {
     id: string;
     score: number;
-    metadata?: Record<string, unknown>;
+    metadata?: VectorMetadata;
     values?: number[];
   }
 }

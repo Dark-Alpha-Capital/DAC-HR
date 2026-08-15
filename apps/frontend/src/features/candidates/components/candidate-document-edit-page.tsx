@@ -36,7 +36,7 @@ export function CandidateDocumentEditPage() {
             </CardContent>
             <CardContent>
               <Button asChild>
-                <Link to="/candidates/$uid" search={{} as never} params={{ uid }}>
+                <Link to="/candidates/$uid" search={{}} params={{ uid }}>
                   Back to Candidate
                 </Link>
               </Button>

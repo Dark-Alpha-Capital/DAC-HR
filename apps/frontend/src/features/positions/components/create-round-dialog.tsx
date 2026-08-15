@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { Button } from "#/components/ui/button";
 import {
   Dialog,
@@ -69,9 +70,7 @@ export function CreateRoundDialog({
 
       if (result.error) {
         toast.error(
-          typeof result.error === "string"
-            ? result.error
-            : "Failed to create round",
+          z.string().safeParse(result.error).data || "Failed to create round",
         );
         return;
       }

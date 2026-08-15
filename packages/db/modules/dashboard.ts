@@ -8,32 +8,21 @@ import {
   application,
   position,
   interview,
-  interviewFeedback,
-  interviewSession,
   user,
   employee,
   recruiterWeeklyCheckin,
-  candidatePosition,
-  interviewAiAnalysis,
-  documents,
-  interviewEvaluation,
   roundTemplate,
 } from "../schema";
 import { applicationActivePipelineStatuses } from "../application-status";
 import {
   eq,
   and,
-  or,
   inArray,
   asc,
   desc,
-  count,
-  gte,
-  lte,
   sql,
-  isNull,
 } from "drizzle-orm";
-import { ilike, jsonArrayOverlap } from "../sqlite-helpers";
+import { jsonArrayOverlap } from "../sqlite-helpers";
 export const getDashboardStats = async () => {
   try {
     const now = Date.now();
@@ -438,6 +427,8 @@ export const getUpcomingInterviews = async (limit?: number) => {
       .orderBy(asc(interview.scheduledAt));
 
     if (limit) {
+      // SAFETY: limit() returns the same select query builder type; the
+      // reassignment needs the self-reference cast.
       query = query.limit(limit) as typeof query;
     }
 
@@ -633,6 +624,8 @@ export const getEmployees = async (
     // This parameter is included for future compatibility
 
     if (conditions.length > 0) {
+      // SAFETY: where() returns the same select query builder type; the
+      // reassignment needs the self-reference cast.
       query = query.where(and(...conditions)) as typeof query;
     }
 

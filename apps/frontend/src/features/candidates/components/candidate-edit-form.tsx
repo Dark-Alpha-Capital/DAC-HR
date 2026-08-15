@@ -34,7 +34,7 @@ import {
   SelectValue,
 } from "#/components/ui/select";
 import { updateCandidate } from "#/features/candidates/server/mutations/update-candidate";
-import type { Candidate } from "@workspace/db/schema";
+import type { Candidate } from "#/features/candidates/types";
 
 interface CandidateEditFormProps {
   candidate: Candidate & { positionIds?: string[] };
@@ -43,8 +43,8 @@ interface CandidateEditFormProps {
 const SOURCES = ["LinkedIn", "Upwork", "Handshake", "Indeed"] as const;
 type Source = (typeof SOURCES)[number];
 
-const isSource = (value: unknown): value is Source =>
-  typeof value === "string" && (SOURCES as readonly string[]).includes(value);
+const isSource = (value: string | null): value is Source =>
+  !!value && SOURCES.some((source) => source === value);
 
 const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
   const router = useRouter();
@@ -60,11 +60,7 @@ const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
       });
 
       if (result.error !== undefined) {
-        throw new Error(
-          typeof result.error === "string"
-            ? result.error
-            : "Failed to update candidate",
-        );
+        throw new Error(result.error);
       }
       return result.data;
     },
@@ -299,6 +295,8 @@ const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
                   <Select
                     value={field.state.value || ""}
                     onValueChange={(value) => {
+                      // SAFETY: the Select only renders the four fixed
+                      // SOURCE options, so any non-empty value is a Source.
                       const newSource =
                         value === "" ? undefined : (value as Source);
                       field.handleChange(newSource);

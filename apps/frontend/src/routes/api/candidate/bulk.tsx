@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { fetchSession as getSession } from "#/lib/auth-session";
-import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import { deleteCandidateWithAssets } from "#/features/candidates/candidates-service";
+import { candidatesService } from "#/features/candidates/server/candidates-service";
+
 
 export const Route = createFileRoute("/api/candidate/bulk")({
   server: {
@@ -58,7 +58,7 @@ export const Route = createFileRoute("/api/candidate/bulk")({
                 });
                 continue;
               }
-              const deleteResult = await deleteCandidateWithAssets(candidateId);
+              const deleteResult = await candidatesService.deleteWithAssets(candidateId);
               if (!deleteResult) {
                 results.push({
                   id: candidateId,
@@ -71,7 +71,7 @@ export const Route = createFileRoute("/api/candidate/bulk")({
                 candidate: candidateData,
                 deletedDocuments: candidateDocuments,
               } = deleteResult;
-              insertAuditLog({
+              candidatesService.insertAudit({
                 userId: user.id,
                 action: "delete_candidate",
                 entityType: "candidate",

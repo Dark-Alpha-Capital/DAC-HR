@@ -2,6 +2,7 @@ import React, { useTransition } from "react";
 import { Button } from "#/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
 import { useAppSession } from "#/hooks/use-app-session";
 import {
@@ -15,6 +16,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "#/components/ui/alert-dialog";
+
+const deleteResponseSchema = z.object({
+  error: z.union([z.string(), z.record(z.string(), z.unknown())]).optional(),
+});
 
 const DeleteCandidateDocumentButton = ({
   documentId,
@@ -44,14 +49,20 @@ const DeleteCandidateDocumentButton = ({
           },
         );
 
-        const result = (await response.json()) as { error?: unknown };
+        const parsedResult = deleteResponseSchema.safeParse(
+          await response.json(),
+        );
 
         if (!response.ok) {
+          const error = parsedResult.success
+            ? parsedResult.data.error
+            : undefined;
+          const errorMessage = z.string().safeParse(error);
           toast.error(
-            typeof result.error === "string"
-              ? result.error
-              : typeof result.error === "object"
-                ? JSON.stringify(result.error)
+            errorMessage.success
+              ? errorMessage.data
+              : error !== undefined
+                ? JSON.stringify(error)
                 : "Failed to delete document",
             {
               position: "bottom-right",

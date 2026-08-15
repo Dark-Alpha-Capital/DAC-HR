@@ -1,8 +1,9 @@
 import { useState, cloneElement, isValidElement } from "react";
+import type { ReactElement } from "react";
 import { Button } from "#/components/ui/button";
 import { Plus } from "lucide-react";
 import RecordInterviewDialog from "./record-interview-dialog";
-import type { ApplicationDetail } from "#/features/applications/server/queries/applications";
+import type { ApplicationDetail } from "#/features/applications/types";
 
 interface RecordInterviewDialogWrapperProps {
   applicationId: string;
@@ -34,7 +35,12 @@ export default function RecordInterviewDialogWrapper({
   return (
     <>
       {trigger && isValidElement(trigger)
-        ? cloneElement(trigger, { onClick: handleOpen } as any)
+        ? // SAFETY: the wrapper contract injects an `onClick` opener onto the
+          // supplied trigger element, which is expected to accept it.
+          cloneElement(
+            trigger as ReactElement<{ onClick?: () => void }>,
+            { onClick: handleOpen },
+          )
         : trigger || (
             <Button size="sm" onClick={handleOpen}>
               <Plus className="h-3 w-3 mr-2" />

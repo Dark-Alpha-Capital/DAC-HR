@@ -7,6 +7,8 @@ type PrismicEnv = {
   PRISMIC_OPERATING_MEMBER_TYPE?: string;
 };
 
+// SAFETY: the Workers env object is a key/value map of binding values; we
+// only access the Prismic vars declared in wrangler.jsonc vars.
 const workerEnv = env as PrismicEnv;
 
 function pickEnvValue(primary?: string, fallback?: string): string | undefined {

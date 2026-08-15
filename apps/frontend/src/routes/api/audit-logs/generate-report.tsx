@@ -1,6 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { fetchSession as getSession } from "#/lib/auth-session";
-import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
+import { adminService } from "#/features/admin/server/admin-service";
+import { z } from "zod";
+
+const auditReportBodySchema = z.object({
+  action: z.string().optional(),
+  entityType: z.string().optional(),
+  entityId: z.string().optional(),
+  details: z.record(z.string(), z.unknown()).optional(),
+});
 
 export const Route = createFileRoute("/api/audit-logs/generate-report")({
   server: {
@@ -12,13 +20,16 @@ export const Route = createFileRoute("/api/audit-logs/generate-report")({
             return Response.json({ error: "Unauthorized" }, { status: 401 });
           const { user } = authSession;
 
-          const body = (await request.json()) as {
-            action?: string;
-            entityType?: string;
-            entityId?: string;
-            details?: unknown;
-          };
-          const { action, entityType, entityId, details } = body;
+          const parsedBody = auditReportBodySchema.safeParse(
+            await request.json(),
+          );
+          if (!parsedBody.success) {
+            return Response.json(
+              { error: "Invalid request body" },
+              { status: 400 },
+            );
+          }
+          const { action, entityType, entityId, details } = parsedBody.data;
 
           if (!action || !entityType || !entityId) {
             return Response.json(
@@ -27,12 +38,12 @@ export const Route = createFileRoute("/api/audit-logs/generate-report")({
             );
           }
 
-          const audit = await insertAuditLog({
+          const audit = await adminService.insertAuditLog({
             userId: user.id,
             action,
             entityType,
             entityId,
-            details: (details || {}) as Record<string, unknown>,
+            details: details ?? {},
           });
 
           return Response.json(

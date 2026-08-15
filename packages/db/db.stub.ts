@@ -11,8 +11,13 @@ export function getDb(): Database {
   return serverOnly();
 }
 
-export const db = new Proxy({} as Database, {
-  get() {
-    return serverOnly();
+export const db = new Proxy(
+  // SAFETY: the stub proxy target is never read directly — every `get` throws
+  // on the client; the placeholder satisfies the Database shape for builds.
+  {} as Database,
+  {
+    get() {
+      return serverOnly();
+    },
   },
-});
+);

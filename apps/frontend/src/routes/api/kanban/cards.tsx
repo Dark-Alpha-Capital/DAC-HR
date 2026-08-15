@@ -2,16 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { fetchSession as getSession } from "#/lib/auth-session";
 import {
   isApplicationStatus,
-  type ApplicationStatus,
-} from "@workspace/db/application-status";
-import {
-  getKanbanColumnCandidates,
-  KANBAN_PAGE_SIZE_DEFAULT,
-} from "@workspace/db/kanban-queries";
+} from "#/lib/application-status";
+
 import {
   isCandidateSortOption,
+  KANBAN_PAGE_SIZE_DEFAULT,
   type CandidateSortOption,
-} from "@workspace/db/candidate-list-filters";
+} from "#/features/candidates/constants";
+import { candidatesService } from "#/features/candidates/server/candidates-service";
 
 function parseStringArray(value: string | string[] | null): string[] | undefined {
   if (!value) {
@@ -62,8 +60,8 @@ export const Route = createFileRoute("/api/kanban/cards")({
               ? sortParam
               : undefined;
 
-          const page = await getKanbanColumnCandidates(
-            statusParam as ApplicationStatus,
+          const page = await candidatesService.getKanbanColumnCandidates(
+            statusParam,
             {
               name: url.searchParams.get("name") ?? undefined,
               email: url.searchParams.get("email") ?? undefined,

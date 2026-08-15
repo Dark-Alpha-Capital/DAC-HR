@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { MeetingsListPage, MeetingsPending } from "#/features/attendance/components/meetings-list-page";
 import { parseConferencesSearch } from "#/features/attendance/conferences-search";
-import { meetingsQueryOptions } from "#/features/attendance/server/meet-attendance";
+import { meetingsQueryOptions } from "#/features/attendance/query-options";
 
 export const Route = createFileRoute("/_main/employees/attendance/")({
   head: () => ({

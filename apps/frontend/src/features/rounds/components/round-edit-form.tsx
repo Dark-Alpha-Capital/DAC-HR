@@ -2,6 +2,7 @@ import * as React from "react";
 import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
+import { z } from "zod";
 import { Button } from "#/components/ui/button";
 import {
   Field,
@@ -21,7 +22,7 @@ import { roundEditFormSchema } from "#/features/rounds/schemas";
 import { Loader2 } from "lucide-react";
 import { updateRound } from "#/features/rounds/server/mutations/update-round";
 import { useRouter } from "@tanstack/react-router";
-import type { RoundTemplate } from "@workspace/db/schema";
+import type { RoundTemplate } from "#/features/rounds/types";
 
 interface RoundEditFormProps {
   round: RoundTemplate;
@@ -63,9 +64,7 @@ const RoundEditForm = ({ round }: RoundEditFormProps) => {
           router.navigate({ to: `/rounds/${result.data?.id}` });
         } else {
           toast.error(
-            typeof result.error === "string"
-              ? result.error
-              : "Failed to update round",
+            z.string().safeParse(result.error).data || "Failed to update round",
             {
               position: "bottom-right",
             },

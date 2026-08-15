@@ -2,7 +2,6 @@ import { expect, test } from "bun:test";
 import {
   looksLikeNoise,
   mergeAnswerUtterances,
-  MAX_ANSWER_FOLLOW_UPS,
 } from "./answer-evaluation";
 
 test("mergeAnswerUtterances joins non-empty utterances", () => {

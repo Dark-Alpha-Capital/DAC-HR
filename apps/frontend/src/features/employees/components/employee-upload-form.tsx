@@ -30,16 +30,14 @@ import { Loader2, ChevronDown } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import {
   employeeFormSchema,
-  type EmployeeFormSchema,
   departmentEnum,
 } from "#/features/employees/schemas";
 import { createEmployee } from "#/features/employees/server/mutations/create-employee";
 import { MarkdownEditor } from "#/components/shared/markdown-editor";
 import { cn } from "#/lib/utils";
 import * as z from "zod";
-import EmployeeProfileImage from "./employee-profile-image";
 
-const departmentLabels: Record<z.infer<typeof departmentEnum>, string> = {
+const departmentLabels = {
   management: "Management",
   "capital-markets": "Capital Markets",
   "deal-team": "Deal Team",
@@ -48,11 +46,11 @@ const departmentLabels: Record<z.infer<typeof departmentEnum>, string> = {
   origination: "Origination",
   pipe: "PIPE",
   "public-markets": "Public Markets",
-};
+} satisfies Record<z.infer<typeof departmentEnum>, string>;
 
 const EmployeeUploadForm = ({
   positions,
-  candidateId,
+  candidateId: _candidateId,
   candidateData,
   applicationData,
 }: {
@@ -90,6 +88,7 @@ const EmployeeUploadForm = ({
       return {
         firstName: candidateData.firstName || "",
         lastName: candidateData.lastName || "",
+        // SAFETY: the form schema requires at least one department value.
         department: [] as z.infer<typeof departmentEnum>[],
         positionId: applicationData?.position.id || "",
         profileImage: "",
@@ -99,6 +98,7 @@ const EmployeeUploadForm = ({
     return {
       firstName: "",
       lastName: "",
+      // SAFETY: the form schema requires at least one department value.
       department: [] as z.infer<typeof departmentEnum>[],
       positionId: "",
       profileImage: "",
@@ -109,7 +109,13 @@ const EmployeeUploadForm = ({
   const form = useForm({
     defaultValues: getInitialValues(),
     validators: {
-      onSubmit: employeeFormSchema as any,
+      onSubmit: ({ value }) => {
+        const result = employeeFormSchema.safeParse(value);
+        if (!result.success) {
+          return result.error.format();
+        }
+        return undefined;
+      },
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
@@ -127,12 +133,14 @@ const EmployeeUploadForm = ({
             });
 
             if (!uploadResponse.ok) {
+              // SAFETY: the upload API returns `{ error }` JSON on failure.
               const errorData = (await uploadResponse.json()) as {
                 error?: string;
               };
               throw new Error(errorData.error || "Failed to upload image");
             }
 
+            // SAFETY: the upload API returns `{ url }` JSON on success.
             const { url: fileUrl } = (await uploadResponse.json()) as {
               url: string;
             };
@@ -152,9 +160,10 @@ const EmployeeUploadForm = ({
           });
 
           if (result.error) {
+            const errorMessage = z.string().safeParse(result.error);
             toast.error(
-              typeof result.error === "string"
-                ? result.error
+              errorMessage.success
+                ? errorMessage.data
                 : "Failed to create employee",
               {
                 position: "bottom-right",
@@ -167,13 +176,18 @@ const EmployeeUploadForm = ({
               action: {
                 label: "View Employees",
                 onClick: () => {
-                  router.navigate({ to: "/employees", search: {} as any });
+                  router.navigate({
+                    to: "/employees",
+                    search: { memberType: "all", name: undefined },
+                  });
                 },
               },
             });
             form.reset();
             setFile(null);
             // Clear file input
+            // SAFETY: the file input is rendered with id="image-upload" by
+            // this form, so getElementById returns the input element.
             const fileInput = document.getElementById(
               "image-upload",
             ) as HTMLInputElement;
@@ -182,7 +196,10 @@ const EmployeeUploadForm = ({
             }
             // Reset bio field
             form.setFieldValue("bio", "");
-            router.navigate({ to: "/employees", search: {} as any });
+            router.navigate({
+              to: "/employees",
+              search: { memberType: "all", name: undefined },
+            });
           }
         } catch (error) {
           toast.error(
@@ -231,6 +248,8 @@ const EmployeeUploadForm = ({
     if (value.trim() !== "") {
       setFile(null);
       // Clear file input
+      // SAFETY: the file input is rendered with id="image-upload" by this
+      // form, so getElementById returns the input element.
       const fileInput = document.getElementById(
         "image-upload",
       ) as HTMLInputElement;
@@ -262,6 +281,8 @@ const EmployeeUploadForm = ({
             onClick={() => {
               form.reset();
               setFile(null);
+              // SAFETY: the file input is rendered with id="image-upload" by
+              // this form, so getElementById returns the input element.
               const fileInput = document.getElementById(
                 "image-upload",
               ) as HTMLInputElement;

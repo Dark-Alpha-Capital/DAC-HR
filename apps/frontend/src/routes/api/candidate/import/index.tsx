@@ -11,14 +11,8 @@ import {
 import { getServerNextcloudClient } from "#/lib/nextcloud-server";
 import { fetchSession as getSession } from "#/lib/auth-session";
 import {
-  createCandidateImportRecord,
-  updateCandidateImportStatus,
-} from "@workspace/db/repositories/candidate-import-repository";
-import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import {
-  updateImportOriginalFileUrl,
-  listRecentCandidateImports,
-} from "#/features/candidates/candidates-service";
+  candidatesService,
+} from "#/features/candidates/server/candidates-service";
 
 const MAX_IMPORT_SIZE = 500 * 1024 * 1024;
 
@@ -34,7 +28,10 @@ export const Route = createFileRoute("/api/candidate/import/")({
 
           const formData = await request.formData();
           const file = formData.get("file");
-          const positionId = (formData.get("positionId") as string | null)?.trim();
+          const positionIdEntry = formData.get("positionId");
+          const positionId = (
+            positionIdEntry instanceof File ? null : positionIdEntry
+          )?.trim();
 
           if (!(file instanceof File)) {
             return Response.json({ error: "File is required" }, { status: 400 });
@@ -64,7 +61,7 @@ export const Route = createFileRoute("/api/candidate/import/")({
             uploadedBy: authSession.user.id,
           });
 
-          const importRecord = await createCandidateImportRecord({
+          const importRecord = await candidatesService.createImportRecord({
             filename: file.name,
             type: importType,
             uploadedBy: authSession.user.id,
@@ -102,7 +99,7 @@ export const Route = createFileRoute("/api/candidate/import/")({
               fileType: importType,
               error: uploadResult.error ?? "Upload failed",
             });
-            await updateCandidateImportStatus(importRecord.id, "failed", {
+            await candidatesService.updateImportStatus(importRecord.id, "failed", {
               error: uploadResult.error ?? "Upload failed",
             });
             return Response.json(
@@ -119,20 +116,12 @@ export const Route = createFileRoute("/api/candidate/import/")({
             downloadUrl: uploadResult.downloadUrl,
           });
 
-          await updateImportOriginalFileUrl(
+          await candidatesService.updateImportOriginalFileUrl(
             importRecord.id,
             uploadResult.downloadUrl,
           );
 
-          const workflow = (env)
-            .CANDIDATE_IMPORT_WORKFLOW as
-            | {
-                create: (opts: {
-                  id: string;
-                  params: Record<string, unknown>;
-                }) => Promise<{ id: string }>;
-              }
-            | undefined;
+          const workflow = env.CANDIDATE_IMPORT_WORKFLOW;
 
           if (workflow) {
             await workflow
@@ -150,7 +139,7 @@ export const Route = createFileRoute("/api/candidate/import/")({
                   fileType: importType,
                 });
               })
-              .catch((error: unknown) => {
+              .catch((error) => {
                 importLog("error", "Failed to start candidate import workflow", {
                   step: "api.upload.workflow_failed",
                   importId: importRecord.id,
@@ -167,7 +156,7 @@ export const Route = createFileRoute("/api/candidate/import/")({
             });
           }
 
-          insertAuditLog({
+          candidatesService.insertAudit({
             userId: authSession.user.id,
             action: "candidate_import_started",
             entityType: "candidate_import",
@@ -204,7 +193,7 @@ export const Route = createFileRoute("/api/candidate/import/")({
             return Response.json({ error: "Unauthorized" }, { status: 401 });
           }
 
-          const imports = await listRecentCandidateImports();
+          const imports = await candidatesService.listRecentImports();
 
           return Response.json({ imports }, { status: 200 });
         } catch (error) {

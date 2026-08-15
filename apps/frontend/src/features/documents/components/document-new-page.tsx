@@ -11,7 +11,16 @@ export function DocumentNewPage() {
   return (
     <div className="narrow-container mx-auto space-y-8 py-6">
       <Button size="sm" asChild variant="secondary">
-        <Link to="/documents" search={{} as never}>
+        <Link
+          to="/documents"
+          search={{
+            scope: undefined,
+            category: undefined,
+            name: undefined,
+            candidateId: undefined,
+            page: undefined,
+          }}
+        >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Documents
         </Link>

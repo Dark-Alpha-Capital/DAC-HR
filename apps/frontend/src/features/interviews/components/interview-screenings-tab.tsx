@@ -311,6 +311,8 @@ export default function InterviewScreeningsTab({
     try {
       const response = await fetch(analysisEndpoint);
       if (response.ok) {
+        // SAFETY: the AI-analysis API returns `{ analyses: StoredAnalysis[] }`
+        // on success, with JSON-serialized records matching StoredAnalysis.
         const data = (await response.json()) as {
           analyses?: StoredAnalysis[];
         };
@@ -329,6 +331,8 @@ export default function InterviewScreeningsTab({
 
   const analyses: StoredAnalysis[] = bundleId
     ? ((
+        // SAFETY: loadBundleAiAnalyses returns the serialized analyses array
+        // in the same shape StoredAnalysis declares.
         bundleScreeningsData as { analyses: StoredAnalysis[] } | undefined
       )?.analyses ?? [])
     : interviewAnalyses;

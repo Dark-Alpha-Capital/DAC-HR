@@ -1,4 +1,4 @@
-import type { RoundDeliveryMode } from "@workspace/db/enums";
+import type { RoundDeliveryMode } from "#/lib/enums";
 import type { VoiceInterviewPhase } from "@workspace/interview-realtime/types";
 
 /**

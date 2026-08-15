@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AttendanceDetailPage, AttendanceDetailPending } from "#/features/attendance/components/attendance-detail-page";
-import { attendanceDetailQueryOptions } from "#/features/attendance/server/meet-attendance";
+import { attendanceDetailQueryOptions } from "#/features/attendance/query-options";
 
 export const Route = createFileRoute(
   "/_main/employees/attendance/$conferenceId",
 )({
-  head: ({ params }) => ({
+  head: () => ({
     meta: [{ title: "Attendance" }],
   }),
   loader: async ({ context: { queryClient }, params }) => {

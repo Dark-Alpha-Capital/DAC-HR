@@ -1,13 +1,10 @@
-import {
-  useQuery,
-  type UseQueryResult,
-} from "@tanstack/react-query";
+import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { ListPageSkeleton } from "#/components/shared/list-page-skeleton";
 import { Link, useSearch } from "@tanstack/react-router";
 import {
   weeklyCheckinRecordsQueryOptions,
   type WeeklyCheckinRecordsData,
-} from "#/features/weekly-checkin/server/queries/weekly-checkin";
+} from "#/features/weekly-checkin/query-options";
 import { Button } from "#/components/ui/button";
 import { Badge } from "#/components/ui/badge";
 import {
@@ -98,9 +95,7 @@ export function WeeklyCheckinRecordsPage() {
             </p>
           </div>
           <Button variant="secondary" asChild>
-            <Link to="/weekly-checkin" search={{} as never}>
-              Submit New Check-in
-            </Link>
+            <Link to="/weekly-checkin">Submit New Check-in</Link>
           </Button>
         </div>
 
@@ -240,16 +235,24 @@ export function WeeklyCheckinRecordsPage() {
                                   </p>
                                   <div className="flex flex-wrap gap-2">
                                     {checkin.bestPerformingChannels.map(
-                                      (channel) => (
-                                        <Badge
-                                          key={channel}
-                                          variant="secondary"
-                                        >
-                                          {sourcingChannelLabels[
+                                      (channel) => {
+                                        // SAFETY: bestPerformingChannels holds SourcingChannel literals
+                                        // (validated on write by weeklyCheckinFormSchema) even though DB
+                                        // rows type it as string[]; unknown channels fall back to the
+                                        // raw string below.
+                                        const label =
+                                          sourcingChannelLabels[
                                             channel as keyof typeof sourcingChannelLabels
-                                          ] || channel}
-                                        </Badge>
-                                      ),
+                                          ] || channel;
+                                        return (
+                                          <Badge
+                                            key={channel}
+                                            variant="secondary"
+                                          >
+                                            {label}
+                                          </Badge>
+                                        );
+                                      },
                                     )}
                                   </div>
                                 </div>

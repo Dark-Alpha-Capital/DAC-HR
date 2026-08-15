@@ -13,7 +13,7 @@ import {
   documentScopeLabels,
   documentScopeOptions,
   type DocumentScope,
-} from "@workspace/db/document-list-filters";
+} from "#/features/documents/constants";
 import { useMultiSelectFilter } from "#/lib/hooks/use-url-list-filter";
 import { cn } from "#/lib/utils";
 
@@ -28,10 +28,11 @@ const FilterDocumentScope = () => {
   });
 
   // "all" is the cleared state; the options show the actual scopes.
+  // SAFETY: selected values come from documentScopeOptions, which are exactly
+  // the DocumentScope literals.
+  const selectedScope: DocumentScope = (selected[0] as DocumentScope) ?? "all";
   const currentScope: DocumentScope =
-    selected.length === 0 || selected.includes("all")
-      ? "all"
-      : (selected[0] as DocumentScope) ?? "all";
+    selected.length === 0 || selected.includes("all") ? "all" : selectedScope;
 
   const handleScopeChange = (value: string) => {
     update(value === "all" ? ["all"] : [value]);

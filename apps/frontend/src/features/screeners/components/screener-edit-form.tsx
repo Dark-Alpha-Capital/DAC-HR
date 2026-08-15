@@ -1,5 +1,6 @@
 import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
+import { z } from "zod";
 import { toast } from "sonner";
 import { Button } from "#/components/ui/button";
 import {
@@ -21,7 +22,7 @@ import { Loader2 } from "lucide-react";
 import { MarkdownEditor } from "#/components/shared/markdown-editor";
 import { screenerEditSchema } from "#/features/screeners/schemas";
 import { updateScreenerAction } from "#/features/screeners/server/mutations/update-screener";
-import type { Screener } from "@workspace/db/schema";
+import type { Screener } from "#/features/screeners/types";
 
 interface ScreenerEditFormProps {
   screener: Screener & { position?: { id: string; name: string } | null };
@@ -49,9 +50,10 @@ export default function ScreenerEditForm({
           data: { id: screener.id, ...value },
         });
         if (result.error) {
+          const parsedError = z.string().safeParse(result.error);
           toast.error(
-            typeof result.error === "string"
-              ? result.error
+            parsedError.success
+              ? parsedError.data
               : "Failed to update screener",
           );
         } else {

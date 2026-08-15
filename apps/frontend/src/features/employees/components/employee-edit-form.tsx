@@ -30,7 +30,6 @@ import { Loader2, ChevronDown } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import {
   employeeFormSchema,
-  type EmployeeFormSchema,
   departmentEnum,
 } from "#/features/employees/schemas";
 import { updateEmployee } from "#/features/employees/server/mutations/update-employee";
@@ -39,7 +38,7 @@ import EmployeeProfileImage from "./employee-profile-image";
 import { MarkdownEditor } from "#/components/shared/markdown-editor";
 import { cn } from "#/lib/utils";
 import { departmentLabels } from "#/features/positions/position-metadata";
-import type { Department } from "@workspace/db/enums";
+import type { Department } from "#/features/employees/types";
 
 interface EmployeeEditFormProps {
   employee: {
@@ -72,7 +71,13 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
       bio: employee.bio || "",
     },
     validators: {
-      onSubmit: employeeFormSchema as any,
+      onSubmit: ({ value }) => {
+        const result = employeeFormSchema.safeParse(value);
+        if (!result.success) {
+          return result.error.format();
+        }
+        return undefined;
+      },
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
@@ -90,12 +95,14 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
             });
 
             if (!uploadResponse.ok) {
+              // SAFETY: the upload API returns `{ error }` JSON on failure.
               const errorData = (await uploadResponse.json()) as {
                 error?: string;
               };
               throw new Error(errorData.error || "Failed to upload image");
             }
 
+            // SAFETY: the upload API returns `{ url }` JSON on success.
             const { url: fileUrl } = (await uploadResponse.json()) as {
               url: string;
             };
@@ -118,9 +125,10 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
           });
 
           if (result.error) {
+            const errorMessage = z.string().safeParse(result.error);
             toast.error(
-              typeof result.error === "string"
-                ? result.error
+              errorMessage.success
+                ? errorMessage.data
                 : "Failed to update employee",
               {
                 position: "bottom-right",
@@ -133,7 +141,10 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
               action: {
                 label: "View Employees",
                 onClick: () => {
-                  router.navigate({ to: "/employees", search: {} as any });
+                  router.navigate({
+                    to: "/employees",
+                    search: { memberType: "all", name: undefined },
+                  });
                 },
               },
             });
@@ -175,6 +186,8 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
     if (value.trim() !== "") {
       setFile(null);
       // Clear file input
+      // SAFETY: the file input is rendered with id="image-upload" by this
+      // form, so getElementById returns the input element.
       const fileInput = document.getElementById(
         "image-upload",
       ) as HTMLInputElement;

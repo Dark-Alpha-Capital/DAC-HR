@@ -6,7 +6,7 @@
 export const UNAUTHORIZED_DOMAIN_MESSAGE =
   "Only Dark Alpha Capital (@darkalphacapital.com) email addresses can access this site.";
 
-export function isAllowedEmail(email: string | null | undefined): boolean {
+export function isAllowedEmail(_email: string | null | undefined): boolean {
   // return !!email?.toLowerCase().endsWith(ALLOWED_EMAIL_SUFFIX);
   return true;
 }

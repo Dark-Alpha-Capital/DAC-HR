@@ -28,7 +28,7 @@ export const candidateFormSchema = z
         (val) => {
           if (!val || val.trim() === "") return true; // Allow empty phone numbers
           // Remove common formatting characters (incl. brackets like [123])
-          const cleaned = val.replace(/[\s\-\(\)\+\.\[\]]/g, "");
+          const cleaned = val.replace(/[\s\-()+.\[\]]/g, "");
           // Check if it's all digits and has reasonable length (7-15 digits)
           return /^\d{7,15}$/.test(cleaned);
         },

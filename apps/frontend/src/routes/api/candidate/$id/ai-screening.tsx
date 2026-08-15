@@ -1,9 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { fetchSession as getSession } from "#/lib/auth-session";
-import {
-  getCandidateAiScreenings,
-  getLatestCandidateAiScreening,
-} from "@workspace/db/repositories/candidate-repository";
+import { candidatesService } from "#/features/candidates/server/candidates-service";
 
 export const Route = createFileRoute("/api/candidate/$id/ai-screening")({
   server: {
@@ -28,14 +25,14 @@ export const Route = createFileRoute("/api/candidate/$id/ai-screening")({
           }
 
           if (latest) {
-            const screening = await getLatestCandidateAiScreening(
+            const screening = await candidatesService.getLatestAiScreening(
               candidateId,
               positionId || undefined,
             );
             return Response.json({ screening }, { status: 200 });
           }
 
-          const screenings = await getCandidateAiScreenings(
+          const screenings = await candidatesService.getAiScreenings(
             candidateId,
             positionId || undefined,
           );

@@ -10,7 +10,7 @@ import { Button } from "#/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { Pencil } from "lucide-react";
 import DeleteScreenerButton from "#/features/screeners/components/delete-screener-button";
-import type { Screener } from "@workspace/db/schema";
+import type { Screener } from "#/features/screeners/types";
 
 interface ScreenerContainerProps {
   screeners: Array<

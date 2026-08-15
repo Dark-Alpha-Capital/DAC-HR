@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { fetchSession as getSession } from "#/lib/auth-session";
 import { z } from "zod";
-import { roundDeliveryModes } from "@workspace/db/enums";
+import { roundDeliveryModes } from "#/lib/enums";
 import { createInterviewSession } from "#/features/interviews/server/mutations/interviews";
 
 const agentConfigSchema = z.object({

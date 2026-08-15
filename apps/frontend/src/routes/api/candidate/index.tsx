@@ -1,18 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { fetchSession as getSession } from "#/lib/auth-session";
 import { candidateFormSchema } from "#/features/candidates/schemas";
-import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import { createCandidateWithPositions } from "#/features/candidates/candidates-service";
-
-const redactEmail = (email: string | null | undefined): string => {
-  if (!email) return "unknown";
-  const atIndex = email.indexOf("@");
-  if (atIndex <= 0 || atIndex === email.length - 1) return "***";
-  const localPart = email.slice(0, atIndex);
-  const domainPart = email.slice(atIndex + 1);
-  const visible = localPart.slice(0, 2);
-  return `${visible}${"*".repeat(Math.max(localPart.length - 2, 1))}@${domainPart}`;
-};
+import { candidatesService } from "#/features/candidates/server/candidates-service";
 
 export const Route = createFileRoute("/api/candidate/")({
   server: {
@@ -57,7 +46,7 @@ export const Route = createFileRoute("/api/candidate/")({
             candidate: newCandidate,
             positionIds: createdPositionIds,
             applicationIds: createdApplicationIds,
-          } = await createCandidateWithPositions({
+          } = await candidatesService.createWithPositions({
             firstName,
             lastName,
             email,
@@ -72,7 +61,7 @@ export const Route = createFileRoute("/api/candidate/")({
           });
           const hasPositions = createdPositionIds.length > 0;
 
-          insertAuditLog({
+          candidatesService.insertAudit({
             userId: user.id,
             action: "create_candidate",
             entityType: "candidate",

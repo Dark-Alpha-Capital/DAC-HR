@@ -18,12 +18,14 @@ export async function resolveDocumentAccessUrl(
   });
 
   if (!response.ok) {
+    // SAFETY: the /api/documents/view route responds with `{ error }` on failure.
     const errorData = (await response.json().catch(() => null)) as {
       error?: string;
     } | null;
     throw new Error(errorData?.error || "Failed to generate access URL");
   }
 
+  // SAFETY: the /api/documents/view route responds with `{ url }` on success.
   const { url: signedUrl } = (await response.json()) as { url: string };
   return signedUrl;
 }

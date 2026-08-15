@@ -37,6 +37,8 @@ const DeleteCandidateButton = ({ candidateId }: { candidateId: string }) => {
           method: "DELETE",
         });
 
+        // SAFETY: the delete endpoint returns a JSON body with an optional
+        // error message on failure.
         const result = (await response.json()) as { error?: string };
 
         if (!response.ok) {
@@ -47,7 +49,10 @@ const DeleteCandidateButton = ({ candidateId }: { candidateId: string }) => {
         toast.success("Candidate deleted successfully", {
           position: "bottom-right",
         });
-        router.navigate({ to: "/candidates", search: {} as any });
+        // SAFETY: the candidates route's validateSearch fills in defaults for
+        // all search params, so an empty search object is valid; `never` only
+        // satisfies tanstack's required-search typing.
+        router.navigate({ to: "/candidates", search: {} as never });
       } catch (error) {
         toast.error(
           error instanceof Error ? error.message : "Failed to delete candidate",

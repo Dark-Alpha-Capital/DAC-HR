@@ -18,7 +18,7 @@ import {
 import {
   prismicMembersQueryOptions,
   type PrismicMembersData,
-} from "#/features/docs/server/queries/members";
+} from "#/features/docs/query-options";
 import type { PrismicMember } from "#/features/docs/member";
 
 function getMemberInitials(name: string) {

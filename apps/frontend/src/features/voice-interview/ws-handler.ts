@@ -1,6 +1,6 @@
 /// <reference types="@cloudflare/workers-types" />
 
-import { resolveSessionFromToken } from "@workspace/db/repositories/interview-bundle-repository";
+import { interviewsService } from "#/features/interviews/server/interviews-service";
 import {
   interviewServerLog,
   truncateId,
@@ -36,7 +36,7 @@ export async function handleInterviewRealtimeWs(
     isPractice,
   });
 
-  const resolved = await resolveSessionFromToken(token);
+  const resolved = await interviewsService.resolveLegacySession(token);
   if (!resolved.ok) {
     interviewServerLog.warn("ws", COMPONENT, "token_resolve_failed", {
       token: truncateId(token),

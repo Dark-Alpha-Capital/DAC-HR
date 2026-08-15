@@ -4,7 +4,7 @@ import { AuditLogsPage } from "#/features/admin/components/audit-logs-page";
 import {
   parseAuditLogsSearch,
   auditLogsIndexQueryOptions,
-} from "#/features/admin/server/queries/audit-logs";
+} from "#/features/admin/query-options";
 
 export const Route = createFileRoute("/_main/admin/audit-logs")({
   head: () => ({
@@ -12,9 +12,7 @@ export const Route = createFileRoute("/_main/admin/audit-logs")({
   }),
   validateSearch: parseAuditLogsSearch,
   loader: async ({ context: { queryClient }, location }) => {
-    const search = parseAuditLogsSearch(
-      location.search as Record<string, unknown>,
-    );
+    const search = parseAuditLogsSearch(location.search);
     await queryClient.ensureQueryData(auditLogsIndexQueryOptions(search));
   },
   pendingComponent: () => <ListPageSkeleton rowCount={8} showActions={false} />,

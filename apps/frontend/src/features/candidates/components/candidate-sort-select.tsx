@@ -12,7 +12,7 @@ import {
   candidateSortLabels,
   candidateSortOptions,
   parseCandidateSortOption,
-} from "@workspace/db/candidate-list-filters";
+} from "#/features/candidates/constants";
 import { ArrowUpDown } from "lucide-react";
 
 const CandidateSortSelect = () => {

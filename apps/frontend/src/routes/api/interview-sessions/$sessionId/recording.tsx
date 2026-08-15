@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { interviewsService } from "#/features/interviews/server/interviews-service";
 import { downloadFile } from "@workspace/nextcloud";
-import { getSessionById } from "@workspace/db/repositories/interview-session-repository";
 import { fetchSession as getSession } from "#/lib/auth-session";
 import { getServerNextcloudClient } from "#/lib/nextcloud-server";
 
@@ -16,7 +16,7 @@ export const Route = createFileRoute(
             return Response.json({ error: "Unauthorized" }, { status: 401 });
           }
 
-          const sessionRow = await getSessionById(params.sessionId);
+          const sessionRow = await interviewsService.getSessionById(params.sessionId);
           if (!sessionRow) {
             return Response.json({ error: "Session not found" }, { status: 404 });
           }
@@ -48,19 +48,21 @@ export const Route = createFileRoute(
           const download =
             new URL(request.url).searchParams.get("download") === "1";
 
+          const headers = new Headers({
+            "Content-Type": "video/webm",
+            "Content-Length": String(downloadResult.buffer.length),
+            "Cache-Control": "private, max-age=3600",
+          });
+          if (download) {
+            headers.set(
+              "Content-Disposition",
+              'attachment; filename="screen-recording.webm"',
+            );
+          }
+
           return new Response(new Uint8Array(downloadResult.buffer), {
             status: 200,
-            headers: {
-              "Content-Type": "video/webm",
-              "Content-Length": String(downloadResult.buffer.length),
-              "Cache-Control": "private, max-age=3600",
-              ...(download
-                ? {
-                    "Content-Disposition":
-                      'attachment; filename="screen-recording.webm"',
-                  }
-                : {}),
-            },
+            headers,
           });
         } catch (error) {
           console.error("Error streaming interview recording:", error);

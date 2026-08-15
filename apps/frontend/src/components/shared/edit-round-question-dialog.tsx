@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { Button } from "#/components/ui/button";
 import {
   Dialog,
@@ -24,10 +25,9 @@ import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
 import { getQuestionTypeLabel } from "#/features/questions/helpers";
 import {
   buildQuestionEditPayload,
-  defaultMcqOptions,
   initialOptionsFrom,
 } from "#/features/questions/question-draft";
-import type { QuestionOption } from "@workspace/db/question-types";
+import type { QuestionOption } from "#/lib/question-types";
 
 type RoundQuestion = {
   id: string;
@@ -95,9 +95,10 @@ export function EditRoundQuestionDialog({
       });
 
       if (result.error) {
+        const errorMessage = z.string().safeParse(result.error);
         toast.error(
-          typeof result.error === "string"
-            ? result.error
+          errorMessage.success
+            ? errorMessage.data
             : "Failed to update question",
         );
         return;

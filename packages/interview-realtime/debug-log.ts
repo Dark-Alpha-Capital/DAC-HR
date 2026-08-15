@@ -1,3 +1,5 @@
+import type { JsonObject } from "./types";
+
 export type ServerInterviewTopic =
   | "voice"
   | "validate"
@@ -8,7 +10,7 @@ export type ServerInterviewTopic =
   | "eval"
   | "api";
 
-const TOPIC_EMOJI: Record<ServerInterviewTopic, string> = {
+const TOPIC_EMOJI = {
   voice: "🎤",
   validate: "🔑",
   state: "🔄",
@@ -17,7 +19,7 @@ const TOPIC_EMOJI: Record<ServerInterviewTopic, string> = {
   ws: "🔌",
   eval: "🤖",
   api: "📡",
-};
+} satisfies Record<ServerInterviewTopic, string>;
 
 const TRUNCATE_KEYS = new Set([
   "token",
@@ -40,16 +42,16 @@ export function truncateId(
   return value.length <= len ? value : value.slice(0, len);
 }
 
-function sanitizeServerData(
-  data: Record<string, unknown>,
-): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
+function sanitizeServerData(data: JsonObject): JsonObject {
+  const out: JsonObject = {};
   for (const [key, value] of Object.entries(data)) {
     if (value === undefined) {
       continue;
     }
-    if (TRUNCATE_KEYS.has(key) && typeof value === "string") {
-      out[key] = truncateId(value);
+    if (TRUNCATE_KEYS.has(key) && String(value) === value) {
+      // SAFETY: a value that round-trips through String() is a string
+      // primitive, so truncateId's string slicing is safe.
+      out[key] = truncateId(value as string);
     } else {
       out[key] = value;
     }
@@ -62,7 +64,7 @@ export function serverInterviewLog(
   topic: ServerInterviewTopic,
   component: string,
   action: string,
-  data: Record<string, unknown> = {},
+  data: JsonObject = {},
   options?: { success?: boolean },
 ) {
   const emoji =
@@ -96,7 +98,7 @@ export const interviewServerLog = {
     topic: ServerInterviewTopic,
     component: string,
     action: string,
-    data: Record<string, unknown> = {},
+    data: JsonObject = {},
   ) {
     serverInterviewLog("info", topic, component, action, data);
   },
@@ -104,7 +106,7 @@ export const interviewServerLog = {
     topic: ServerInterviewTopic,
     component: string,
     action: string,
-    data: Record<string, unknown> = {},
+    data: JsonObject = {},
   ) {
     serverInterviewLog("warn", topic, component, action, data);
   },
@@ -112,7 +114,7 @@ export const interviewServerLog = {
     topic: ServerInterviewTopic,
     component: string,
     action: string,
-    data: Record<string, unknown> = {},
+    data: JsonObject = {},
   ) {
     serverInterviewLog("error", topic, component, action, data);
   },
@@ -120,7 +122,7 @@ export const interviewServerLog = {
     topic: ServerInterviewTopic,
     component: string,
     action: string,
-    data: Record<string, unknown> = {},
+    data: JsonObject = {},
   ) {
     serverInterviewLog("info", topic, component, action, data, { success: true });
   },

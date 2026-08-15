@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { DetailPageSkeleton } from "#/components/shared/detail-page-skeleton";
 import { Link, useParams } from "@tanstack/react-router";
-import { employeeDetailQueryOptions } from "#/features/employees/server/queries/employees";
+import { employeeDetailQueryOptions } from "#/features/employees/query-options";
 import { Button } from "#/components/ui/button";
 import { Separator } from "#/components/ui/separator";
 import { Badge } from "#/components/ui/badge";
@@ -45,7 +45,10 @@ export function EmployeeDetailPage() {
             removed.
           </p>
           <Button asChild>
-            <Link to="/employees" search={{} as never}>
+            <Link
+              to="/employees"
+              search={{ memberType: "all", name: undefined }}
+            >
               Back to Employees
             </Link>
           </Button>

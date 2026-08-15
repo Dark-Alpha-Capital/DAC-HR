@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export type InterviewLogTopic =
   | "voice"
   | "validate"
@@ -8,7 +10,7 @@ export type InterviewLogTopic =
   | "eval"
   | "api";
 
-const TOPIC_EMOJI: Record<InterviewLogTopic, string> = {
+const TOPIC_EMOJI = {
   voice: "🎤",
   validate: "🔑",
   state: "🔄",
@@ -17,7 +19,7 @@ const TOPIC_EMOJI: Record<InterviewLogTopic, string> = {
   ws: "🔌",
   eval: "🤖",
   api: "📡",
-};
+} satisfies Record<InterviewLogTopic, string>;
 
 const TRUNCATE_KEYS = new Set([
   "token",
@@ -40,19 +42,18 @@ export function truncateId(
   return value.length <= len ? value : value.slice(0, len);
 }
 
-function sanitizeData(
-  data: Record<string, unknown>,
-): Record<string, unknown> {
+function sanitizeData(data: Record<string, unknown>) {
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(data)) {
     if (value === undefined) {
       continue;
     }
-    if (TRUNCATE_KEYS.has(key) && typeof value === "string") {
-      out[key] = truncateId(value);
-    } else if (key === "wsUrl" && typeof value === "string") {
+    const stringValue = z.string().safeParse(value);
+    if (TRUNCATE_KEYS.has(key) && stringValue.success) {
+      out[key] = truncateId(stringValue.data);
+    } else if (key === "wsUrl" && stringValue.success) {
       try {
-        const url = new URL(value);
+        const url = new URL(stringValue.data);
         const tokenParam = url.searchParams.get("token");
         if (tokenParam) {
           url.searchParams.set("token", truncateId(tokenParam) ?? "");

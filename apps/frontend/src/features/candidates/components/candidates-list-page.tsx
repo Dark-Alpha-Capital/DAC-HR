@@ -1,5 +1,4 @@
 import {
-  keepPreviousData,
   useQuery,
   type UseQueryResult,
 } from "@tanstack/react-query";
@@ -9,15 +8,13 @@ import { Button } from "#/components/ui/button";
 import CandidateFilters from "#/features/candidates/components/candidate-filters";
 import BulkUploadCandidatesDialog from "#/features/candidates/components/bulk-upload-candidates-dialog";
 import CandidatesViewWrapper from "#/features/candidates/components/candidates-view-wrapper";
-import {
-  candidatesIndexQueries,
-  type CandidatesIndexData,
-} from "#/features/candidates/server/queries/candidates";
-import type { CandidateViewMode } from "#/lib/parse-search";
+import { candidatesIndexQueries } from "#/features/candidates/query-options";
+import type { CandidatesIndexData } from "#/features/candidates/server/candidates-service";
+import type { CandidateViewMode } from "#/features/candidates/helpers";
 
 export function CandidatesListPage() {
   const search = useSearch({ from: "/_main/candidates/" });
-  const navigate = useNavigate();
+  const navigate = useNavigate({ from: "/candidates/" });
 
   const { data, isLoading, isFetching }: UseQueryResult<CandidatesIndexData> =
     useQuery(candidatesIndexQueries.options(search));
@@ -27,7 +24,7 @@ export function CandidatesListPage() {
       search: {
         ...search,
         view,
-      } as never,
+      },
     });
   };
 
@@ -60,7 +57,7 @@ export function CandidatesListPage() {
         <div className="flex items-center gap-2">
           <BulkUploadCandidatesDialog positions={positions} />
           <Button asChild>
-            <Link to="/candidates/new" search={{} as never}>
+            <Link to="/candidates/new" search={{ view: "kanban" }}>
               New Candidate
             </Link>
           </Button>
@@ -77,7 +74,7 @@ export function CandidatesListPage() {
               : "No candidates found."}
           </p>
           <Button asChild className="mt-4">
-            <Link to="/candidates/new" search={{} as never}>
+            <Link to="/candidates/new" search={{ view: "kanban" }}>
               Add your first candidate
             </Link>
           </Button>

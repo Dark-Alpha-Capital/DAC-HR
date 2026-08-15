@@ -55,6 +55,9 @@ const BulkDeleteCandidatesButton = ({
           body: JSON.stringify({ candidateIds: selectedIds }),
         });
 
+        // SAFETY: /api/candidate/bulk returns { error?, deleted?, failed?,
+        // errors? } on both success and failure paths (the bulk-delete route
+        // serializes that exact shape).
         const result = (await response.json()) as {
           error?: string;
           deleted?: number;

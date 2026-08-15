@@ -40,7 +40,21 @@ export default function PositionContainer({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {positions.map((position, index) => (
+          {positions.map((position, index) => {
+            // SAFETY: statusLabels/hireLevelLabels are keyed by the known
+            // position values; a lookup miss falls back to the raw string.
+            const statusLabel = position.status
+              ? statusLabels[position.status as keyof typeof statusLabels] ||
+                position.status
+              : null;
+            // SAFETY: hireLevelLabels is keyed by the known hire level
+            // values; a lookup miss falls back to the raw string.
+            const hireLevelLabel = position.hireLevel
+              ? hireLevelLabels[
+                  position.hireLevel as keyof typeof hireLevelLabels
+                ] || position.hireLevel
+              : null;
+            return (
             <TableRow key={position.id} className="relative cursor-pointer">
               <TableCell className="py-1.5 px-2 text-sm text-muted-foreground tabular-nums">
                 {index + 1}
@@ -49,25 +63,21 @@ export default function PositionContainer({
                 {position.name}
               </TableCell>
               <TableCell className="py-1.5 px-2 text-sm">
-                {position.status ? (
+                {statusLabel ? (
                   <Badge
                     variant="secondary"
                     className={`text-xs ${statusBadgeClass(position.status)}`}
                   >
-                    {statusLabels[
-                      position.status as keyof typeof statusLabels
-                    ] || position.status}
+                    {statusLabel}
                   </Badge>
                 ) : (
                   <span className="text-xs text-muted-foreground">—</span>
                 )}
               </TableCell>
               <TableCell className="py-1.5 px-2 text-sm">
-                {position.hireLevel ? (
+                {hireLevelLabel ? (
                   <Badge variant="secondary" className="text-xs">
-                    {hireLevelLabels[
-                      position.hireLevel as keyof typeof hireLevelLabels
-                    ] || position.hireLevel}
+                    {hireLevelLabel}
                   </Badge>
                 ) : (
                   <span className="text-xs text-muted-foreground">—</span>
@@ -80,7 +90,8 @@ export default function PositionContainer({
                 aria-label={`View ${position.name}`}
               />
             </TableRow>
-          ))}
+            );
+          })}
         </TableBody>
       </Table>
     </div>

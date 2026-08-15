@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { env } from "cloudflare:workers";
 import { fetchSession as getSession } from "#/lib/auth-session";
-import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
-import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
+import { candidatesService } from "#/features/candidates/server/candidates-service";
+
 import { candidateDocumentFormSchema } from "#/features/candidates/candidate-document-schemas";
-import { createCandidateDocument } from "#/features/candidates/candidates-service";
+
 import {
   buildNamedEntityFolderPath,
   formatPersonName,
@@ -41,7 +41,7 @@ export const Route = createFileRoute("/api/candidate/$id/documents")({
               { status: 400 },
             );
 
-          const documents = await getDocumentsByCandidateId(candidateId);
+          const { documents } = await candidatesService.listDocuments(candidateId);
           return Response.json({ documents }, { status: 200 });
         } catch (error) {
           return Response.json(
@@ -73,15 +73,22 @@ export const Route = createFileRoute("/api/candidate/$id/documents")({
           }
 
           const formData = await request.formData();
+          // SAFETY: the file input submits a File; when absent, FormData
+          // returns null for the "file" field.
           const file = formData.get("file") as File | null;
+          // SAFETY: name is a required text input, so FormData yields a string.
           const name = formData.get("name") as string;
+          // SAFETY: description is an optional text field.
           const description = formData.get("description") as string | null;
+          // SAFETY: the category select submits one of the four allowed values.
           const category = formData.get("category") as
             | "resume"
             | "cover-letter"
             | "portfolio"
             | "other";
+          // SAFETY: url is an optional text field.
           const urlField = formData.get("url") as string | null;
+          // SAFETY: tags is an optional text field.
           const tagsInput = formData.get("tags") as string | null;
 
           let tags: string[] = [];
@@ -111,7 +118,7 @@ export const Route = createFileRoute("/api/candidate/$id/documents")({
                 { status: 400 },
               );
 
-            const candidateRecord = await getCandidateById(candidateId);
+            const { candidate: candidateRecord } = await candidatesService.getEdit(candidateId);
             const folderPath = buildNamedEntityFolderPath({
               root: "/ATS/candidates",
               name: candidateRecord
@@ -173,7 +180,7 @@ export const Route = createFileRoute("/api/candidate/$id/documents")({
           }
 
           const validatedData = validationResult.data;
-          const newCandidateDocument = await createCandidateDocument(
+          const newCandidateDocument = await candidatesService.createDocument(
             {
               candidateId,
               name: validatedData.name,
@@ -188,22 +195,14 @@ export const Route = createFileRoute("/api/candidate/$id/documents")({
 
           if (newCandidateDocument && nextcloudFilePath) {
             env.DOCUMENT_INDEXING_WORKFLOW &&
-              (
-                env.DOCUMENT_INDEXING_WORKFLOW as {
-                  create: (opts: {
-                    id: string;
-                    params: Record<string, unknown>;
-                  }) => Promise<{ id: string }>;
-                }
-              )
-                .create({
-                  id: `index-${newCandidateDocument.id}`,
-                  params: {
-                    documentId: newCandidateDocument.id,
-                    nextcloudFilePath,
-                  },
-                })
-                .catch((err: unknown) =>
+              env.DOCUMENT_INDEXING_WORKFLOW.create({
+                id: `index-${newCandidateDocument.id}`,
+                params: {
+                  documentId: newCandidateDocument.id,
+                  nextcloudFilePath,
+                },
+              })
+                .catch((err) =>
                   console.error(
                     "Failed to start document indexing workflow:",
                     err,

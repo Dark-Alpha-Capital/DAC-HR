@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { z } from "zod";
 import type {
   InterviewQuestion,
+  JsonObject,
   VoiceInterviewPhase,
 } from "@workspace/interview-realtime/types";
 import {
@@ -8,7 +10,7 @@ import {
   sendDoMessage,
 } from "@workspace/interview-realtime/events";
 import { formatRealtimeCallsError } from "@workspace/ai-config";
-import type { CheatingEventType } from "@workspace/db/enums";
+import type { CheatingEventType } from "#/lib/enums";
 import { useCheatingPrevention } from "./useCheatingPrevention";
 import {
   logInterview,
@@ -39,7 +41,6 @@ import {
   WS_CLOSE_SUPERSEDED,
 } from "#/features/voice-interview/voice/session-socket";
 import {
-  isIntroPhase,
   isQuestionPhase,
 } from "#/features/voice-interview/interview-flow";
 
@@ -106,6 +107,8 @@ async function parseStartVoiceResponse(
   }
 
   try {
+    // SAFETY: the start-voice API route serializes StartVoiceResponse (this
+    // exact client shape is a documented subset of the route's response).
     return JSON.parse(bodyText) as StartVoiceResponse;
   } catch (error) {
     logInterview.error("voice", "start_voice_json_parse_failed", {
@@ -251,7 +254,7 @@ export function useVoiceInterview(token: string) {
   }, [token]);
 
   const sendToDO = useCallback(
-    (eventType: CheatingEventType, metadata?: Record<string, unknown>) => {
+    (eventType: CheatingEventType, metadata?: JsonObject) => {
       const socket = socketRef.current;
       if (!socket) {
         return;
@@ -720,8 +723,12 @@ export function useVoiceInterview(token: string) {
           try {
             const bodyText = await startRes.text();
             if (bodyText.trim()) {
-              const body = JSON.parse(bodyText) as { error?: string };
-              errorMessage = body.error || errorMessage;
+              const parsedBody = z
+                .object({ error: z.string().optional() })
+                .safeParse(JSON.parse(bodyText));
+              if (parsedBody.success && parsedBody.data.error) {
+                errorMessage = parsedBody.data.error;
+              }
             }
           } catch (parseError) {
             logInterview.warn("voice", "start_voice_error_body_parse_failed", {

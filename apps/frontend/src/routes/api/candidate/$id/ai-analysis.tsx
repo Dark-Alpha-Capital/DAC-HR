@@ -1,11 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { env } from "cloudflare:workers";
+import { z } from "zod";
 import { fetchSession as getSession } from "#/lib/auth-session";
-import { saveCandidateAiScreening } from "@workspace/db/repositories/candidate-repository";
-import { getCandidateWithApplications } from "@workspace/db/repositories/candidate-repository";
+import { candidatesService } from "#/features/candidates/server/candidates-service";
 import { getOpenAIProvider, generateEmbedding } from "@workspace/ai-config";
 import { generateText, Output } from "ai";
 import { candidateAiScreeningSchema } from "#/features/applications/schemas";
+
+const aiAnalysisBodySchema = z.object({
+  positionId: z.string().optional(),
+  documentIds: z.array(z.string()).optional(),
+  customPrompt: z.string().optional(),
+});
 
 export const Route = createFileRoute("/api/candidate/$id/ai-analysis")({
   server: {
@@ -16,7 +22,6 @@ export const Route = createFileRoute("/api/candidate/$id/ai-analysis")({
           const authSession = await getSession();
           if (!authSession?.user)
             return Response.json({ error: "Unauthorized" }, { status: 401 });
-          const { user } = authSession;
 
           const candidateId = params.id;
           if (!candidateId)
@@ -25,20 +30,14 @@ export const Route = createFileRoute("/api/candidate/$id/ai-analysis")({
               { status: 400 },
             );
 
-          let body: {
-            positionId?: string;
-            documentIds?: string[];
-            customPrompt?: string;
-          } = {};
-          try {
-            body = await request.json();
-          } catch {
-            /* no body */
-          }
-
-          const { positionId, documentIds, customPrompt } = body;
+          const parsedBody = aiAnalysisBodySchema.safeParse(
+            await request.json().catch(() => undefined),
+          );
+          const { positionId, documentIds, customPrompt } = parsedBody.success
+            ? parsedBody.data
+            : {};
           const candidateRecord =
-            await getCandidateWithApplications(candidateId);
+            await candidatesService.getCandidateWithApplications(candidateId);
           if (!candidateRecord)
             return Response.json(
               { error: "Candidate not found" },
@@ -80,24 +79,8 @@ Provide concise markdown analysis: background, skills, experience fit, culture f
             ? { documentId: { $in: documentIds } }
             : undefined;
 
-          const matches = await (
-            env
-          ).VECTORIZE && typeof (env).VECTORIZE === "object"
-            ? await (
-                (env).VECTORIZE as {
-                  query: (
-                    vector: number[],
-                    opts: {
-                      topK: number;
-                      namespace: string;
-                      returnMetadata: string;
-                      filter?: Record<string, { $in: string[] }>;
-                    },
-                  ) => Promise<{
-                    matches: Array<{ metadata?: { text?: string } }>;
-                  }>;
-                }
-              ).query(queryEmbedding, {
+          const matches = env.VECTORIZE
+            ? await env.VECTORIZE.query(queryEmbedding, {
                 topK: 10,
                 namespace,
                 returnMetadata: "indexed",
@@ -105,6 +88,8 @@ Provide concise markdown analysis: background, skills, experience fit, culture f
               })
             : { matches: [] };
 
+          // SAFETY: the document-indexing workflow stores `text` (a string) in
+          // each vector's metadata, so non-falsy metadata.text values are strings.
           const contextChunks = matches.matches
             .map((m) => m.metadata?.text)
             .filter(Boolean) as string[];
@@ -117,7 +102,7 @@ Provide concise markdown analysis: background, skills, experience fit, culture f
             prompt: `Context from candidate documents:\n${context || "No document context available."}\n\nAnalysis request:\n${analysisPrompt}`,
           });
 
-          const savedScreening = await saveCandidateAiScreening({
+          const savedScreening = await candidatesService.saveAiScreening({
             candidateId,
             positionId: targetApplication?.position.id || null,
             applicationId: targetApplication?.id || null,

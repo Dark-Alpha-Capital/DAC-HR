@@ -12,12 +12,6 @@ import {
 } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
 import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupText,
-  InputGroupTextarea,
-} from "#/components/ui/input-group";
-import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
@@ -29,7 +23,6 @@ import {
   positionFormSchema,
   hireLevelEnum,
   positionStatusEnum,
-  type PositionFormSchema,
 } from "#/features/positions/schemas";
 import { departmentEnum } from "#/features/employees/schemas";
 import { Loader2, ChevronDown } from "lucide-react";
@@ -42,7 +35,7 @@ import {
 } from "#/components/ui/select";
 import { updatePosition } from "#/features/positions/server/mutations/update-position";
 import { useRouter } from "@tanstack/react-router";
-import type { Position } from "@workspace/db/schema";
+import type { Position } from "#/features/positions/types";
 import { MarkdownEditor } from "#/components/shared/markdown-editor";
 import { cn } from "#/lib/utils";
 import * as z from "zod";
@@ -65,19 +58,22 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
       name: position.name,
       description: position.description || "",
       department: position.department || [],
-      hireLevel: position.hireLevel as
-        | z.infer<typeof hireLevelEnum>
-        | undefined,
-      status:
-        (position.status as z.infer<typeof positionStatusEnum>) || "active",
-    } as PositionFormSchema,
+      hireLevel: position.hireLevel ?? undefined,
+      status: position.status || "active",
+    },
     validators: {
-      onSubmit: positionFormSchema as any,
+      onSubmit: ({ value }) => {
+        const result = positionFormSchema.safeParse(value);
+        if (!result.success) {
+          return result.error.format();
+        }
+        return undefined;
+      },
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
         const result = await updatePosition({
-          data: [position.id, value as PositionFormSchema],
+          data: [position.id, value],
         });
         if ("success" in result && result.success) {
           toast("Position updated successfully", {
@@ -118,16 +114,9 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
               form.reset({
                 name: position.name,
                 description: position.description || "",
-                department:
-                  (position.department as z.infer<typeof departmentEnum>[]) ||
-                  [],
-                hireLevel:
-                  (position.hireLevel as z.infer<
-                    typeof hireLevelEnum
-                  > | null) || undefined,
-                status:
-                  (position.status as z.infer<typeof positionStatusEnum>) ||
-                  "active",
+                department: position.department || [],
+                hireLevel: position.hireLevel || undefined,
+                status: position.status || "active",
               });
             }}
             disabled={isPending}
@@ -279,13 +268,15 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
                   <FieldLabel htmlFor={field.name}>Hire Level</FieldLabel>
                   <Select
                     value={field.state.value || ""}
-                    onValueChange={(value) =>
+                    onValueChange={(value) => {
+                      // SAFETY: the <SelectItem> values are hireLevelEnum.options,
+                      // so the selected value is a hireLevelEnum literal.
                       field.handleChange(
                         value === ""
                           ? undefined
                           : (value as z.infer<typeof hireLevelEnum>),
-                      )
-                    }
+                      );
+                    }}
                   >
                     <SelectTrigger
                       id={field.name}
@@ -319,11 +310,14 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
                   <FieldLabel htmlFor={field.name}>Status</FieldLabel>
                   <Select
                     value={field.state.value || "active"}
-                    onValueChange={(value) =>
+                    onValueChange={(value) => {
+                      // SAFETY: the <SelectItem> values are
+                      // positionStatusEnum.options, so the selected value is a
+                      // positionStatusEnum literal.
                       field.handleChange(
                         value as z.infer<typeof positionStatusEnum>,
-                      )
-                    }
+                      );
+                    }}
                   >
                     <SelectTrigger id={field.name} aria-invalid={isInvalid}>
                       <SelectValue placeholder="Select status" />

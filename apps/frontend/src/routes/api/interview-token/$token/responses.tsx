@@ -1,11 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { interviewsService } from "#/features/interviews/server/interviews-service";
 import { z } from "zod";
-import { upsertResponse } from "@workspace/db/repositories/interview-session-repository";
-import {
-  getQuestionById,
-  getQuestionsForInterviewSession,
-} from "@workspace/db/modules/positions";
-import { resolveInterviewToken } from "#/features/interviews/interview-token";
 import {
   interviewServerLog,
   truncateId,
@@ -31,7 +26,7 @@ export const Route = createFileRoute("/api/interview-token/$token/responses")({
             return Response.json({ error: "Token is required" }, { status: 400 });
           }
 
-          const resolved = await resolveInterviewToken(token);
+          const resolved = await interviewsService.resolveToken(token);
 
           if (!resolved.ok) {
             interviewServerLog.warn("form", COMPONENT, "token_resolve_failed", {
@@ -74,14 +69,14 @@ export const Route = createFileRoute("/api/interview-token/$token/responses")({
           }
 
           const { questionId, answerText, selectedOptionId } = parsed.data;
-          const question = await getQuestionById(questionId);
+          const question = await interviewsService.getQuestionById(questionId);
 
           if (!question) {
             return Response.json({ error: "Question not found" }, { status: 404 });
           }
 
           if (resolved.type === "bundle") {
-            const roundQuestions = await getQuestionsForInterviewSession(
+            const roundQuestions = await interviewsService.getSessionQuestions(
               session.roundId,
             );
             const belongsToRound = roundQuestions.some(
@@ -124,7 +119,7 @@ export const Route = createFileRoute("/api/interview-token/$token/responses")({
               );
             }
 
-            const response = await upsertResponse({
+            const response = await interviewsService.upsertResponse({
               sessionId: session.id,
               questionId,
               answerText: null,
@@ -148,7 +143,7 @@ export const Route = createFileRoute("/api/interview-token/$token/responses")({
             );
           }
 
-          const response = await upsertResponse({
+          const response = await interviewsService.upsertResponse({
             sessionId: session.id,
             questionId,
             answerText: answerText.trim(),

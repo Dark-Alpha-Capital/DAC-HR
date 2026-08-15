@@ -40,6 +40,8 @@ export function encodeKanbanCursor(payload: KanbanCursorPayload): string {
 
 export function decodeKanbanCursor(cursor: string): KanbanCursorPayload | null {
   try {
+    // SAFETY: the decoded text is JSON with at most `updatedAt` and `id`
+    // fields; the shape cast lets us read and validate each field.
     const parsed = JSON.parse(decodeBase64Url(cursor)) as {
       updatedAt?: unknown;
       id?: unknown;

@@ -1,37 +1,26 @@
 import { createServerFn } from "@tanstack/react-start";
-import { serverFnAuthGuard } from "#/lib/middleware/auth-guard";
-import { patchQuestion as patchQuestionService, type PatchQuestionInput } from "#/features/questions/questions-service";
-import {
-  questionEditFormSchema,
-  type QuestionEditFormSchema,
-} from "#/features/questions/schemas";
+import { serverFnAuthGuard } from "#/features/auth/server/auth-middleware";
+import { questionsService } from "../questions-service";
+import type { QuestionEditFormSchema } from "../../schemas";
 
-export interface PatchQuestionInputData {
+type PatchQuestionInputData = {
   questionId: string;
   formData: QuestionEditFormSchema;
-}
+};
 
 export const patchQuestion = createServerFn({ method: "POST" })
   .middleware([serverFnAuthGuard])
   .validator((data: PatchQuestionInputData) => data)
   .handler(async ({ data, context: { session } }) => {
     const { questionId, formData } = data;
-
-    const result = questionEditFormSchema.safeParse(formData);
-    if (!result.success) {
-      return { error: result.error.flatten().fieldErrors };
-    }
-
-    const parsed = result.data;
-
-    return patchQuestionService(
+    return questionsService.patch(
       {
         questionId,
-        questionText: parsed.questionText,
-        questionType: parsed.questionType,
+        questionText: formData.questionText,
+        questionType: formData.questionType,
         options:
-          parsed.questionType === "mcq" ? parsed.options : undefined,
-      } as PatchQuestionInput,
+          formData.questionType === "mcq" ? formData.options : undefined,
+      },
       session.user,
     );
   });

@@ -5,10 +5,7 @@ export function normalizeName(name: string): string {
     .trim();
 }
 
-export function splitFullName(fullName: string): {
-  firstName: string;
-  lastName: string;
-} {
+export function splitFullName(fullName: string) {
   const trimmed = fullName.trim();
   if (!trimmed) {
     return { firstName: "Unknown", lastName: "Candidate" };

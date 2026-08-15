@@ -34,13 +34,15 @@ export const updateChecklistItem = async (
   id: string,
   data: { label?: string; checked?: boolean },
 ) => {
+  const values: Partial<typeof candidateChecklistItem.$inferInsert> = {
+    updatedAt: new Date(),
+  };
+  if (data.label !== undefined) values.label = data.label;
+  if (data.checked !== undefined) values.checked = data.checked;
+
   const [row] = await db
     .update(candidateChecklistItem)
-    .set({
-      ...(data.label !== undefined ? { label: data.label } : {}),
-      ...(data.checked !== undefined ? { checked: data.checked } : {}),
-      updatedAt: new Date(),
-    })
+    .set(values)
     .where(eq(candidateChecklistItem.id, id))
     .returning();
   return row ?? null;

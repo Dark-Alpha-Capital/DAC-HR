@@ -35,7 +35,7 @@ export default function ApplicationBreadcrumb({
                 <Link
                   to="/candidates/$uid"
                   params={{ uid: candidateId }}
-                  search={{} as any}
+                  search={{}}
                 >
                   {candidateName}
                 </Link>

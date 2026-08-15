@@ -37,7 +37,8 @@ export function parseClientMessage(
   raw: string | ArrayBuffer,
 ): ParsedClientToDoMessage | null {
   try {
-    const text = typeof raw === "string" ? raw : new TextDecoder().decode(raw);
+    const text =
+      raw instanceof ArrayBuffer ? new TextDecoder().decode(raw) : raw;
     const json: unknown = JSON.parse(text);
     const parsed = clientToDoMessageSchema.safeParse(json);
     return parsed.success ? parsed.data : null;
@@ -46,7 +47,7 @@ export function parseClientMessage(
   }
 }
 
-export function serializeDoMessage(message: Record<string, unknown>): string {
+export function serializeDoMessage<T extends object>(message: T): string {
   return JSON.stringify(message);
 }
 
@@ -141,7 +142,8 @@ export function parseDoMessage(
   raw: string | ArrayBuffer,
 ): DoToClientMessage | null {
   try {
-    const text = typeof raw === "string" ? raw : new TextDecoder().decode(raw);
+    const text =
+      raw instanceof ArrayBuffer ? new TextDecoder().decode(raw) : raw;
     const json: unknown = JSON.parse(text);
     const parsed = doToClientMessageSchema.safeParse(json);
     return parsed.success ? parsed.data : null;

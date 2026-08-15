@@ -15,7 +15,7 @@ import PaginationControls from "#/components/shared/pagination-controls";
 import {
   applicationsIndexQueryOptions,
   type ApplicationsIndexData,
-} from "#/features/applications/server/queries/applications";
+} from "#/features/applications/query-options";
 
 export function ApplicationsListPage() {
   const search = useSearch({ from: "/_main/applications/" });

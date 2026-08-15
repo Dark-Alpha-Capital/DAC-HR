@@ -6,7 +6,7 @@ import {
 import {
   parseWeeklyCheckinRecordsSearch,
   weeklyCheckinRecordsQueryOptions,
-} from "#/features/weekly-checkin/server/queries/weekly-checkin";
+} from "#/features/weekly-checkin/query-options";
 
 export const Route = createFileRoute("/_main/weekly-checkin/records")({
   head: () => ({
@@ -14,9 +14,7 @@ export const Route = createFileRoute("/_main/weekly-checkin/records")({
   }),
   validateSearch: parseWeeklyCheckinRecordsSearch,
   loader: async ({ context: { queryClient }, location }) => {
-    const search = parseWeeklyCheckinRecordsSearch(
-      location.search as Record<string, unknown>,
-    );
+    const search = parseWeeklyCheckinRecordsSearch(location.search);
     await queryClient.ensureQueryData(weeklyCheckinRecordsQueryOptions(search));
   },
   pendingComponent: WeeklyCheckinRecordsPending,

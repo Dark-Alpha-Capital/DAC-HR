@@ -11,7 +11,7 @@ export function EmployeeNewPage() {
   return (
     <div className="narrow-container mx-auto space-y-8 py-6">
       <Button asChild variant="secondary" size="sm">
-        <Link to="/employees" search={{} as never}>
+        <Link to="/employees" search={{ memberType: "all", name: undefined }}>
           Back to Employees
         </Link>
       </Button>

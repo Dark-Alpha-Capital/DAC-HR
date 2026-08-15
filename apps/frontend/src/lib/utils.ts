@@ -13,7 +13,7 @@ export function formatDate(date: Date | string) {
   }).format(new Date(date));
 }
 
-const departmentLabels: Record<string, string> = {
+const departmentLabels = {
   management: "Management",
   "capital-markets": "Capital Markets",
   "deal-team": "Deal Team",
@@ -22,20 +22,26 @@ const departmentLabels: Record<string, string> = {
   origination: "Origination",
   pipe: "PIPE",
   "public-markets": "Public Markets",
-};
+} satisfies Record<string, string>;
+
+function departmentLabel(department: string): string | undefined {
+  // SAFETY: unknown departments aren't keys of departmentLabels, so the
+  // lookup yields undefined and callers fall back to the raw value.
+  return departmentLabels[department as keyof typeof departmentLabels];
+}
 
 export function formatDepartment(department: string | string[]): string {
   if (Array.isArray(department)) {
-    return department.map((dept) => departmentLabels[dept] || dept).join(", ");
+    return department.map((dept) => departmentLabel(dept) || dept).join(", ");
   }
-  return departmentLabels[department] || department;
+  return departmentLabel(department) || department;
 }
 
 export function formatDepartments(departments: string | string[]): string[] {
   if (Array.isArray(departments)) {
-    return departments.map((dept) => departmentLabels[dept] || dept);
+    return departments.map((dept) => departmentLabel(dept) || dept);
   }
-  return [departmentLabels[departments] || departments];
+  return [departmentLabel(departments) || departments];
 }
 
 export function formatDateTime(date: Date | string | number | null) {

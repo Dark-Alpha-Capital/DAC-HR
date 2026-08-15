@@ -56,11 +56,7 @@ export default function DeleteScreenerButton({
               startTransition(async () => {
                 const response = await deleteScreenerAction({ data: screenerId });
                 if (response?.error) {
-                  toast.error(
-                    typeof response.error === "string"
-                      ? response.error
-                      : "Failed to delete screener",
-                  );
+                  toast.error(response.error || "Failed to delete screener");
                 }
                 if (response?.success) {
                   toast.success("Screener deleted");

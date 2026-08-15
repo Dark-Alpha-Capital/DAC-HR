@@ -1,10 +1,8 @@
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { DetailPageSkeleton } from "#/components/shared/detail-page-skeleton";
 import { Link, useParams, useRouteContext } from "@tanstack/react-router";
-import {
-  type ApplicationDetailData,
-  applicationDetailQueryOptions,
-} from "#/features/applications/server/queries/applications";
+import type { ApplicationDetailData } from "#/features/applications/types";
+import { applicationDetailQueryOptions } from "#/features/applications/query-options";
 import { Button } from "#/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "#/components/ui/tabs";
 import { Briefcase, Calendar, MessageSquare, Star } from "lucide-react";
@@ -40,7 +38,16 @@ export function ApplicationDetailPage() {
           This application doesn&apos;t exist or has been removed.
         </p>
         <Button asChild variant="secondary" className="mt-4">
-          <Link to="/applications" search={{} as never}>
+          <Link
+            to="/applications"
+            search={{
+              name: undefined,
+              email: undefined,
+              position: undefined,
+              status: undefined,
+              page: undefined,
+            }}
+          >
             View All Applications
           </Link>
         </Button>
@@ -175,8 +182,7 @@ export function ApplicationDetailPage() {
                     <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
                     <span className="text-muted-foreground">
                       {formatDate(screening.createdAt)} —{" "}
-                      {typeof screening.structuredData === "object" &&
-                      screening.structuredData
+                      {screening.structuredData
                         ? (screening.structuredData.score ?? "N/A")
                         : "N/A"}
                     </span>

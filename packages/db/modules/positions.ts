@@ -11,7 +11,7 @@ import {
   candidate,
   candidatePosition,
 } from "../schema";
-import { eq, and, or, inArray, asc, desc, isNull, count } from "drizzle-orm";
+import { eq, and, or, inArray } from "drizzle-orm";
 import { ilike } from "../sqlite-helpers";
 import {
   hireLevels as hireLevelValues,
@@ -53,6 +53,8 @@ export const getPositions = async (
       // Validate hire levels against enum values
       const validHireLevels = hireLevels.filter(
         (level): level is (typeof hireLevelValues)[number] =>
+          // SAFETY: `hireLevelValues` is a string-literal array; widening to
+          // `readonly string[]` lets us search it with an arbitrary string.
           (hireLevelValues as readonly string[]).includes(level),
       );
       if (validHireLevels.length > 0) {
@@ -65,6 +67,8 @@ export const getPositions = async (
       // Validate statuses against enum values
       const validStatuses = statuses.filter(
         (status): status is (typeof positionStatusValues)[number] =>
+          // SAFETY: `positionStatusValues` is a string-literal array; widening
+          // to `readonly string[]` lets us search it with an arbitrary string.
           (positionStatusValues as readonly string[]).includes(status),
       );
       if (validStatuses.length > 0) {
@@ -84,6 +88,8 @@ export const getPositions = async (
 
     // Apply all conditions with AND
     if (conditions.length > 0) {
+      // SAFETY: where() returns the same select query builder type; the
+      // reassignment needs the self-reference cast.
       query = query.where(and(...conditions)) as typeof query;
     }
 

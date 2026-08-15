@@ -14,7 +14,7 @@ import PaginationControls from "#/components/shared/pagination-controls";
 import {
   positionsIndexQueryOptions,
   type PositionsIndexData,
-} from "#/features/positions/server/queries/positions";
+} from "#/features/positions/query-options";
 
 export function PositionsListPage() {
   const search = useSearch({ from: "/_main/positions/" });
@@ -43,7 +43,7 @@ export function PositionsListPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Positions</h1>
         <Button asChild>
-          <Link to="/positions/new" search={{} as never}>
+          <Link to="/positions/new" search={{}}>
             New Position
           </Link>
         </Button>
@@ -68,7 +68,7 @@ export function PositionsListPage() {
           </p>
           {hasFilters ? null : (
             <Button asChild className="mt-4">
-              <Link to="/positions/new" search={{} as never}>
+              <Link to="/positions/new" search={{}}>
                 Create your first position
               </Link>
             </Button>

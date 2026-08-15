@@ -62,10 +62,7 @@ const STATE_ABBR_SET = new Set([
   "MP",
 ]);
 
-export function splitLocation(location: string | null | undefined): {
-  city: string | null;
-  state: string | null;
-} {
+export function splitLocation(location: string | null | undefined) {
   if (!location || !location.trim()) {
     return { city: null, state: null };
   }

@@ -4,8 +4,7 @@ import {
   uploadFile as uploadToNextcloud,
 } from "@workspace/nextcloud";
 import { getServerNextcloudClient } from "#/lib/nextcloud-server";
-import { assertInterviewTokenValidForRecordingUpload } from "@workspace/db/repositories/interview-bundle-repository";
-import { updateSessionVoiceMetadata } from "@workspace/db/repositories/interview-session-repository";
+import { interviewsService } from "#/features/interviews/server/interviews-service";
 
 const ALLOWED_RECORDING_TYPES = [
   "video/webm",
@@ -47,12 +46,13 @@ export async function handleRecordingUpload(
   try {
     const formData = await request.formData();
 
+    const sessionIdValue = formData.get("sessionId");
     const requestedSessionId =
-      typeof formData.get("sessionId") === "string"
-        ? (formData.get("sessionId") as string)
-        : undefined;
+      sessionIdValue === null || sessionIdValue instanceof File
+        ? undefined
+        : sessionIdValue;
 
-    const validation = await assertInterviewTokenValidForRecordingUpload(
+    const validation = await interviewsService.assertRecordingUploadValid(
       token,
       requestedSessionId,
     );
@@ -124,7 +124,7 @@ export async function handleRecordingUpload(
         return;
       }
 
-      await updateSessionVoiceMetadata(sessionId, {
+      await interviewsService.updateSessionVoiceMetadata(sessionId, {
         sessionAudioUrl: uploadResult.downloadUrl,
         sessionAudioPath: uploadResult.filePath ?? null,
       });

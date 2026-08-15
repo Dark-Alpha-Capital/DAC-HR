@@ -14,7 +14,6 @@ import {
   CheckCircle2,
   Users,
   Calendar,
-  FileText,
   AlertCircle,
   Zap,
   Brain,

@@ -4,7 +4,6 @@ import { toast } from "sonner";
 export type ActionResult = {
   success?: boolean;
   error?: string;
-  [key: string]: unknown;
 };
 
 type Options<TResult> = {
@@ -36,14 +35,14 @@ export function useServerMutation<TInput extends { data: unknown }, TResult exte
       }
       if (options.successMessage) {
         toast.success(
-          typeof options.successMessage === "function"
+          options.successMessage instanceof Function
             ? options.successMessage(result)
             : options.successMessage,
         );
       }
       options.onSuccess?.(result);
       for (const key of options.invalidate ?? []) {
-        queryClient.invalidateQueries({ queryKey: key as string[] });
+        queryClient.invalidateQueries({ queryKey: key });
       }
     },
     onError: (error) => {

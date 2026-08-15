@@ -6,7 +6,6 @@ import {
   ATTENDANCE_SYNC_CHUNK_SIZE,
   prepareAttendanceSync,
   syncAttendanceChunk,
-  type AttendanceSyncSeed,
 } from "#/features/attendance/server/meet-attendance";
 import { queryKeys } from "#/lib/query/query-keys";
 
@@ -48,7 +47,7 @@ export function SyncAttendanceButton() {
       let failed = 0;
 
       for (let i = 0; i < chunks.length; i++) {
-        const chunk = chunks[i] as AttendanceSyncSeed[];
+        const chunk = chunks[i];
         const from = synced + failed + 1;
         const to = Math.min(synced + failed + chunk.length, conferences.length);
         setStatus(`Syncing meetings ${from}–${to} of ${conferences.length}…`);

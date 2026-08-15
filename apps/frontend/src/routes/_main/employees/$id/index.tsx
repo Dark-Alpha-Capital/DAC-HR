@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DetailPageSkeleton } from "#/components/shared/detail-page-skeleton";
 import { EmployeeDetailPage } from "#/features/employees/components/employee-detail-page";
-import { employeeDetailQueryOptions } from "#/features/employees/server/queries/employees";
+import { employeeDetailQueryOptions } from "#/features/employees/query-options";
 
 export const Route = createFileRoute("/_main/employees/$id/")({
   head: () => ({

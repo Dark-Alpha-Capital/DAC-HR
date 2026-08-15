@@ -46,15 +46,17 @@ export async function createRealtimeEphemeralSession(
     );
   }
 
+  const headers = new Headers({
+    Authorization: `Bearer ${apiKey}`,
+    "Content-Type": "application/json",
+  });
+  if (options.safetyIdentifier) {
+    headers.set("OpenAI-Safety-Identifier", options.safetyIdentifier);
+  }
+
   const response = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      ...(options.safetyIdentifier
-        ? { "OpenAI-Safety-Identifier": options.safetyIdentifier }
-        : {}),
-    },
+    headers,
     body: JSON.stringify({
       session: {
         type: "realtime",
@@ -85,6 +87,8 @@ export async function createRealtimeEphemeralSession(
     );
   }
 
+  // SAFETY: the client_secrets response is JSON with the documented
+  // `value` / `client_secret.value` fields; the cast narrows the parsed body.
   const data = (await response.json()) as ClientSecretsResponse;
   const clientSecret = data.value ?? data.client_secret?.value;
 

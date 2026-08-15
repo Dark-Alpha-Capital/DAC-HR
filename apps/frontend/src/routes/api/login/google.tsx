@@ -14,6 +14,8 @@ export const Route = createFileRoute("/api/login/google")({
           asResponse: true,
         });
 
+        // SAFETY: better-auth's signInSocial response carries `url` in the body
+        // when a redirect is required (the OAuth authorize URL).
         const data = (await res.json()) as { url?: string };
 
         if (!data.url) {

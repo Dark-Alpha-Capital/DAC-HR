@@ -4,10 +4,9 @@ import { FileText, ExternalLink } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import CandidateDocumentTable from "#/features/candidates/components/candidate-document-table";
 import { CandidateAddDocumentDialog } from "#/features/candidates/components/candidate-add-document-dialog";
-import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
+import type { CandidateDocuments } from "#/features/candidates/types";
 
-type Documents = Awaited<ReturnType<typeof getDocumentsByCandidateId>>;
-
+type Documents = CandidateDocuments;
 export function CandidateDocumentsTab({
   uid,
   documents,

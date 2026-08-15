@@ -6,11 +6,11 @@ export async function extractDocumentText(
 ): Promise<string> {
   try {
     const result = await extractText(buffer, { mergePages: true });
-    if (typeof result.text === "string" && result.text.trim()) {
-      return result.text;
-    }
     if (Array.isArray(result.text)) {
       return result.text.filter(Boolean).join("\n").trim();
+    }
+    if (result.text && result.text.trim()) {
+      return result.text;
     }
   } catch (error) {
     console.error(
