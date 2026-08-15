@@ -1,7 +1,4 @@
-import {
-  useQuery,
-  type UseQueryResult,
-} from "@tanstack/react-query";
+import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Badge } from "#/components/ui/badge";
@@ -47,8 +44,6 @@ function ParticipantRow({
 }: {
   participant: MeetAttendanceParticipant;
 }) {
-  const rejoinCount = Math.max(0, participant.sessionCount - 1);
-
   return (
     <li className="px-4 py-3 sm:px-5">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
@@ -69,13 +64,6 @@ function ParticipantRow({
             </dd>
           </div>
           <div>
-            <dt className="inline">Sessions: </dt>
-            <dd className="inline">
-              {participant.sessionCount}
-              {rejoinCount > 0 ? ` (${rejoinCount} rejoin)` : ""}
-            </dd>
-          </div>
-          <div>
             <dt className="inline">Joined: </dt>
             <dd className="inline">
               {formatDateTime(participant.earliestStartTime)}
@@ -91,24 +79,14 @@ function ParticipantRow({
           </div>
         </dl>
       </div>
-
-      {participant.sessions.length > 1 ? (
-        <ul className="mt-2 space-y-1 border-l border-border pl-3 text-xs text-muted-foreground">
-          {participant.sessions.map((session, index) => (
-            <li key={session.name || `${participant.name}-${index}`}>
-              Session {index + 1}: {formatDateTime(session.startTime)} →{" "}
-              {session.endTime ? formatDateTime(session.endTime) : "open"} (
-              {formatDuration(session.durationMs)})
-            </li>
-          ))}
-        </ul>
-      ) : null}
     </li>
   );
 }
 
 export function AttendanceDetailPage() {
-  const params = useParams({ from: "/_main/employees/attendance/$conferenceId" });
+  const params = useParams({
+    from: "/_main/employees/attendance/$conferenceId",
+  });
   const {
     data,
     isLoading,

@@ -9,18 +9,9 @@ const CALENDAR_API = "https://www.googleapis.com/calendar/v3";
 
 export const ATTENDANCE_SYNC_CHUNK_SIZE = 12;
 
-export type MeetParticipantKind =
-  | "signedin"
-  | "anonymous"
-  | "phone"
-  | "unknown";
+import type { MeetParticipantKind } from "@workspace/db/repositories/meet-attendance-repository";
 
-export type MeetParticipantSession = {
-  name: string;
-  startTime: string | null;
-  endTime: string | null;
-  durationMs: number | null;
-};
+export type { MeetParticipantKind };
 
 export type MeetAttendanceParticipant = {
   name: string;
@@ -29,9 +20,7 @@ export type MeetAttendanceParticipant = {
   userId: string | null;
   earliestStartTime: string | null;
   latestEndTime: string | null;
-  sessionCount: number;
   totalDurationMs: number | null;
-  sessions: MeetParticipantSession[];
 };
 
 export type MeetConferenceSummary = {
@@ -56,15 +45,11 @@ export type MeetConferenceFilter = {
   endIso?: string;
 };
 
-export type AttendanceSyncSeed = {
-  id: string;
-  name: string;
-  title: string;
-  meetingCode: string | null;
-  startTime: string | null;
-  endTime: string | null;
-  space: string | null;
-};
+/** A conference to persist — everything in the summary except the live count. */
+export type AttendanceSyncSeed = Omit<
+  MeetConferenceSummary,
+  "participantCount"
+>;
 
 type GoogleApiError = {
   error?: { message?: string; status?: string };
@@ -270,9 +255,7 @@ export function buildParticipantFromRecord(
   const base = mapParticipantBase(record);
   return {
     ...base,
-    sessionCount: 1,
     totalDurationMs: durationMs(base.earliestStartTime, base.latestEndTime),
-    sessions: [],
   };
 }
 
@@ -642,18 +625,7 @@ export async function prepareMeetAttendanceSeeds(
 
   const conferences = listResult.records
     .map((record) => toSummary(record, index))
-    .filter((row): row is MeetConferenceSummary => row !== null)
-    .map(
-      (row): AttendanceSyncSeed => ({
-        id: row.id,
-        name: row.name,
-        title: row.title,
-        meetingCode: row.meetingCode,
-        startTime: row.startTime,
-        endTime: row.endTime,
-        space: row.space,
-      }),
-    );
+    .filter((row): row is MeetConferenceSummary => row !== null);
 
   return { conferences };
 }
