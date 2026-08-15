@@ -1,9 +1,9 @@
 import { db } from "@workspace/db/db";
 import { eq } from "@workspace/db";
 import { employee } from "@workspace/db/schema";
-import type { Department } from "@workspace/db/enums";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { getEmployeeById } from "@workspace/db/modules/dashboard";
+import type { EmployeeFormSchema } from "./schemas";
 
 type Actor = {
   id: string;
@@ -11,14 +11,7 @@ type Actor = {
   name: string | null;
 };
 
-export type EmployeeFormData = {
-  firstName: string;
-  lastName: string;
-  department: Department[];
-  positionId?: string | null;
-  profileImage?: string | null;
-  bio?: string | null;
-};
+export type EmployeeFormData = EmployeeFormSchema;
 
 export const createEmployee = async (input: EmployeeFormData, actor: Actor) => {
   const { firstName, lastName, department, positionId, profileImage, bio } =

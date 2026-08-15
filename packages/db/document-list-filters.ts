@@ -12,16 +12,14 @@ export function isDocumentScope(value: string): value is DocumentScope {
   return (documentScopeOptions as readonly string[]).includes(value);
 }
 
-export function parseDocumentScope(
-  value: string | undefined,
-): DocumentScope {
+export function parseDocumentScope(value: string | undefined): DocumentScope {
   if (value && isDocumentScope(value)) {
     return value;
   }
   return "all";
 }
 
-export type UnifiedDocumentListItem = {
+type DocumentListItemBase = {
   id: string;
   name: string;
   url: string;
@@ -29,9 +27,22 @@ export type UnifiedDocumentListItem = {
   tags: string[];
   createdAt: Date;
   updatedAt: Date;
-  scope: "firm" | "candidate";
-  categories?: Array<{ id: string; name: string }>;
-  candidateId?: string;
-  candidateName?: string;
-  candidateCategory?: string;
 };
+
+/** A firm document — categorization lives in the many-to-many relation table. */
+export type FirmDocumentListItem = DocumentListItemBase & {
+  scope: "firm";
+  categories: Array<{ id: string; name: string }>;
+};
+
+/** A candidate document — category is a column on candidate_document. */
+export type CandidateDocumentListItem = DocumentListItemBase & {
+  scope: "candidate";
+  candidateId: string;
+  candidateName: string;
+  candidateCategory: string;
+};
+
+export type UnifiedDocumentListItem =
+  | FirmDocumentListItem
+  | CandidateDocumentListItem;

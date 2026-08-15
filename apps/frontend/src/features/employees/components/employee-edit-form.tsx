@@ -38,13 +38,15 @@ import * as z from "zod";
 import EmployeeProfileImage from "./employee-profile-image";
 import { MarkdownEditor } from "#/components/shared/markdown-editor";
 import { cn } from "#/lib/utils";
+import { departmentLabels } from "#/features/positions/position-metadata";
+import type { Department } from "@workspace/db/enums";
 
 interface EmployeeEditFormProps {
   employee: {
     id: string;
     firstName: string;
     lastName: string;
-    department: string | string[];
+    department: Department[];
     positionId?: string | null;
     profileImage?: string | null;
     bio?: string | null;
@@ -55,17 +57,6 @@ interface EmployeeEditFormProps {
   }[];
 }
 
-const departmentLabels: Record<z.infer<typeof departmentEnum>, string> = {
-  management: "Management",
-  "capital-markets": "Capital Markets",
-  "deal-team": "Deal Team",
-  legal: "Legal",
-  operations: "Operations",
-  origination: "Origination",
-  pipe: "PIPE",
-  "public-markets": "Public Markets",
-};
-
 const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -75,11 +66,7 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
     defaultValues: {
       firstName: employee.firstName,
       lastName: employee.lastName,
-      department: Array.isArray(employee.department)
-        ? (employee.department as z.infer<typeof departmentEnum>[])
-        : employee.department
-          ? [employee.department as z.infer<typeof departmentEnum>]
-          : [],
+      department: employee.department,
       positionId: employee.positionId,
       profileImage: employee.profileImage,
       bio: employee.bio || "",

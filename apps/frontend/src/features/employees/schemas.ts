@@ -29,3 +29,4 @@ export const employeeFormSchema = z.object({
 });
 
 export type EmployeeFormSchema = z.infer<typeof employeeFormSchema>;
+export type EmployeeFormInput = EmployeeFormSchema;

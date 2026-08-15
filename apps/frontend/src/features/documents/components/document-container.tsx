@@ -87,12 +87,11 @@ const DocumentContainer = ({
   const renderCategory = (document: UnifiedDocumentListItem) => {
     if (document.scope === "candidate") {
       const label =
-        candidateCategoryLabels[document.candidateCategory ?? "other"] ??
-        "Other";
+        candidateCategoryLabels[document.candidateCategory] ?? "Other";
       return <Badge variant="secondary">{label}</Badge>;
     }
 
-    const categories = document.categories || [];
+    const categories = document.categories;
     if (categories.length === 0) {
       return <span className="text-muted-foreground">-</span>;
     }
@@ -156,7 +155,7 @@ const DocumentContainer = ({
               </TableCell>
               {showCandidateColumn ? (
                 <TableCell className="py-1.5 px-2 text-sm">
-                  {document.candidateId && document.candidateName ? (
+                  {document.scope === "candidate" ? (
                     <Link
                       to="/candidates/$uid"
                       params={{ uid: document.candidateId }}
@@ -216,7 +215,7 @@ const DocumentContainer = ({
                     </TooltipTrigger>
                     <TooltipContent>Download</TooltipContent>
                   </Tooltip>
-                  {document.scope === "candidate" && document.candidateId ? (
+                  {document.scope === "candidate" ? (
                     <DeleteCandidateDocumentButton
                       documentId={document.id}
                       candidateId={document.candidateId}
