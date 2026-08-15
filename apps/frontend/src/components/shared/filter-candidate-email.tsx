@@ -1,60 +1,15 @@
-import { useUrlSearchParams } from "#/lib/hooks/use-url-search-params";
-
-import { resetListPageParam } from "#/lib/parse-search";
-
-import React, { useTransition, useEffect, useRef } from "react";
-import { Input } from "#/components/ui/input";
+import React from "react";
 import { Mail } from "lucide-react";
+import { DebouncedTextFilter } from "#/components/shared/debounced-text-filter";
 
-const FilterCandidateEmail = () => {
-  const { searchParams, setSearchParams } = useUrlSearchParams();
-  const [isPending, startTransition] = useTransition();
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const handleSearch = (value: string) => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    timeoutRef.current = setTimeout(() => {
-      startTransition(() => {
-        const params = new URLSearchParams(searchParams);
-        if (value.trim()) {
-          params.set("email", value.trim());
-        } else {
-          params.delete("email");
-        }
-        resetListPageParam(params);
-        setSearchParams(params);
-    });
-    }, 300);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
-  return (
-    <div
-      className="relative flex-1 max-w-sm"
-      data-pending={isPending ? "" : undefined}
-    >
-      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-      <Input
-        key={`email-${searchParams.get("email") ?? ""}`}
-        type="email"
-        placeholder="Search by email..."
-        defaultValue={searchParams.get("email") || ""}
-        onChange={(e) => handleSearch(e.target.value)}
-        className="pl-9"
-        aria-label="Filter candidates by email"
-      />
-    </div>
-  );
-};
+const FilterCandidateEmail = () => (
+  <DebouncedTextFilter
+    param="email"
+    type="email"
+    placeholder="Search by email..."
+    ariaLabel="Filter candidates by email"
+    icon={<Mail className="h-4 w-4 text-muted-foreground" />}
+  />
+);
 
 export default FilterCandidateEmail;

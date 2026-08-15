@@ -5,7 +5,7 @@ import {
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { AttendanceDataTable } from "#/features/attendance/components/attendance-data-table";
 import { SyncAttendanceButton } from "#/features/attendance/components/sync-attendance-button";
-import AttendancePaginationControls from "#/features/attendance/components/attendance-pagination-controls";
+import PaginationControls from "#/components/shared/pagination-controls";
 import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
@@ -119,7 +119,8 @@ export function MeetingAttendancePage() {
 
       <AttendanceDataTable data={rows} />
 
-      <AttendancePaginationControls
+      <PaginationControls
+        variant="numbered"
         currentPage={currentPage}
         totalPages={totalPages}
         hasNextPage={hasNextPage}
@@ -127,6 +128,9 @@ export function MeetingAttendancePage() {
         totalCount={data.total}
         pageItemCount={rows.length}
         limit={PAGE_SIZE}
+        itemLabel="records"
+        basePath="/employees/attendance/meeting-attendance"
+        hideWhenEmpty
       />
     </div>
   );

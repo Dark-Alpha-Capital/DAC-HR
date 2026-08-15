@@ -18,9 +18,6 @@ import {
   TableRow,
 } from "#/components/ui/table";
 import {
-  Search,
-  ChevronLeft,
-  ChevronRight,
   Filter,
   X,
   Activity,
@@ -36,6 +33,8 @@ import {
   SelectValue,
 } from "#/components/ui/select";
 import GenerateReportDialog from "#/features/admin/components/generate-report-dialog";
+import { DebouncedTextFilter } from "#/components/shared/debounced-text-filter";
+import PaginationControls from "#/components/shared/pagination-controls";
 
 export type AuditLog = {
   id: string;
@@ -60,52 +59,12 @@ type Props = {
 };
 
 function FilterSearch() {
-  const { searchParams, setSearchParams } = useUrlSearchParams();
-  const [isPending, startTransition] = React.useTransition();
-  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-
-  const handleSearch = (value: string) => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    timeoutRef.current = setTimeout(() => {
-      startTransition(() => {
-        const params = new URLSearchParams(searchParams);
-        params.delete("page"); // Reset to page 1 when filtering
-        if (value.trim()) {
-          params.set("search", value.trim());
-        } else {
-          params.delete("search");
-        }
-        setSearchParams(params);
-      });
-    }, 300);
-  };
-
-  React.useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
   return (
-    <div
-      className="relative flex-1 max-w-sm"
-      data-pending={isPending ? "" : undefined}
-    >
-      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-      <Input
-        key={`search-${searchParams.get("search") ?? ""}`}
-        type="text"
-        placeholder="Search actions, types, IDs..."
-        defaultValue={searchParams.get("search") || ""}
-        onChange={(e) => handleSearch(e.target.value)}
-        className="pl-9"
-      />
-    </div>
+    <DebouncedTextFilter
+      param="search"
+      placeholder="Search actions, types, IDs..."
+      ariaLabel="Search audit logs"
+    />
   );
 }
 
@@ -416,60 +375,6 @@ function ClearFilters() {
   );
 }
 
-function AuditLogsPaginationControls({
-  currentPage,
-  totalPages,
-  hasNextPage,
-  hasPreviousPage,
-}: {
-  currentPage: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
-}) {
-  const { searchParams, setSearchParams } = useUrlSearchParams();
-
-  const navigateToPage = (page: number) => {
-    const params = new URLSearchParams(searchParams);
-
-    if (page === 1) {
-      params.delete("page");
-    } else {
-      params.set("page", page.toString());
-    }
-
-    setSearchParams(params);
-  };
-
-  return (
-    <div className="flex items-center justify-between border-t pt-4">
-      <div className="text-sm text-muted-foreground">
-        Showing page {currentPage} of {totalPages || 1}
-      </div>
-      <div className="flex items-center gap-2">
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => navigateToPage(currentPage - 1)}
-          disabled={!hasPreviousPage}
-        >
-          <ChevronLeft className="h-4 w-4 mr-1" />
-          Previous
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => navigateToPage(currentPage + 1)}
-          disabled={!hasNextPage}
-        >
-          Next
-          <ChevronRight className="h-4 w-4 ml-1" />
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 function getActionBadgeVariant(
   action: string,
 ): "default" | "secondary" | "destructive" {
@@ -611,9 +516,9 @@ export function AuditLogsClient({
 
           {/* Pagination */}
           {logs.length > 0 && (
-            <AuditLogsPaginationControls
+            <PaginationControls
               currentPage={currentPage}
-              totalPages={totalPages}
+              totalPages={Math.max(totalPages, 1)}
               hasNextPage={hasNextPage}
               hasPreviousPage={hasPreviousPage}
             />

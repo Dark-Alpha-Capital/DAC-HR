@@ -1,7 +1,7 @@
 import ViewToggle from "./view-toggle";
 import CandidateContainer from "./candidate-container";
 import CandidateKanbanBoard from "./candidate-kanban-board";
-import CandidatesPaginationControls from "#/features/candidates/components/candidates-pagination-controls";
+import PaginationControls from "#/components/shared/pagination-controls";
 import type { CandidateViewMode } from "#/lib/parse-search";
 import type { KanbanFilters } from "#/features/candidates/kanban-types";
 
@@ -71,7 +71,8 @@ export default function CandidatesViewWrapper({
       </div>
 
       {isTableView ? (
-        <CandidatesPaginationControls
+        <PaginationControls
+          variant="numbered"
           currentPage={currentPage}
           totalPages={totalPages}
           hasNextPage={hasNextPage}
@@ -79,6 +80,9 @@ export default function CandidatesViewWrapper({
           totalCount={totalCount}
           pageItemCount={candidates.length}
           limit={limit}
+          itemLabel="candidates"
+          basePath="/candidates"
+          hideWhenEmpty
         />
       ) : null}
     </div>

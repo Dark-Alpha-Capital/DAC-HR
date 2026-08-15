@@ -1,6 +1,4 @@
-import { useUrlSearchParams } from "#/lib/hooks/use-url-search-params";
-import { resetListPageParam } from "#/lib/parse-search";
-import React, { useOptimistic, useTransition } from "react";
+import React from "react";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -14,28 +12,29 @@ import { Filter } from "lucide-react";
 import {
   documentScopeLabels,
   documentScopeOptions,
-  parseDocumentScope,
+  type DocumentScope,
 } from "@workspace/db/document-list-filters";
+import { useMultiSelectFilter } from "#/lib/hooks/use-url-list-filter";
+import { cn } from "#/lib/utils";
 
 const FilterDocumentScope = () => {
-  const { searchParams, setSearchParams } = useUrlSearchParams();
-  const [isPending, startTransition] = useTransition();
-  const currentScope = parseDocumentScope(searchParams.get("scope") ?? undefined);
-  const [selectedScope, setSelectedScope] = useOptimistic(currentScope);
+  const { selected, isPending, update } = useMultiSelectFilter("scope", {
+    onMutate: (params, next) => {
+      params.delete("candidateId");
+      if (next.length === 0 || next.includes("all")) {
+        params.delete("scope");
+      }
+    },
+  });
+
+  // "all" is the cleared state; the options show the actual scopes.
+  const currentScope: DocumentScope =
+    selected.length === 0 || selected.includes("all")
+      ? "all"
+      : (selected[0] as DocumentScope) ?? "all";
 
   const handleScopeChange = (value: string) => {
-    startTransition(() => {
-      const params = new URLSearchParams(searchParams);
-      if (value === "all") {
-        params.delete("scope");
-        params.delete("candidateId");
-      } else {
-        params.set("scope", value);
-      }
-      resetListPageParam(params);
-      setSelectedScope(parseDocumentScope(value));
-      setSearchParams(params);
-    });
+    update(value === "all" ? ["all"] : [value]);
   };
 
   return (
@@ -48,11 +47,15 @@ const FilterDocumentScope = () => {
           <Button variant="secondary" size="sm">
             <Filter className="mr-2 h-4 w-4" />
             Type
-            {selectedScope !== "all" ? (
-              <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-                {documentScopeLabels[selectedScope]}
+            {currentScope !== "all" && (
+              <span
+                className={cn(
+                  "ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground",
+                )}
+              >
+                {documentScopeLabels[currentScope]}
               </span>
-            ) : null}
+            )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56">
@@ -61,7 +64,7 @@ const FilterDocumentScope = () => {
           {documentScopeOptions.map((scope) => (
             <DropdownMenuCheckboxItem
               key={scope}
-              checked={selectedScope === scope}
+              checked={currentScope === scope}
               onCheckedChange={(checked) => {
                 if (checked) {
                   handleScopeChange(scope);

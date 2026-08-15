@@ -1,6 +1,5 @@
 import * as React from "react";
 import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
-import { useUrlSearchParams } from "#/lib/hooks/use-url-search-params";
 import { authClient } from "#/features/auth/client";
 import { cn } from "#/lib/utils";
 import { Button } from "#/components/ui/button";
@@ -37,14 +36,12 @@ import {
   CheckCircle2,
   Loader2,
   RefreshCcw,
-  Search,
   Mail,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
-import { Input } from "#/components/ui/input";
 import { toast } from "sonner";
 import type { AdminUser } from "#/features/admin/server/queries/users";
+import { DebouncedTextFilter } from "#/components/shared/debounced-text-filter";
+import PaginationControls from "#/components/shared/pagination-controls";
 
 export type { AdminUser };
 
@@ -78,156 +75,24 @@ function getUserInitials(name: string | null, email: string): string {
 }
 
 function FilterAdminUserName() {
-  const { searchParams, setSearchParams } = useUrlSearchParams();
-  const [isPending, startTransition] = React.useTransition();
-  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-
-  const handleSearch = (value: string) => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    timeoutRef.current = setTimeout(() => {
-      startTransition(() => {
-        const params = new URLSearchParams(searchParams);
-        params.delete("page");
-        if (value.trim()) {
-          params.set("name", value.trim());
-        } else {
-          params.delete("name");
-        }
-        setSearchParams(params);
-      });
-    }, 300);
-  };
-
-  React.useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
   return (
-    <div
-      className="relative flex-1 max-w-sm"
-      data-pending={isPending ? "" : undefined}
-    >
-      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-      <Input
-        key={`name-${searchParams.get("name") ?? ""}`}
-        type="text"
-        placeholder="Search by name..."
-        defaultValue={searchParams.get("name") || ""}
-        onChange={(e) => handleSearch(e.target.value)}
-        className="pl-9"
-      />
-    </div>
+    <DebouncedTextFilter
+      param="name"
+      placeholder="Search by name..."
+      ariaLabel="Filter admin users by name"
+    />
   );
 }
 
 function FilterAdminUserEmail() {
-  const { searchParams, setSearchParams } = useUrlSearchParams();
-  const [isPending, startTransition] = React.useTransition();
-  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-
-  const handleSearch = (value: string) => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    timeoutRef.current = setTimeout(() => {
-      startTransition(() => {
-        const params = new URLSearchParams(searchParams);
-        params.delete("page");
-        if (value.trim()) {
-          params.set("email", value.trim());
-        } else {
-          params.delete("email");
-        }
-        setSearchParams(params);
-      });
-    }, 300);
-  };
-
-  React.useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
   return (
-    <div
-      className="relative flex-1 max-w-sm"
-      data-pending={isPending ? "" : undefined}
-    >
-      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-      <Input
-        key={`email-${searchParams.get("email") ?? ""}`}
-        type="email"
-        placeholder="Search by email..."
-        defaultValue={searchParams.get("email") || ""}
-        onChange={(e) => handleSearch(e.target.value)}
-        className="pl-9"
-      />
-    </div>
-  );
-}
-
-function AdminUsersPaginationControls({
-  currentPage,
-  totalPages,
-  hasNextPage,
-  hasPreviousPage,
-}: {
-  currentPage: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
-}) {
-  const { searchParams, setSearchParams } = useUrlSearchParams();
-
-  const navigateToPage = (page: number) => {
-    const params = new URLSearchParams(searchParams);
-
-    if (page === 1) {
-      params.delete("page");
-    } else {
-      params.set("page", page.toString());
-    }
-
-    setSearchParams(params);
-  };
-
-  return (
-    <div className="flex items-center justify-between border-t pt-4">
-      <div className="text-sm text-muted-foreground">
-        Showing page {currentPage} of {totalPages}
-      </div>
-      <div className="flex items-center gap-2">
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => navigateToPage(currentPage - 1)}
-          disabled={!hasPreviousPage}
-        >
-          <ChevronLeft className="h-4 w-4 mr-1" />
-          Previous
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => navigateToPage(currentPage + 1)}
-          disabled={!hasNextPage}
-        >
-          Next
-          <ChevronRight className="h-4 w-4 ml-1" />
-        </Button>
-      </div>
-    </div>
+    <DebouncedTextFilter
+      param="email"
+      type="email"
+      placeholder="Search by email..."
+      ariaLabel="Filter admin users by email"
+      icon={<Mail className="h-4 w-4 text-muted-foreground" />}
+    />
   );
 }
 
@@ -646,7 +511,7 @@ export function AdminUsersClient({
       </Tabs>
 
       {totalPages > 1 && (
-        <AdminUsersPaginationControls
+        <PaginationControls
           currentPage={currentPage}
           totalPages={totalPages}
           hasNextPage={hasNextPage}

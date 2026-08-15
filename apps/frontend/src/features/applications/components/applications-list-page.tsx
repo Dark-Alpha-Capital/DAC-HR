@@ -11,7 +11,7 @@ import FilterApplicationStatus from "#/components/shared/filter-application-stat
 import FilterCandidateName from "#/components/shared/filter-candidate-name";
 import FilterCandidateEmail from "#/components/shared/filter-candidate-email";
 import ClearApplicationFiltersButton from "#/features/applications/components/clear-application-filters-button";
-import ApplicationsPaginationControls from "#/features/applications/components/applications-pagination-controls";
+import PaginationControls from "#/components/shared/pagination-controls";
 import {
   applicationsIndexQueryOptions,
   type ApplicationsIndexData,
@@ -75,11 +75,12 @@ export function ApplicationsListPage() {
             limit={50}
           />
           {totalPages > 1 ? (
-            <ApplicationsPaginationControls
+            <PaginationControls
               currentPage={currentPage}
               totalPages={totalPages}
               hasNextPage={hasNextPage}
               hasPreviousPage={hasPreviousPage}
+              basePath="/applications"
             />
           ) : null}
         </div>
