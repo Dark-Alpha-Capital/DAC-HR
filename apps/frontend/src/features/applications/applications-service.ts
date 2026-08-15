@@ -1,5 +1,6 @@
 import { db } from "@workspace/db/db";
 import { eq, and } from "@workspace/db";
+import type { Personality } from "@workspace/db/enums";
 import {
   application,
   candidate,
@@ -124,23 +125,7 @@ export const createApplication = async (
 export type UpdateApplicationInput = {
   applicationId: string;
   status?: ApplicationStatus;
-  personality?:
-    | "ENFJ"
-    | "ENFP"
-    | "ENTJ"
-    | "ENTP"
-    | "ESFJ"
-    | "ESFP"
-    | "ESTJ"
-    | "ESTP"
-    | "INFJ"
-    | "INTJ"
-    | "INTP"
-    | "ISFJ"
-    | "ISFP"
-    | "ISTJ"
-    | "ISTP"
-    | null;
+  personality?: Personality | null;
 };
 
 export const updateApplication = async (
@@ -195,8 +180,7 @@ export const updateApplication = async (
                 `${context.candidateName} ${context.candidateLastName}`.trim(),
               positionName: context.positionName,
               location:
-                context.candidateLocationCity &&
-                context.candidateLocationState
+                context.candidateLocationCity && context.candidateLocationState
                   ? `${context.candidateLocationCity}, ${context.candidateLocationState}`
                   : context.candidateLocationCity ||
                     context.candidateLocationState ||
@@ -292,8 +276,7 @@ export const updateAiScreening = async (
     };
 
     if (structuredData !== undefined) {
-      updateFields.structuredData =
-        structuredData as Record<string, unknown>;
+      updateFields.structuredData = structuredData as Record<string, unknown>;
     }
 
     const [updatedScreening] = await db

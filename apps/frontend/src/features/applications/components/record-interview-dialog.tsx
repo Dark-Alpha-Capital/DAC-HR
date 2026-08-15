@@ -25,17 +25,13 @@ import type { RoundDeliveryMode } from "@workspace/db/enums";
 import { toast } from "sonner";
 import { Bot, Calendar, Check, Copy, Link2, Mic, Plus } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import type { ApplicationDetail } from "#/features/applications/server/queries/applications";
 
 type DialogMode = "ai_link" | "manual";
 
 interface RecordInterviewDialogProps {
   applicationId: string;
-  application: {
-    rounds: Array<{
-      id: string;
-      name: string;
-    }>;
-  };
+  application: Pick<ApplicationDetail, "rounds">;
   users: Array<{
     id: string;
     name: string | null;

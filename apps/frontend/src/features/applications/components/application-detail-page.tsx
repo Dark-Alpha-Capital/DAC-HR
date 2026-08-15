@@ -1,7 +1,4 @@
-import {
-  useQuery,
-  type UseQueryResult,
-} from "@tanstack/react-query";
+import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { DetailPageSkeleton } from "#/components/shared/detail-page-skeleton";
 import { Link, useParams, useRouteContext } from "@tanstack/react-router";
 import {
@@ -54,12 +51,11 @@ export function ApplicationDetailPage() {
   const candidateName = candidate
     ? `${candidate.firstName} ${candidate.lastName}`
     : "Unknown Candidate";
-  const positionName =
-    (application as any).position?.name ?? "Unknown Position";
+  const positionName = application.position?.name ?? "Unknown Position";
 
-  const rounds = (application as any).rounds ?? [];
-  const interviews = (application as any).interviews ?? [];
-  const bundles = (application as any).bundles ?? [];
+  const rounds = application.rounds ?? [];
+  const interviews = application.interviews ?? [];
+  const bundles = application.bundles ?? [];
 
   return (
     <div className="container mx-auto py-6 max-w-4xl space-y-6">
@@ -181,7 +177,7 @@ export function ApplicationDetailPage() {
                       {formatDate(screening.createdAt)} —{" "}
                       {typeof screening.structuredData === "object" &&
                       screening.structuredData
-                        ? ((screening.structuredData as any).score ?? "N/A")
+                        ? (screening.structuredData.score ?? "N/A")
                         : "N/A"}
                     </span>
                   </div>
@@ -195,10 +191,10 @@ export function ApplicationDetailPage() {
           <div className="mb-6 rounded-lg border bg-muted/50 p-4 text-sm text-muted-foreground">
             <p>
               This is where you create or record interviews for this
-              candidate&apos;s application. You can either generate an
-              interview link to send to the candidate so they can complete the
-              interview process on their own, or you can record it manually by
-              adding their responses yourself. Once the interview is done, use
+              candidate&apos;s application. You can either generate an interview
+              link to send to the candidate so they can complete the interview
+              process on their own, or you can record it manually by adding
+              their responses yourself. Once the interview is done, use
               screeners to screen the candidate and evaluate whether they are
               the right fit for this position.
             </p>
@@ -210,10 +206,8 @@ export function ApplicationDetailPage() {
             applicationId={application.id}
             currentUser={currentUser}
             users={users}
-            application={application as any}
-            positionSlug={
-              (application as any).position?.slug as string | undefined
-            }
+            application={application}
+            positionSlug={application.position?.slug}
           />
         </TabsContent>
       </Tabs>

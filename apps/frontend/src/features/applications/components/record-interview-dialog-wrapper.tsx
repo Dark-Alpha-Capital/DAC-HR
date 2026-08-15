@@ -2,15 +2,11 @@ import { useState, cloneElement, isValidElement } from "react";
 import { Button } from "#/components/ui/button";
 import { Plus } from "lucide-react";
 import RecordInterviewDialog from "./record-interview-dialog";
+import type { ApplicationDetail } from "#/features/applications/server/queries/applications";
 
 interface RecordInterviewDialogWrapperProps {
   applicationId: string;
-  application: {
-    rounds: Array<{
-      id: string;
-      name: string;
-    }>;
-  };
+  application: Pick<ApplicationDetail, "rounds">;
   users: Array<{
     id: string;
     name: string | null;

@@ -10,6 +10,22 @@ import { getPositions } from "@workspace/db/modules/positions";
 import { getApplicationWithInterviews } from "@workspace/db/repositories/interview-repository";
 import { getSessionsByApplicationId } from "@workspace/db/repositories/interview-session-repository";
 import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
+import type { CandidateAiScreeningData } from "#/features/applications/schemas";
+
+/**
+ * Full shape returned by getApplicationWithInterviews — the single canonical
+ * application detail type. Components that need a narrower view pick from it.
+ */
+export type ApplicationDetail = NonNullable<
+  Awaited<ReturnType<typeof getApplicationWithInterviews>>
+>;
+
+export type ApplicationProgress = Pick<
+  ApplicationDetail,
+  "id" | "candidateId" | "positionId" | "rounds"
+>;
+
+export type ApplicationRounds = ApplicationDetail["rounds"];
 
 type ApplicationsIndexInput = {
   name?: string;
@@ -59,9 +75,10 @@ export type ApplicationDetailData = {
   candidate: Awaited<ReturnType<typeof getCandidateById>>;
   sessions: Awaited<ReturnType<typeof getSessionsByApplicationId>>;
   aiScreenings: Array<
-    Awaited<ReturnType<typeof getCandidateAiScreenings>>[number] & {
-      structuredData: any;
-    }
+    Omit<
+      Awaited<ReturnType<typeof getCandidateAiScreenings>>[number],
+      "structuredData"
+    > & { structuredData: CandidateAiScreeningData | null }
   >;
   documents: Awaited<ReturnType<typeof getDocumentsByCandidateId>>;
   users: Awaited<ReturnType<typeof getUsers>>;
@@ -98,7 +115,11 @@ export const loadApplicationDetail = createServerFn({ method: "GET" })
       application,
       candidate,
       sessions,
-      aiScreenings,
+      aiScreenings: aiScreenings.map((screening) => ({
+        ...screening,
+        structuredData:
+          screening.structuredData as CandidateAiScreeningData | null,
+      })),
       documents,
       users,
     };
@@ -106,7 +127,11 @@ export const loadApplicationDetail = createServerFn({ method: "GET" })
 
 import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import { queryKeys } from "#/lib/query/query-keys";
-import { toOptionalString, toPageNumber, toStringArray } from "#/lib/parse-search";
+import {
+  toOptionalString,
+  toPageNumber,
+  toStringArray,
+} from "#/lib/parse-search";
 
 export function parseApplicationsSearch(search: Record<string, unknown>) {
   return {

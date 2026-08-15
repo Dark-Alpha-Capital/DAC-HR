@@ -9,31 +9,14 @@ import {
 import { updateApplication } from "#/features/applications/server/mutations/applications";
 import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
 import { toast } from "sonner";
-
-type Personality =
-  | "ENFJ"
-  | "ENFP"
-  | "ENTJ"
-  | "ENTP"
-  | "ESFJ"
-  | "ESFP"
-  | "ESTJ"
-  | "ESTP"
-  | "INFJ"
-  | "INTJ"
-  | "INTP"
-  | "ISFJ"
-  | "ISFP"
-  | "ISTJ"
-  | "ISTP"
-  | null;
+import type { Personality } from "@workspace/db/enums";
 
 interface ApplicationPersonalitySelectorProps {
   applicationId: string;
-  currentPersonality: Personality;
+  currentPersonality: Personality | null;
 }
 
-const personalityOptions: Exclude<Personality, null>[] = [
+const personalityOptions: Personality[] = [
   "ENFJ",
   "ENFP",
   "ENTJ",

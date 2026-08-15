@@ -55,6 +55,7 @@ import { deleteInterview } from "#/features/interviews/server/mutations/intervie
 import { removeInterviewBundle } from "#/features/interviews/server/mutations/interviews";
 import { toast } from "sonner";
 import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
+import type { ApplicationProgress } from "#/features/applications/server/queries/applications";
 
 type TimeFilter = "all" | "7d" | "30d";
 type SortDir = "newest" | "oldest";
@@ -86,6 +87,23 @@ const timeCutoff = (time: TimeFilter): Date | null => {
 
 const compareByDate = (sort: SortDir, a: Date, b: Date) =>
   sort === "newest" ? b.getTime() - a.getTime() : a.getTime() - b.getTime();
+
+/**
+ * Apply a time+sort filter to a list of items. Shared by the AI-session and
+ * manual-interview lists, which were previously two near-identical memos.
+ */
+const filterAndSortByDate = <T,>(
+  items: T[],
+  filter: InterviewFilter,
+  getCreatedAt: (item: T) => Date,
+): T[] => {
+  const cutoff = timeCutoff(filter.time);
+  return items
+    .filter((item) => !cutoff || getCreatedAt(item) >= cutoff)
+    .sort((a, b) =>
+      compareByDate(filter.sort, getCreatedAt(a), getCreatedAt(b)),
+    );
+};
 
 function InterviewFilterControls({
   value,
@@ -203,12 +221,7 @@ interface ApplicationProgressTimelineProps {
     name: string | null;
     email: string;
   }>;
-  application?: {
-    id: string;
-    candidateId: string;
-    positionId: string;
-    rounds: Round[];
-  };
+  application?: ApplicationProgress;
   positionSlug?: string;
 }
 
@@ -440,31 +453,17 @@ export default function ApplicationProgressTimeline({
     [interviews],
   );
 
-  const filteredBundles = useMemo(() => {
-    const cutoff = timeCutoff(aiFilter.time);
-    return bundles
-      .filter((item) => !cutoff || new Date(item.bundle.createdAt) >= cutoff)
-      .sort((a, b) =>
-        compareByDate(
-          aiFilter.sort,
-          new Date(a.bundle.createdAt),
-          new Date(b.bundle.createdAt),
-        ),
-      );
-  }, [bundles, aiFilter]);
+  const filteredBundles = useMemo(
+    () =>
+      filterAndSortByDate(bundles, aiFilter, (item) => item.bundle.createdAt),
+    [bundles, aiFilter],
+  );
 
-  const filteredManualInterviews = useMemo(() => {
-    const cutoff = timeCutoff(manualFilter.time);
-    return manualInterviews
-      .filter((i) => !cutoff || new Date(i.createdAt) >= cutoff)
-      .sort((a, b) =>
-        compareByDate(
-          manualFilter.sort,
-          new Date(a.createdAt),
-          new Date(b.createdAt),
-        ),
-      );
-  }, [manualInterviews, manualFilter]);
+  const filteredManualInterviews = useMemo(
+    () =>
+      filterAndSortByDate(manualInterviews, manualFilter, (i) => i.createdAt),
+    [manualInterviews, manualFilter],
+  );
 
   const latestManualAt = useMemo(() => {
     if (filteredManualInterviews.length === 0) return null;

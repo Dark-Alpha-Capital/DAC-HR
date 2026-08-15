@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+/** Structured AI-screening analysis shape (see candidateAiScreeningSchema). */
+export type CandidateAiScreeningData = z.infer<
+  typeof candidateAiScreeningSchema
+>;
+
 /**
  * Comprehensive candidate AI screening schema for structured evaluation
  * Used by AI models to generate detailed candidate assessments
