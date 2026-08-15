@@ -2,7 +2,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   invalidateApplicationDetail,
   invalidateApplicationLists,
-  invalidateAuditLogs,
   invalidateAdminUsers,
   invalidateCandidateDetail,
   invalidateCandidateLists,
@@ -27,13 +26,11 @@ export function useQueryInvalidation() {
       invalidateApplicationDetail(queryClient, id),
     documentLists: () => invalidateDocumentLists(queryClient),
     employeeLists: () => invalidateEmployeeLists(queryClient),
-    employeeDetail: (id: string) =>
-      invalidateEmployeeDetail(queryClient, id),
+    employeeDetail: (id: string) => invalidateEmployeeDetail(queryClient, id),
     positionLists: () => invalidatePositionLists(queryClient),
     roundLists: () => invalidateRoundLists(queryClient),
     questionLists: () => invalidateQuestionLists(queryClient),
     adminUsers: () => invalidateAdminUsers(queryClient),
-    auditLogs: () => invalidateAuditLogs(queryClient),
     weeklyCheckinRecords: () => invalidateWeeklyCheckinRecords(queryClient),
   };
 }

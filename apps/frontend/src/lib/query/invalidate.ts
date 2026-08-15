@@ -72,20 +72,8 @@ export async function invalidateAdminUsers(queryClient: QueryClient) {
   await queryClient.invalidateQueries({ queryKey: queryKeys.admin.all });
 }
 
-export async function invalidateAuditLogs(queryClient: QueryClient) {
-  await queryClient.invalidateQueries({
-    queryKey: [...queryKeys.admin.all, "audit-logs"],
-  });
-}
-
 export async function invalidateWeeklyCheckinRecords(queryClient: QueryClient) {
   await queryClient.invalidateQueries({
     queryKey: queryKeys.weeklyCheckin.all,
   });
-}
-
-export async function invalidateMeetingAttendance(queryClient: QueryClient) {
-  await Promise.all([
-    queryClient.invalidateQueries({ queryKey: queryKeys.attendance.all }),
-  ]);
 }
