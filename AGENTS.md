@@ -52,14 +52,16 @@ Shadcn/ui components live in `apps/frontend/src/components/ui/` (no separate `pa
 - Driver: `drizzle-orm/d1` via `cloudflare:workers` environment binding.
 - D1 database: `hr-automation-db` (binding `DB` in `apps/frontend/wrangler.jsonc`).
 - Schema: `packages/db/schema.ts` (SQLite dialect, ~36 tables).
-- Migrations: `packages/db/drizzle/` (17 SQL files, `0000`–`0016`) — applied via `wrangler d1 migrations apply` / scripts below. `drizzle/meta/_journal.json` + snapshots are kept in sync (last snapshot `0016_snapshot.json` reflects the current schema); `db:generate` should print "No schema changes, nothing to migrate" when the schema hasn't changed. If it ever proposes re-creating existing tables, the journal/snapshot drifted — re-sync it (see git history) rather than applying that migration.
+- Migrations: `packages/db/drizzle/` (SQL files `0000`–`0020`) — applied via `wrangler d1 migrations apply` / scripts below. `drizzle/meta/_journal.json` + snapshots are kept in sync (last snapshot `0020_snapshot.json` reflects the current schema); `db:generate` should print "No schema changes, nothing to migrate" when the schema hasn't changed, and `db:check` fails the build if it would produce a new migration. If `db:generate` ever proposes re-creating existing tables, the journal/snapshot drifted — re-sync it (see git history) rather than applying that migration.
 - Repositories: `packages/db/repositories/` (9 files: audit, candidate, candidate-import, document, interview, interview-bundle, interview-session, meet-attendance, screener).
 
 ```bash
 cd packages/db
 bun run db:generate      # generate migrations from schema changes
-bun run db:migrate       # apply migrations to local D1
+bun run db:check         # fail if schema.ts has pending changes (drift guard — run before pushing)
+bun run db:migrate       # apply migrations to local D1 (alias: db:migrate:local)
 bun run db:migrate:remote # apply migrations to remote D1
+bun run db:reset:local   # wipe local .wrangler/state + re-apply all migrations from scratch
 bun run db:seed          # seed local D1
 bun run db:seed:remote   # seed remote D1
 bun run db:studio        # drizzle studio — needs CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN in apps/frontend/.env
@@ -67,6 +69,10 @@ bun run db:seed-positions        # + :remote variant
 bun run db:reset-rounds          # + :remote variant
 bun run db:finalize-interview-schema  # + :remote variant
 ```
+
+**Sync model (schema → local → remote):** `packages/db/schema.ts` is the single source of truth. Schema changes go through `db:generate` (creates a numbered SQL file + journal/snapshot), then `db:migrate` (local) and `db:migrate:remote` (remote). `deploy` runs `db:migrate:remote` before building, so remote applies every migration in order before serving the new code. Run `db:migrate` + `db:check` locally after pulling schema changes so the local D1 matches the migration journal.
+
+**Local state corruption (`_cf_ALARM ... SQLITE_ERROR`):** when workerd/wrangler is upgraded, the on-disk `.wrangler/state` sqlite (D1, Durable Object alarms, workflows) can become unreadable — every local wrangler command dies with a SQLite error before running. The state is dev-ephemeral and gitignored; fix with `bun run db:reset:local` (clears `.wrangler/state` and re-applies all migrations). Note `db:seed`/`db:seed-positions` currently fail under plain `bun` because `@workspace/db/db` imports `cloudflare:workers`; run seeds through a Workers-context (wrangler dev) if needed.
 
 The package exports many submodules beyond `.`/`./db`: `./queries`, `./repositories/*`, `./schema`, `./question-types`, `./enums`, `./application-status`, `./candidate-list-filters`, `./document-list-filters`, `./default-rounds`, `./create-default-rounds`, `./kanban-cursor`, `./kanban-queries`, `./sqlite-helpers`. Add new exports to both the `exports` map in `package.json` and `index.ts` (or the relevant module).
 
