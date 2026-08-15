@@ -15,16 +15,25 @@ import {
   advanceBundleRound,
   resolveSessionFromToken,
 } from "@workspace/db/repositories/interview-bundle-repository";
-import { interviewServerLog, truncateId } from "@workspace/interview-realtime/debug-log";
+import {
+  interviewServerLog,
+  truncateId,
+} from "@workspace/interview-realtime/debug-log";
 import {
   parseClientMessage,
   serializeDoMessage,
 } from "@workspace/interview-realtime/events";
-import { evaluateCandidateAnswer, evaluateIntroUtterance, looksLikeNoise, PRACTICE_QUESTIONS } from "@workspace/interview-realtime";
+import {
+  evaluateCandidateAnswer,
+  evaluateIntroUtterance,
+  looksLikeNoise,
+  PRACTICE_QUESTIONS,
+} from "@workspace/interview-realtime";
 import {
   matchMcqOption,
   detectQuestionIndexFromTranscript,
   buildCheatingSummary,
+  nextPhaseAfterWelcomeDone,
 } from "@workspace/interview-realtime/session-logic";
 import {
   buildAskCurrentQuestionEvent,
@@ -66,7 +75,7 @@ interface InterviewSessionEnv {
 }
 
 declare const WebSocketPair: {
-  new(): { 0: WebSocket; 1: WebSocket };
+  new (): { 0: WebSocket; 1: WebSocket };
 };
 
 const CHEATING_RATE_LIMIT_MS = 1000;
@@ -106,9 +115,12 @@ export class InterviewSessionDO implements DurableObject {
     firstAudioAt?: number;
   } | null = null;
   private pendingWelcomeIntro = false;
-  private welcomeIntroCompleted = false;
   private welcomeIntroFallbackTimer: ReturnType<typeof setTimeout> | null =
     null;
+  /** Persisted in InterviewState — survives hibernation (see interviewState). */
+  private get welcomeIntroCompleted(): boolean {
+    return this.interviewState?.welcomeIntroSent === true;
+  }
   private lastCheatingEventAt = new Map<string, number>();
   private focusLostStartedAt: number | null = null;
   private pendingAdvanceAfterAck = false;
@@ -124,8 +136,6 @@ export class InterviewSessionDO implements DurableObject {
     this.durableState = state;
     this.env = env;
   }
-
-
 
   private logTranscript(
     action: string,
@@ -174,7 +184,9 @@ export class InterviewSessionDO implements DurableObject {
 
     // A new connection cancels a pending interrupt-grace alarm: the candidate
     // reattached (transient drop / reload), so the session lives on.
-    await this.durableState.storage.delete("alarmPurpose").catch(() => undefined);
+    await this.durableState.storage
+      .delete("alarmPurpose")
+      .catch(() => undefined);
     await this.durableState.storage.setAlarm(Date.now() + SESSION_TIMEOUT_MS);
 
     // Abuse guard: reject rapid reconnect storms.
@@ -211,7 +223,8 @@ export class InterviewSessionDO implements DurableObject {
     }
 
     this.logTranscript("client_websocket_connected", {
-      conversationHistoryLength: this.interviewState!.conversationHistory.length,
+      conversationHistoryLength:
+        this.interviewState!.conversationHistory.length,
       currentQuestionIndex: this.interviewState!.currentQuestionIndex,
       connectionGeneration: this.interviewState!.connectionGeneration,
     });
@@ -386,14 +399,13 @@ export class InterviewSessionDO implements DurableObject {
     if (this.interviewState) {
       return;
     }
-    const stored = await this.durableState.storage.get<InterviewState>(
-      "interviewState",
-    );
+    const stored =
+      await this.durableState.storage.get<InterviewState>("interviewState");
     if (stored) {
       this.interviewState = {
         ...stored,
         voicePhase: stored.voicePhase ?? "questions",
-        candidateReady: stored.candidateReady ?? false,
+        welcomeIntroSent: stored.welcomeIntroSent ?? false,
         awaitingAnswerForIndex: stored.awaitingAnswerForIndex ?? null,
         questionAnswers: stored.questionAnswers ?? {},
         questionPartialAnswers: stored.questionPartialAnswers ?? {},
@@ -403,14 +415,13 @@ export class InterviewSessionDO implements DurableObject {
   }
 
   private async ensureState(sessionId: string, token: string) {
-    const stored = await this.durableState.storage.get<InterviewState>(
-      "interviewState",
-    );
+    const stored =
+      await this.durableState.storage.get<InterviewState>("interviewState");
     if (stored && stored.sessionId === sessionId) {
       this.interviewState = {
         ...stored,
         voicePhase: stored.voicePhase ?? "questions",
-        candidateReady: stored.candidateReady ?? false,
+        welcomeIntroSent: stored.welcomeIntroSent ?? false,
         awaitingAnswerForIndex: stored.awaitingAnswerForIndex ?? null,
         questionAnswers: stored.questionAnswers ?? {},
         questionPartialAnswers: stored.questionPartialAnswers ?? {},
@@ -467,7 +478,7 @@ export class InterviewSessionDO implements DurableObject {
       isFullscreen: false,
       status: "active",
       voicePhase: "intro",
-      candidateReady: false,
+      welcomeIntroSent: false,
       awaitingAnswerForIndex: null,
       questionAnswers: {},
       questionPartialAnswers: {},
@@ -495,14 +506,13 @@ export class InterviewSessionDO implements DurableObject {
     this.interviewState.isPracticeMode = true;
     this.interviewState.questions = PRACTICE_QUESTIONS;
     this.interviewState.voicePhase = "intro";
-    this.interviewState.candidateReady = false;
+    this.interviewState.welcomeIntroSent = false;
     this.interviewState.awaitingAnswerForIndex = null;
     this.interviewState.currentQuestionIndex = 0;
     this.interviewState.conversationHistory = [];
     this.interviewState.questionAnswers = {};
     this.interviewState.questionPartialAnswers = {};
     this.interviewState.questionFollowUpCounts = {};
-    this.welcomeIntroCompleted = false;
     this.pendingWelcomeIntro = false;
     this.clearQuestionTimer();
     this.durableState.storage.deleteAlarm().catch(() => undefined);
@@ -514,7 +524,7 @@ export class InterviewSessionDO implements DurableObject {
     }
 
     this.interviewState.voicePhase = "intro";
-    this.interviewState.candidateReady = false;
+    this.interviewState.welcomeIntroSent = false;
     this.interviewState.awaitingAnswerForIndex = null;
     this.interviewState.currentQuestionIndex = 0;
     this.interviewState.conversationHistory = [];
@@ -527,7 +537,6 @@ export class InterviewSessionDO implements DurableObject {
     this.pendingAdvanceAfterAck = false;
     this.pendingAdvanceReason = null;
     this.evaluatingAnswer = false;
-    this.welcomeIntroCompleted = false;
     this.pendingWelcomeIntro = false;
     this.sessionTimeLimitSent = false;
     this.clearQuestionTimer();
@@ -550,11 +559,12 @@ export class InterviewSessionDO implements DurableObject {
 
     const purpose =
       ((await this.durableState.storage.get("alarmPurpose")) as
-        | string
-        | undefined) ?? ALARM_SESSION_LIMIT;
+        string | undefined) ?? ALARM_SESSION_LIMIT;
 
     if (purpose === ALARM_INTERRUPT_GRACE) {
-      await this.durableState.storage.delete("alarmPurpose").catch(() => undefined);
+      await this.durableState.storage
+        .delete("alarmPurpose")
+        .catch(() => undefined);
       this.logTranscript("interrupt_grace_elapsed", {});
       await this.markInterrupted();
       return;
@@ -799,12 +809,12 @@ export class InterviewSessionDO implements DurableObject {
       responseInstructions:
         payload.response && typeof payload.response === "object"
           ? previewText(
-            String(
-              (payload.response as Record<string, unknown>).instructions ??
-              "",
-            ),
-            200,
-          )
+              String(
+                (payload.response as Record<string, unknown>).instructions ??
+                  "",
+              ),
+              200,
+            )
           : undefined,
       ...extra,
     });
@@ -944,7 +954,11 @@ export class InterviewSessionDO implements DurableObject {
   }
 
   private sendPhaseSessionUpdate(phase: VoiceInterviewPhase) {
-    if (!this.sideband || !this.interviewState || !this.cachedBaseInstructions) {
+    if (
+      !this.sideband ||
+      !this.interviewState ||
+      !this.cachedBaseInstructions
+    ) {
       return;
     }
 
@@ -999,27 +1013,18 @@ export class InterviewSessionDO implements DurableObject {
       outputModalities: sessionUpdate.session.output_modalities,
       voice:
         sessionUpdate.session.audio &&
-          typeof sessionUpdate.session.audio === "object" &&
-          "output" in sessionUpdate.session.audio
-          ? (
-            sessionUpdate.session.audio as Record<
-              string,
-              unknown
-            >
-          ).output
+        typeof sessionUpdate.session.audio === "object" &&
+        "output" in sessionUpdate.session.audio
+          ? (sessionUpdate.session.audio as Record<string, unknown>).output
           : undefined,
       turnDetection:
         sessionUpdate.session.audio &&
-          typeof sessionUpdate.session.audio === "object" &&
-          "input" in sessionUpdate.session.audio
+        typeof sessionUpdate.session.audio === "object" &&
+        "input" in sessionUpdate.session.audio
           ? (
-            (
-              sessionUpdate.session.audio as Record<
-                string,
-                unknown
-              >
-            ).input as Record<string, unknown>
-          )?.turn_detection
+              (sessionUpdate.session.audio as Record<string, unknown>)
+                .input as Record<string, unknown>
+            )?.turn_detection
           : undefined,
       instructionsLength: instructions.length,
     });
@@ -1184,11 +1189,7 @@ export class InterviewSessionDO implements DurableObject {
   }
 
   private async resendWelcomeIntro() {
-    if (
-      !this.interviewState ||
-      !this.sideband ||
-      this.welcomeIntroCompleted
-    ) {
+    if (!this.interviewState || !this.sideband || this.welcomeIntroCompleted) {
       return;
     }
 
@@ -1217,11 +1218,11 @@ export class InterviewSessionDO implements DurableObject {
 
     this.logTranscript("welcome_intro_interrupted", {
       responseStatus,
-      candidateReady: this.interviewState.candidateReady,
+      phase: this.interviewState.voicePhase ?? "intro",
     });
 
-    if (this.interviewState.candidateReady) {
-      this.welcomeIntroCompleted = true;
+    if (this.interviewState.voicePhase === "intro_ready") {
+      this.interviewState.welcomeIntroSent = true;
       this.interviewState.voicePhase = "questions";
       this.sendPhaseSessionUpdate("questions");
       await this.persistState();
@@ -1229,7 +1230,7 @@ export class InterviewSessionDO implements DurableObject {
       return;
     }
 
-    this.welcomeIntroCompleted = true;
+    this.interviewState.welcomeIntroSent = true;
     this.interviewState.voicePhase = "awaiting_ready";
     this.sendPhaseSessionUpdate("awaiting_ready");
     await this.persistState();
@@ -1295,7 +1296,9 @@ export class InterviewSessionDO implements DurableObject {
             ? (event.item as Record<string, unknown>).type
             : undefined,
         deltaPreview:
-          typeof event.delta === "string" ? previewText(event.delta, 80) : undefined,
+          typeof event.delta === "string"
+            ? previewText(event.delta, 80)
+            : undefined,
         transcriptPreview:
           typeof event.transcript === "string"
             ? previewText(event.transcript, 120)
@@ -1402,9 +1405,7 @@ export class InterviewSessionDO implements DurableObject {
               : undefined,
         });
         if (event.item && typeof event.item === "object") {
-          this.maybeAutoReplyWaitForUser(
-            event.item as Record<string, unknown>,
-          );
+          this.maybeAutoReplyWaitForUser(event.item as Record<string, unknown>);
         }
         return;
       }
@@ -1442,8 +1443,7 @@ export class InterviewSessionDO implements DurableObject {
           responseId: event.response_id,
           outputIndex: event.output_index,
           contentIndex: event.content_index,
-          deltaLength:
-            typeof event.delta === "string" ? event.delta.length : 0,
+          deltaLength: typeof event.delta === "string" ? event.delta.length : 0,
         });
         return;
       }
@@ -1553,15 +1553,13 @@ export class InterviewSessionDO implements DurableObject {
 
     const phase = this.interviewState.voicePhase ?? "questions";
 
-    if (phase === "intro") {
-      this.welcomeIntroCompleted = true;
-      const nextPhase = this.interviewState.candidateReady
-        ? "questions"
-        : "awaiting_ready";
+    if (phase === "intro" || phase === "intro_ready") {
+      this.interviewState.welcomeIntroSent = true;
+      const nextPhase = nextPhaseAfterWelcomeDone(phase);
       this.interviewState.voicePhase = nextPhase;
       this.sendPhaseSessionUpdate(nextPhase);
       await this.persistState();
-      if (this.interviewState.candidateReady) {
+      if (nextPhase === "questions") {
         await this.askCurrentQuestion();
       }
       return;
@@ -1619,7 +1617,9 @@ export class InterviewSessionDO implements DurableObject {
           selectedOptionId: this.matchMcqOption(question, transcript),
         };
       })
-      .filter((answer): answer is NonNullable<typeof answer> => answer !== null);
+      .filter(
+        (answer): answer is NonNullable<typeof answer> => answer !== null,
+      );
   }
 
   private async flushResponsesToDatabase() {
@@ -1896,15 +1896,19 @@ export class InterviewSessionDO implements DurableObject {
       this.appendConversation("user", trimmed);
 
       if (evaluation.ready) {
-        this.interviewState.candidateReady = true;
-        await this.persistState();
-
-        if (phase === "awaiting_ready" || this.welcomeIntroCompleted) {
+        if (phase === "awaiting_ready") {
           this.interviewState.voicePhase = "questions";
           this.sendPhaseSessionUpdate("questions");
           await this.persistState();
           await this.askCurrentQuestion();
+          return;
         }
+
+        // phase === "intro": the candidate confirmed ready while the welcome
+        // was still in progress. Latch intro_ready until the welcome response
+        // completes (response.done) so the ready state survives hibernation.
+        this.interviewState.voicePhase = "intro_ready";
+        await this.persistState();
         return;
       }
 
@@ -1944,7 +1948,10 @@ export class InterviewSessionDO implements DurableObject {
     if (!this.interviewState) {
       return null;
     }
-    return this.interviewState.questions[this.interviewState.currentQuestionIndex] ?? null;
+    return (
+      this.interviewState.questions[this.interviewState.currentQuestionIndex] ??
+      null
+    );
   }
 
   private detectQuestionIndexFromTranscript(transcript: string): number | null {
@@ -1999,15 +2006,21 @@ export class InterviewSessionDO implements DurableObject {
     }
 
     const phase = this.interviewState.voicePhase ?? "questions";
-    if (phase !== "questions" && phase !== "closing" && phase !== "awaiting_end") {
+    if (
+      phase !== "questions" &&
+      phase !== "closing" &&
+      phase !== "awaiting_end"
+    ) {
       return;
     }
 
     const detectedIndex = this.detectQuestionIndexFromTranscript(transcript);
-    const index =
-      detectedIndex ?? this.interviewState.currentQuestionIndex;
+    const index = detectedIndex ?? this.interviewState.currentQuestionIndex;
 
-    if (detectedIndex !== null && detectedIndex !== this.interviewState.currentQuestionIndex) {
+    if (
+      detectedIndex !== null &&
+      detectedIndex !== this.interviewState.currentQuestionIndex
+    ) {
       this.interviewState.currentQuestionIndex = detectedIndex;
       await this.persistState();
     }
@@ -2152,9 +2165,7 @@ export class InterviewSessionDO implements DurableObject {
 
       this.clearQuestionTimer();
       this.durableState.storage.deleteAlarm().catch(() => undefined);
-      this.durableState.storage
-        .delete("alarmPurpose")
-        .catch(() => undefined);
+      this.durableState.storage.delete("alarmPurpose").catch(() => undefined);
       await this.persistState();
       this.closeSideband({ intentional: true });
       this.closeClientSocket();

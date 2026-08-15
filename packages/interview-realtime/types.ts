@@ -11,7 +11,12 @@ export interface InterviewQuestion {
 }
 
 export type VoiceInterviewPhase =
-  "intro" | "awaiting_ready" | "questions" | "closing" | "awaiting_end";
+  | "intro"
+  | "awaiting_ready"
+  | "intro_ready"
+  | "questions"
+  | "closing"
+  | "awaiting_end";
 
 export type InterviewSessionDoStatus = "active" | "paused" | "completed";
 
@@ -38,7 +43,8 @@ export interface InterviewState {
   positionName?: string;
   candidateName?: string;
   voicePhase?: VoiceInterviewPhase;
-  candidateReady?: boolean;
+  /** True once the welcome intro response completed or was interrupted. */
+  welcomeIntroSent?: boolean;
   awaitingAnswerForIndex?: number | null;
   /** questionId → answer transcript (excludes intro / chit-chat) */
   questionAnswers?: Record<string, string>;

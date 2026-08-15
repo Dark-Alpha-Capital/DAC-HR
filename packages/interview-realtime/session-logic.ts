@@ -3,7 +3,18 @@
  * no db, no WebSocket. Deterministic and directly unit-testable.
  */
 import type { CheatingSummary } from "@workspace/db/enums";
-import type { InterviewQuestion } from "./types";
+import type { InterviewQuestion, VoiceInterviewPhase } from "./types";
+
+/**
+ * Next voice phase when the welcome response completes. A candidate who already
+ * confirmed readiness (intro_ready) goes straight to questions; otherwise we
+ * ask for a readiness confirmation.
+ */
+export function nextPhaseAfterWelcomeDone(
+  phase: VoiceInterviewPhase,
+): "questions" | "awaiting_ready" {
+  return phase === "intro_ready" ? "questions" : "awaiting_ready";
+}
 
 /**
  * Match a spoken answer against MCQ options. Returns the matched option id or
@@ -69,7 +80,10 @@ export function detectQuestionIndexFromTranscript(
     if (question.questionType === "mcq" && question.options?.length) {
       for (const option of question.options) {
         const optionText = option.text.toLowerCase().trim();
-        if (optionText.length > 8 && normalized.includes(optionText.slice(0, 40))) {
+        if (
+          optionText.length > 8 &&
+          normalized.includes(optionText.slice(0, 40))
+        ) {
           score += 20;
         }
       }

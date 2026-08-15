@@ -82,7 +82,9 @@ export function isVoiceRound(
 
 /** True during the welcome/intro phases (before questions begin). */
 export function isIntroPhase(phase: VoiceInterviewPhase): boolean {
-  return phase === "intro" || phase === "awaiting_ready";
+  return (
+    phase === "intro" || phase === "awaiting_ready" || phase === "intro_ready"
+  );
 }
 
 /** True once questions are being asked or winding down. */

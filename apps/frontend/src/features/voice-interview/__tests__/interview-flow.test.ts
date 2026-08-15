@@ -27,6 +27,7 @@ describe("voice interview phase predicates", () => {
     for (const phase of [
       "intro",
       "awaiting_ready",
+      "intro_ready",
       "questions",
       "closing",
       "awaiting_end",

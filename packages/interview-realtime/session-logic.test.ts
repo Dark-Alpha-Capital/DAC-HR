@@ -3,6 +3,7 @@ import {
   matchMcqOption,
   detectQuestionIndexFromTranscript,
   buildCheatingSummary,
+  nextPhaseAfterWelcomeDone,
 } from "./session-logic";
 import type { InterviewQuestion } from "./types";
 
@@ -63,4 +64,10 @@ test("buildCheatingSummary maps counters to the summary shape", () => {
     copyAttempts: 1,
     pasteAttempts: 0,
   });
+});
+
+test("nextPhaseAfterWelcomeDone starts questions only when the candidate confirmed ready", () => {
+  expect(nextPhaseAfterWelcomeDone("intro_ready")).toBe("questions");
+  expect(nextPhaseAfterWelcomeDone("intro")).toBe("awaiting_ready");
+  expect(nextPhaseAfterWelcomeDone("awaiting_ready")).toBe("awaiting_ready");
 });
