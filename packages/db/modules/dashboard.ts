@@ -19,7 +19,7 @@ import {
   interviewEvaluation,
   roundTemplate,
 } from "../schema";
-import type { ApplicationStatus } from "../application-status";
+import { applicationActivePipelineStatuses } from "../application-status";
 import {
   eq,
   and,
@@ -62,14 +62,7 @@ export const getDashboardStats = async () => {
       .where(sql`${candidate.createdAt} >= ${thirtyDaysAgo}`);
     const totalCandidatesThisMonth = totalCandidatesThisMonthResult?.count || 0;
 
-    const activePipelineStatuses = [
-      "ai_screening",
-      "first_round",
-      "offer_agreement",
-      "technical_round",
-      "contract_offer",
-      "onboarding",
-    ] as const satisfies readonly ApplicationStatus[];
+    const activePipelineStatuses = applicationActivePipelineStatuses;
 
     // Active candidates count (applications still in the hiring pipeline)
     const [activeCandidatesResult] = await db

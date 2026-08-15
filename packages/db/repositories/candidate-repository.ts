@@ -16,6 +16,7 @@ import {
   type CandidateSortOption,
 } from "../candidate-list-filters";
 import type { ApplicationStatus } from "../application-status";
+import { normalizeApplicationStatus } from "../application-status";
 import { getInterviewsByApplicationId } from "./interview-repository";
 import {
   sortCandidateListItems,
@@ -344,7 +345,7 @@ export const getCandidatesWithPositionsFiltered = async (
     createdAt: Date;
     updatedAt: Date;
     position: { id: string; name: string } | null;
-    applicationStatus: string | null;
+    applicationStatus: ApplicationStatus;
   }>;
   total: number;
 }> => {
@@ -489,17 +490,21 @@ export const getCandidatesWithPositionsFiltered = async (
       .orderBy(desc(application.updatedAt));
 
     // Group applications by candidateId and get the most recent one
-    const applicationStatusMap = new Map<string, string>();
+    const applicationStatusMap = new Map<string, ApplicationStatus>();
     for (const app of applications) {
       if (!applicationStatusMap.has(app.candidateId)) {
-        applicationStatusMap.set(app.candidateId, app.status);
+        applicationStatusMap.set(
+          app.candidateId,
+          normalizeApplicationStatus(app.status) ?? "ai_screening",
+        );
       }
     }
 
     // Add application status to candidates
     const candidatesWithStatus = paginatedCandidates.map((candidate) => ({
       ...candidate,
-      applicationStatus: applicationStatusMap.get(candidate.id) || null,
+      applicationStatus:
+        applicationStatusMap.get(candidate.id) ?? "ai_screening",
     }));
 
     return { candidates: candidatesWithStatus, total };

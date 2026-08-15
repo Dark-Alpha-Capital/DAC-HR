@@ -13,6 +13,10 @@ import {
 } from "../schema";
 import { eq, and, or, inArray, asc, desc, isNull, count } from "drizzle-orm";
 import { ilike } from "../sqlite-helpers";
+import {
+  hireLevels as hireLevelValues,
+  positionStatuses as positionStatusValues,
+} from "../enums";
 export const getPositions = async (
   hireLevels?: string[],
   statuses?: string[],
@@ -48,21 +52,8 @@ export const getPositions = async (
     if (hireLevels && hireLevels.length > 0) {
       // Validate hire levels against enum values
       const validHireLevels = hireLevels.filter(
-        (
-          level,
-        ): level is
-          | "managing-director"
-          | "vice-president"
-          | "associate"
-          | "analyst"
-          | "intern" =>
-          [
-            "managing-director",
-            "vice-president",
-            "associate",
-            "analyst",
-            "intern",
-          ].includes(level),
+        (level): level is (typeof hireLevelValues)[number] =>
+          (hireLevelValues as readonly string[]).includes(level),
       );
       if (validHireLevels.length > 0) {
         conditions.push(inArray(position.hireLevel, validHireLevels));
@@ -73,8 +64,8 @@ export const getPositions = async (
     if (statuses && statuses.length > 0) {
       // Validate statuses against enum values
       const validStatuses = statuses.filter(
-        (status): status is "active" | "hold" | "passed" | "upcoming" =>
-          ["active", "hold", "passed", "upcoming"].includes(status),
+        (status): status is (typeof positionStatusValues)[number] =>
+          (positionStatusValues as readonly string[]).includes(status),
       );
       if (validStatuses.length > 0) {
         conditions.push(inArray(position.status, validStatuses));
@@ -137,7 +128,6 @@ export const getPositionBySlug = async (slug: string) => {
  */
 
 export async function getCandidatesByPositionId(positionId: string) {
-
   try {
     const results = await db
       .select({
@@ -172,8 +162,6 @@ export async function getCandidatesByPositionId(positionId: string) {
  */
 
 export const getRounds = async () => {
-
-
   try {
     return await db.select().from(roundTemplate);
   } catch (error) {

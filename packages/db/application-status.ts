@@ -80,12 +80,33 @@ const legacyApplicationStatusLabels: Record<string, string> = {
   withdrawn: applicationStatusLabels.rejected,
 };
 
-const legacyApplicationStatusMap: Record<string, ApplicationStatus> = {
+export const legacyApplicationStatusMap: Record<string, ApplicationStatus> = {
   first_round_recruiter_call: "first_round",
   second_round_technical_screening: "technical_round",
   third_round_final_ceo: "offer_agreement",
   withdrawn: "rejected",
 };
+
+/**
+ * SQL CASE expression mapping raw/legacy `application.status` values to
+ * canonical `ApplicationStatus` values. Unknown/legacy-missing statuses land
+ * on `ai_screening` so every row falls in a kanban column and column sums
+ * reconcile with the global total.
+ */
+export function buildNormalizedStatusCase(): string {
+  const legacyArms = Object.entries(legacyApplicationStatusMap)
+    .map(
+      ([legacy, canonical]) =>
+        `  WHEN la.status = '${legacy}' THEN '${canonical}'`,
+    )
+    .join("\n");
+
+  return `CASE
+  WHEN la.status IS NULL THEN 'ai_screening'
+${legacyArms}
+  ELSE 'ai_screening'
+END`;
+}
 
 export function isApplicationStatus(value: string): value is ApplicationStatus {
   return (applicationStatuses as readonly string[]).includes(value);

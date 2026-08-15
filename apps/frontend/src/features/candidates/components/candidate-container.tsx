@@ -11,6 +11,7 @@ import { Checkbox } from "#/components/ui/checkbox";
 import { useNavigate } from "@tanstack/react-router";
 import BulkDeleteCandidatesButton from "#/features/candidates/components/bulk-delete-candidates-button";
 import type { Candidate } from "@workspace/db/schema";
+import type { ApplicationStatus } from "@workspace/db/application-status";
 import { ApplicationStatusBadge } from "#/components/shared/application-status-badge";
 import CopyButton from "#/features/candidates/components/copy-button";
 import { Badge } from "#/components/ui/badge";
@@ -19,7 +20,7 @@ import { formatDate, isNew } from "#/lib/utils";
 
 type CandidateWithPosition = Candidate & {
   position: { id: string; name: string } | null;
-  applicationStatus?: string | null;
+  applicationStatus?: ApplicationStatus;
 };
 
 interface CandidateContainerProps {

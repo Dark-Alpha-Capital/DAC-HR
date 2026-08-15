@@ -4,6 +4,7 @@ import CandidateKanbanBoard from "./candidate-kanban-board";
 import PaginationControls from "#/components/shared/pagination-controls";
 import type { CandidateViewMode } from "#/lib/parse-search";
 import type { KanbanFilters } from "#/features/candidates/kanban-types";
+import type { ApplicationStatus } from "@workspace/db/application-status";
 
 type Candidate = {
   id: string;
@@ -20,7 +21,7 @@ type Candidate = {
   createdAt: Date;
   updatedAt: Date;
   position: { id: string; name: string } | null;
-  applicationStatus: string | null;
+  applicationStatus: ApplicationStatus;
 };
 
 interface CandidatesViewWrapperProps {

@@ -14,7 +14,7 @@ export type KanbanCard = {
   createdAt: string;
   updatedAt: string;
   position: { id: string; name: string } | null;
-  applicationStatus: string | null;
+  applicationStatus: ApplicationStatus;
 };
 
 export type KanbanPage = {

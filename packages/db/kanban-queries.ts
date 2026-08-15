@@ -2,6 +2,7 @@ import { db } from "@workspace/db/db";
 import { sql } from "drizzle-orm";
 import type { ApplicationStatus } from "./application-status";
 import {
+  buildNormalizedStatusCase,
   getApplicationStatusesForKanbanColumn,
   kanbanColumnMatchesStatusFilter,
   normalizeApplicationStatus,
@@ -24,7 +25,7 @@ export type KanbanColumnCandidate = {
   createdAt: Date;
   updatedAt: Date;
   position: { id: string; name: string } | null;
-  applicationStatus: string | null;
+  applicationStatus: ApplicationStatus;
 };
 
 export type KanbanColumnFilters = {
@@ -45,14 +46,7 @@ export type KanbanColumnPage = {
 
 export const KANBAN_PAGE_SIZE_DEFAULT = 30;
 
-const normalizedStatusExpr = sql.raw(`CASE
-  WHEN la.status IS NULL THEN 'ai_screening'
-  WHEN la.status = 'first_round_recruiter_call' THEN 'first_round'
-  WHEN la.status = 'second_round_technical_screening' THEN 'technical_round'
-  WHEN la.status = 'third_round_final_ceo' THEN 'offer_agreement'
-  WHEN la.status = 'withdrawn' THEN 'rejected'
-  ELSE la.status
-END`);
+const normalizedStatusExpr = sql.raw(buildNormalizedStatusCase());
 
 type SqlFragment = ReturnType<typeof sql>;
 
@@ -223,10 +217,8 @@ type KanbanRow = {
 };
 
 function mapKanbanRow(row: KanbanRow): KanbanColumnCandidate {
-  const applicationStatus = row.application_status
-    ? (normalizeApplicationStatus(row.application_status) ??
-      row.application_status)
-    : "ai_screening";
+  const applicationStatus: ApplicationStatus =
+    normalizeApplicationStatus(row.application_status ?? "") ?? "ai_screening";
 
   return {
     id: row.id,
