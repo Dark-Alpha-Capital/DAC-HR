@@ -15,7 +15,6 @@ import type {
   CandidateImportStatus,
   CandidateImportType,
   Department,
-  DocumentCategoryValue,
   HireLevel,
   AgentConfig,
   CheatingSummary,
@@ -376,10 +375,6 @@ export const documents = sqliteTable("documents", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description"),
-  category: text("category")
-    .$type<DocumentCategoryValue>()
-    .default("other")
-    .notNull(),
   url: text("url").notNull(),
   tags: text("tags", { mode: "json" }).$type<string[]>(),
   createdAt: createdAtCol(),
@@ -425,27 +420,15 @@ export const candidateOnboarding = sqliteTable("candidate_onboarding", {
   contractSigned: integer("contract_signed", { mode: "boolean" })
     .default(false)
     .notNull(),
-  signedContractDocumentId: text("signed_contract_document_id").references(
-    () => candidateDocument.id,
-    { onDelete: "set null" },
-  ),
-  contractSignedAt: integer("contract_signed_at", { mode: "timestamp_ms" }),
   emailProvided: integer("email_provided", { mode: "boolean" })
     .default(false)
     .notNull(),
-  emailRegisteredAt: integer("email_registered_at", { mode: "timestamp_ms" }),
   onboardingPacketSent: integer("onboarding_packet_sent", { mode: "boolean" })
     .default(false)
     .notNull(),
-  onboardingPacketSentAt: integer("onboarding_packet_sent_at", {
-    mode: "timestamp_ms",
-  }),
   companyEmailActivate: integer("company_email_activate", { mode: "boolean" })
     .default(false)
     .notNull(),
-  companyEmailActivateAt: integer("company_email_activate_at", {
-    mode: "timestamp_ms",
-  }),
   createdAt: createdAtCol(),
   updatedAt: updatedAtCol(),
 });

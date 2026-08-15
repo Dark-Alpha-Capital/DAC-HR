@@ -51,10 +51,8 @@ export async function createDocumentRecord({
           validated.description && validated.description.trim() !== ""
             ? validated.description
             : null,
-        category: "other",
         url,
-        tags: validated.tags.length > 0 ? validated.tags : null,
-      })
+        tags: validated.tags.length > 0 ? validated.tags : null,      })
       .returning();
 
     if (validated.categoryIds.length > 0 && newDocument) {
@@ -72,7 +70,6 @@ export async function createDocumentRecord({
           name: newDocument?.name ?? "",
           slug: newDocument?.slug ?? "",
           description: newDocument?.description ?? "",
-          category: newDocument?.category ?? "",
           url: newDocument?.url ?? "",
           tags: newDocument?.tags ?? [],
           createdAt: newDocument?.createdAt.toISOString() ?? "",
@@ -127,7 +124,6 @@ export const deleteDocument = async (id: string, actor: Actor) => {
             name: documentData.name,
             slug: documentData.slug,
             description: documentData.description,
-            category: documentData.category,
             url: documentData.url,
             tags: documentData.tags,
           },

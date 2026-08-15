@@ -134,6 +134,13 @@
       "when": 1786125888763,
       "tag": "0018_chilly_colleen_wing",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1786777162353,
+      "tag": "0019_large_wild_pack",
+      "breakpoints": true
     }
   ]
 }
