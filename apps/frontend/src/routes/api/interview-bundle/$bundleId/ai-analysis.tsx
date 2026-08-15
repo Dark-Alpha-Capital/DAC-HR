@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { getSession } from "#/lib/get-session";
 import { getInterviewAiAnalysesByBundleId } from "@workspace/db/repositories/interview-repository";
 import { deleteInterviewAiAnalysisForBundle } from "@workspace/db/repositories/interview-repository";
-import { runBundleAiAnalysisWithScreener } from "#/features/interviews/run-bundle-ai-analysis";
+import { runAiAnalysis } from "#/features/interviews/run-ai-analysis";
 
 export const Route = createFileRoute(
   "/api/interview-bundle/$bundleId/ai-analysis",
@@ -64,14 +64,15 @@ export const Route = createFileRoute(
             );
           }
 
-          const result = await runBundleAiAnalysisWithScreener({
-            bundleId,
+          const result = await runAiAnalysis({
+            scope: { kind: "bundle", id: bundleId },
             screenerId,
             customPrompt,
           });
 
           if (result.error) {
-            return Response.json({ error: result.error }, { status: 400 });
+            const status = result.error.endsWith("not found") ? 404 : 400;
+            return Response.json({ error: result.error }, { status });
           }
 
           return Response.json(

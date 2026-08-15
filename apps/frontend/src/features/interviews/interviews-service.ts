@@ -21,7 +21,11 @@ import {
   getServerEmailSender,
   getPublicBaseUrl,
 } from "#/lib/server/email-sender";
-import type { AgentConfig, RoundDeliveryMode } from "@workspace/db/enums";
+import type {
+  AgentConfig,
+  InterviewStatus,
+  RoundDeliveryMode,
+} from "@workspace/db/enums";
 
 type Actor = {
   id: string;
@@ -36,7 +40,10 @@ export type CreateInterviewInput = {
   scheduledAt?: Date;
 };
 
-export const createInterview = async (input: CreateInterviewInput, actor: Actor) => {
+export const createInterview = async (
+  input: CreateInterviewInput,
+  actor: Actor,
+) => {
   const { applicationId, roundId, interviewerId, scheduledAt } = input;
 
   try {
@@ -122,13 +129,17 @@ export const createInterview = async (input: CreateInterviewInput, actor: Actor)
 
 export type UpdateInterviewInput = {
   interviewId: string;
-  status?: "pending" | "move_forward" | "rejected" | "scheduled";
+  /** `completed` is set by the bundle flow, never chosen in the editor. */
+  status?: Exclude<InterviewStatus, "completed">;
   scheduledAt?: Date | null;
   overallFeedback?: string;
   rating?: number;
 };
 
-export const updateInterview = async (input: UpdateInterviewInput, actor: Actor) => {
+export const updateInterview = async (
+  input: UpdateInterviewInput,
+  actor: Actor,
+) => {
   const { interviewId, status, scheduledAt, overallFeedback, rating } = input;
 
   try {
@@ -325,7 +336,10 @@ export const createInterviewSession = async (
       }));
     }
 
-    const validation = await validatePositionRounds(applicationId, roundConfigs);
+    const validation = await validatePositionRounds(
+      applicationId,
+      roundConfigs,
+    );
 
     if (!validation.ok) {
       return { error: validation.error };
@@ -356,7 +370,8 @@ export const createInterviewSession = async (
           to: app.candidateEmail,
           template: "interview-invite",
           data: {
-            candidateName: `${app.candidateName} ${app.candidateLastName}`.trim(),
+            candidateName:
+              `${app.candidateName} ${app.candidateLastName}`.trim(),
             positionName: app.positionName,
             interviewUrl: `${origin}/interview/${result.token}`,
             expiresAt: result.bundle.expiresAt,
@@ -508,7 +523,10 @@ export const bulkCreateInterviewFeedback = async (
             rating: item.rating ?? null,
           })
           .onConflictDoUpdate({
-            target: [interviewFeedback.interviewId, interviewFeedback.questionId],
+            target: [
+              interviewFeedback.interviewId,
+              interviewFeedback.questionId,
+            ],
             set: {
               notes: item.notes ?? null,
               rating: item.rating ?? null,

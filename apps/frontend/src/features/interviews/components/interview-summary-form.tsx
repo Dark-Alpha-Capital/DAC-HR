@@ -13,13 +13,14 @@ import { Textarea } from "#/components/ui/textarea";
 import { updateInterview } from "#/features/interviews/server/mutations/interviews";
 import { toast } from "sonner";
 import { CheckCircle, XCircle, Clock, Circle, Loader2 } from "lucide-react";
+import type { InterviewStatus } from "@workspace/db/enums";
 
-type InterviewStatus = "pending" | "move_forward" | "rejected" | "scheduled";
+type EditableInterviewStatus = Exclude<InterviewStatus, "completed">;
 
 interface InterviewSummaryFormProps {
   interview: {
     id: string;
-    status: InterviewStatus;
+    status: EditableInterviewStatus;
     rating: number | null;
     scheduledAt: Date | null;
     overallFeedback: string | null;
@@ -28,7 +29,7 @@ interface InterviewSummaryFormProps {
 }
 
 const statusOptions: {
-  value: InterviewStatus;
+  value: EditableInterviewStatus;
   label: string;
   icon: typeof CheckCircle;
 }[] = [
@@ -43,7 +44,9 @@ export default function InterviewSummaryForm({
   applicationId,
 }: InterviewSummaryFormProps) {
   const invalidate = useQueryInvalidation();
-  const [status, setStatus] = useState<InterviewStatus>(interview.status);
+  const [status, setStatus] = useState<EditableInterviewStatus>(
+    interview.status,
+  );
   const [rating, setRating] = useState<string>(
     interview.rating?.toString() ?? "none",
   );
@@ -62,7 +65,7 @@ export default function InterviewSummaryForm({
       const result = await updateInterview({
         data: {
           interviewId: interview.id,
-          status: status as "pending" | "move_forward" | "rejected",
+          status,
           rating: parsedRating,
           overallFeedback: overallFeedback.trim() || undefined,
         },
@@ -91,7 +94,7 @@ export default function InterviewSummaryForm({
           </Label>
           <Select
             value={status}
-            onValueChange={(value: InterviewStatus) => setStatus(value)}
+            onValueChange={(value: EditableInterviewStatus) => setStatus(value)}
           >
             <SelectTrigger id="status">
               <SelectValue placeholder="Select status" />

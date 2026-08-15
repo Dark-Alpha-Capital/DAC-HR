@@ -1,28 +1,12 @@
 import {
   getApplicationById,
-  saveInterviewAiAnalysis,
   getInterviewAiAnalysesByBundleId,
 } from "@workspace/db/repositories/interview-repository";
-import {
-  getBundleById,
-  getBundleRounds,
-} from "@workspace/db/repositories/interview-bundle-repository";
-import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
-import {
-  getScreenerById,
-  getScreenerByPositionId,
-} from "@workspace/db/repositories/screener-repository";
-import { getAiModel } from "#/lib/ai/models";
-import { generateText, Output } from "ai";
-import { interviewAiAnalysisSchema } from "#/features/interviews/schemas";
-import { buildBundleInterviewAnalysisPrompt } from "#/features/interviews/interview-analysis-prompt";
+import { getBundleById } from "@workspace/db/repositories/interview-bundle-repository";
+import { getScreenerByPositionId } from "@workspace/db/repositories/screener-repository";
+import { runAiAnalysis, type AiAnalysisResult } from "./run-ai-analysis";
 
-export type BundleAnalysisResult = {
-  analysis?: unknown;
-  analysisId?: string | null;
-  screenerName?: string;
-  error?: string;
-};
+export type BundleAnalysisResult = AiAnalysisResult;
 
 export async function runBundleAiAnalysisWithScreener({
   bundleId,
@@ -33,69 +17,11 @@ export async function runBundleAiAnalysisWithScreener({
   screenerId: string;
   customPrompt?: string | null;
 }): Promise<BundleAnalysisResult> {
-  const screener = await getScreenerById(screenerId);
-
-  if (!screener) {
-    return { error: "Screener not found" };
-  }
-
-  const bundle = await getBundleById(bundleId);
-  if (!bundle) {
-    return { error: "Bundle not found" };
-  }
-
-  const rounds = await getBundleRounds(bundleId);
-  if (rounds.length === 0) {
-    return { error: "Bundle has no rounds configured" };
-  }
-
-  const application = await getApplicationById(bundle.applicationId);
-  if (!application) {
-    return { error: "Application not found" };
-  }
-
-  const candidate = await getCandidateById(application.candidateId);
-  const anchorInterviewId = rounds[0]!.bundleRound.interviewId;
-
-  const prompt = await buildBundleInterviewAnalysisPrompt({
-    screener,
-    bundleId,
-    roundCount: rounds.length,
-    application: {
-      position: application.position,
-      candidate: candidate
-        ? {
-            firstName: candidate.firstName,
-            lastName: candidate.lastName,
-          }
-        : null,
-    },
+  return runAiAnalysis({
+    scope: { kind: "bundle", id: bundleId },
+    screenerId,
     customPrompt,
   });
-
-  const { output: structuredData } = await generateText({
-    model: getAiModel("gpt-4o-mini"),
-    output: Output.object({ schema: interviewAiAnalysisSchema }),
-    prompt,
-  });
-
-  const savedAnalysis = await saveInterviewAiAnalysis({
-    interviewId: anchorInterviewId,
-    bundleId,
-    applicationId: application.id,
-    positionId: application.position.id,
-    screenerId: screener.id,
-    analysis: structuredData.overallSummary,
-    customPrompt: customPrompt || null,
-    model: "gpt-4o-mini",
-    structuredData,
-  });
-
-  return {
-    analysis: structuredData,
-    analysisId: savedAnalysis?.id || null,
-    screenerName: screener.name,
-  };
 }
 
 export async function autoRunBundleAiAnalysis(
