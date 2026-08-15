@@ -1,8 +1,9 @@
-import type { HandshakeRosterEntry, MatchedResume, ResumeChunk } from "../types";
-import {
-  nameAppearsInText,
-  namesMatch,
-} from "../dedup/name-matching";
+import type {
+  HandshakeRosterEntry,
+  MatchedResume,
+  ResumeChunk,
+} from "../types";
+import { nameAppearsInText, namesMatch } from "../dedup/name-matching";
 import {
   getFirstMeaningfulLine,
   isBlockedResumeHeader,
@@ -81,7 +82,11 @@ function assignPageOwners(
   }
 
   // Continuation pages inherit the previous owner when no new owner is detected.
-  for (let pageIndex = rosterPageCount + 1; pageIndex < pages.length; pageIndex++) {
+  for (
+    let pageIndex = rosterPageCount + 1;
+    pageIndex < pages.length;
+    pageIndex++
+  ) {
     if (owners[pageIndex] !== null) {
       continue;
     }
@@ -140,9 +145,13 @@ function ownersToChunks(
     }
 
     chunks.push({
+      kind: "roster",
       startPage: startIndex + 1,
       endPage: pageIndex,
-      headerName: detectHeaderName(pages[startIndex] ?? "", roster[owner]!.name),
+      headerName: detectHeaderName(
+        pages[startIndex] ?? "",
+        roster[owner]!.name,
+      ),
       rosterEmail: roster[owner]!.email,
     });
   }
@@ -157,7 +166,11 @@ function findOrphanRanges(
   const ranges: Array<{ startPage: number; endPage: number }> = [];
   let rangeStart: number | null = null;
 
-  for (let pageIndex = rosterPageCount; pageIndex < owners.length; pageIndex++) {
+  for (
+    let pageIndex = rosterPageCount;
+    pageIndex < owners.length;
+    pageIndex++
+  ) {
     if (owners[pageIndex] === null) {
       if (rangeStart === null) {
         rangeStart = pageIndex;
@@ -226,21 +239,19 @@ export function extractHandshakeResumeChunks(
 }
 
 export function matchHandshakeExport(
-  pages: string[],
+  chunks: ResumeChunk[],
   roster: HandshakeRosterEntry[],
-  rosterPageCount = 2,
 ): {
   matched: MatchedResume[];
   unmatchedRoster: HandshakeRosterEntry[];
   unmatchedChunks: ResumeChunk[];
 } {
-  const chunks = extractHandshakeResumeChunks(pages, roster, rosterPageCount);
   const matched: MatchedResume[] = [];
   const usedRosterEmails = new Set<string>();
   const usedChunkKeys = new Set<string>();
 
   for (const chunk of chunks) {
-    if (!chunk.rosterEmail) {
+    if (chunk.kind !== "roster") {
       continue;
     }
 

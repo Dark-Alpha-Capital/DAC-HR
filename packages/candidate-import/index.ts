@@ -1,9 +1,10 @@
-export {
-  ImportCancelledError,
-  throwIfImportCancelled,
-} from "./cancellation";
+export { ImportCancelledError, throwIfImportCancelled } from "./cancellation";
 export { importLog } from "./logger";
-export type { ImportFileType, ImportLogContext, ImportLogLevel } from "./logger";
+export type {
+  ImportFileType,
+  ImportLogContext,
+  ImportLogLevel,
+} from "./logger";
 export type {
   CsvRow,
   HandshakeRosterEntry,
@@ -44,14 +45,9 @@ export {
   extractHandshakeResumeChunks,
   matchHandshakeExport,
 } from "./pdf/handshake-chunks";
-export {
-  extractPerPageText,
-  extractResumeChunksFromPages,
-  joinPagesText,
-} from "./pdf/extract-chunks";
+export { extractPerPageText, joinPagesText } from "./pdf/extract-chunks";
 export { writeChunkPdf } from "./pdf/write-chunk-pdf";
 export { extractDocumentText } from "./pdf/extract-text";
-export { matchRosterToChunks } from "./match/match-roster-to-chunk";
 export {
   extractResumeFieldsFromText,
   extractHandshakeRosterWithOpenAI,

@@ -6,16 +6,12 @@ import {
   namesMatch,
 } from "./dedup/name-matching";
 import { parseCsvContent } from "./processors/csv";
-import {
-  extractResumeChunksFromPages,
-} from "./pdf/extract-chunks";
-import { matchRosterToChunks } from "./match/match-roster-to-chunk";
 import { parseHandshakeRosterFromText } from "./parsers/extract-handshake-roster";
-import { matchHandshakeExport } from "./pdf/handshake-chunks";
 import {
-  findEmailInText,
-  normalizeResumeFields,
-} from "./parsers/schemas";
+  matchHandshakeExport,
+  extractHandshakeResumeChunks,
+} from "./pdf/handshake-chunks";
+import { findEmailInText, normalizeResumeFields } from "./parsers/schemas";
 import {
   duplicateActionLabel,
   resolveDuplicateAction,
@@ -23,7 +19,9 @@ import {
 import { tallyImportResult } from "./types";
 
 test("normalizeName matches variants", () => {
-  expect(normalizeName("Alexander Barto")).toBe(normalizeName("ALEXANDER BARTO"));
+  expect(normalizeName("Alexander Barto")).toBe(
+    normalizeName("ALEXANDER BARTO"),
+  );
 });
 
 test("nameMatchKeys handles parenthetical and middle initials", () => {
@@ -82,49 +80,6 @@ test("parseCsvContent maps Handshake application export headers", () => {
     major: "Marketing",
     graduationYear: 2026,
   });
-});
-
-test("extractResumeChunksFromPages detects name headers", () => {
-  const pages = [
-    "Applicant Roster",
-    "More roster",
-    "ALEXANDER BARTO\nExperience...",
-    "continued resume",
-    "HARRY FELGRAN\nEducation...",
-  ];
-
-  const chunks = extractResumeChunksFromPages(pages, 2);
-  expect(chunks).toHaveLength(2);
-  expect(chunks[0]).toMatchObject({
-    startPage: 3,
-    endPage: 4,
-    headerName: "ALEXANDER BARTO",
-  });
-  expect(chunks[1]).toMatchObject({
-    startPage: 5,
-    endPage: 5,
-    headerName: "HARRY FELGRAN",
-  });
-});
-
-test("matchRosterToChunks exact and fuzzy matching", () => {
-  const roster = [
-    { name: "Alexander Barto", email: "alex@example.com" },
-    { name: "Harry Felgran", email: "harry@example.com" },
-  ];
-  const chunks = [
-    { startPage: 3, endPage: 4, headerName: "ALEXANDER BARTO" },
-    { startPage: 5, endPage: 5, headerName: "Harry Felgran" },
-  ];
-
-  const { matched, unmatchedRoster, unmatchedChunks } = matchRosterToChunks(
-    roster,
-    chunks,
-  );
-
-  expect(matched).toHaveLength(2);
-  expect(unmatchedRoster).toHaveLength(0);
-  expect(unmatchedChunks).toHaveLength(0);
 });
 
 test("parseHandshakeRosterFromText extracts roster lines", () => {
@@ -186,7 +141,8 @@ test("matchHandshakeExport assigns one chunk per roster entry on multi-resume pa
     "Don J. Gunderson\ndonjgunderson@hotmail.com\nOverview",
   ];
 
-  const { matched, unmatchedRoster } = matchHandshakeExport(pages, roster, 2);
+  const chunks = extractHandshakeResumeChunks(pages, roster, 2);
+  const { matched, unmatchedRoster } = matchHandshakeExport(chunks, roster);
 
   expect(matched).toHaveLength(5);
   expect(unmatchedRoster).toHaveLength(0);

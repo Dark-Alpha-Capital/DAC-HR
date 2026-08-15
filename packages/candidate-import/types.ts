@@ -19,13 +19,25 @@ export type HandshakeRosterEntry = {
   major?: string | null;
 };
 
-export type ResumeChunk = {
-  startPage: number;
-  endPage: number;
-  headerName: string;
-  /** Set when chunk is assigned from Handshake roster email matching. */
-  rosterEmail?: string;
-};
+/**
+ * A contiguous page range of one candidate's resume.
+ * `roster` chunks are owned by a Handshake roster entry (email-matched);
+ * `header` chunks were detected purely from a name-looking page header.
+ */
+export type ResumeChunk =
+  | {
+      kind: "roster";
+      startPage: number;
+      endPage: number;
+      headerName: string;
+      rosterEmail: string;
+    }
+  | {
+      kind: "header";
+      startPage: number;
+      endPage: number;
+      headerName: string;
+    };
 
 export type ImportProfileInput = {
   school?: string | null;

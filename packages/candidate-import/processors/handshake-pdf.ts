@@ -4,10 +4,7 @@ import { ImportCancelledError, throwIfImportCancelled } from "../cancellation";
 import { createCandidateFromImport } from "../unified/create-candidate-from-import";
 import { splitFullName } from "../dedup/normalize-name";
 import { extractHandshakeRoster } from "../parsers/extract-handshake-roster";
-import {
-  extractPerPageText,
-  joinPagesText,
-} from "../pdf/extract-chunks";
+import { extractPerPageText, joinPagesText } from "../pdf/extract-chunks";
 import {
   extractHandshakeResumeChunks,
   matchHandshakeExport,
@@ -75,15 +72,14 @@ export async function processHandshakePdfImport(args: {
     chunkCount: chunks.length,
     chunks: chunks.map((c) => ({
       headerName: c.headerName,
-      rosterEmail: c.rosterEmail ?? null,
+      rosterEmail: c.kind === "roster" ? c.rosterEmail : null,
       pages: `${c.startPage}-${c.endPage}`,
     })),
   });
 
   const { matched, unmatchedRoster, unmatchedChunks } = matchHandshakeExport(
-    pages,
+    chunks,
     roster,
-    2,
   );
 
   importLog("log", "Roster matched to resume chunks", {

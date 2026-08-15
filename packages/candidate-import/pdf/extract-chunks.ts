@@ -77,8 +77,7 @@ export function looksLikeNameHeader(line: string): boolean {
     return false;
   }
 
-  const uppercaseRatio =
-    letters.replace(/[^A-Z]/g, "").length / letters.length;
+  const uppercaseRatio = letters.replace(/[^A-Z]/g, "").length / letters.length;
   const titleCase =
     /^[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+$/.test(trimmed) ||
     /^[A-Z][a-z]+(?:\s+\([A-Za-z]+\)\s+[A-Z][a-z]+)+$/.test(trimmed) ||
@@ -118,6 +117,7 @@ export function extractResumeChunksFromPages(
         chunks.push(current);
       }
       current = {
+        kind: "header",
         startPage: pageNumber,
         endPage: pageNumber,
         headerName: header,
@@ -137,7 +137,11 @@ export function extractResumeChunksFromPages(
   return chunks;
 }
 
-export function joinPagesText(pages: string[], startPage: number, endPage: number) {
+export function joinPagesText(
+  pages: string[],
+  startPage: number,
+  endPage: number,
+) {
   return pages
     .slice(startPage - 1, endPage)
     .join("\n\n")
