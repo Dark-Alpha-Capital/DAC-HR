@@ -48,7 +48,7 @@ export const Route = createFileRoute(
           const download =
             new URL(request.url).searchParams.get("download") === "1";
 
-          return new Response(downloadResult.buffer, {
+          return new Response(new Uint8Array(downloadResult.buffer), {
             status: 200,
             headers: {
               "Content-Type": "video/webm",
