@@ -22,6 +22,11 @@ import {
 } from "#/features/questions/schemas";
 import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
 import { getQuestionTypeLabel } from "#/features/questions/helpers";
+import {
+  buildQuestionEditPayload,
+  defaultMcqOptions,
+  initialOptionsFrom,
+} from "#/features/questions/question-draft";
 import type { QuestionOption } from "@workspace/db/question-types";
 
 type RoundQuestion = {
@@ -36,24 +41,6 @@ interface EditRoundQuestionDialogProps {
   onQuestionUpdated?: () => void;
 }
 
-const defaultMcqOptions = () => [{ text: "" }, { text: "" }];
-
-function getInitialOptions(question: RoundQuestion) {
-  if (question.questionType !== "mcq") {
-    return defaultMcqOptions();
-  }
-
-  const options = question.options ?? [];
-  if (options.length < 2) {
-    return defaultMcqOptions();
-  }
-
-  return options.map((option) => ({
-    id: option.id,
-    text: option.text,
-  }));
-}
-
 export function EditRoundQuestionDialog({
   question,
   onQuestionUpdated,
@@ -65,12 +52,14 @@ export function EditRoundQuestionDialog({
 
   const [open, setOpen] = useState(false);
   const [questionText, setQuestionText] = useState(question.questionText);
-  const [options, setOptions] = useState(() => getInitialOptions(question));
+  const [options, setOptions] = useState(() =>
+    initialOptionsFrom(question.questionType, question.options),
+  );
   const [loading, setLoading] = useState(false);
 
   const resetForm = () => {
     setQuestionText(question.questionText);
-    setOptions(getInitialOptions(question));
+    setOptions(initialOptionsFrom(question.questionType, question.options));
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -83,17 +72,11 @@ export function EditRoundQuestionDialog({
   const canSubmit = !loading && Boolean(questionText.trim());
 
   const submitQuestion = async () => {
-    const payload: QuestionEditFormSchema =
-      questionType === "mcq"
-        ? {
-            questionText,
-            questionType: "mcq",
-            options,
-          }
-        : {
-            questionText,
-            questionType: "text",
-          };
+    const payload: QuestionEditFormSchema = buildQuestionEditPayload({
+      questionType,
+      questionText,
+      options,
+    });
 
     const parsed = questionEditFormSchema.safeParse(payload);
     if (!parsed.success) {
@@ -122,10 +105,7 @@ export function EditRoundQuestionDialog({
 
       toast.success("Question updated");
       handleOpenChange(false);
-      await Promise.all([
-        invalidate.questionLists(),
-        onQuestionUpdated?.(),
-      ]);
+      await Promise.all([invalidate.questionLists(), onQuestionUpdated?.()]);
     } catch {
       toast.error("An error occurred while updating the question");
     } finally {

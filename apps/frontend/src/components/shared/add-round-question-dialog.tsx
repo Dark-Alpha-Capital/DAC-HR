@@ -26,6 +26,10 @@ import {
   questionFormSchema,
   type QuestionFormSchema,
 } from "#/features/questions/schemas";
+import {
+  buildQuestionFormPayload,
+  defaultMcqOptions,
+} from "#/features/questions/question-draft";
 import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
 
 interface AddRoundQuestionDialogProps {
@@ -36,8 +40,6 @@ interface AddRoundQuestionDialogProps {
   onQuestionAdded?: () => void;
   variant?: "header" | "empty-state";
 }
-
-const defaultMcqOptions = () => [{ text: "" }, { text: "" }];
 
 export function AddRoundQuestionDialog({
   positionId,
@@ -71,21 +73,13 @@ export function AddRoundQuestionDialog({
   const canSubmit = !loading && Boolean(questionText.trim());
 
   const submitQuestion = async () => {
-    const payload: QuestionFormSchema =
-      questionType === "mcq"
-        ? {
-            questionText,
-            positionId,
-            roundTemplateId: roundId,
-            questionType: "mcq",
-            options,
-          }
-        : {
-            questionText,
-            positionId,
-            roundTemplateId: roundId,
-            questionType: "text",
-          };
+    const payload: QuestionFormSchema = buildQuestionFormPayload({
+      questionType,
+      questionText,
+      options,
+      positionId,
+      roundTemplateId: roundId,
+    });
 
     const parsed = questionFormSchema.safeParse(payload);
     if (!parsed.success) {
@@ -109,10 +103,7 @@ export function AddRoundQuestionDialog({
 
       toast.success("Question added");
       handleOpenChange(false);
-      await Promise.all([
-        invalidate.questionLists(),
-        onQuestionAdded?.(),
-      ]);
+      await Promise.all([invalidate.questionLists(), onQuestionAdded?.()]);
     } catch {
       toast.error("An error occurred while creating the question");
     } finally {

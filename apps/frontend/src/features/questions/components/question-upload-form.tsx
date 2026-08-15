@@ -33,6 +33,10 @@ import { createQuestion } from "#/features/questions/server/mutations/create-que
 import { getRoundsByPosition } from "#/features/rounds/server/queries/get-rounds-by-position";
 import { McqOptionsField } from "#/components/shared/mcq-options-field";
 import { queryKeys } from "#/lib/query/query-keys";
+import {
+  buildQuestionFormPayload,
+  defaultMcqOptions,
+} from "#/features/questions/question-draft";
 
 interface QuestionUploadFormProps {
   positions: {
@@ -42,8 +46,6 @@ interface QuestionUploadFormProps {
   preSelectedPositionId?: string;
   preSelectedRoundId?: string;
 }
-
-const defaultMcqOptions = () => [{ text: "" }, { text: "" }];
 
 const emptyFormValues = {
   questionText: "",
@@ -70,7 +72,9 @@ function RoundSelectField({
     enabled: Boolean(positionId),
   });
 
-  const selectedPosition = positions.find((position) => position.id === positionId);
+  const selectedPosition = positions.find(
+    (position) => position.id === positionId,
+  );
   const isDisabled = !positionId;
 
   return (
@@ -150,21 +154,13 @@ const QuestionUploadForm = ({
       roundTemplateId: preSelectedRoundId,
     },
     onSubmit: async ({ value }) => {
-      const payload: QuestionFormSchema =
-        value.questionType === "mcq"
-          ? {
-              questionText: value.questionText,
-              positionId: value.positionId,
-              roundTemplateId: value.roundTemplateId,
-              questionType: "mcq",
-              options: value.options,
-            }
-          : {
-              questionText: value.questionText,
-              positionId: value.positionId,
-              roundTemplateId: value.roundTemplateId,
-              questionType: "text",
-            };
+      const payload: QuestionFormSchema = buildQuestionFormPayload({
+        questionType: value.questionType,
+        questionText: value.questionText,
+        options: value.options,
+        positionId: value.positionId,
+        roundTemplateId: value.roundTemplateId,
+      });
 
       const parsed = questionFormSchema.safeParse(payload);
       if (!parsed.success) {

@@ -13,15 +13,12 @@ type Actor = {
 
 export type QuestionFormData = {
   questionText: string;
-  questionType: "text" | "mcq" | "video" | "audio" | string;
+  questionType: "text" | "mcq";
   options?: Array<{ id?: string; text: string }>;
   roundTemplateId: string;
 };
 
-export const createQuestion = async (
-  input: QuestionFormData,
-  actor: Actor,
-) => {
+export const createQuestion = async (input: QuestionFormData, actor: Actor) => {
   const parsed = input;
   const { questionText, roundTemplateId } = parsed;
 
@@ -30,7 +27,7 @@ export const createQuestion = async (
       .insert(questionBank)
       .values({
         questionText,
-        questionType: parsed.questionType as "text",
+        questionType: parsed.questionType,
         options:
           parsed.questionType === "mcq"
             ? normalizeMcqOptions(parsed.options ?? [])
@@ -88,77 +85,6 @@ export const createQuestion = async (
   }
 };
 
-export const createQuestionForRound = async (
-  input: QuestionFormData,
-  roundId: string,
-  actor: Actor,
-) => {
-  const parsed = input;
-  const { questionText } = parsed;
-
-  try {
-    const [newQuestion] = await db
-      .insert(questionBank)
-      .values({
-        questionText,
-        questionType: parsed.questionType as "text",
-        options:
-          parsed.questionType === "mcq"
-            ? normalizeMcqOptions(parsed.options ?? [])
-            : null,
-      })
-      .returning();
-
-    if (!newQuestion) {
-      return { error: "Failed to create question" };
-    }
-
-    await db.insert(roundTemplateQuestions).values({
-      roundTemplateId: roundId,
-      questionId: newQuestion.id,
-    });
-    insertAuditLog({
-      userId: actor.id,
-      action: "create_question_for_round",
-      entityType: "question",
-      entityId: newQuestion.id,
-      details: {
-        question: {
-          id: newQuestion.id,
-          questionText: newQuestion.questionText,
-          questionType: newQuestion.questionType,
-          createdAt: newQuestion.createdAt.toISOString(),
-          updatedAt: newQuestion.updatedAt.toISOString(),
-        },
-        input: {
-          questionText,
-          questionType: parsed.questionType,
-          roundId,
-        },
-        createdBy: {
-          id: actor.id,
-          email: actor.email,
-          name: actor.name,
-        },
-        metadata: {
-          timestamp: new Date().toISOString(),
-          linkedToRound: true,
-        },
-      },
-    }).catch((error) => console.error("Audit log error:", error));
-
-    return { success: true, data: newQuestion };
-  } catch (error) {
-    console.error(error);
-
-    if (error instanceof Error) {
-      return { error: error.message };
-    }
-
-    return { error: "Failed to create question" };
-  }
-};
-
 export type PatchQuestionInput = {
   questionId: string;
   questionText: string;
@@ -166,7 +92,10 @@ export type PatchQuestionInput = {
   options?: Array<{ id?: string; text: string }>;
 };
 
-export const patchQuestion = async (input: PatchQuestionInput, actor: Actor) => {
+export const patchQuestion = async (
+  input: PatchQuestionInput,
+  actor: Actor,
+) => {
   const { questionId, questionText, questionType, options } = input;
 
   try {

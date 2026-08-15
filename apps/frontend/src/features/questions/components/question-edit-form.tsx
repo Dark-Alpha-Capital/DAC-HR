@@ -27,6 +27,11 @@ import { useRouter } from "@tanstack/react-router";
 import type { Question } from "@workspace/db/schema";
 import { McqOptionsField } from "#/components/shared/mcq-options-field";
 import { getQuestionTypeLabel } from "#/features/questions/helpers";
+import {
+  buildQuestionEditPayload,
+  defaultMcqOptions,
+  initialOptionsFrom,
+} from "#/features/questions/question-draft";
 
 interface QuestionEditFormProps {
   question: Question;
@@ -42,28 +47,14 @@ const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
     defaultValues: {
       questionText: question.questionText,
       questionType,
-      options:
-        questionType === "mcq"
-          ? (question.options ?? [{ id: crypto.randomUUID(), text: "" }, { id: crypto.randomUUID(), text: "" }]).map(
-              (option) => ({
-                id: option.id,
-                text: option.text,
-              }),
-            )
-          : [{ text: "" }, { text: "" }],
+      options: initialOptionsFrom(question.questionType, question.options),
     },
     onSubmit: async ({ value }) => {
-      const payload: QuestionEditFormSchema =
-        value.questionType === "mcq"
-          ? {
-              questionText: value.questionText,
-              questionType: "mcq",
-              options: value.options,
-            }
-          : {
-              questionText: value.questionText,
-              questionType: "text",
-            };
+      const payload: QuestionEditFormSchema = buildQuestionEditPayload({
+        questionType: value.questionType,
+        questionText: value.questionText,
+        options: value.options,
+      });
 
       const parsed = questionEditFormSchema.safeParse(payload);
       if (!parsed.success) {
