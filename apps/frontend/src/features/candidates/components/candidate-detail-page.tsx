@@ -134,24 +134,13 @@ export function CandidateDetailPage() {
         </TabsContent>
 
         <TabsContent value="checklist" className="mt-6">
-          {!onboardingData ? (
-            <div className="mt-4 md:mt-6 lg:mt-8">
-              <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
-                Checklist
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Checklist enabled, but no data available.
-              </p>
-            </div>
-          ) : (
-            <div className="mt-4 md:mt-6 lg:mt-8">
-              <OnboardingCard
-                candidateId={candidate.id}
-                onboardingData={onboardingData}
-                checklistItems={checklistItems}
-              />
-            </div>
-          )}
+          <div className="mt-4 md:mt-6 lg:mt-8">
+            <OnboardingCard
+              candidateId={candidate.id}
+              onboardingData={onboardingData}
+              checklistItems={checklistItems}
+            />
+          </div>
         </TabsContent>
       </CandidateTabsClient>
     </div>

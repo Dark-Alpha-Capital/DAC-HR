@@ -28,8 +28,8 @@ type OnboardingCardProps = {
   candidateId: string;
   onboardingData: {
     contractSigned: boolean;
-    registrationEmailSent: boolean;
-    packetSent: boolean;
+    emailProvided: boolean;
+    onboardingPacketSent: boolean;
     companyEmailActivate: boolean;
   };
   checklistItems?: ChecklistItem[];
@@ -44,18 +44,18 @@ const onboardingTasks = [
     key: "contractSigned" as const,
   },
   {
-    id: "registrationEmailSent",
+    id: "emailProvided",
     label: "Welcome Email Sent",
     description: "Registration and welcome email has been sent",
     icon: Mail,
-    key: "registrationEmailSent" as const,
+    key: "emailProvided" as const,
   },
   {
-    id: "packetSent",
+    id: "onboardingPacketSent",
     label: "Onboarding Packet Sent",
     description: "Onboarding documentation packet has been delivered",
     icon: Package,
-    key: "packetSent" as const,
+    key: "onboardingPacketSent" as const,
   },
   {
     id: "companyEmailActivate",
@@ -73,11 +73,12 @@ const OnboardingCard: React.FC<OnboardingCardProps> = ({
 }) => {
   const [tasks, setTasks] = useState({
     contractSigned: onboardingData.contractSigned,
-    registrationEmailSent: onboardingData.registrationEmailSent,
-    packetSent: onboardingData.packetSent,
+    emailProvided: onboardingData.emailProvided,
+    onboardingPacketSent: onboardingData.onboardingPacketSent,
     companyEmailActivate: onboardingData.companyEmailActivate,
   });
-  const [customItems, setCustomItems] = useState<ChecklistItem[]>(checklistItems);
+  const [customItems, setCustomItems] =
+    useState<ChecklistItem[]>(checklistItems);
   const [newItemLabel, setNewItemLabel] = useState("");
   const [isPending, startTransition] = useTransition();
 
@@ -90,11 +91,11 @@ const OnboardingCard: React.FC<OnboardingCardProps> = ({
     return totalItems > 0 ? (completed / totalItems) * 100 : 0;
   }, [tasks, customItems, totalItems]);
 
-  const hasChanges = useMemo(() => {
+  const { presetChanged, customChanged } = useMemo(() => {
     const presetChanged =
       tasks.contractSigned !== onboardingData.contractSigned ||
-      tasks.registrationEmailSent !== onboardingData.registrationEmailSent ||
-      tasks.packetSent !== onboardingData.packetSent ||
+      tasks.emailProvided !== onboardingData.emailProvided ||
+      tasks.onboardingPacketSent !== onboardingData.onboardingPacketSent ||
       tasks.companyEmailActivate !== onboardingData.companyEmailActivate;
     const customChanged =
       customItems.length !== checklistItems.length ||
@@ -104,8 +105,10 @@ const OnboardingCard: React.FC<OnboardingCardProps> = ({
           checklistItems[index]?.label !== item.label ||
           checklistItems[index]?.checked !== item.checked,
       );
-    return presetChanged || customChanged;
+    return { presetChanged, customChanged };
   }, [tasks, customItems, checklistItems]);
+
+  const hasChanges = presetChanged || customChanged;
 
   const handleTaskChange = (key: keyof typeof tasks, checked: boolean) => {
     setTasks((prev) => ({
@@ -116,9 +119,7 @@ const OnboardingCard: React.FC<OnboardingCardProps> = ({
 
   const handleCustomToggle = (id: string, checked: boolean) => {
     setCustomItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, checked } : item,
-      ),
+      prev.map((item) => (item.id === id ? { ...item, checked } : item)),
     );
   };
 
@@ -148,22 +149,14 @@ const OnboardingCard: React.FC<OnboardingCardProps> = ({
     startTransition(async () => {
       try {
         const result = await updateOnboardingTasks({
-          data: [
-            candidateId,
-            {
-              contractSigned: tasks.contractSigned,
-              emailProvided: tasks.registrationEmailSent,
-              onboardingPacketSent: tasks.packetSent,
-              companyEmailActivate: tasks.companyEmailActivate,
-            },
-          ],
+          data: [candidateId, tasks],
         });
 
         if (!result.success) {
           throw new Error(result.error || "Failed to update tasks");
         }
 
-        if (customItems.length > 0) {
+        if (customChanged) {
           const customResult = await updateChecklistItems({
             data: [
               candidateId,

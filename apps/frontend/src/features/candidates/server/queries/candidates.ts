@@ -25,6 +25,7 @@ import {
 } from "@workspace/db/repositories/candidate-repository";
 import { getKanbanFilteredTotalCount } from "@workspace/db/kanban-queries";
 import type { Session } from "better-auth";
+import type { OnboardingTasks } from "#/features/candidates/candidates-service";
 
 type CachedCandidate = Awaited<ReturnType<typeof getCandidateWithApplications>>;
 type CandidateDocuments = Awaited<ReturnType<typeof getDocumentsByCandidateId>>;
@@ -47,12 +48,7 @@ export type CandidateDetailData = {
   };
   documents: CandidateDocuments;
   screenings: CandidateScreenings;
-  onboardingData: {
-    contractSigned: boolean;
-    registrationEmailSent: boolean;
-    packetSent: boolean;
-    companyEmailActivate: boolean;
-  } | null;
+  onboardingData: OnboardingTasks;
   checklistItems: Array<{
     id: string;
     label: string;
@@ -102,11 +98,11 @@ export const loadCandidatesIndex = createServerFn({ method: "GET" })
 
     const hasFilters = Boolean(
       deps.name ||
-        deps.email ||
-        deps.position?.length ||
-        deps.status?.length ||
-        deps.source?.length ||
-        (deps.sort && deps.sort !== "newest"),
+      deps.email ||
+      deps.position?.length ||
+      deps.status?.length ||
+      deps.source?.length ||
+      (deps.sort && deps.sort !== "newest"),
     );
 
     if (isKanbanView) {
@@ -202,61 +198,65 @@ export const loadCandidateDetail = createServerFn({ method: "GET" })
   .validator((data: CandidateDetailInput) => data)
   .handler(
     async ({ data, context: { session } }): Promise<CandidateDetailData> => {
-    const [users, candidate, documents, screenings] = await Promise.all([
-      getUsers(),
-      getCandidateWithApplications(data.uid),
-      getDocumentsByCandidateId(data.uid),
-      getCandidateAiScreenings(data.uid),
-    ]);
-
-    if (!candidate) {
-      return {
-        candidate: null,
-        users: [],
-        session: session.session,
-        currentUser: session.user,
-        documents: [],
-        screenings: [],
-        onboardingData: null,
-        checklistItems: [],
-        applicationDetails: [],
-        initialApplicationId: data.application,
-      };
-    }
-
-    const [applicationDetails, rawOnboarding, checklistItems] =
-      await Promise.all([
-        Promise.all(
-          candidate.applications.map((app) =>
-            getApplicationWithInterviews(app.id),
-          ),
-        ),
-        getOrCreateCandidateOnboarding(candidate.id),
-        getChecklistItemsByCandidateId(candidate.id),
+      const [users, candidate, documents, screenings] = await Promise.all([
+        getUsers(),
+        getCandidateWithApplications(data.uid),
+        getDocumentsByCandidateId(data.uid),
+        getCandidateAiScreenings(data.uid),
       ]);
 
-    const onboardingData = rawOnboarding
-      ? {
-          contractSigned: rawOnboarding.contractSigned ?? false,
-          registrationEmailSent: rawOnboarding.emailProvided ?? false,
-          packetSent: rawOnboarding.onboardingPacketSent ?? false,
-          companyEmailActivate: rawOnboarding.companyEmailActivate ?? false,
-        }
-      : null;
+      if (!candidate) {
+        return {
+          candidate: null,
+          users: [],
+          session: session.session,
+          currentUser: session.user,
+          documents: [],
+          screenings: [],
+          onboardingData: {
+            contractSigned: false,
+            emailProvided: false,
+            onboardingPacketSent: false,
+            companyEmailActivate: false,
+          },
+          checklistItems: [],
+          applicationDetails: [],
+          initialApplicationId: data.application,
+        };
+      }
 
-    return {
-      candidate,
-      users,
-      session: session.session,
-      currentUser: session.user,
-      documents,
-      screenings,
-      onboardingData,
-      checklistItems,
-      applicationDetails,
-      initialApplicationId: data.application,
-    };
-  });
+      const [applicationDetails, rawOnboarding, checklistItems] =
+        await Promise.all([
+          Promise.all(
+            candidate.applications.map((app) =>
+              getApplicationWithInterviews(app.id),
+            ),
+          ),
+          getOrCreateCandidateOnboarding(candidate.id),
+          getChecklistItemsByCandidateId(candidate.id),
+        ]);
+
+      const onboardingData = {
+        contractSigned: rawOnboarding.contractSigned ?? false,
+        emailProvided: rawOnboarding.emailProvided ?? false,
+        onboardingPacketSent: rawOnboarding.onboardingPacketSent ?? false,
+        companyEmailActivate: rawOnboarding.companyEmailActivate ?? false,
+      };
+
+      return {
+        candidate,
+        users,
+        session: session.session,
+        currentUser: session.user,
+        documents,
+        screenings,
+        onboardingData,
+        checklistItems,
+        applicationDetails,
+        initialApplicationId: data.application,
+      };
+    },
+  );
 
 export const loadCandidateEdit = createServerFn({ method: "GET" })
   .middleware([serverFnAuthGuard])
