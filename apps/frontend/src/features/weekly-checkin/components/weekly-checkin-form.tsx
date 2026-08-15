@@ -3,12 +3,7 @@ import { useTransition, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import { Button } from "#/components/ui/button";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "#/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
 import {
   Field,
   FieldDescription,
@@ -49,6 +44,56 @@ interface WeeklyCheckinFormProps {
   userName?: string;
 }
 
+/** Pipeline tab numeric fields, rendered by one shared field renderer. */
+const PIPELINE_METRICS: Array<{
+  name:
+    | "candidatesSourced"
+    | "candidatesScreened"
+    | "candidatesRejected"
+    | "candidatesAdvanced2ndRound"
+    | "candidatesAdvanced3rdRound"
+    | "offersExtended"
+    | "offersAccepted";
+  label: string;
+}> = [
+  { name: "candidatesSourced", label: "Candidates Sourced/Shortlisted" },
+  { name: "candidatesScreened", label: "Candidates Screened" },
+  { name: "candidatesRejected", label: "Candidates Rejected" },
+  { name: "candidatesAdvanced2ndRound", label: "Advanced to 2nd Round" },
+  { name: "candidatesAdvanced3rdRound", label: "Advanced to 3rd Round" },
+  { name: "offersExtended", label: "Offers Extended" },
+  { name: "offersAccepted", label: "Offers Accepted" },
+];
+
+/** Notes tab textarea fields, rendered by one shared field renderer. */
+const NOTE_FIELDS: Array<{
+  name: "delaysOrBottlenecks" | "concernsOrEscalations" | "supportNeeded";
+  label: string;
+  placeholder: string;
+}> = [
+  {
+    name: "delaysOrBottlenecks",
+    label: "Delays or Bottlenecks Noticed",
+    placeholder:
+      "Describe any delays or bottlenecks you encountered this week...",
+  },
+  {
+    name: "concernsOrEscalations",
+    label: "Any Concerns or Escalations",
+    placeholder: "Note any concerns or issues that need escalation...",
+  },
+  {
+    name: "supportNeeded",
+    label: "Support Needed for Next Week",
+    placeholder: "Describe any support or resources you need for next week...",
+  },
+];
+
+const toggleValue = <T,>(list: T[], value: T) =>
+  list.includes(value)
+    ? list.filter((item) => item !== value)
+    : [...list, value];
+
 export default function WeeklyCheckinForm({
   positions,
   userName,
@@ -59,9 +104,6 @@ export default function WeeklyCheckinForm({
 
   const [activeTab, setActiveTab] = useState("week-info");
 
-  const [selectedPositions, setSelectedPositions] = useState<string[]>([]);
-
-  const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
   // Calculate default week range (current week)
   const today = new Date();
   const dayOfWeek = today.getDay();
@@ -85,7 +127,7 @@ export default function WeeklyCheckinForm({
       candidatesAdvanced3rdRound: 0,
       offersExtended: 0,
       offersAccepted: 0,
-      bestPerformingChannels: [] as string[],
+      bestPerformingChannels: [] as (typeof sourcingChannels)[number][],
       avgTimeToScreen: "",
       delaysOrBottlenecks: "",
       concernsOrEscalations: "",
@@ -98,11 +140,7 @@ export default function WeeklyCheckinForm({
       startTransition(async () => {
         try {
           const result = await createWeeklyCheckin({
-            data: {
-              ...value,
-              positionsWorked: selectedPositions,
-              bestPerformingChannels: selectedChannels as any,
-            },
+            data: value,
           });
 
           if (result.error) {
@@ -130,22 +168,6 @@ export default function WeeklyCheckinForm({
     return date.toISOString().split("T")[0];
   };
 
-  const togglePosition = (positionId: string) => {
-    setSelectedPositions((prev) =>
-      prev.includes(positionId)
-        ? prev.filter((id) => id !== positionId)
-        : [...prev, positionId],
-    );
-  };
-
-  const toggleChannel = (channel: string) => {
-    setSelectedChannels((prev) =>
-      prev.includes(channel)
-        ? prev.filter((c) => c !== channel)
-        : [...prev, channel],
-    );
-  };
-
   return (
     <div className="w-full space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -163,8 +185,6 @@ export default function WeeklyCheckinForm({
             variant="secondary"
             onClick={() => {
               form.reset();
-              setSelectedPositions([]);
-              setSelectedChannels([]);
             }}
             disabled={isPending}
           >
@@ -315,8 +335,18 @@ export default function WeeklyCheckinForm({
                     >
                       <Checkbox
                         id={`position-${position.id}`}
-                        checked={selectedPositions.includes(position.id)}
-                        onCheckedChange={() => togglePosition(position.id)}
+                        checked={form.state.values.positionsWorked.includes(
+                          position.id,
+                        )}
+                        onCheckedChange={() =>
+                          form.setFieldValue(
+                            "positionsWorked",
+                            toggleValue(
+                              form.state.values.positionsWorked,
+                              position.id,
+                            ),
+                          )
+                        }
                       />
                       <Label
                         htmlFor={`position-${position.id}`}
@@ -340,159 +370,30 @@ export default function WeeklyCheckinForm({
           <TabsContent value="pipeline" className="mt-6 space-y-6">
             <FieldGroup>
               <div className="grid gap-4 sm:grid-cols-2">
-                <form.Field
-                  name="candidatesSourced"
-                  children={(field) => (
-                    <Field>
-                      <FieldLabel htmlFor={field.name}>
-                        Candidates Sourced/Shortlisted
-                      </FieldLabel>
-                      <Input
-                        id={field.name}
-                        name={field.name}
-                        type="number"
-                        min="0"
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) =>
-                          field.handleChange(parseInt(e.target.value) || 0)
-                        }
-                      />
-                    </Field>
-                  )}
-                />
-
-                <form.Field
-                  name="candidatesScreened"
-                  children={(field) => (
-                    <Field>
-                      <FieldLabel htmlFor={field.name}>
-                        Candidates Screened
-                      </FieldLabel>
-                      <Input
-                        id={field.name}
-                        name={field.name}
-                        type="number"
-                        min="0"
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) =>
-                          field.handleChange(parseInt(e.target.value) || 0)
-                        }
-                      />
-                    </Field>
-                  )}
-                />
-
-                <form.Field
-                  name="candidatesRejected"
-                  children={(field) => (
-                    <Field>
-                      <FieldLabel htmlFor={field.name}>
-                        Candidates Rejected
-                      </FieldLabel>
-                      <Input
-                        id={field.name}
-                        name={field.name}
-                        type="number"
-                        min="0"
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) =>
-                          field.handleChange(parseInt(e.target.value) || 0)
-                        }
-                      />
-                    </Field>
-                  )}
-                />
-
-                <form.Field
-                  name="candidatesAdvanced2ndRound"
-                  children={(field) => (
-                    <Field>
-                      <FieldLabel htmlFor={field.name}>
-                        Advanced to 2nd Round
-                      </FieldLabel>
-                      <Input
-                        id={field.name}
-                        name={field.name}
-                        type="number"
-                        min="0"
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) =>
-                          field.handleChange(parseInt(e.target.value) || 0)
-                        }
-                      />
-                    </Field>
-                  )}
-                />
-
-                <form.Field
-                  name="candidatesAdvanced3rdRound"
-                  children={(field) => (
-                    <Field>
-                      <FieldLabel htmlFor={field.name}>
-                        Advanced to 3rd Round
-                      </FieldLabel>
-                      <Input
-                        id={field.name}
-                        name={field.name}
-                        type="number"
-                        min="0"
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) =>
-                          field.handleChange(parseInt(e.target.value) || 0)
-                        }
-                      />
-                    </Field>
-                  )}
-                />
-
-                <form.Field
-                  name="offersExtended"
-                  children={(field) => (
-                    <Field>
-                      <FieldLabel htmlFor={field.name}>
-                        Offers Extended
-                      </FieldLabel>
-                      <Input
-                        id={field.name}
-                        name={field.name}
-                        type="number"
-                        min="0"
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) =>
-                          field.handleChange(parseInt(e.target.value) || 0)
-                        }
-                      />
-                    </Field>
-                  )}
-                />
-
-                <form.Field
-                  name="offersAccepted"
-                  children={(field) => (
-                    <Field>
-                      <FieldLabel htmlFor={field.name}>
-                        Offers Accepted
-                      </FieldLabel>
-                      <Input
-                        id={field.name}
-                        name={field.name}
-                        type="number"
-                        min="0"
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) =>
-                          field.handleChange(parseInt(e.target.value) || 0)
-                        }
-                      />
-                    </Field>
-                  )}
-                />
+                {PIPELINE_METRICS.map((metric) => (
+                  <form.Field
+                    key={metric.name}
+                    name={metric.name}
+                    children={(field) => (
+                      <Field>
+                        <FieldLabel htmlFor={field.name}>
+                          {metric.label}
+                        </FieldLabel>
+                        <Input
+                          id={field.name}
+                          name={field.name}
+                          type="number"
+                          min="0"
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(e) =>
+                            field.handleChange(parseInt(e.target.value) || 0)
+                          }
+                        />
+                      </Field>
+                    )}
+                  />
+                ))}
               </div>
             </FieldGroup>
           </TabsContent>
@@ -510,8 +411,18 @@ export default function WeeklyCheckinForm({
                     <div key={channel} className="flex items-center space-x-2">
                       <Checkbox
                         id={`channel-${channel}`}
-                        checked={selectedChannels.includes(channel)}
-                        onCheckedChange={() => toggleChannel(channel)}
+                        checked={form.state.values.bestPerformingChannels.includes(
+                          channel,
+                        )}
+                        onCheckedChange={() =>
+                          form.setFieldValue(
+                            "bestPerformingChannels",
+                            toggleValue(
+                              form.state.values.bestPerformingChannels,
+                              channel,
+                            ),
+                          )
+                        }
                       />
                       <Label
                         htmlFor={`channel-${channel}`}
@@ -551,89 +462,36 @@ export default function WeeklyCheckinForm({
           {/* Tab 4: Notes & Issues */}
           <TabsContent value="notes" className="mt-6 space-y-6">
             <FieldGroup>
-              <form.Field
-                name="delaysOrBottlenecks"
-                children={(field) => (
-                  <Field>
-                    <FieldLabel htmlFor={field.name}>
-                      Delays or Bottlenecks Noticed
-                    </FieldLabel>
-                    <InputGroup>
-                      <InputGroupTextarea
-                        id={field.name}
-                        name={field.name}
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder="Describe any delays or bottlenecks you encountered this week..."
-                        rows={4}
-                        className="min-h-24 resize-none"
-                      />
-                      <InputGroupAddon align="block-end">
-                        <InputGroupText className="tabular-nums">
-                          {field.state.value.length}/2000
-                        </InputGroupText>
-                      </InputGroupAddon>
-                    </InputGroup>
-                  </Field>
-                )}
-              />
-
-              <form.Field
-                name="concernsOrEscalations"
-                children={(field) => (
-                  <Field>
-                    <FieldLabel htmlFor={field.name}>
-                      Any Concerns or Escalations
-                    </FieldLabel>
-                    <InputGroup>
-                      <InputGroupTextarea
-                        id={field.name}
-                        name={field.name}
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder="Note any concerns or issues that need escalation..."
-                        rows={4}
-                        className="min-h-24 resize-none"
-                      />
-                      <InputGroupAddon align="block-end">
-                        <InputGroupText className="tabular-nums">
-                          {field.state.value.length}/2000
-                        </InputGroupText>
-                      </InputGroupAddon>
-                    </InputGroup>
-                  </Field>
-                )}
-              />
-
-              <form.Field
-                name="supportNeeded"
-                children={(field) => (
-                  <Field>
-                    <FieldLabel htmlFor={field.name}>
-                      Support Needed for Next Week
-                    </FieldLabel>
-                    <InputGroup>
-                      <InputGroupTextarea
-                        id={field.name}
-                        name={field.name}
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder="Describe any support or resources you need for next week..."
-                        rows={4}
-                        className="min-h-24 resize-none"
-                      />
-                      <InputGroupAddon align="block-end">
-                        <InputGroupText className="tabular-nums">
-                          {field.state.value.length}/2000
-                        </InputGroupText>
-                      </InputGroupAddon>
-                    </InputGroup>
-                  </Field>
-                )}
-              />
+              {NOTE_FIELDS.map((noteField) => (
+                <form.Field
+                  key={noteField.name}
+                  name={noteField.name}
+                  children={(field) => (
+                    <Field>
+                      <FieldLabel htmlFor={field.name}>
+                        {noteField.label}
+                      </FieldLabel>
+                      <InputGroup>
+                        <InputGroupTextarea
+                          id={field.name}
+                          name={field.name}
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          placeholder={noteField.placeholder}
+                          rows={4}
+                          className="min-h-24 resize-none"
+                        />
+                        <InputGroupAddon align="block-end">
+                          <InputGroupText className="tabular-nums">
+                            {field.state.value.length}/2000
+                          </InputGroupText>
+                        </InputGroupAddon>
+                      </InputGroup>
+                    </Field>
+                  )}
+                />
+              ))}
             </FieldGroup>
           </TabsContent>
         </Tabs>
