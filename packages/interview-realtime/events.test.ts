@@ -69,6 +69,7 @@ test("parseDoMessage accepts every message shape the DO emits", () => {
         id: "q-1",
         questionText: "Tell me about yourself",
         questionType: "text",
+        category: null,
       },
     },
     { type: "ALL_QUESTIONS_ASKED" },
