@@ -24,7 +24,6 @@
     "./default-rounds": "./default-rounds.ts",
     "./create-default-rounds": "./create-default-rounds.ts",
     "./kanban-cursor": "./kanban-cursor.ts",
-    "./kanban-queries": "./kanban-queries.ts",
     "./sqlite-helpers": "./sqlite-helpers.ts",
     "./round-progression": "./round-progression.ts",
     "./location": "./location.ts",
@@ -53,6 +52,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "drizzle-orm": "^0.45.1"
+    "drizzle-orm": "^0.45.1",
+    "zod": "^4.1.12"
   }
 }

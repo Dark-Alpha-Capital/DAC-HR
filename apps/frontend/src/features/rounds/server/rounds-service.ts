@@ -10,7 +10,7 @@ import {
   getRoundById,
   getRoundsByPositionId,
   getRoundsWithPositions,
-} from "@workspace/db/modules/positions";
+} from "@workspace/db/repositories/position-repository";
 import {
   roundFormSchema,
   roundEditFormSchema,

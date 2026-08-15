@@ -13,17 +13,11 @@ import {
   DEFAULT_TECHNICAL_ROUND,
 } from "../default-rounds";
 import { position } from "../schema";
+import { formatSqlValue } from "../sql-value";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const webDir = path.resolve(__dirname, "../../../apps/frontend");
 const remote = process.argv.includes("--remote");
-
-function sqlValue(value: unknown): string {
-  if (value === null || value === undefined) return "NULL";
-  if (typeof value === "number") return Number.isFinite(value) ? String(value) : "NULL";
-  if (typeof value === "boolean") return value ? "1" : "0";
-  return `'${String(value).replace(/'/g, "''")}'`;
-}
 
 function executeD1(sql: string) {
   const target = remote ? "--remote" : "--local";
@@ -106,14 +100,16 @@ function getLocalD1SqlitePath(): string {
     (f) => f.endsWith(".sqlite") && f !== "metadata.sqlite",
   );
   if (files.length === 0) {
-    throw new Error("No local D1 database found. Run bun run db:migrate first.");
+    throw new Error(
+      "No local D1 database found. Run bun run db:migrate first.",
+    );
   }
   return path.join(d1Dir, files[0]!);
 }
 
 function tableExists(tableName: string): boolean {
   const rows = queryD1<{ name: string }>(
-    `SELECT name FROM sqlite_master WHERE type='table' AND name=${sqlValue(tableName)};`,
+    `SELECT name FROM sqlite_master WHERE type='table' AND name=${formatSqlValue(tableName)};`,
   );
   return rows.length > 0;
 }
@@ -147,8 +143,8 @@ function buildResetSql(
     const screeningId = crypto.randomUUID();
     const technicalId = crypto.randomUUID();
     insertValues.push(
-      `(${sqlValue(screeningId)}, ${sqlValue(pos.id)}, ${sqlValue(DEFAULT_SCREENING_ROUND.name)}, ${sqlValue(DEFAULT_SCREENING_ROUND.description)}, ${now}, ${now})`,
-      `(${sqlValue(technicalId)}, ${sqlValue(pos.id)}, ${sqlValue(DEFAULT_TECHNICAL_ROUND.name)}, ${sqlValue(DEFAULT_TECHNICAL_ROUND.description)}, ${now}, ${now})`,
+      `(${formatSqlValue(screeningId)}, ${formatSqlValue(pos.id)}, ${formatSqlValue(DEFAULT_SCREENING_ROUND.name)}, ${formatSqlValue(DEFAULT_SCREENING_ROUND.description)}, ${now}, ${now})`,
+      `(${formatSqlValue(technicalId)}, ${formatSqlValue(pos.id)}, ${formatSqlValue(DEFAULT_TECHNICAL_ROUND.name)}, ${formatSqlValue(DEFAULT_TECHNICAL_ROUND.description)}, ${now}, ${now})`,
     );
   }
 

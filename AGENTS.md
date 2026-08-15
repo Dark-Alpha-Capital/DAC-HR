@@ -53,7 +53,7 @@ Shadcn/ui components live in `apps/frontend/src/components/ui/` (no separate `pa
 - D1 database: `hr-automation-db` (binding `DB` in `apps/frontend/wrangler.jsonc`).
 - Schema: `packages/db/schema.ts` (SQLite dialect, ~36 tables).
 - Migrations: `packages/db/drizzle/` (SQL files `0000`–`0020`) — applied via `wrangler d1 migrations apply` / scripts below. `drizzle/meta/_journal.json` + snapshots are kept in sync (last snapshot `0020_snapshot.json` reflects the current schema); `db:generate` should print "No schema changes, nothing to migrate" when the schema hasn't changed, and `db:check` fails the build if it would produce a new migration. If `db:generate` ever proposes re-creating existing tables, the journal/snapshot drifted — re-sync it (see git history) rather than applying that migration.
-- Repositories: `packages/db/repositories/` (9 files: audit, candidate, candidate-import, document, interview, interview-bundle, interview-session, meet-attendance, screener).
+- Query layer: `packages/db/repositories/` is the **single home for all D1 queries** — one `*-repository.ts` file per domain/aggregate, bound to the production `db` (12 files: audit, candidate, candidate-import, dashboard, document, interview, interview-bundle, interview-session, kanban, position, screener). Feature services are the only files that import them. The only exception: `packages/db/modules/audit.ts` is a pure (db-injected) module with `repositories/audit-repository.ts` as its thin adapter, kept separate for unit-testability. Pure logic/cursor helpers live at the package root (`kanban-cursor.ts`, `round-progression.ts`, `location.ts`). When adding a query that serves 2+ features, put it in `repositories/`; single-consumer queries may live directly in the owning feature service.
 
 ```bash
 cd packages/db
@@ -74,7 +74,7 @@ bun run db:finalize-interview-schema  # + :remote variant
 
 **Local state corruption (`_cf_ALARM ... SQLITE_ERROR`):** when workerd/wrangler is upgraded, the on-disk `.wrangler/state` sqlite (D1, Durable Object alarms, workflows) can become unreadable — every local wrangler command dies with a SQLite error before running. The state is dev-ephemeral and gitignored; fix with `bun run db:reset:local` (clears `.wrangler/state` and re-applies all migrations). Note `db:seed`/`db:seed-positions` currently fail under plain `bun` because `@workspace/db/db` imports `cloudflare:workers`; run seeds through a Workers-context (wrangler dev) if needed.
 
-The package exports many submodules beyond `.`/`./db`: `./queries`, `./repositories/*`, `./schema`, `./question-types`, `./enums`, `./application-status`, `./candidate-list-filters`, `./document-list-filters`, `./default-rounds`, `./create-default-rounds`, `./kanban-cursor`, `./kanban-queries`, `./sqlite-helpers`. Add new exports to both the `exports` map in `package.json` and `index.ts` (or the relevant module).
+The package exports many submodules beyond `.`/`./db`: `./repositories/*`, `./modules/*`, `./schema`, `./question-types`, `./enums`, `./application-status`, `./candidate-list-filters`, `./document-list-filters`, `./default-rounds`, `./create-default-rounds`, `./kanban-cursor`, `./sqlite-helpers`, `./round-progression`, `./location`, `./testing`. Add new exports to both the `exports` map in `package.json` and `index.ts` (or the relevant module).
 
 ### DB import — critical: server-only with client stub
 
@@ -166,7 +166,7 @@ import { eq, and, or, sql, asc, desc, inArray, count, gte, lte } from "@workspac
 - Routes under `_main/employees/attendance/`: `index.tsx` (Meetings list), `$conferenceId.tsx` (per-meeting attendance), `meeting-attendance.tsx` (firm-wide data table + Sync button).
 - `src/lib/attendance/meet-auth.ts` resolves the Google access token; `meet-attendance.ts` is the client-safe Meet API + Calendar-title-matching core (fetch only).
 - Server functions in `lib/actions/sync-meet-attendance.ts`: `getMeetConferences`, `getMeetConferenceDetail`, `getStoredAttendance`, `prepareAttendanceSync`, `syncAttendanceChunk`.
-- Persistence: `packages/db/repositories/meet-attendance-repository.ts` (`persistConferenceAttendance`, `listStoredAttendanceRows`).
+- Persistence: `features/attendance/server/attendance-service.ts` owns `persistConferenceAttendance` + `listStoredAttendanceRows` (inlined — single-consumer queries live in the feature service, not `repositories/`).
 
 ## Prismic (headless CMS)
 

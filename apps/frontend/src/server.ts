@@ -27,18 +27,12 @@ export default {
       url.pathname.startsWith("/api/interview-token/") &&
       url.pathname.endsWith("/upload-audio")
     ) {
-      const token = decodeURIComponent(
-        url.pathname.split("/")[3] ?? "",
-      );
+      const token = decodeURIComponent(url.pathname.split("/")[3] ?? "");
       return handleRecordingUpload(request, token, {
         waitUntil: (promise) => ctx.waitUntil(promise),
       });
     }
 
-    return (handler.fetch as unknown as (
-      request: Request,
-      env: Env,
-      ctx: ExecutionContext,
-    ) => Promise<Response>)(request, env, ctx);
+    return handler.fetch(request);
   },
 };

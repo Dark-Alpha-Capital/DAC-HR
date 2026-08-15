@@ -10,7 +10,7 @@ import {
   getPositionBySlug,
   getPositions,
   getRoundsByPositionId,
-} from "@workspace/db/modules/positions";
+} from "@workspace/db/repositories/position-repository";
 import { getScreenerByPositionId } from "@workspace/db/repositories/screener-repository";
 
 type Actor = {

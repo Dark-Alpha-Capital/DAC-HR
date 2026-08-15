@@ -5,8 +5,8 @@ import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import {
   getEmployeeById,
   getEmployees,
-} from "@workspace/db/modules/dashboard";
-import { getPositions } from "@workspace/db/modules/positions";
+} from "@workspace/db/repositories/dashboard-repository";
+import { getPositions } from "@workspace/db/repositories/position-repository";
 import { getCandidateWithApplications } from "@workspace/db/repositories/candidate-repository";
 import {
   employeeFormSchema,

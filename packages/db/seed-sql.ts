@@ -1,4 +1,5 @@
 import type { Database } from "bun:sqlite";
+import { formatSqlValue } from "./sql-value";
 
 const SEED_TABLES_IN_INSERT_ORDER = [
   "user",
@@ -36,23 +37,11 @@ DELETE FROM user WHERE id = '00000000-0000-4000-8000-000000000001';
 PRAGMA foreign_keys = ON;
 `;
 
-function sqlValue(value: unknown): string {
-  if (value === null || value === undefined) return "NULL";
-  if (typeof value === "number") return Number.isFinite(value) ? String(value) : "NULL";
-  if (typeof value === "bigint") return value.toString();
-  if (typeof value === "boolean") return value ? "1" : "0";
-  return `'${String(value).replace(/'/g, "''")}'`;
-}
-
-function exportTable(
-  sqlite: Database,
-  table: string,
-  where?: string,
-): string {
+function exportTable(sqlite: Database, table: string, where?: string): string {
   // SAFETY: PRAGMA table_info returns one row per column with a `name` field.
-  const columns = sqlite
-    .prepare(`PRAGMA table_info(${table})`)
-    .all() as Array<{ name: string }>;
+  const columns = sqlite.prepare(`PRAGMA table_info(${table})`).all() as Array<{
+    name: string;
+  }>;
 
   if (columns.length === 0) return "";
 
@@ -63,13 +52,15 @@ function exportTable(
     .prepare(
       `SELECT ${colNames.join(", ")} FROM ${table}${where ? ` WHERE ${where}` : ""}`,
     )
-    .all() as Array<Record<string, string | number | bigint | null | Uint8Array>>;
+    .all() as Array<
+    Record<string, string | number | bigint | null | Uint8Array>
+  >;
 
   if (rows.length === 0) return "";
 
   return rows
     .map((row) => {
-      const values = colNames.map((col) => sqlValue(row[col])).join(", ");
+      const values = colNames.map((col) => formatSqlValue(row[col])).join(", ");
       return `INSERT INTO ${table} (${colNames.join(", ")}) VALUES (${values});`;
     })
     .join("\n");
@@ -78,11 +69,7 @@ function exportTable(
 export function exportSeedDataSql(sqlite: Database): string {
   const chunks = [
     "PRAGMA foreign_keys = OFF;",
-    exportTable(
-      sqlite,
-      "user",
-      "id = '00000000-0000-4000-8000-000000000001'",
-    ),
+    exportTable(sqlite, "user", "id = '00000000-0000-4000-8000-000000000001'"),
     exportTable(sqlite, "position"),
     exportTable(sqlite, "round_template"),
     exportTable(sqlite, "question_bank"),

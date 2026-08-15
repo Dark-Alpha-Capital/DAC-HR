@@ -9,6 +9,7 @@ import {
   candidateProfile,
   position,
   user,
+  type JsonObject,
 } from "../schema";
 import { ilike } from "../sqlite-helpers";
 import {
@@ -584,7 +585,7 @@ export const saveCandidateAiScreening = async (params: {
   applicationId?: string | null;
   analysis: string;
   model?: string;
-  structuredData?: any;
+  structuredData?: JsonObject;
 }) => {
   try {
     const [screening] = await db

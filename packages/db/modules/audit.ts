@@ -6,7 +6,7 @@
  */
 import { and, count, desc, eq, gte, lte, or } from "drizzle-orm";
 import { ilike } from "../sqlite-helpers";
-import { auditLog, user } from "../schema";
+import { auditLog, user, type JsonObject } from "../schema";
 import type { Database } from "@workspace/db/db";
 
 export type InsertAuditLogParams = {
@@ -14,7 +14,7 @@ export type InsertAuditLogParams = {
   action: string;
   entityType: string;
   entityId: string;
-  details: Record<string, unknown>;
+  details: JsonObject;
 };
 
 /** Insert one audit log row. Returns the created row, or null on failure. */
@@ -65,7 +65,7 @@ export async function listAuditLogs(
     action: string;
     entityType: string;
     entityId: string;
-    details: Record<string, unknown> | null;
+    details: JsonObject | null;
     createdAt: string;
     updatedAt: string;
   }>;

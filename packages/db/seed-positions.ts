@@ -9,6 +9,7 @@ import { drizzle } from "drizzle-orm/bun-sqlite";
 import type { Department, HireLevel, PositionStatus } from "./enums";
 import { position } from "./schema";
 import { createDefaultRoundsForPosition } from "./create-default-rounds";
+import { formatSqlValue } from "./sql-value";
 
 const webDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -253,7 +254,9 @@ function getLocalD1SqlitePath(): string {
     (file) => file.endsWith(".sqlite") && file !== "metadata.sqlite",
   );
   if (sqliteFiles.length === 0) {
-    throw new Error("No local D1 database found. Run bun run db:migrate first.");
+    throw new Error(
+      "No local D1 database found. Run bun run db:migrate first.",
+    );
   }
   return path.join(d1Dir, sqliteFiles[0]!);
 }
@@ -280,17 +283,10 @@ function runWranglerD1(filePath: string, remote: boolean) {
   }
 }
 
-function sqlValue(value: unknown): string {
-  if (value === null || value === undefined) return "NULL";
-  if (typeof value === "number") return Number.isFinite(value) ? String(value) : "NULL";
-  if (typeof value === "boolean") return value ? "1" : "0";
-  return `'${String(value).replace(/'/g, "''")}'`;
-}
-
 function exportInsertedSql(sqlite: Database, positionIds: string[]): string {
   if (positionIds.length === 0) return "";
 
-  const placeholders = positionIds.map((id) => sqlValue(id)).join(", ");
+  const placeholders = positionIds.map((id) => formatSqlValue(id)).join(", ");
   const exportTable = (table: string, where: string) => {
     // SAFETY: PRAGMA table_info returns one row per column with a `name` field.
     const columns = sqlite
@@ -302,14 +298,16 @@ function exportInsertedSql(sqlite: Database, positionIds: string[]): string {
     // SAFETY: bun:sqlite `.all()` returns row objects whose column values are
     // the SQLite storage types (string | number | bigint | null | Uint8Array).
     const rows = sqlite
-      .prepare(
-        `SELECT ${colNames.join(", ")} FROM ${table} WHERE ${where}`,
-      )
-      .all() as Array<Record<string, string | number | bigint | null | Uint8Array>>;
+      .prepare(`SELECT ${colNames.join(", ")} FROM ${table} WHERE ${where}`)
+      .all() as Array<
+      Record<string, string | number | bigint | null | Uint8Array>
+    >;
 
     return rows
       .map((row) => {
-        const values = colNames.map((col) => sqlValue(row[col])).join(", ");
+        const values = colNames
+          .map((col) => formatSqlValue(row[col]))
+          .join(", ");
         return `INSERT OR IGNORE INTO ${table} (${colNames.join(", ")}) VALUES (${values});`;
       })
       .join("\n");
@@ -365,7 +363,9 @@ async function seedPositions(remote: boolean) {
   );
 
   if (remote) {
-    const tempDir = mkdtempSync(path.join(tmpdir(), "hr-automation-positions-"));
+    const tempDir = mkdtempSync(
+      path.join(tmpdir(), "hr-automation-positions-"),
+    );
     const dataPath = path.join(tempDir, "positions.sql");
 
     try {

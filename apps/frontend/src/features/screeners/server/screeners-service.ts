@@ -5,7 +5,7 @@ import {
   getScreenerById,
   updateScreener,
 } from "@workspace/db/repositories/screener-repository";
-import { getPositions } from "@workspace/db/modules/positions";
+import { getPositions } from "@workspace/db/repositories/position-repository";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import type {
   ScreenerFormSchema,

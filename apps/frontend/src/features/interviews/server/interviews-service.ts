@@ -15,7 +15,7 @@ import {
   type RoundConfig,
 } from "@workspace/db/repositories/interview-bundle-repository";
 import { getInterviewById } from "@workspace/db/repositories/interview-repository";
-import { getRoundsByPositionId } from "@workspace/db/modules/positions";
+import { getRoundsByPositionId } from "@workspace/db/repositories/position-repository";
 import { getApplicationWithInterviews, getInterviewAiAnalysesByBundleId } from "@workspace/db/repositories/interview-repository";
 import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
 import {
@@ -32,7 +32,7 @@ import {
 import {
   getQuestionsForInterviewSession,
   getQuestionById,
-} from "@workspace/db/modules/positions";
+} from "@workspace/db/repositories/position-repository";
 import {
   getSessionById,
   getSessionByInterviewId,

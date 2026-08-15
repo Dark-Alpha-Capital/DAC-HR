@@ -18,7 +18,7 @@ import {
   getCandidateAiScreenings,
   getUsers,
 } from "@workspace/db/repositories/candidate-repository";
-import { getPositions } from "@workspace/db/modules/positions";
+import { getPositions } from "@workspace/db/repositories/position-repository";
 import { getApplicationWithInterviews } from "@workspace/db/repositories/interview-repository";
 import { getSessionsByApplicationId } from "@workspace/db/repositories/interview-session-repository";
 import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
@@ -412,7 +412,7 @@ export const applicationsService = {
           },
           input: {
             analysis: analysis.trim(),
-            structuredData: structuredData || null,
+            structuredData: updateFields.structuredData ?? null,
           },
           previous: {
             analysis: currentScreening.analysis,

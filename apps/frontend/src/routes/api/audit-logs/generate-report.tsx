@@ -7,7 +7,7 @@ const auditReportBodySchema = z.object({
   action: z.string().optional(),
   entityType: z.string().optional(),
   entityId: z.string().optional(),
-  details: z.record(z.string(), z.unknown()).optional(),
+  details: z.record(z.string(), z.json()).optional(),
 });
 
 export const Route = createFileRoute("/api/audit-logs/generate-report")({

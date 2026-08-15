@@ -1,7 +1,17 @@
+import { z } from "zod";
+
 export type KanbanCursorPayload = {
   updatedAt: string;
   id: string;
 };
+
+const kanbanCursorPayloadSchema = z.object({
+  updatedAt: z.union([
+    z.string().min(1),
+    z.number().finite().transform(String),
+  ]),
+  id: z.string().min(1),
+});
 
 function encodeBase64Url(value: string): string {
   const bytes = new TextEncoder().encode(value);
@@ -9,7 +19,10 @@ function encodeBase64Url(value: string): string {
   for (const byte of bytes) {
     binary += String.fromCharCode(byte);
   }
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 }
 
 function decodeBase64Url(value: string): string {
@@ -17,16 +30,6 @@ function decodeBase64Url(value: string): string {
   const binary = atob(padded);
   const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
   return new TextDecoder().decode(bytes);
-}
-
-function normalizeUpdatedAt(value: unknown): string | null {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return String(value);
-  }
-  if (typeof value === "string" && value.length > 0) {
-    return value;
-  }
-  return null;
 }
 
 export function encodeKanbanCursor(payload: KanbanCursorPayload): string {
@@ -40,19 +43,10 @@ export function encodeKanbanCursor(payload: KanbanCursorPayload): string {
 
 export function decodeKanbanCursor(cursor: string): KanbanCursorPayload | null {
   try {
-    // SAFETY: the decoded text is JSON with at most `updatedAt` and `id`
-    // fields; the shape cast lets us read and validate each field.
-    const parsed = JSON.parse(decodeBase64Url(cursor)) as {
-      updatedAt?: unknown;
-      id?: unknown;
-    };
-
-    const updatedAt = normalizeUpdatedAt(parsed.updatedAt);
-    if (typeof parsed.id !== "string" || !parsed.id || !updatedAt) {
-      return null;
-    }
-
-    return { updatedAt, id: parsed.id };
+    const parsed = kanbanCursorPayloadSchema.safeParse(
+      JSON.parse(decodeBase64Url(cursor)),
+    );
+    return parsed.success ? parsed.data : null;
   } catch {
     return null;
   }

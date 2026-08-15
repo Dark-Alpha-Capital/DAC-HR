@@ -7,7 +7,7 @@ import {
   getQuestionById,
   getQuestionsWithRounds,
   getRounds,
-} from "@workspace/db/modules/positions";
+} from "@workspace/db/repositories/position-repository";
 import { normalizeMcqOptions } from "../helpers";
 import { questionFormSchema, type QuestionFormSchema } from "../schemas";
 

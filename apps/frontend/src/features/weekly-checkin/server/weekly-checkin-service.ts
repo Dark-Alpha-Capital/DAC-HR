@@ -1,8 +1,8 @@
 import { db } from "@workspace/db/db";
 import { recruiterWeeklyCheckin } from "@workspace/db/schema";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import { getWeeklyCheckins } from "@workspace/db/modules/dashboard";
-import { getPositions } from "@workspace/db/modules/positions";
+import { getWeeklyCheckins } from "@workspace/db/repositories/dashboard-repository";
+import { getPositions } from "@workspace/db/repositories/position-repository";
 import { hasWeeklyCheckinViewerAccess } from "../constants";
 import {
   weeklyCheckinFormSchema,

@@ -2,7 +2,7 @@ import { test, expect } from "bun:test";
 import {
   sortCandidateListItems,
   type CandidateListItem,
-} from "../candidate-list-sort";
+} from "./candidate-list-sort";
 
 const items: CandidateListItem[] = [
   {

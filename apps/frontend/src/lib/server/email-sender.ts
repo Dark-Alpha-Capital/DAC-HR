@@ -8,13 +8,27 @@ import type { EmailSender } from "@workspace/mail";
  */
 export function getServerEmailSender(): EmailSender | null {
   const binding = env.EMAIL;
-  if (binding && "send" in binding) {
-    // SAFETY: the EMAIL binding's `send` accepts a builder-shaped message that
-    // matches EmailSender.send; the structural mismatch is only the extra
-    // overloads declared on the platform's SendEmail type.
-    return binding as EmailSender;
+  if (!binding || !("send" in binding)) {
+    return null;
   }
-  return null;
+
+  // SAFETY: the EMAIL binding's `send` builder accepts a message shaped as
+  // { to, from, subject, html, text }. `from` accepts either a plain email
+  // string or an { email, name } object — we pass the display name only when
+  // one is set, so the runtime call stays within the binding's accepted shape.
+  return {
+    send: async (input) => {
+      await binding.send({
+        to: input.to,
+        from: input.from.name
+          ? { email: input.from.email, name: input.from.name }
+          : input.from.email,
+        subject: input.subject,
+        html: input.html,
+        text: input.text,
+      });
+    },
+  };
 }
 
 /** Public base URL used to build shareable links in emails. */

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { JsonObject } from "@workspace/interview-realtime/types";
 
 export type InterviewLogTopic =
   | "voice"
@@ -42,8 +43,8 @@ export function truncateId(
   return value.length <= len ? value : value.slice(0, len);
 }
 
-function sanitizeData(data: Record<string, unknown>) {
-  const out: Record<string, unknown> = {};
+function sanitizeData(data: JsonObject): JsonObject {
+  const out: JsonObject = {};
   for (const [key, value] of Object.entries(data)) {
     if (value === undefined) {
       continue;
@@ -75,7 +76,7 @@ function interviewLog(
   level: LogLevel,
   topic: InterviewLogTopic,
   action: string,
-  data: Record<string, unknown> = {},
+  data: JsonObject = {},
   emojiOverride?: string,
 ) {
   const emoji =
@@ -93,32 +94,16 @@ function interviewLog(
 }
 
 export const logInterview = {
-  info(
-    topic: InterviewLogTopic,
-    action: string,
-    data: Record<string, unknown> = {},
-  ) {
+  info(topic: InterviewLogTopic, action: string, data: JsonObject = {}) {
     interviewLog("info", topic, action, data);
   },
-  warn(
-    topic: InterviewLogTopic,
-    action: string,
-    data: Record<string, unknown> = {},
-  ) {
+  warn(topic: InterviewLogTopic, action: string, data: JsonObject = {}) {
     interviewLog("warn", topic, action, data);
   },
-  error(
-    topic: InterviewLogTopic,
-    action: string,
-    data: Record<string, unknown> = {},
-  ) {
+  error(topic: InterviewLogTopic, action: string, data: JsonObject = {}) {
     interviewLog("error", topic, action, data);
   },
-  success(
-    topic: InterviewLogTopic,
-    action: string,
-    data: Record<string, unknown> = {},
-  ) {
+  success(topic: InterviewLogTopic, action: string, data: JsonObject = {}) {
     interviewLog("info", topic, action, data, "✅");
   },
 };

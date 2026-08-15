@@ -10,11 +10,12 @@ import {
   roundTemplate,
   screener,
   user,
+  type JsonObject,
 } from "../schema";
 import {
   getQuestionsByRoundId,
   getRoundsByPositionId,
-} from "../modules/positions";
+} from "./position-repository";
 import { getBundlesByApplicationId } from "./interview-bundle-repository";
 
 export const getInterviewsByApplicationId = async (applicationId: string) => {
@@ -312,7 +313,7 @@ export const saveInterviewAiAnalysis = async (params: {
   analysis: string;
   customPrompt?: string | null;
   model?: string;
-  structuredData?: unknown;
+  structuredData?: JsonObject;
 }) => {
   try {
     const [result] = await db
@@ -326,12 +327,7 @@ export const saveInterviewAiAnalysis = async (params: {
         analysis: params.analysis,
         customPrompt: params.customPrompt || null,
         model: params.model || "gpt-4o-mini",
-        // SAFETY: structured_data is a JSON TEXT column; the nullable object
-        // is stored as-is when present, else NULL.
-        structuredData: (params.structuredData ?? null) as Record<
-          string,
-          unknown
-        > | null,
+        structuredData: params.structuredData ?? null,
       })
       .returning();
 

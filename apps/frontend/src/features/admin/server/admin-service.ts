@@ -31,7 +31,7 @@ type AuditLogInput = {
 };
 
 /** Arbitrary JSON-serializable metadata attached to an audit log entry. */
-const auditLogDetailsSchema = z.record(z.string(), z.unknown());
+const auditLogDetailsSchema = z.record(z.string(), z.json());
 type AuditLogDetails = z.infer<typeof auditLogDetailsSchema>;
 
 export type AuditLogRow = {

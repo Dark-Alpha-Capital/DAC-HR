@@ -1,14 +1,14 @@
-import { db } from "@workspace/db/db";
+import { db } from "../db";
 import { sql } from "drizzle-orm";
-import type { ApplicationStatus } from "./application-status";
+import type { ApplicationStatus } from "../application-status";
 import {
   buildNormalizedStatusCase,
   getApplicationStatusesForKanbanColumn,
   kanbanColumnMatchesStatusFilter,
   normalizeApplicationStatus,
-} from "./application-status";
-import { decodeKanbanCursor, encodeKanbanCursor } from "./kanban-cursor";
-import type { CandidateSortOption } from "./candidate-list-filters";
+} from "../application-status";
+import { decodeKanbanCursor, encodeKanbanCursor } from "../kanban-cursor";
+import type { CandidateSortOption } from "../candidate-list-filters";
 
 export type KanbanColumnCandidate = {
   id: string;

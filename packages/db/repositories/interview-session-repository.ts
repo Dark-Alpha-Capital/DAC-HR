@@ -18,6 +18,7 @@ import {
   candidate,
   position,
   roundTemplate,
+  type JsonObject,
 } from "../schema";
 
 export const createAiInterviewWithSession = async (data: {
@@ -373,7 +374,7 @@ export const insertCheatingEvents = async (
     sessionId: string;
     eventType: CheatingEventType;
     timestamp?: Date;
-    metadata?: Record<string, unknown>;
+    metadata?: JsonObject;
   }>,
 ) => {
   if (events.length === 0) {

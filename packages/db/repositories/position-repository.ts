@@ -1,6 +1,6 @@
 /**
  * Positions · Rounds · Questions module — owns all position/round/question
- * reads (moved out of the legacy queries.ts monolith).
+ * reads (bound D1 query layer for positions/rounds/questions).
  */
 import { db } from "@workspace/db/db";
 import {

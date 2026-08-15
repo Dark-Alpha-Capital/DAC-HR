@@ -11,7 +11,10 @@ import {
 } from "@workspace/ai-config";
 import { createNextcloudClient, downloadFile } from "@workspace/nextcloud";
 import { candidatesService } from "#/features/candidates/server/candidates-service";
-import { extractTextFromDocument } from "#/lib/document-text-extraction";
+import {
+  extractTextFromDocument,
+  type DocumentExtractionLogger,
+} from "#/lib/document-text-extraction";
 
 type Env = {
   NEXTCLOUD_URL: string;
@@ -26,8 +29,8 @@ type Params = {
   nextcloudFilePath: string;
 };
 
-function log(level: string, message: string, data?: Record<string, unknown>) {
-  console[level as "log" | "warn" | "error"](
+const log: DocumentExtractionLogger = (level, message, data) => {
+  console[level](
     JSON.stringify({
       timestamp: new Date().toISOString(),
       level,
@@ -36,7 +39,7 @@ function log(level: string, message: string, data?: Record<string, unknown>) {
       message,
     }),
   );
-}
+};
 
 export class DocumentIndexingWorkflow extends WorkflowEntrypoint<Env, Params> {
   async run(event: WorkflowEvent<Params>, step: WorkflowStep) {
@@ -218,7 +221,10 @@ export class DocumentIndexingWorkflow extends WorkflowEntrypoint<Env, Params> {
 
     // Step 7: Update database
     await step.do("update database", async () => {
-      await candidatesService.setDocumentVectorizeNamespace(documentId, namespace);
+      await candidatesService.setDocumentVectorizeNamespace(
+        documentId,
+        namespace,
+      );
 
       log("log", "Step completed: update database", {
         documentId,

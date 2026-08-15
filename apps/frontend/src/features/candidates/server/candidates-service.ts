@@ -1,8 +1,9 @@
 import { db } from "@workspace/db/db";
-import { eq, desc } from "@workspace/db";
+import { eq, asc, desc } from "@workspace/db";
 import {
   application,
   candidate,
+  candidateChecklistItem,
   candidateDocument,
   candidateImport,
   candidateOnboarding,
@@ -13,12 +14,6 @@ import type { BatchItem } from "drizzle-orm/batch";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
 import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
-import {
-  createChecklistItem,
-  deleteChecklistItem,
-  getChecklistItemsByCandidateId,
-  updateChecklistItem,
-} from "@workspace/db/repositories/candidate-checklist-repository";
 import {
   getCandidateAiScreenings,
   getLatestCandidateAiScreening,
@@ -37,12 +32,12 @@ import {
 import {
   getPositions,
   getRoundsByPositionId,
-} from "@workspace/db/modules/positions";
+} from "@workspace/db/repositories/position-repository";
 import { getApplicationWithInterviews } from "@workspace/db/repositories/interview-repository";
 import {
   getKanbanFilteredTotalCount,
   getKanbanColumnCandidates as getKanbanColumnCandidatesFn,
-} from "@workspace/db/kanban-queries";
+} from "@workspace/db/repositories/kanban-repository";
 import {
   getCandidateWithApplications,
   getCandidatesWithPositionsFiltered,
@@ -461,6 +456,61 @@ export type ChecklistItemInput = {
   id?: string;
   label: string;
   checked: boolean;
+};
+
+
+const getChecklistItemsByCandidateId = async (candidateId: string) => {
+  try {
+    return await db
+      .select()
+      .from(candidateChecklistItem)
+      .where(eq(candidateChecklistItem.candidateId, candidateId))
+      .orderBy(asc(candidateChecklistItem.createdAt));
+  } catch (error) {
+    console.error("Error fetching checklist items", error);
+    return [];
+  }
+};
+
+const createChecklistItem = async (data: {
+  candidateId: string;
+  label: string;
+}) => {
+  const [row] = await db
+    .insert(candidateChecklistItem)
+    .values({
+      candidateId: data.candidateId,
+      label: data.label,
+      checked: false,
+    })
+    .returning();
+  return row ?? null;
+};
+
+const updateChecklistItem = async (
+  id: string,
+  data: { label?: string; checked?: boolean },
+) => {
+  const values: Partial<typeof candidateChecklistItem.$inferInsert> = {
+    updatedAt: new Date(),
+  };
+  if (data.label !== undefined) values.label = data.label;
+  if (data.checked !== undefined) values.checked = data.checked;
+
+  const [row] = await db
+    .update(candidateChecklistItem)
+    .set(values)
+    .where(eq(candidateChecklistItem.id, id))
+    .returning();
+  return row ?? null;
+};
+
+const deleteChecklistItem = async (id: string) => {
+  const [row] = await db
+    .delete(candidateChecklistItem)
+    .where(eq(candidateChecklistItem.id, id))
+    .returning({ id: candidateChecklistItem.id });
+  return row ?? null;
 };
 
 export const updateChecklistItems = async (
@@ -903,7 +953,7 @@ export const candidatesService = {
 
   async getKanbanColumnCandidates(
     columnStatus: import("@workspace/db/application-status").ApplicationStatus,
-    filters: import("@workspace/db/kanban-queries").KanbanColumnFilters,
+    filters: import("@workspace/db/repositories/kanban-repository").KanbanColumnFilters,
     cursor?: string,
     limit?: number,
   ) {

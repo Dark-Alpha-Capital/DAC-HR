@@ -5,7 +5,7 @@ import { z } from "zod";
  * An arbitrary JSON object (metadata carried through the import pipeline and
  * persisted as-is). Parsed with zod at the import boundary.
  */
-export const jsonObjectSchema = z.record(z.string(), z.unknown());
+export const jsonObjectSchema = z.record(z.string(), z.json());
 export type JsonObject = z.infer<typeof jsonObjectSchema>;
 
 export type ResumeFields = {

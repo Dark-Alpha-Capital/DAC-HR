@@ -35,6 +35,18 @@ import type {
 } from "./enums";
 import type { QuestionOption } from "./question-types";
 
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | JsonObject;
+
+export interface JsonObject {
+  [key: string]: JsonValue | undefined;
+}
+
 const uuidPk = () =>
   text("id")
     .primaryKey()
@@ -226,9 +238,7 @@ export const candidateImportRow = sqliteTable(
       .default("pending")
       .notNull(),
     error: text("error"),
-    metadata: text("metadata", { mode: "json" }).$type<
-      Record<string, unknown>
-    >(),
+    metadata: text("metadata", { mode: "json" }).$type<JsonObject>(),
     createdAt: createdAtCol(),
     updatedAt: updatedAtCol(),
   },
@@ -459,7 +469,7 @@ export const auditLog = sqliteTable("audit_log", {
   action: text("action").notNull(),
   entityType: text("entity_type").notNull(),
   entityId: text("entity_id").notNull(),
-  details: text("details", { mode: "json" }).$type<Record<string, unknown>>(),
+  details: text("details", { mode: "json" }).$type<JsonObject>(),
   createdAt: createdAtCol(),
   updatedAt: updatedAtCol(),
 });
@@ -478,9 +488,7 @@ export const candidateAiScreening = sqliteTable("candidate_ai_screening", {
     onDelete: "set null",
   }),
   analysis: text("analysis").notNull(),
-  structuredData: text("structured_data", { mode: "json" }).$type<
-    Record<string, unknown>
-  >(),
+  structuredData: text("structured_data", { mode: "json" }).$type<JsonObject>(),
   model: text("model").default("gpt-4o-mini"),
   createdAt: createdAtCol(),
   updatedAt: updatedAtCol(),
@@ -544,9 +552,7 @@ export const interviewAiAnalysis = sqliteTable("interview_ai_analysis", {
     onDelete: "set null",
   }),
   analysis: text("analysis").notNull(),
-  structuredData: text("structured_data", { mode: "json" }).$type<
-    Record<string, unknown>
-  >(),
+  structuredData: text("structured_data", { mode: "json" }).$type<JsonObject>(),
   customPrompt: text("custom_prompt"),
   model: text("model").default("gpt-4o-mini"),
   createdAt: createdAtCol(),
@@ -725,9 +731,7 @@ export const cheatingEvent = sqliteTable(
     timestamp: integer("timestamp", { mode: "timestamp_ms" })
       .notNull()
       .$defaultFn(() => new Date()),
-    metadata: text("metadata", { mode: "json" }).$type<
-      Record<string, unknown>
-    >(),
+    metadata: text("metadata", { mode: "json" }).$type<JsonObject>(),
   },
   (table) => ({
     cheatingEventSessionTimestampIdx: index(

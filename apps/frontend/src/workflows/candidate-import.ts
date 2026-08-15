@@ -16,6 +16,8 @@ import {
   processCsvImport,
   processHandshakePdfImport,
   processZipImport,
+  type ImportLogContext,
+  type ImportLogLevel,
   type ImportServices,
   type ProcessImportResult,
 } from "@workspace/candidate-import";
@@ -41,7 +43,10 @@ type Env = {
   DOCUMENT_INDEXING_WORKFLOW?: {
     create: (opts: {
       id: string;
-      params: Record<string, unknown>;
+      params: {
+        documentId: string;
+        nextcloudFilePath: string;
+      };
     }) => Promise<{ id: string }>;
   };
 };
@@ -55,8 +60,16 @@ type ImportRecord = NonNullable<
   Awaited<ReturnType<typeof candidatesService.getImportById>>
 >;
 
-function log(level: string, message: string, data?: Record<string, unknown>) {
-  importLog(level as "log" | "warn" | "error", message, {
+type WorkflowLogContext = Omit<ImportLogContext, "step"> & {
+  step?: string;
+};
+
+function log(
+  level: ImportLogLevel,
+  message: string,
+  data?: WorkflowLogContext,
+) {
+  importLog(level, message, {
     step: String(data?.step ?? "workflow"),
     ...data,
   });
@@ -343,7 +356,7 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
           }
         },
       )
-      .catch(async (error: unknown) => {
+      .catch(async (error) => {
         const message =
           error instanceof Error ? error.message : "Import processing failed";
         const stack = error instanceof Error ? error.stack : undefined;
@@ -353,7 +366,7 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
           importId,
           fileType: importRecord.type,
           error: message,
-          stack: stack?.split("\n").slice(0, 3).join(" | "),
+          stack: stack?.split("\n").slice(0, 3).join(" | ") ?? null,
         });
         await candidatesService.updateImportStatus(importId, "failed", {
           error: message,
@@ -422,23 +435,25 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
     }
 
     await step.do("audit-log", async () => {
-      await candidatesService.insertAudit({
-        userId: uploadedBy,
-        action: "candidate_import_completed",
-        entityType: "candidate_import",
-        entityId: importId,
-        details: {
-          importId,
-          ...processResult,
-          elapsedMs: Date.now() - workflowStartTime,
-        },
-      }).catch((error) => {
-        log("error", "Audit log failed", {
-          step: "workflow.audit_failed",
-          importId,
-          error: error instanceof Error ? error.message : String(error),
+      await candidatesService
+        .insertAudit({
+          userId: uploadedBy,
+          action: "candidate_import_completed",
+          entityType: "candidate_import",
+          entityId: importId,
+          details: {
+            importId,
+            ...processResult,
+            elapsedMs: Date.now() - workflowStartTime,
+          },
+        })
+        .catch((error) => {
+          log("error", "Audit log failed", {
+            step: "workflow.audit_failed",
+            importId,
+            error: error instanceof Error ? error.message : String(error),
+          });
         });
-      });
     });
 
     log("log", "Workflow completed", {

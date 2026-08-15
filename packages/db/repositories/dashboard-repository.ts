@@ -1,6 +1,6 @@
 /**
  * Dashboard · Employees · Weekly check-in module — owns the aggregate dashboard
- * reads and admin/employee lists (moved out of the legacy queries.ts monolith).
+ * reads and admin/employee lists (bound D1 query layer for dashboard/employees/check-ins).
  */
 import { db } from "@workspace/db/db";
 import {

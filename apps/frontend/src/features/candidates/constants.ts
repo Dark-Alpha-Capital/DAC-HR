@@ -5,7 +5,7 @@ export {
   isCandidateSortOption,
   parseCandidateSortOption,
 } from "@workspace/db/candidate-list-filters";
-export { KANBAN_PAGE_SIZE_DEFAULT } from "@workspace/db/kanban-queries";
+export { KANBAN_PAGE_SIZE_DEFAULT } from "@workspace/db/repositories/kanban-repository";
 export type {
   CandidateSortOption,
   CandidateSourceOption,
