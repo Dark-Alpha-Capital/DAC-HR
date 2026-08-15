@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSession } from "#/lib/get-session";
+import { fetchSession as getSession } from "#/lib/auth-session";
 import { candidateFormSchema } from "#/features/candidates/schemas";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { createCandidateWithPositions } from "#/features/candidates/candidates-service";

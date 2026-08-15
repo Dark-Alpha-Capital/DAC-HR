@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { env } from "cloudflare:workers";
-import { getSession } from "#/lib/get-session";
+import { fetchSession as getSession } from "#/lib/auth-session";
 import {
   cancelCandidateImport,
   getCandidateImportById,

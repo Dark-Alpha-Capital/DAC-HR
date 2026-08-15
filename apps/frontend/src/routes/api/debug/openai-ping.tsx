@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSession } from "#/lib/get-session";
+import { fetchSession as getSession } from "#/lib/auth-session";
 import { describeOpenAIKeySources } from "#/lib/server/openai-api-key";
 import { pingOpenAIRealtime } from "#/lib/server/openai-ping";
 

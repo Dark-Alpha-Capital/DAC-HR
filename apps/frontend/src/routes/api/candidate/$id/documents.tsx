@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { env } from "cloudflare:workers";
-import { getSession } from "#/lib/get-session";
+import { fetchSession as getSession } from "#/lib/auth-session";
 import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
 import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
 import { candidateDocumentFormSchema } from "#/features/candidates/candidate-document-schemas";

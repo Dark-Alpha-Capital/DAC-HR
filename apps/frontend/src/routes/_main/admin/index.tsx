@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { ListPageSkeleton } from "#/components/shared/list-page-skeleton";
 import { AdminUsersPage, parseAdminUsersSearch } from "#/features/admin/components/admin-users-page";
-import { getSession } from "#/lib/get-session";
+import { fetchSession as getSession } from "#/lib/auth-session";
 
 export const Route = createFileRoute("/_main/admin/")({
   head: () => ({

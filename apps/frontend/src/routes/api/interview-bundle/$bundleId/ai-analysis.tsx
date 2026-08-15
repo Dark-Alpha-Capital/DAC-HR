@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSession } from "#/lib/get-session";
+import { fetchSession as getSession } from "#/lib/auth-session";
 import { getInterviewAiAnalysesByBundleId } from "@workspace/db/repositories/interview-repository";
 import { deleteInterviewAiAnalysisForBundle } from "@workspace/db/repositories/interview-repository";
 import { runAiAnalysis } from "#/features/interviews/run-ai-analysis";

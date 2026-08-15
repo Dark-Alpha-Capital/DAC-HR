@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSession } from "#/lib/get-session";
+import { fetchSession as getSession } from "#/lib/auth-session";
 import { createDocumentRecord } from "#/features/documents/documents-service";
 import { uploadFile } from "#/lib/storage";
 

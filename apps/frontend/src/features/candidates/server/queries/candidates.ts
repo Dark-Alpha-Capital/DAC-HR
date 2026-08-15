@@ -41,7 +41,7 @@ export type CandidateDetailData = {
     id: string;
     name: string;
     email: string;
-    role: string;
+    role?: string | null;
     image?: string | null;
   };
   documents: CandidateDocuments;

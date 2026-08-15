@@ -9,7 +9,7 @@ import {
   uploadFile as uploadToNextcloud,
 } from "@workspace/nextcloud";
 import { getServerNextcloudClient } from "#/lib/nextcloud-server";
-import { getSession } from "#/lib/get-session";
+import { fetchSession as getSession } from "#/lib/auth-session";
 import {
   createCandidateImportRecord,
   updateCandidateImportStatus,

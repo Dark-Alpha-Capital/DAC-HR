@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSession } from "#/lib/get-session";
+import { fetchSession as getSession } from "#/lib/auth-session";
 import { z } from "zod";
 import { roundDeliveryModes } from "@workspace/db/enums";
 import { createInterviewSession } from "#/features/interviews/server/mutations/interviews";

@@ -8,7 +8,7 @@ import {
   session as sessionsTable,
   verification as verificationsTable,
 } from "@workspace/db/schema";
-import { admin, customSession } from "better-auth/plugins";
+import { admin } from "better-auth/plugins";
 import { createAuthMiddleware, APIError } from "better-auth/api";
 import {
   isAllowedEmail,
@@ -90,21 +90,7 @@ export const auth = betterAuth({
       prompt: "select_account consent",
     },
   },
-  plugins: [
-    admin(),
-    customSession(async ({ user, session }) => {
-      const isAdmin = isAdminEmail(user.email);
-      return {
-        user: {
-          ...user,
-          role: isAdmin ? "admin" : "user",
-        },
-        session: {
-          ...session,
-        },
-      };
-    }),
-  ],
+  plugins: [admin()],
 
   databaseHooks: {
     user: {
@@ -230,16 +216,6 @@ export const auth = betterAuth({
               .where(eq(sessionsTable.id, sessionId));
           }
           throw ctx.redirect("/unauthorized");
-        }
-        if (
-          signedInUser.email &&
-          isAdminEmail(signedInUser.email) &&
-          signedInUser.role !== "admin"
-        ) {
-          await db
-            .update(usersTable)
-            .set({ role: "admin" })
-            .where(eq(usersTable.id, signedInUser.id));
         }
       }
     }),
