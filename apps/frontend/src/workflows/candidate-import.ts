@@ -121,13 +121,17 @@ async function downloadImportFile(
   });
 
   if (buffer.byteLength > MAX_STEP_RESULT_BYTES) {
-    log("log", "File exceeds 1 MiB step limit — processing in same step (not persisted between steps)", {
-      step: "workflow.large_file.inline",
-      importId: importRecord.id,
-      fileType: importRecord.type,
-      bufferBytes: buffer.byteLength,
-      limitBytes: MAX_STEP_RESULT_BYTES,
-    });
+    log(
+      "log",
+      "File exceeds 1 MiB step limit — processing in same step (not persisted between steps)",
+      {
+        step: "workflow.large_file.inline",
+        importId: importRecord.id,
+        fileType: importRecord.type,
+        bufferBytes: buffer.byteLength,
+        limitBytes: MAX_STEP_RESULT_BYTES,
+      },
+    );
   }
 
   return buffer;
@@ -159,14 +163,16 @@ function buildImportServices(env: Env): ImportServices {
             id: `index-${args.documentId}`,
             params: {
               documentId: args.documentId,
-              candidateId: args.candidateId,
               nextcloudFilePath: args.nextcloudFilePath,
-              metadata: args.metadata,
             },
           });
         }
       : undefined,
-    updateImportProgress: async ({ importId, totalCandidates, processedCandidates }) => {
+    updateImportProgress: async ({
+      importId,
+      totalCandidates,
+      processedCandidates,
+    }) => {
       await db
         .update(candidateImport)
         .set({
@@ -238,43 +244,46 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
       importId,
     });
 
-    const importRecord = await step.do("load-import", async (ctx: WorkflowStepContext) => {
-      log("log", "Loading import record", {
-        step: "workflow.load_import.start",
-        importId,
-        attempt: ctx.attempt,
-      });
-
-      const record = await getCandidateImportById(importId);
-      if (!record) {
-        throw new Error(`Import job not found: ${importId}`);
-      }
-      if (record.status === "cancelled") {
-        log("log", "Import already cancelled — skipping workflow", {
-          step: "workflow.cancelled",
+    const importRecord = await step.do(
+      "load-import",
+      async (ctx: WorkflowStepContext) => {
+        log("log", "Loading import record", {
+          step: "workflow.load_import.start",
           importId,
+          attempt: ctx.attempt,
         });
-        return null;
-      }
 
-      log("log", "Import record loaded", {
-        step: "workflow.load_import",
-        importId,
-        fileType: record.type,
-        filename: record.filename,
-        positionId: record.positionId,
-        status: record.status,
-      });
+        const record = await getCandidateImportById(importId);
+        if (!record) {
+          throw new Error(`Import job not found: ${importId}`);
+        }
+        if (record.status === "cancelled") {
+          log("log", "Import already cancelled — skipping workflow", {
+            step: "workflow.cancelled",
+            importId,
+          });
+          return null;
+        }
 
-      if (record.status === "pending") {
-        await updateCandidateImportStatus(importId, "processing");
-        log("log", "Status → processing", {
-          step: "workflow.status_processing",
+        log("log", "Import record loaded", {
+          step: "workflow.load_import",
           importId,
+          fileType: record.type,
+          filename: record.filename,
+          positionId: record.positionId,
+          status: record.status,
         });
-      }
-      return record;
-    });
+
+        if (record.status === "pending") {
+          await updateCandidateImportStatus(importId, "processing");
+          log("log", "Status → processing", {
+            step: "workflow.status_processing",
+            importId,
+          });
+        }
+        return record;
+      },
+    );
 
     if (!importRecord) {
       return;
@@ -356,7 +365,9 @@ export class CandidateImportWorkflow extends WorkflowEntrypoint<Env, Params> {
           error: message,
           stack: stack?.split("\n").slice(0, 3).join(" | "),
         });
-        await updateCandidateImportStatus(importId, "failed", { error: message });
+        await updateCandidateImportStatus(importId, "failed", {
+          error: message,
+        });
         throw error;
       });
 

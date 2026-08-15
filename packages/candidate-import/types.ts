@@ -86,14 +86,7 @@ export type NextcloudUploadFn = (args: {
 
 export type TriggerDocumentIndexingFn = (args: {
   documentId: string;
-  candidateId: string;
   nextcloudFilePath: string;
-  metadata: {
-    name: string;
-    category: string;
-    candidateId: string;
-    url: string;
-  };
 }) => Promise<void>;
 
 export type UpdateImportProgressFn = (args: {

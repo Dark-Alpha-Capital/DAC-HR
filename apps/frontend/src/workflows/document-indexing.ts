@@ -25,14 +25,7 @@ type Env = {
 
 type Params = {
   documentId: string;
-  candidateId: string;
   nextcloudFilePath: string;
-  metadata: {
-    name: string;
-    category: string;
-    candidateId: string;
-    url: string;
-  };
 };
 
 function log(level: string, message: string, data?: Record<string, unknown>) {
@@ -49,17 +42,39 @@ function log(level: string, message: string, data?: Record<string, unknown>) {
 
 export class DocumentIndexingWorkflow extends WorkflowEntrypoint<Env, Params> {
   async run(event: WorkflowEvent<Params>, step: WorkflowStep) {
-    const { documentId, candidateId, nextcloudFilePath, metadata } =
-      event.payload;
-    const namespace = `candidate-${candidateId}`;
+    const { documentId, nextcloudFilePath } = event.payload;
     const workflowStartTime = Date.now();
+
+    // Step 0: Load the document row. All indexing metadata (candidateId, name,
+    // category, url) is already persisted on candidate_document, so the payload
+    // only needs documentId + nextcloudFilePath (which has no DB column).
+    const { candidateId, name, category, url } = await step.do(
+      "load document",
+      async () => {
+        const [row] = await db
+          .select({
+            candidateId: candidateDocument.candidateId,
+            name: candidateDocument.name,
+            category: candidateDocument.category,
+            url: candidateDocument.url,
+          })
+          .from(candidateDocument)
+          .where(eq(candidateDocument.id, documentId))
+          .limit(1);
+        if (!row) {
+          throw new Error(`Candidate document ${documentId} not found`);
+        }
+        return row;
+      },
+    );
+    const namespace = `candidate-${candidateId}`;
 
     log("log", "Workflow started", {
       instanceId: event.instanceId,
       documentId,
       candidateId,
       namespace,
-      fileName: metadata.name,
+      fileName: name,
       filePath: nextcloudFilePath,
     });
 
@@ -108,7 +123,7 @@ export class DocumentIndexingWorkflow extends WorkflowEntrypoint<Env, Params> {
 
     // Step 2: Extract text
     const text = await step.do("extract text", async () => {
-      const result = await extractTextFromDocument(buffer, metadata.name, log, {
+      const result = await extractTextFromDocument(buffer, name, log, {
         openAiApiKey: this.env.OPENAI_API_KEY,
       });
       log("log", "Step completed: extract text", {
@@ -123,7 +138,7 @@ export class DocumentIndexingWorkflow extends WorkflowEntrypoint<Env, Params> {
       log("warn", "Workflow aborted: no text extracted", {
         documentId,
         candidateId,
-        fileName: metadata.name,
+        fileName: name,
         elapsedMs: Date.now() - workflowStartTime,
       });
       return;
@@ -170,9 +185,9 @@ export class DocumentIndexingWorkflow extends WorkflowEntrypoint<Env, Params> {
           metadata: {
             documentId,
             candidateId,
-            name: metadata.name.slice(0, 64),
-            category: metadata.category,
-            url: metadata.url.slice(0, 64),
+            name: name.slice(0, 64),
+            category,
+            url: url.slice(0, 64),
             chunkIndex: i,
             text: chunk.substring(0, 64),
           },

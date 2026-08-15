@@ -77,7 +77,10 @@ export const Route = createFileRoute("/api/candidate/$id/documents")({
           const name = formData.get("name") as string;
           const description = formData.get("description") as string | null;
           const category = formData.get("category") as
-            "resume" | "cover-letter" | "portfolio" | "other";
+            | "resume"
+            | "cover-letter"
+            | "portfolio"
+            | "other";
           const urlField = formData.get("url") as string | null;
           const tagsInput = formData.get("tags") as string | null;
 
@@ -177,18 +180,16 @@ export const Route = createFileRoute("/api/candidate/$id/documents")({
               description: validatedData.description?.trim() || null,
               category: validatedData.category || "other",
               url: validatedData.url,
-              tags: validatedData.tags?.length
-                ? validatedData.tags
-                : undefined,
+              tags: validatedData.tags?.length ? validatedData.tags : undefined,
               nextcloudFilePath,
             },
             user,
           );
 
           if (newCandidateDocument && nextcloudFilePath) {
-            (env).DOCUMENT_INDEXING_WORKFLOW &&
+            env.DOCUMENT_INDEXING_WORKFLOW &&
               (
-                (env).DOCUMENT_INDEXING_WORKFLOW as {
+                env.DOCUMENT_INDEXING_WORKFLOW as {
                   create: (opts: {
                     id: string;
                     params: Record<string, unknown>;
@@ -199,14 +200,7 @@ export const Route = createFileRoute("/api/candidate/$id/documents")({
                   id: `index-${newCandidateDocument.id}`,
                   params: {
                     documentId: newCandidateDocument.id,
-                    candidateId,
                     nextcloudFilePath,
-                    metadata: {
-                      name: validatedData.name,
-                      category: validatedData.category,
-                      candidateId,
-                      url: validatedData.url,
-                    },
                   },
                 })
                 .catch((err: unknown) =>

@@ -22,14 +22,8 @@ export async function attachImportResume(args: {
   rowIndex: number;
   services: ImportServices;
 }): Promise<{ documentId: string }> {
-  const {
-    candidateId,
-    document,
-    resumeText,
-    importId,
-    rowIndex,
-    services,
-  } = args;
+  const { candidateId, document, resumeText, importId, rowIndex, services } =
+    args;
 
   const folderPath = buildNamedEntityFolderPath({
     root: "/ATS/candidates",
@@ -114,14 +108,7 @@ export async function attachImportResume(args: {
 
     await triggerIndexing({
       documentId: doc.id,
-      candidateId,
       nextcloudFilePath: uploadResult.filePath,
-      metadata: {
-        name: document.fileName,
-        category: document.category,
-        candidateId,
-        url: uploadResult.url,
-      },
     });
   }
 
