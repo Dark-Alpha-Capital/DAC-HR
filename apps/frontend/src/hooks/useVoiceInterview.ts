@@ -3,11 +3,17 @@ import type {
   InterviewQuestion,
   VoiceInterviewPhase,
 } from "@workspace/interview-realtime/types";
-import { parseDoMessage, sendDoMessage } from "@workspace/interview-realtime/events";
+import {
+  parseDoMessage,
+  sendDoMessage,
+} from "@workspace/interview-realtime/events";
 import { formatRealtimeCallsError } from "@workspace/ai-config";
 import type { CheatingEventType } from "@workspace/db/enums";
 import { useCheatingPrevention } from "./useCheatingPrevention";
-import { logInterview, truncateId } from "#/features/voice-interview/interview-debug-log";
+import {
+  logInterview,
+  truncateId,
+} from "#/features/voice-interview/interview-debug-log";
 import {
   buildRecordingStream,
   getAudioOnlyStream,
@@ -32,6 +38,10 @@ import {
   SessionSocket,
   WS_CLOSE_SUPERSEDED,
 } from "#/features/voice-interview/voice/session-socket";
+import {
+  isIntroPhase,
+  isQuestionPhase,
+} from "#/features/voice-interview/interview-flow";
 
 interface StartVoiceResponse {
   clientSecret: string;
@@ -43,7 +53,8 @@ interface StartVoiceResponse {
 }
 
 export interface VoiceInterviewState {
-  status: "idle" | "connecting" | "active" | "completed" | "error";
+  status:
+    "idle" | "connecting" | "active" | "completed" | "error" | "superseded";
   isEnding: boolean;
   isPractice: boolean;
   currentQuestionIndex: number;
@@ -53,14 +64,10 @@ export interface VoiceInterviewState {
   transcripts: Array<{ role: "user" | "assistant"; text: string }>;
   liveUserTranscript: string;
   liveAssistantTranscript: string;
-  allQuestionsAsked: boolean;
-  introActive: boolean;
   timeLimitReached?: boolean;
   error?: string;
   /** True when running without screen capture (iOS / unsupported browsers). */
   audioOnly?: boolean;
-  /** True when another tab superseded this connection (DO close code 4001). */
-  replacedElsewhere?: boolean;
 }
 
 const LIVE_TRANSCRIPT_FLUSH_MS = 1000;
@@ -118,12 +125,6 @@ function resolveQuestionForIndex(
   return questions[index] ?? fallback ?? null;
 }
 
-function isQuestionPhase(phase: VoiceInterviewPhase) {
-  return (
-    phase === "questions" || phase === "closing" || phase === "awaiting_end"
-  );
-}
-
 function mergeQuestion(
   questions: InterviewQuestion[],
   question: InterviewQuestion,
@@ -179,8 +180,6 @@ export function useVoiceInterview(token: string) {
     transcripts: [],
     liveUserTranscript: "",
     liveAssistantTranscript: "",
-    allQuestionsAsked: false,
-    introActive: false,
   });
 
   const socketRef = useRef<SessionSocket | null>(null);
@@ -441,445 +440,203 @@ export function useVoiceInterview(token: string) {
     isPracticeRef.current = false;
   }, [cleanup, completeSessionViaApi, uploadRecording]);
 
-  const handleWsMessage = useCallback(
-    (event: MessageEvent) => {
-      const message = parseDoMessage(event.data);
-      if (!message) {
-        return;
-      }
-
-      if (message.type !== "PONG") {
-        logInterview.info("ws", "ws_message", {
-          type: message.type,
-          role: "role" in message ? message.role : undefined,
-          questionIndex: "index" in message ? message.index : undefined,
-          textPreview:
-            "text" in message
-              ? previewTranscriptText(message.text, 80)
-              : undefined,
-        });
-      }
-
-      switch (message.type) {
-        case "CONNECTED": {
-          const { currentQuestionIndex, voicePhase, questions, conversationHistory } =
-            message.state;
-          const index = currentQuestionIndex ?? 0;
-          const phase = voicePhase ?? "intro";
-          const incomingQuestions = questions?.length ? questions : undefined;
-          const transcripts = mapConversationHistory(conversationHistory);
-
-          setState((current) => {
-            const mergedQuestions = incomingQuestions ?? current.questions;
-            const displayQuestion = isQuestionPhase(phase)
-              ? resolveQuestionForIndex(mergedQuestions, index)
-              : null;
-
-            return {
-              ...current,
-              status: "active",
-              currentQuestionIndex: index,
-              voicePhase: phase,
-              introActive: phase === "intro" || phase === "awaiting_ready",
-              questions: mergedQuestions,
-              displayQuestion,
-              transcripts,
-              liveUserTranscript: "",
-              liveAssistantTranscript: "",
-            };
-          });
-          liveTranscriptBuffersRef.current = { user: "", assistant: "" };
-          break;
-        }
-
-        case "INTRO_STARTED":
-          setState((current) => ({
-            ...current,
-            voicePhase: "intro",
-            introActive: true,
-            displayQuestion: null,
-          }));
-          break;
-
-        case "QUESTION_CHANGED": {
-          const { index, question } = message;
-          setState((current) => {
-            const mergedQuestions = question
-              ? mergeQuestion(current.questions, question)
-              : current.questions;
-            const resolvedQuestion = resolveQuestionForIndex(
-              mergedQuestions,
-              index,
-              question ?? current.displayQuestion,
-            );
-
-            return {
-              ...current,
-              voicePhase: current.allQuestionsAsked ? current.voicePhase : "questions",
-              introActive: false,
-              currentQuestionIndex: index,
-              displayQuestion: resolvedQuestion,
-              questions: mergedQuestions,
-            };
-          });
-          break;
-        }
-
-        case "ALL_QUESTIONS_ASKED":
-          setState((current) => ({
-            ...current,
-            voicePhase: "awaiting_end",
-            allQuestionsAsked: true,
-            introActive: false,
-          }));
-          break;
-
-        case "TRANSCRIPT_DELTA":
-          liveTranscriptBuffersRef.current[message.role] += message.delta;
-          break;
-
-        case "TRANSCRIPT": {
-          const role = message.role;
-          liveTranscriptBuffersRef.current[role] = "";
-
-          setState((current) => {
-            const nextTranscripts = [
-              ...current.transcripts,
-              { role, text: message.text },
-            ];
-            logInterview.info("voice", "transcript_committed", {
-              role,
-              textPreview: previewTranscriptText(message.text),
-              transcriptCount: nextTranscripts.length,
-            });
-            return {
-              ...current,
-              liveUserTranscript: role === "user" ? "" : current.liveUserTranscript,
-              liveAssistantTranscript:
-                role === "assistant" ? "" : current.liveAssistantTranscript,
-              transcripts: nextTranscripts,
-            };
-          });
-          break;
-        }
-
-        case "ANSWER_SAVED":
-          logInterview.info("voice", "answer_saved", {
-            questionId: message.questionId,
-          });
-          break;
-
-        case "INTERVIEW_COMPLETED":
-          endInterviewResolveRef.current?.();
-          setState((current) => ({ ...current, status: "completed" }));
-          // Auto-end: the DO finished all questions before the candidate clicked
-          // End — finalize the recording and tear down media.
-          void handleAutoEnd();
-          break;
-
-        case "SESSION_TIME_LIMIT":
-          logInterview.info("voice", "session_time_limit_reached", {});
-          setState((current) => ({ ...current, timeLimitReached: true }));
-          break;
-
-        case "QUESTION_TIMED_OUT":
-          logInterview.info("voice", "question_timed_out", {
-            questionId: message.questionId,
-          });
-          break;
-
-        case "PRACTICE_ENDED":
-          practiceEndResolveRef.current?.();
-          setState((current) => ({
-            ...current,
-            status: "idle",
-            isPractice: false,
-          }));
-          isPracticeRef.current = false;
-          break;
-
-        case "ERROR":
-          logInterview.error("ws", "ws_error_message", {
-            message: message.message,
-          });
-          setState((current) => ({
-            ...current,
-            status: "error",
-            error: message.message,
-          }));
-          break;
-
-        case "PONG":
-          break;
-      }
-    },
-    [],
-  );
-
-  const start = useCallback(async (options?: { practice?: boolean }) => {
-    if (startInFlightRef.current) {
-      logInterview.warn("voice", "start_already_in_flight", {
-        token: truncateId(token),
-      });
+  const handleWsMessage = useCallback((event: MessageEvent) => {
+    const message = parseDoMessage(event.data);
+    if (!message) {
       return;
     }
 
-    const isPractice = options?.practice === true;
-    startInFlightRef.current = true;
-    logInterview.info("voice", "start_interview", {
-      token: truncateId(token),
-      isPractice,
-    });
-    isPracticeRef.current = isPractice;
-    liveTranscriptBuffersRef.current = { user: "", assistant: "" };
-    cleanup();
-    setState({
-      status: "connecting",
-      isEnding: false,
-      isPractice,
-      currentQuestionIndex: 0,
-      voicePhase: "intro",
-      questions: [],
-      displayQuestion: null,
-      transcripts: [],
-      liveUserTranscript: "",
-      liveAssistantTranscript: "",
-      allQuestionsAsked: false,
-      introActive: false,
-    });
-
-    try {
-      await document.documentElement.requestFullscreen().catch(() => undefined);
-
-      const { audioOnly } = preflightMedia();
-      audioOnlyRef.current = audioOnly;
-      setState((current) => ({ ...current, audioOnly }));
-
-      logInterview.info("voice", "requesting_display_media", {
-        token: truncateId(token),
-        audioOnly,
-        isIOS: isIOSDevice(),
+    if (message.type !== "PONG") {
+      logInterview.info("ws", "ws_message", {
+        type: message.type,
+        role: "role" in message ? message.role : undefined,
+        questionIndex: "index" in message ? message.index : undefined,
+        textPreview:
+          "text" in message
+            ? previewTranscriptText(message.text, 80)
+            : undefined,
       });
+    }
 
-      const screenStream = audioOnly ? null : await requestDisplayMedia();
-      if (screenStream) {
-        screenStreamRef.current = screenStream;
-        const screenTrack = screenStream.getVideoTracks()[0];
-        screenTrack?.addEventListener("ended", () => {
-          sendToDO("WINDOW_BLUR", { reason: "screen_share_stopped" });
-          if (mediaRecorderRef.current?.state === "recording") {
-            void stopMediaRecorder(mediaRecorderRef.current);
-          }
+    switch (message.type) {
+      case "CONNECTED": {
+        const {
+          currentQuestionIndex,
+          voicePhase,
+          questions,
+          conversationHistory,
+        } = message.state;
+        const index = currentQuestionIndex ?? 0;
+        const phase = voicePhase ?? "intro";
+        const incomingQuestions = questions?.length ? questions : undefined;
+        const transcripts = mapConversationHistory(conversationHistory);
+
+        setState((current) => {
+          const mergedQuestions = incomingQuestions ?? current.questions;
+          const displayQuestion = isQuestionPhase(phase)
+            ? resolveQuestionForIndex(mergedQuestions, index)
+            : null;
+
+          return {
+            ...current,
+            status: "active",
+            currentQuestionIndex: index,
+            voicePhase: phase,
+            questions: mergedQuestions,
+            displayQuestion,
+            transcripts,
+            liveUserTranscript: "",
+            liveAssistantTranscript: "",
+          };
         });
+        liveTranscriptBuffersRef.current = { user: "", assistant: "" };
+        break;
       }
 
-      const stream = await requestUserMedia(audioOnly);
-      streamRef.current = stream;
-      deviceChangeCleanupRef.current?.();
-      deviceChangeCleanupRef.current = watchDeviceChanges(() => {
-        logInterview.info("voice", "device_change", {});
-      });
+      case "INTRO_STARTED":
+        setState((current) => ({
+          ...current,
+          voicePhase: "intro",
+          displayQuestion: null,
+        }));
+        break;
 
-      const { stream: recordingStream, audioContext } = buildRecordingStream(
-        screenStream,
-        stream,
-        audioContextRef.current,
-      );
-      audioContextRef.current = audioContext;
+      case "QUESTION_CHANGED": {
+        const { index, question } = message;
+        setState((current) => {
+          const mergedQuestions = question
+            ? mergeQuestion(current.questions, question)
+            : current.questions;
+          const resolvedQuestion = resolveQuestionForIndex(
+            mergedQuestions,
+            index,
+            question ?? current.displayQuestion,
+          );
 
-      const mimeType = getRecordingMimeType(audioOnly);
-      recordingMimeTypeRef.current = mimeType;
+          return {
+            ...current,
+            voicePhase:
+              current.voicePhase === "awaiting_end"
+                ? current.voicePhase
+                : "questions",
+            currentQuestionIndex: index,
+            displayQuestion: resolvedQuestion,
+            questions: mergedQuestions,
+          };
+        });
+        break;
+      }
 
-      const audioStream = getAudioOnlyStream(stream);
-      chunksRef.current = [];
-      mediaRecorderRef.current = createMediaRecorder(
-        recordingStream,
-        mimeType,
-        (event) => {
-          if (event.data.size > 0) {
-            chunksRef.current.push(event.data);
-          }
-        },
-      );
+      case "ALL_QUESTIONS_ASKED":
+        setState((current) => ({
+          ...current,
+          voicePhase: "awaiting_end",
+        }));
+        break;
 
-      logInterview.info("voice", "requesting_start_voice", {
+      case "TRANSCRIPT_DELTA":
+        liveTranscriptBuffersRef.current[message.role] += message.delta;
+        break;
+
+      case "TRANSCRIPT": {
+        const role = message.role;
+        liveTranscriptBuffersRef.current[role] = "";
+
+        setState((current) => {
+          const nextTranscripts = [
+            ...current.transcripts,
+            { role, text: message.text },
+          ];
+          logInterview.info("voice", "transcript_committed", {
+            role,
+            textPreview: previewTranscriptText(message.text),
+            transcriptCount: nextTranscripts.length,
+          });
+          return {
+            ...current,
+            liveUserTranscript:
+              role === "user" ? "" : current.liveUserTranscript,
+            liveAssistantTranscript:
+              role === "assistant" ? "" : current.liveAssistantTranscript,
+            transcripts: nextTranscripts,
+          };
+        });
+        break;
+      }
+
+      case "ANSWER_SAVED":
+        logInterview.info("voice", "answer_saved", {
+          questionId: message.questionId,
+        });
+        break;
+
+      case "INTERVIEW_COMPLETED":
+        endInterviewResolveRef.current?.();
+        setState((current) => ({ ...current, status: "completed" }));
+        // Auto-end: the DO finished all questions before the candidate clicked
+        // End — finalize the recording and tear down media.
+        void handleAutoEnd();
+        break;
+
+      case "SESSION_TIME_LIMIT":
+        logInterview.info("voice", "session_time_limit_reached", {});
+        setState((current) => ({ ...current, timeLimitReached: true }));
+        break;
+
+      case "QUESTION_TIMED_OUT":
+        logInterview.info("voice", "question_timed_out", {
+          questionId: message.questionId,
+        });
+        break;
+
+      case "PRACTICE_ENDED":
+        practiceEndResolveRef.current?.();
+        setState((current) => ({
+          ...current,
+          status: "idle",
+          isPractice: false,
+        }));
+        isPracticeRef.current = false;
+        break;
+
+      case "ERROR":
+        logInterview.error("ws", "ws_error_message", {
+          message: message.message,
+        });
+        setState((current) => ({
+          ...current,
+          status: "error",
+          error: message.message,
+        }));
+        break;
+
+      case "PONG":
+        break;
+    }
+  }, []);
+
+  const start = useCallback(
+    async (options?: { practice?: boolean }) => {
+      if (startInFlightRef.current) {
+        logInterview.warn("voice", "start_already_in_flight", {
+          token: truncateId(token),
+        });
+        return;
+      }
+
+      const isPractice = options?.practice === true;
+      startInFlightRef.current = true;
+      logInterview.info("voice", "start_interview", {
         token: truncateId(token),
         isPractice,
       });
-      const startRes = await fetch(`/api/interview-token/${token}/start-voice`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ practice: isPractice }),
-      });
-
-      if (!startRes.ok) {
-        let errorMessage = "Failed to start voice session";
-        try {
-          const bodyText = await startRes.text();
-          if (bodyText.trim()) {
-            const body = JSON.parse(bodyText) as { error?: string };
-            errorMessage = body.error || errorMessage;
-          }
-        } catch (parseError) {
-          logInterview.warn("voice", "start_voice_error_body_parse_failed", {
-            status: startRes.status,
-            error:
-              parseError instanceof Error
-                ? parseError.message
-                : String(parseError),
-          });
-        }
-        throw new Error(`[start-voice] ${errorMessage}`);
-      }
-
-      const config = await parseStartVoiceResponse(startRes);
-      sessionIdRef.current = config.sessionId;
-      logInterview.success("voice", "start_voice_ok", {
-        sessionId: truncateId(config.sessionId),
-        questionCount: config.questions.length,
-        wsUrl: config.wsUrl,
-      });
-
-      const socket = new SessionSocket(config.wsUrl, {
-        onMessage: handleWsMessage,
-        onOpen: () => {
-          logInterview.info("ws", "ws_open", { wsUrl: config.wsUrl });
-          sendDoMessage(socket, { type: "PING" });
-          sendDoMessage(socket, {
-            type: "FULLSCREEN_STATE",
-            isFullscreen: Boolean(document.fullscreenElement),
-          });
-          const pending = pendingCallStartedRef.current;
-          if (pending) {
-            pendingCallStartedRef.current = null;
-            sendDoMessage(socket, {
-              type: "CALL_STARTED",
-              callId: pending.callId,
-              clientSecret: pending.clientSecret,
-            });
-          }
-        },
-        onClose: (code, reason) => {
-          logInterview.warn("ws", "ws_close", { code, reason });
-          if (code === WS_CLOSE_SUPERSEDED) {
-            setState((current) => ({ ...current, replacedElsewhere: true }));
-          }
-        },
-        canReconnect: () => {
-          const s = stateRef.current.status;
-          return s === "active" || s === "connecting";
-        },
-      });
-      socketRef.current = socket;
-      socket.connect();
-
-      logInterview.info("ws", "ws_connecting", {
-        wsUrl: config.wsUrl,
-        questionCount: config.questions.length,
-      });
-
-      setState((current) => ({
-        ...current,
-        questions: config.questions,
-      }));
-
-      const pc = new RTCPeerConnection();
-      pcRef.current = pc;
-      audioStream.getTracks().forEach((track) => pc.addTrack(track, audioStream));
-
-      attachRemoteAudio(pc, remoteAudioRef);
-      peerMonitorCleanupRef.current = monitorPeerConnection(pc);
-
-      const oaiEvents = createDataChannel(pc, (event) => {
-        const current = socketRef.current;
-        if (current?.readyState !== WebSocket.OPEN) {
-          return;
-        }
-        sendDoMessage(current, {
-          type: "REALTIME_EVENT",
-          event: event.data,
-        });
-      });
-      void oaiEvents;
-
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      await waitForIceGathering(pc);
-
-      const offerSdp = pc.localDescription?.sdp;
-      if (!offerSdp) {
-        throw new Error("Failed to create WebRTC offer");
-      }
-
-      logInterview.info("voice", "realtime_sdp_request", {
-        token: truncateId(token),
-        sdpLength: offerSdp.length,
-      });
-
-      const sdpResponse = await fetch("https://api.openai.com/v1/realtime/calls", {
-        method: "POST",
-        body: offerSdp,
-        headers: {
-          Authorization: `Bearer ${config.clientSecret}`,
-          "Content-Type": "application/sdp",
-        },
-      });
-
-      const answerSdp = await sdpResponse.text();
-      if (!sdpResponse.ok) {
-        logInterview.error("voice", "realtime_sdp_failed", {
-          status: sdpResponse.status,
-          bodyPreview: answerSdp.slice(0, 400),
-        });
-        throw new Error(`[realtime/calls] ${parseRealtimeSdpError(sdpResponse.status, answerSdp)}`);
-      }
-
-      const location = sdpResponse.headers.get("Location");
-      const callId =
-        location?.split("/").pop()?.trim() ??
-        sdpResponse.headers.get("x-openai-call-id")?.trim() ??
-        "";
-
-      await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
-
-      if (callId) {
-        if (socket.readyState === WebSocket.OPEN) {
-          logInterview.info("ws", "call_started_sent", {
-            callId: truncateId(callId),
-            location,
-          });
-          sendDoMessage(socket, {
-            type: "CALL_STARTED",
-            callId,
-            clientSecret: config.clientSecret,
-          });
-        } else {
-          pendingCallStartedRef.current = {
-            callId,
-            clientSecret: config.clientSecret,
-          };
-          logInterview.warn("ws", "call_started_queued_ws_not_open", {
-            callId: truncateId(callId),
-            readyState: socket.readyState,
-          });
-        }
-      } else {
-        logInterview.warn("ws", "call_started_missing_call_id", {
-          headerCallId: sdpResponse.headers.get("x-openai-call-id"),
-          location: sdpResponse.headers.get("Location"),
-        });
-      }
-
-      setState((current) => ({ ...current, status: "active" }));
-    } catch (error) {
-      logInterview.error("voice", "start_failed", {
-        error: error instanceof Error ? error.message : String(error),
-      });
+      isPracticeRef.current = isPractice;
+      liveTranscriptBuffersRef.current = { user: "", assistant: "" };
       cleanup();
       setState({
-        status: "error",
+        status: "connecting",
         isEnding: false,
-        isPractice: isPracticeRef.current,
+        isPractice,
         currentQuestionIndex: 0,
         voicePhase: "intro",
         questions: [],
@@ -887,14 +644,269 @@ export function useVoiceInterview(token: string) {
         transcripts: [],
         liveUserTranscript: "",
         liveAssistantTranscript: "",
-        allQuestionsAsked: false,
-        introActive: false,
-        error: error instanceof Error ? error.message : "Voice interview failed",
       });
-    } finally {
-      startInFlightRef.current = false;
-    }
-  }, [cleanup, handleWsMessage, sendToDO, token]);
+
+      try {
+        await document.documentElement
+          .requestFullscreen()
+          .catch(() => undefined);
+
+        const { audioOnly } = preflightMedia();
+        audioOnlyRef.current = audioOnly;
+        setState((current) => ({ ...current, audioOnly }));
+
+        logInterview.info("voice", "requesting_display_media", {
+          token: truncateId(token),
+          audioOnly,
+          isIOS: isIOSDevice(),
+        });
+
+        const screenStream = audioOnly ? null : await requestDisplayMedia();
+        if (screenStream) {
+          screenStreamRef.current = screenStream;
+          const screenTrack = screenStream.getVideoTracks()[0];
+          screenTrack?.addEventListener("ended", () => {
+            sendToDO("WINDOW_BLUR", { reason: "screen_share_stopped" });
+            if (mediaRecorderRef.current?.state === "recording") {
+              void stopMediaRecorder(mediaRecorderRef.current);
+            }
+          });
+        }
+
+        const stream = await requestUserMedia(audioOnly);
+        streamRef.current = stream;
+        deviceChangeCleanupRef.current?.();
+        deviceChangeCleanupRef.current = watchDeviceChanges(() => {
+          logInterview.info("voice", "device_change", {});
+        });
+
+        const { stream: recordingStream, audioContext } = buildRecordingStream(
+          screenStream,
+          stream,
+          audioContextRef.current,
+        );
+        audioContextRef.current = audioContext;
+
+        const mimeType = getRecordingMimeType(audioOnly);
+        recordingMimeTypeRef.current = mimeType;
+
+        const audioStream = getAudioOnlyStream(stream);
+        chunksRef.current = [];
+        mediaRecorderRef.current = createMediaRecorder(
+          recordingStream,
+          mimeType,
+          (event) => {
+            if (event.data.size > 0) {
+              chunksRef.current.push(event.data);
+            }
+          },
+        );
+
+        logInterview.info("voice", "requesting_start_voice", {
+          token: truncateId(token),
+          isPractice,
+        });
+        const startRes = await fetch(
+          `/api/interview-token/${token}/start-voice`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ practice: isPractice }),
+          },
+        );
+
+        if (!startRes.ok) {
+          let errorMessage = "Failed to start voice session";
+          try {
+            const bodyText = await startRes.text();
+            if (bodyText.trim()) {
+              const body = JSON.parse(bodyText) as { error?: string };
+              errorMessage = body.error || errorMessage;
+            }
+          } catch (parseError) {
+            logInterview.warn("voice", "start_voice_error_body_parse_failed", {
+              status: startRes.status,
+              error:
+                parseError instanceof Error
+                  ? parseError.message
+                  : String(parseError),
+            });
+          }
+          throw new Error(`[start-voice] ${errorMessage}`);
+        }
+
+        const config = await parseStartVoiceResponse(startRes);
+        sessionIdRef.current = config.sessionId;
+        logInterview.success("voice", "start_voice_ok", {
+          sessionId: truncateId(config.sessionId),
+          questionCount: config.questions.length,
+          wsUrl: config.wsUrl,
+        });
+
+        const socket = new SessionSocket(config.wsUrl, {
+          onMessage: handleWsMessage,
+          onOpen: () => {
+            logInterview.info("ws", "ws_open", { wsUrl: config.wsUrl });
+            sendDoMessage(socket, { type: "PING" });
+            sendDoMessage(socket, {
+              type: "FULLSCREEN_STATE",
+              isFullscreen: Boolean(document.fullscreenElement),
+            });
+            const pending = pendingCallStartedRef.current;
+            if (pending) {
+              pendingCallStartedRef.current = null;
+              sendDoMessage(socket, {
+                type: "CALL_STARTED",
+                callId: pending.callId,
+                clientSecret: pending.clientSecret,
+              });
+            }
+          },
+          onClose: (code, reason) => {
+            logInterview.warn("ws", "ws_close", { code, reason });
+            if (code === WS_CLOSE_SUPERSEDED) {
+              cleanup();
+              setState((current) => ({ ...current, status: "superseded" }));
+            }
+          },
+          canReconnect: () => {
+            const s = stateRef.current.status;
+            return s === "active" || s === "connecting";
+          },
+        });
+        socketRef.current = socket;
+        socket.connect();
+
+        logInterview.info("ws", "ws_connecting", {
+          wsUrl: config.wsUrl,
+          questionCount: config.questions.length,
+        });
+
+        setState((current) => ({
+          ...current,
+          questions: config.questions,
+        }));
+
+        const pc = new RTCPeerConnection();
+        pcRef.current = pc;
+        audioStream
+          .getTracks()
+          .forEach((track) => pc.addTrack(track, audioStream));
+
+        attachRemoteAudio(pc, remoteAudioRef);
+        peerMonitorCleanupRef.current = monitorPeerConnection(pc);
+
+        const oaiEvents = createDataChannel(pc, (event) => {
+          const current = socketRef.current;
+          if (current?.readyState !== WebSocket.OPEN) {
+            return;
+          }
+          sendDoMessage(current, {
+            type: "REALTIME_EVENT",
+            event: event.data,
+          });
+        });
+        void oaiEvents;
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        await waitForIceGathering(pc);
+
+        const offerSdp = pc.localDescription?.sdp;
+        if (!offerSdp) {
+          throw new Error("Failed to create WebRTC offer");
+        }
+
+        logInterview.info("voice", "realtime_sdp_request", {
+          token: truncateId(token),
+          sdpLength: offerSdp.length,
+        });
+
+        const sdpResponse = await fetch(
+          "https://api.openai.com/v1/realtime/calls",
+          {
+            method: "POST",
+            body: offerSdp,
+            headers: {
+              Authorization: `Bearer ${config.clientSecret}`,
+              "Content-Type": "application/sdp",
+            },
+          },
+        );
+
+        const answerSdp = await sdpResponse.text();
+        if (!sdpResponse.ok) {
+          logInterview.error("voice", "realtime_sdp_failed", {
+            status: sdpResponse.status,
+            bodyPreview: answerSdp.slice(0, 400),
+          });
+          throw new Error(
+            `[realtime/calls] ${parseRealtimeSdpError(sdpResponse.status, answerSdp)}`,
+          );
+        }
+
+        const location = sdpResponse.headers.get("Location");
+        const callId =
+          location?.split("/").pop()?.trim() ??
+          sdpResponse.headers.get("x-openai-call-id")?.trim() ??
+          "";
+
+        await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
+
+        if (callId) {
+          if (socket.readyState === WebSocket.OPEN) {
+            logInterview.info("ws", "call_started_sent", {
+              callId: truncateId(callId),
+              location,
+            });
+            sendDoMessage(socket, {
+              type: "CALL_STARTED",
+              callId,
+              clientSecret: config.clientSecret,
+            });
+          } else {
+            pendingCallStartedRef.current = {
+              callId,
+              clientSecret: config.clientSecret,
+            };
+            logInterview.warn("ws", "call_started_queued_ws_not_open", {
+              callId: truncateId(callId),
+              readyState: socket.readyState,
+            });
+          }
+        } else {
+          logInterview.warn("ws", "call_started_missing_call_id", {
+            headerCallId: sdpResponse.headers.get("x-openai-call-id"),
+            location: sdpResponse.headers.get("Location"),
+          });
+        }
+
+        setState((current) => ({ ...current, status: "active" }));
+      } catch (error) {
+        logInterview.error("voice", "start_failed", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        cleanup();
+        setState({
+          status: "error",
+          isEnding: false,
+          isPractice: isPracticeRef.current,
+          currentQuestionIndex: 0,
+          voicePhase: "intro",
+          questions: [],
+          displayQuestion: null,
+          transcripts: [],
+          liveUserTranscript: "",
+          liveAssistantTranscript: "",
+          error:
+            error instanceof Error ? error.message : "Voice interview failed",
+        });
+      } finally {
+        startInFlightRef.current = false;
+      }
+    },
+    [cleanup, handleWsMessage, sendToDO, token],
+  );
 
   useEffect(() => {
     return () => {

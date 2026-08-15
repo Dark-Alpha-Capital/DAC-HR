@@ -1,4 +1,5 @@
 import type { RoundDeliveryMode } from "@workspace/db/enums";
+import type { VoiceInterviewPhase } from "@workspace/interview-realtime/types";
 
 /**
  * Pure flow-planning for the candidate-facing interview page.
@@ -77,4 +78,16 @@ export function isVoiceRound(
   deliveryMode: RoundDeliveryMode | "hybrid" | undefined,
 ): boolean {
   return deliveryMode === "voice";
+}
+
+/** True during the welcome/intro phases (before questions begin). */
+export function isIntroPhase(phase: VoiceInterviewPhase): boolean {
+  return phase === "intro" || phase === "awaiting_ready";
+}
+
+/** True once questions are being asked or winding down. */
+export function isQuestionPhase(phase: VoiceInterviewPhase): boolean {
+  return (
+    phase === "questions" || phase === "closing" || phase === "awaiting_end"
+  );
 }

@@ -5,6 +5,10 @@ import { Bot, Loader2, Mic, PhoneOff, Timer } from "lucide-react";
 import { cn } from "#/lib/utils";
 import type { VoiceInterviewState } from "#/hooks/useVoiceInterview";
 import { logInterview } from "#/features/voice-interview/interview-debug-log";
+import {
+  isIntroPhase,
+  isQuestionPhase,
+} from "#/features/voice-interview/interview-flow";
 
 interface VoiceInterviewProps {
   candidateName: string;
@@ -63,18 +67,14 @@ export default function VoiceInterview({
     null;
   const activeQuestion =
     currentQuestion &&
-    (state.voicePhase === "questions" ||
-      state.voicePhase === "closing" ||
-      state.voicePhase === "awaiting_end" ||
-      state.displayQuestion)
+    (isQuestionPhase(state.voicePhase) || state.displayQuestion)
       ? currentQuestion
       : null;
   const isMcq =
     activeQuestion?.questionType === "mcq" &&
     Boolean(activeQuestion.options?.length);
 
-  const questionLimitSeconds =
-    activeQuestion?.timeLimitSeconds ?? 180;
+  const questionLimitSeconds = activeQuestion?.timeLimitSeconds ?? 180;
 
   useEffect(() => {
     setCountdown(questionLimitSeconds);
@@ -92,10 +92,7 @@ export default function VoiceInterview({
 
   const progress =
     questionCount > 0
-      ? Math.min(
-          100,
-          ((state.currentQuestionIndex + 1) / questionCount) * 100,
-        )
+      ? Math.min(100, ((state.currentQuestionIndex + 1) / questionCount) * 100)
       : 0;
 
   useEffect(() => {
@@ -130,7 +127,11 @@ export default function VoiceInterview({
       return;
     }
     container.scrollTop = container.scrollHeight;
-  }, [state.transcripts, state.liveUserTranscript, state.liveAssistantTranscript]);
+  }, [
+    state.transcripts,
+    state.liveUserTranscript,
+    state.liveAssistantTranscript,
+  ]);
 
   if (state.status === "idle" || state.status === "error") {
     return (
@@ -142,17 +143,12 @@ export default function VoiceInterview({
         <p className="mt-1 text-sm text-[#9aa0a6]">
           {positionName} — {candidateName}
         </p>
-        {state.replacedElsewhere ? (
-          <div className="mt-6 max-w-md rounded-lg bg-[#3c4043] px-4 py-3 text-center text-sm text-[#e8eaed]">
-            This interview was opened in another tab. Please use the other tab
-            to continue.
-          </div>
-        ) : state.error ? (
+        {state.error ? (
           <p className="mt-4 max-w-md text-center text-sm text-red-400">
             {state.error}
           </p>
         ) : null}
-        {state.status === "error" && !state.replacedElsewhere ? (
+        {state.status === "error" ? (
           <Button
             onClick={() => {
               logInterview.info("voice", "ui_retry_clicked");
@@ -179,7 +175,7 @@ export default function VoiceInterview({
           Voice only — screen recording isn&apos;t available on this device.
         </div>
       ) : null}
-      {state.replacedElsewhere ? (
+      {state.status === "superseded" ? (
         <div className="border-b border-white/10 bg-[#3c4043] px-4 py-2 text-center text-xs text-[#e8eaed]">
           This interview was opened in another tab. Please use the other tab.
         </div>
@@ -307,7 +303,7 @@ export default function VoiceInterview({
                   </ul>
                 ) : null}
               </div>
-            ) : state.introActive ? (
+            ) : isIntroPhase(state.voicePhase) ? (
               <div className="space-y-1">
                 <Badge className="bg-[#5f6368] text-[#e8eaed] hover:bg-[#5f6368]">
                   Welcome
@@ -323,12 +319,12 @@ export default function VoiceInterview({
               </p>
             )}
 
-            {state.allQuestionsAsked ? (
+            {state.voicePhase === "awaiting_end" ? (
               <p className="mt-3 rounded-lg bg-[#1a73e8]/20 px-3 py-2 text-xs text-[#8ab4f8]">
                 {state.isPractice ? (
                   <>
-                    Practice complete. Click <strong>Exit Practice</strong> below
-                    to return.
+                    Practice complete. Click <strong>Exit Practice</strong>{" "}
+                    below to return.
                   </>
                 ) : (
                   <>
@@ -402,7 +398,7 @@ export default function VoiceInterview({
               variant="destructive"
               onClick={() => {
                 logInterview.info("voice", "ui_end_clicked", {
-                  allQuestionsAsked: state.allQuestionsAsked,
+                  allQuestionsAsked: state.voicePhase === "awaiting_end",
                   isPractice: state.isPractice,
                 });
                 onEnd();
@@ -410,7 +406,9 @@ export default function VoiceInterview({
               disabled={state.isEnding}
               className={cn(
                 "rounded-full px-5",
-                state.allQuestionsAsked && !state.isEnding && "animate-pulse",
+                state.voicePhase === "awaiting_end" &&
+                  !state.isEnding &&
+                  "animate-pulse",
               )}
             >
               {state.isEnding ? (
