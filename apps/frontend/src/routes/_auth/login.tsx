@@ -1,4 +1,8 @@
-import { createFileRoute, redirect, type SearchSchemaInput } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  redirect,
+  type SearchSchemaInput,
+} from "@tanstack/react-router";
 import { fetchSession } from "#/lib/auth-session";
 import { LoginPage } from "#/features/auth/components/login-page";
 

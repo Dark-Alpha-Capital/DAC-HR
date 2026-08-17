@@ -4,6 +4,6 @@
     "baseUrl": ".",
     "lib": ["ESNext"]
   },
-  "include": ["**/*.ts"],
+  "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules"]
 }

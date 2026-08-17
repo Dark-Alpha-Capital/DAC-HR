@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Link } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -28,37 +28,38 @@ export default function EmailSignInForm({
 }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [pending, setPending] = useState(false);
   const [domainError, setDomainError] = useState<string | null>(null);
 
+  const [isPending, startTransition] = useTransition();
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setDomainError(null);
+    startTransition(async () => {
+      event.preventDefault();
+      setDomainError(null);
 
-    if (!isAllowedEmail(email)) {
-      setDomainError(UNAUTHORIZED_DOMAIN_MESSAGE);
-      return;
-    }
+      if (!isAllowedEmail(email)) {
+        setDomainError(UNAUTHORIZED_DOMAIN_MESSAGE);
 
-    setPending(true);
-    try {
-      const result = await authClient.signIn.email({
-        email: email.trim(),
-        password,
-        callbackURL,
-      });
-
-      if (result.error) {
-        toast.error(result.error.message ?? "Sign in failed");
-        setPending(false);
         return;
       }
 
-      window.location.assign(callbackURL);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Sign in failed");
-      setPending(false);
-    }
+      try {
+        const result = await authClient.signIn.email({
+          email: email.trim(),
+          password,
+          callbackURL,
+        });
+
+        if (result.error) {
+          toast.error(result.error.message ?? "Sign in failed");
+          return;
+        }
+
+        window.location.assign(callbackURL);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Sign in failed");
+      }
+    });
   };
 
   return (
@@ -99,8 +100,8 @@ export default function EmailSignInForm({
         </Field>
       </FieldGroup>
 
-      <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? (
+      <Button type="submit" className="w-full" disabled={isPending}>
+        {isPending ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Signing in...

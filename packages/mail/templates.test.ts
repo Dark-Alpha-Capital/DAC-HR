@@ -1,8 +1,8 @@
 import { test, expect } from "bun:test";
-import { templates } from "./templates";
+import { renderEmail } from "./index";
 
-test("interview-invite renders subject, html and text with data", () => {
-  const rendered = templates["interview-invite"].render({
+test("interview-invite renders subject, html and text with data", async () => {
+  const rendered = await renderEmail("interview-invite", {
     candidateName: "Jane Doe",
     positionName: "Analyst",
     interviewUrl: "https://recruiting.darkalphacapital.com/interview/abc123",
@@ -18,8 +18,8 @@ test("interview-invite renders subject, html and text with data", () => {
   expect(rendered.html).toContain("Analyst");
 });
 
-test("onboarding-welcome renders with optional fields omitted", () => {
-  const rendered = templates["onboarding-welcome"].render({
+test("onboarding-welcome renders with optional fields omitted", async () => {
+  const rendered = await renderEmail("onboarding-welcome", {
     candidateName: "John Smith",
     positionName: "Software Engineer",
     contactEmail: "people@darkalphacapital.com",
@@ -30,8 +30,8 @@ test("onboarding-welcome renders with optional fields omitted", () => {
   expect(rendered.html).toContain("people@darkalphacapital.com");
 });
 
-test("onboarding-welcome includes location when provided", () => {
-  const rendered = templates["onboarding-welcome"].render({
+test("onboarding-welcome includes location when provided", async () => {
+  const rendered = await renderEmail("onboarding-welcome", {
     candidateName: "John Smith",
     positionName: "Software Engineer",
     location: "Philadelphia, PA",

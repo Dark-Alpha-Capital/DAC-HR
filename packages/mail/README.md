@@ -21,9 +21,11 @@ await sendMail({
 });
 ```
 
-Templates live in `templates.ts` (pure render functions → subject/html/text)
-and are unit-testable without a mail client. Add new templates there and
-export the type via `EmailTemplateName`.
+Templates are React Email components (`emails/*.tsx`) rendered to
+subject/html/text at send time via `@react-email/render`. Register new
+templates in `templates.ts` (a `subject` builder + the component) and export
+the type via `EmailTemplateName`. Rendering is unit-testable via `renderEmail`
+without a mail client.
 
 ## Binding
 

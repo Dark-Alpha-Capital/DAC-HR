@@ -1,3 +1,5 @@
+import { createElement, type ReactElement } from "react";
+import { render } from "@react-email/render";
 import { templates, type EmailTemplateName } from "./templates";
 
 export type EmailAddress = {
@@ -20,12 +22,16 @@ export interface EmailSender {
   }): Promise<void>;
 }
 
+export type TemplateData<T extends EmailTemplateName> = Parameters<
+  (typeof templates)[T]["Component"]
+>[0];
+
 export interface SendMailInput<T extends EmailTemplateName> {
   sender: EmailSender;
   to: string;
   from?: EmailAddress;
   template: T;
-  data: Parameters<(typeof templates)[T]["render"]>[0];
+  data: TemplateData<T>;
 }
 
 export const DEFAULT_FROM: EmailAddress = {
@@ -38,6 +44,40 @@ type RenderedEmail = {
   html: string;
   text: string;
 };
+
+/**
+ * Renders a named template to subject/html/text using the React Email
+ * component and `@react-email/render`. `render` resolves to an async
+ * implementation on both the node and Workers (edge) builds.
+ */
+export async function renderEmail<T extends EmailTemplateName>(
+  template: T,
+  data: TemplateData<T>,
+): Promise<RenderedEmail> {
+  const entry = templates[template] as {
+    subject: (data: TemplateData<T>) => string;
+    Component: (props: TemplateData<T>) => ReactElement;
+  };
+  const element = createElement(entry.Component, data);
+  const [html, text] = await Promise.all([
+    render(element),
+    render(element, {
+      plainText: true,
+      htmlToTextOptions: {
+        selectors: [
+          { selector: "h1", options: { uppercase: false } },
+          { selector: "h2", options: { uppercase: false } },
+          { selector: "h3", options: { uppercase: false } },
+          { selector: "h4", options: { uppercase: false } },
+          { selector: "h5", options: { uppercase: false } },
+          { selector: "h6", options: { uppercase: false } },
+        ],
+      },
+    }),
+  ]);
+
+  return { subject: entry.subject(data), html, text };
+}
 
 /**
  * Renders a named template and sends it via the Cloudflare Email Service
@@ -56,16 +96,7 @@ export async function sendMail<T extends EmailTemplateName>({
     return false;
   }
 
-  const rendered = (
-    // SAFETY: the generic index keeps the selected template's render
-    // signature; the cast correlates it with `data`, which is already typed
-    // to that render's parameter.
-    templates[template] as {
-      render: (
-        data: Parameters<(typeof templates)[T]["render"]>[0],
-      ) => RenderedEmail;
-    }
-  ).render(data);
+  const rendered = await renderEmail(template, data);
 
   return sender.send({
     to,
