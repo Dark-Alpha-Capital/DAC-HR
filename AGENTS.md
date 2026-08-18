@@ -119,7 +119,7 @@ import { eq, and, or, sql, asc, desc, inArray, count, gte, lte } from "@workspac
 - Config: `features/auth/server/auth-service.ts` (host re-exported from `lib/auth.ts`), Client: `features/auth/client.ts`.
 - **Email domain restriction is currently DISABLED** — `features/auth/helpers.ts` sets `isAllowedEmail()` to always return `true` (all sign-ins allowed temporarily). The enforcement hooks are still in `auth-service.ts`; re-enable by uncommenting the `@darkalphacapital.com` suffix check.
 - Admin emails hardcoded in `features/auth/server/auth-service.ts` (`rahul@`, `gaurav@`, `da@`); admin role is derived at session time via the `admin()` plugin (no admin flag column).
-- Google OAuth enabled with **minimal scopes** (`openid`, `email`, `profile`), `accessType: "offline"`, and `account.skipStateCookieCheck: true` (OAuth consent can exceed the cookie TTL — do not revert without reason). Calendar/Meet scopes were removed (attendance sync now errors with "Meet access not granted"). Changing scopes requires users to re-consent.
+- Google OAuth enabled with **Calendar + Meet scopes** (`calendar.readonly`, `meetings.space.readonly`), `accessType: "offline"`, and `account.skipStateCookieCheck: true` (OAuth consent can exceed the cookie TTL — do not revert without reason). Changing scopes requires users to re-consent.
 - **`account.issuer` column** (migration 0022): required by better-auth 1.7.x's `findAccountOwnerByKey` OAuth lookup. `better-auth` is pinned to `~1.6.19` in `apps/frontend/package.json`; do not bump to 1.7.x without the column (it queries `WHERE issuer = ?`). Existing Google accounts backfilled with `https://accounts.google.com`.
 - Session helpers:
   - `fetchSession()` in `lib/auth-session.ts` — server function used in `beforeLoad` of layout routes.
@@ -163,7 +163,7 @@ import { eq, and, or, sql, asc, desc, inArray, count, gte, lte } from "@workspac
 
 ## Attendance (Google Calendar/Meet)
 
-- Ported from `dac-googlemeet`. D1 tables `meet_conference` + `meet_attendee` hold persisted firm-wide Meet attendance (relies on the Google Calendar/Meet OAuth scopes, which are no longer requested at sign-in — sync surfaces a "Meet access not granted" error).
+- Ported from `dac-googlemeet`. D1 tables `meet_conference` + `meet_attendee` hold persisted firm-wide Meet attendance (relies on the Google Calendar/Meet OAuth scopes above).
 - Routes under `_main/employees/attendance/`: `index.tsx` (Meetings list), `$conferenceId.tsx` (per-meeting attendance), `meeting-attendance.tsx` (firm-wide data table + Sync button).
 - `src/lib/attendance/meet-auth.ts` resolves the Google access token; `meet-attendance.ts` is the client-safe Meet API + Calendar-title-matching core (fetch only).
 - Server functions in `lib/actions/sync-meet-attendance.ts`: `getMeetConferences`, `getMeetConferenceDetail`, `getStoredAttendance`, `prepareAttendanceSync`, `syncAttendanceChunk`.

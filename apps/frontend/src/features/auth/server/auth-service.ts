@@ -136,7 +136,13 @@ export const auth = betterAuth({
       clientId: workerEnv.GOOGLE_CLIENT_ID,
       // SAFETY: see clientId — secret is also a required Worker secret.
       clientSecret: workerEnv.GOOGLE_CLIENT_SECRET,
-      scope: ["openid", "email", "profile"],
+      scope: [
+        "openid",
+        "email",
+        "profile",
+        "https://www.googleapis.com/auth/calendar.readonly",
+        "https://www.googleapis.com/auth/meetings.space.readonly",
+      ],
       accessType: "offline",
       prompt: "select_account consent",
     },
