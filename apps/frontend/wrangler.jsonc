@@ -13,89 +13,12 @@
   // Non-secret config only. Secrets (OPENAI_API_KEY, NEXTCLOUD_*, BETTER_AUTH_SECRET,
   // GOOGLE_CLIENT_*, etc.) are set in the Cloudflare dashboard or via `wrangler secret put`.
   // Do NOT add secrets here — deploying empty vars would overwrite dashboard values.
-  // Local dev uses the top-level vars (localhost) + remote D1 (remote: true) via the
-  // @cloudflare/vite-plugin `remoteBindings: true` in vite.config.ts.
-  // Production deploy uses --env production.
+  // Local dev uses remote D1 (remote: true) via @cloudflare/vite-plugin remoteBindings.
   "vars": {
-    "BETTER_AUTH_URL": "http://localhost:3000",
+    "BETTER_AUTH_URL": "https://recruiting.darkalphacapital.com",
     "PRISMIC_REPOSITORY_NAME": "darkalpha",
     "PRISMIC_TEAM_MEMBER_TYPE": "teammember",
     "PRISMIC_OPERATING_MEMBER_TYPE": "operatingmember",
-  },
-
-  "env": {
-    "production": {
-      // Must match the Worker serving recruiting.darkalphacapital.com (see CF logs: service=hr-automation).
-      // With legacy_env, bindings are NOT inherited — repeat every binding here.
-      "name": "hr-automation",
-      "vars": {
-        "BETTER_AUTH_URL": "https://recruiting.darkalphacapital.com",
-        "PRISMIC_REPOSITORY_NAME": "darkalpha",
-        "PRISMIC_TEAM_MEMBER_TYPE": "teammember",
-        "PRISMIC_OPERATING_MEMBER_TYPE": "operatingmember",
-      },
-      "d1_databases": [
-        {
-          "binding": "DB",
-          "database_name": "hr-automation-db",
-          "database_id": "d86703d9-2aa7-42b5-91a6-995fcf0afde0",
-          "migrations_dir": "../../packages/db/drizzle",
-        },
-      ],
-      "vectorize": [
-        {
-          "binding": "VECTORIZE",
-          "index_name": "hr-documents-index",
-        },
-      ],
-      "queues": {
-        "producers": [
-          {
-            "binding": "OUTBOUND_EMAIL_QUEUE",
-            "queue": "hr-outbound-email",
-          },
-        ],
-        "consumers": [
-          {
-            "queue": "hr-outbound-email",
-            "max_batch_size": 10,
-            "max_retries": 10,
-            "retry_delay": 30,
-          },
-        ],
-      },
-      "workflows": [
-        {
-          "name": "document-indexing",
-          "binding": "DOCUMENT_INDEXING_WORKFLOW",
-          "class_name": "DocumentIndexingWorkflow",
-        },
-        {
-          "name": "interview-evaluation",
-          "binding": "INTERVIEW_EVALUATION_WORKFLOW",
-          "class_name": "InterviewEvaluationWorkflow",
-        },
-        {
-          "name": "candidate-import",
-          "binding": "CANDIDATE_IMPORT_WORKFLOW",
-          "class_name": "CandidateImportWorkflow",
-        },
-      ],
-      "durable_objects": {
-        "bindings": [
-          {
-            "name": "INTERVIEW_SESSION_DO",
-            "class_name": "InterviewSessionDO",
-          },
-        ],
-      },
-      "migrations": [
-        {
-          "tag": "v1",
-          "new_sqlite_classes": ["InterviewSessionDO"],
-        },
-      ],
-    },
   },
 
   "d1_databases": [

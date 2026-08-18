@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { env as workerEnv } from "cloudflare:workers";
 import { db } from "@workspace/db/db";
 import { eq } from "@workspace/db";
 import {
@@ -62,21 +63,9 @@ const redactEmail = (email: string | null | undefined): string => {
   return `${visible}${"*".repeat(Math.max(localPart.length - 2, 1))}@${domainPart}`;
 };
 
-const AUTH_ALLOWED_HOSTS = [
-  "localhost",
-  "localhost:3000",
-  "127.0.0.1",
-  "127.0.0.1:3000",
-  "recruiting.darkalphacapital.com",
-] as const;
-
 export const auth = betterAuth({
-  secret: process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET,
-  baseURL: {
-    allowedHosts: [...AUTH_ALLOWED_HOSTS],
-    fallback: "https://recruiting.darkalphacapital.com",
-    protocol: "auto",
-  },
+  secret: workerEnv.BETTER_AUTH_SECRET,
+  baseURL: workerEnv.BETTER_AUTH_URL,
   trustedOrigins: [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -144,9 +133,9 @@ export const auth = betterAuth({
       // SAFETY: the Google OAuth client credentials are required for the
       // social provider and are configured as Worker secrets; the provider
       // API expects plain strings.
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientId: workerEnv.GOOGLE_CLIENT_ID,
       // SAFETY: see clientId — secret is also a required Worker secret.
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      clientSecret: workerEnv.GOOGLE_CLIENT_SECRET,
       scope: [
         "openid",
         "email",

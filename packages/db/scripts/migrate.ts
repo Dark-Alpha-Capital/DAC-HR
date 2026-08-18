@@ -9,20 +9,10 @@ const target = isRemote ? "--remote" : "--local";
 
 console.log(`⏳ Applying D1 migrations (${target.replace("--", "")})...`);
 
-const wranglerArgs = [
-  "wrangler",
-  "d1",
-  "migrations",
-  "apply",
-  "hr-automation-db",
-  target,
-];
-// Remote migrations must use the same wrangler env as production deploy.
-if (isRemote) {
-  wranglerArgs.push("--env", "production");
-}
-
-const result = spawnSync("bunx", wranglerArgs, {
+const result = spawnSync(
+  "bunx",
+  ["wrangler", "d1", "migrations", "apply", "hr-automation-db", target],
+  {
     cwd: webDir,
     stdio: "inherit",
     env: process.env,

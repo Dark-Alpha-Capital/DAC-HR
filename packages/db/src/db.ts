@@ -4,21 +4,14 @@ import * as schema from "./schema";
 
 export type Database = DrizzleD1Database<typeof schema>;
 
-let cachedDb: Database | undefined;
-
 export function getDb(): Database {
-  if (cachedDb) {
-    return cachedDb;
-  }
-
   if (!env.DB) {
     throw new Error(
-      "D1 binding DB is not available. Ensure wrangler production env includes d1_databases.",
+      "D1 binding DB is not available. Check wrangler.jsonc d1_databases and redeploy.",
     );
   }
 
-  cachedDb = drizzle(env.DB, { schema });
-  return cachedDb;
+  return drizzle(env.DB, { schema });
 }
 
 export const db = new Proxy(
