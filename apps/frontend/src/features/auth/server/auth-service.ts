@@ -10,10 +10,37 @@ import {
 } from "@workspace/db/schema";
 import { admin } from "better-auth/plugins";
 import { createAuthMiddleware, APIError } from "better-auth/api";
+import { enqueueEmail } from "#/lib/queues/enqueue";
 import {
   isAllowedEmail,
   UNAUTHORIZED_DOMAIN_MESSAGE,
 } from "../helpers";
+
+async function sendAuthEmail(
+  kind: "verification" | "password-reset",
+  to: string,
+  subject: string,
+  html: string,
+): Promise<void> {
+  try {
+    await enqueueEmail(db, [
+      {
+        jobName: "auth-email",
+        jobId: `auth-${kind}-${Date.now()}-${to.replace(/[^a-zA-Z0-9_-]/g, "_")}`,
+        dedupeKey: `auth:${kind}:${to}`,
+        data: {
+          type: "auth-email" as const,
+          to,
+          subject,
+          html,
+        },
+      },
+    ]);
+  } catch (error) {
+    console.error(`[auth] Failed to enqueue ${kind} email to ${to}:`, error);
+    throw error;
+  }
+}
 
 const ADMIN_EMAILS: string[] = [
   "rahul@darkalphacapital.com",
@@ -69,6 +96,43 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    sendResetPassword: async ({
+      user,
+      url,
+    }: {
+      user: { email: string };
+      url: string;
+      token: string;
+    }) => {
+      await sendAuthEmail(
+        "password-reset",
+        user.email,
+        "Reset your password",
+        `<p>Click the link to reset your password: <a href="${url}">${url}</a></p>
+         <p>This link will expire in 1 hour.</p>
+         <p>If you didn't request this, please ignore this email.</p>`,
+      );
+    },
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    sendVerificationEmail: async ({
+      user,
+      url,
+    }: {
+      user: { email: string };
+      url: string;
+      token: string;
+    }) => {
+      await sendAuthEmail(
+        "verification",
+        user.email,
+        "Verify your email address",
+        `<p>Click the link to verify your email: <a href="${url}">${url}</a></p>
+         <p>If you didn't create an account, you can ignore this email.</p>`,
+      );
+    },
   },
   // OAuth state is stored in D1; skip the short-lived signed cookie check.
   // Google consent (esp. Meet/Calendar scopes) can exceed the ~5m cookie TTL.

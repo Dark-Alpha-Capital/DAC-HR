@@ -8,6 +8,7 @@ import type { ApplicationDetail } from "#/features/applications/types";
 interface RecordInterviewDialogWrapperProps {
   applicationId: string;
   application: Pick<ApplicationDetail, "rounds">;
+  candidateEmail?: string | null;
   users: Array<{
     id: string;
     name: string | null;
@@ -22,6 +23,7 @@ interface RecordInterviewDialogWrapperProps {
 export default function RecordInterviewDialogWrapper({
   applicationId,
   application,
+  candidateEmail,
   users,
   currentUserId,
   trigger,
@@ -50,6 +52,7 @@ export default function RecordInterviewDialogWrapper({
       <RecordInterviewDialog
         applicationId={applicationId}
         application={application}
+        candidateEmail={candidateEmail}
         users={users}
         currentUserId={currentUserId}
         open={open}

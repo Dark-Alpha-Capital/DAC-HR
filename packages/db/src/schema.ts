@@ -820,3 +820,39 @@ export const meetAttendee = sqliteTable(
 );
 
 export type MeetAttendee = InferSelectModel<typeof meetAttendee>;
+
+export type OutboxStatus =
+  | "pending"
+  | "processing"
+  | "dispatched"
+  | "sent"
+  | "failed";
+
+/**
+ * Async side-effect outbox. Feature services insert a row here (payload as
+ * JSON, UNIQUE dedupeKey) instead of sending emails inline; a dispatch loop
+ * claims pending/failed rows and publishes a small { outboxId } pointer to a
+ * Cloudflare Queue, whose consumer re-reads this row and runs the side-effect
+ * (at-least-once, retriable, idempotent via Resend idempotencyKey).
+ */
+export const sideEffectOutbox = sqliteTable(
+  "side_effect_outbox",
+  {
+    id: text("id").primaryKey(),
+    topic: text("topic").notNull(),
+    dedupeKey: text("dedupe_key").notNull().unique(),
+    payload: text("payload", { mode: "json" }).$type<JsonValue>().notNull(),
+    status: text("status").$type<OutboxStatus>().default("pending").notNull(),
+    attempts: integer("attempts").default(0).notNull(),
+    lastError: text("last_error"),
+    dispatchedAt: integer("dispatched_at", { mode: "timestamp_ms" }),
+    createdAt: createdAtCol(),
+    updatedAt: updatedAtCol(),
+  },
+  (table) => [
+    index("side_effect_outbox_status_idx").on(table.status),
+    index("side_effect_outbox_created_at_idx").on(table.createdAt),
+  ],
+);
+
+export type SideEffectOutbox = InferSelectModel<typeof sideEffectOutbox>;

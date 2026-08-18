@@ -13,7 +13,8 @@
     "preview": "vite preview",
     "db:migrate:remote": "bun run --filter @workspace/db db:migrate:remote",
     "deploy": "bun run db:migrate:remote && vite build && wrangler deploy --env production",
-    "cf-typegen": "wrangler types"
+    "cf-typegen": "wrangler types",
+    "test": "bun test --pass-with-no-tests"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

@@ -8,7 +8,9 @@ declare namespace Cloudflare {
     INTERVIEW_EVALUATION_WORKFLOW: Workflow;
     CANDIDATE_IMPORT_WORKFLOW: Workflow;
     INTERVIEW_SESSION_DO: DurableObjectNamespace;
-    EMAIL: SendEmail | undefined;
+    // Cloudflare Queue producer binding; message carries { outboxId } (pointer).
+    // Structurally matches OutboxPointerMessage in lib/queues/queue-config.ts.
+    OUTBOUND_EMAIL_QUEUE: Queue<{ outboxId: string }>;
     BETTER_AUTH_URL: string;
     // Secrets — set via Cloudflare dashboard or `wrangler secret put`, not wrangler.jsonc vars
     OPENAI_API_KEY: string;
@@ -19,6 +21,7 @@ declare namespace Cloudflare {
     NEXTCLOUD_URL: string;
     NEXTCLOUD_USER: string;
     NEXTCLOUD_PASSWORD: string;
+    RESEND_API_KEY: string;
     PRISMIC_REPOSITORY_NAME: string;
     PRISMIC_TEAM_MEMBER_TYPE?: string;
     PRISMIC_OPERATING_MEMBER_TYPE?: string;

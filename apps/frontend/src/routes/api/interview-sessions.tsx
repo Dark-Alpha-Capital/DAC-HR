@@ -21,6 +21,7 @@ const createSchema = z.object({
   roundConfigs: z.array(roundConfigSchema).optional(),
   expiryHours: z.number().min(1).max(720).default(72),
   agentConfig: agentConfigSchema.optional(),
+  sendInviteEmail: z.boolean().optional().default(false),
 });
 
 export const Route = createFileRoute("/api/interview-sessions")({

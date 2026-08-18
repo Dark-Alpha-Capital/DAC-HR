@@ -9,8 +9,6 @@ import {
   position,
 } from "@workspace/db/schema";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import { sendMail } from "@workspace/mail";
-import { getServerEmailSender } from "#/lib/server/email-sender";
 import type { ApplicationStatus } from "#/lib/application-status";
 import {
   getApplicationsFiltered,
@@ -269,48 +267,6 @@ export const applicationsService = {
 
       if (!updatedApplication) {
         return { error: "Application not found" };
-      }
-
-      if (status === "onboarding" && updatedApplication.status === "onboarding") {
-        const [context] = await db
-          .select({
-            candidateEmail: candidate.email,
-            candidateName: candidate.firstName,
-            candidateLastName: candidate.lastName,
-            candidateLocationCity: candidate.locationCity,
-            candidateLocationState: candidate.locationState,
-            positionName: position.name,
-          })
-          .from(application)
-          .innerJoin(candidate, eq(candidate.id, application.candidateId))
-          .innerJoin(position, eq(position.id, application.positionId))
-          .where(eq(application.id, applicationId))
-          .limit(1);
-
-        if (context?.candidateEmail) {
-          const sender = getServerEmailSender();
-          if (sender) {
-            sendMail({
-              sender,
-              to: context.candidateEmail,
-              template: "onboarding-welcome",
-              data: {
-                candidateName:
-                  `${context.candidateName} ${context.candidateLastName}`.trim(),
-                positionName: context.positionName,
-                location:
-                  context.candidateLocationCity && context.candidateLocationState
-                    ? `${context.candidateLocationCity}, ${context.candidateLocationState}`
-                    : context.candidateLocationCity ||
-                      context.candidateLocationState ||
-                      null,
-                contactEmail: "people@darkalphacapital.com",
-              },
-            }).catch((error) =>
-              console.error("Failed to send onboarding welcome email:", error),
-            );
-          }
-        }
       }
 
       insertAuditLog({

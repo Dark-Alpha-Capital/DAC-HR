@@ -3,6 +3,7 @@ import { eq } from "@workspace/db";
 import {
   interview,
   interviewFeedback,
+  interviewSession,
   application,
   candidate,
   position,
@@ -68,11 +69,8 @@ import {
   truncateId,
 } from "@workspace/interview-realtime/debug-log";
 import { getOptionLabel } from "#/features/questions/helpers";
-import { sendMail } from "@workspace/mail";
-import {
-  getServerEmailSender,
-  getPublicBaseUrl,
-} from "#/lib/server/email-sender";
+import { enqueueEmail } from "#/lib/queues/enqueue";
+import { getPublicBaseUrl } from "#/lib/server/email-sender";
 import type { AgentConfig, InterviewStatus } from "#/lib/enums";
 
 type Actor = {
@@ -331,6 +329,8 @@ export type CreateInterviewSessionInput = {
   roundConfigs?: RoundConfig[];
   expiryHours?: number;
   agentConfig?: AgentConfig;
+  /** When true (and the candidate has an email), enqueue the interview-invite email. */
+  sendInviteEmail?: boolean;
 };
 
 export const createInterviewSession = async (
@@ -393,26 +393,32 @@ export const createInterviewSession = async (
         .where(eq(application.id, applicationId));
     }
 
-    // Non-blocking: send the interview link to the candidate. A missing
-    // EMAIL binding or a send failure must not fail link creation.
-    if (app.candidateEmail) {
+    // Opt-in: only enqueue the invite email when the admin asks for it AND the
+    // candidate has an email on file. A queue failure must not fail link
+    // creation — the outbox dedupes re-emits.
+    let emailSent = false;
+    if (input.sendInviteEmail && app.candidateEmail) {
       const origin = getPublicBaseUrl();
-      const sender = getServerEmailSender();
-      if (sender) {
-        sendMail({
-          sender,
-          to: app.candidateEmail,
-          template: "interview-invite",
-          data: {
-            candidateName:
-              `${app.candidateName} ${app.candidateLastName}`.trim(),
-            positionName: app.positionName,
-            interviewUrl: `${origin}/interview/${result.token}`,
-            expiresAt: result.bundle.expiresAt,
+      try {
+        await enqueueEmail(db, [
+          {
+            jobName: "interview-invite",
+            jobId: `interview-invite-${result.bundle.id}`,
+            dedupeKey: `interview-invite:${result.bundle.id}:${app.candidateEmail}`,
+            data: {
+              type: "interview-invite" as const,
+              to: app.candidateEmail,
+              candidateName:
+                `${app.candidateName} ${app.candidateLastName}`.trim(),
+              positionName: app.positionName,
+              interviewUrl: `${origin}/interview/${result.token}`,
+              expiresAt: result.bundle.expiresAt.toISOString(),
+            },
           },
-        }).catch((error) =>
-          console.error("Failed to send interview invite email:", error),
-        );
+        ]);
+        emailSent = true;
+      } catch (error) {
+        console.error("Failed to enqueue interview invite email:", error);
       }
     }
 
@@ -442,6 +448,7 @@ export const createInterviewSession = async (
         bundleId: result.bundle.id,
         token: result.token,
         expiresAt: result.bundle.expiresAt,
+        emailSent,
       },
     };
   } catch (error) {
@@ -840,7 +847,11 @@ export const interviewsService = {
     status: Parameters<typeof updateSessionStatus>[1],
     metadata?: Parameters<typeof updateSessionStatus>[2],
   ) {
-    return updateSessionStatus(sessionId, status, metadata);
+    const row = await updateSessionStatus(sessionId, status, metadata);
+    if (status === "completed") {
+      await enqueueInterviewCompletedEmail(sessionId);
+    }
+    return row;
   },
 
   async updateSessionVoiceMetadata(
@@ -855,7 +866,11 @@ export const interviewsService = {
   },
 
   async advanceBundleRound(sessionId: string) {
-    return advanceBundleRound(sessionId);
+    const result = await advanceBundleRound(sessionId);
+    if (result?.allCompleted) {
+      await enqueueInterviewCompletedEmail(sessionId);
+    }
+    return result;
   },
 
   async upsertVoiceResponse(data: Parameters<typeof upsertVoiceResponse>[0]) {
@@ -1342,6 +1357,54 @@ type ResolvedInterviewSession = ResolvedSessionOk["session"];
 type TokenValidationResult = Awaited<
   ReturnType<typeof assertInterviewTokenValid>
 >;
+
+/**
+ * Enqueue the interview-completed thank-you email for a candidate who finished
+ * their entire interview. Fires from the round-advance and legacy-completion
+ * paths (both form + voice); the outbox `dedupeKey` (bundleId or sessionId)
+ * absorbs a DO-vs-API double-complete race. Skips silently when the candidate
+ * has no email on file.
+ */
+async function enqueueInterviewCompletedEmail(sessionId: string): Promise<void> {
+  try {
+    const [context] = await db
+      .select({
+        candidateEmail: candidate.email,
+        candidateFirstName: candidate.firstName,
+        candidateLastName: candidate.lastName,
+        positionName: position.name,
+        bundleId: interviewSession.bundleId,
+      })
+      .from(interviewSession)
+      .innerJoin(application, eq(interviewSession.applicationId, application.id))
+      .innerJoin(candidate, eq(application.candidateId, candidate.id))
+      .innerJoin(position, eq(application.positionId, position.id))
+      .where(eq(interviewSession.id, sessionId))
+      .limit(1);
+
+    if (!context?.candidateEmail) {
+      return;
+    }
+
+    const dedupeKey = `interview-completed:${context.bundleId ?? sessionId}`;
+    await enqueueEmail(db, [
+      {
+        jobName: "interview-completed",
+        jobId: dedupeKey,
+        dedupeKey,
+        data: {
+          type: "interview-completed" as const,
+          to: context.candidateEmail,
+          candidateName:
+            `${context.candidateFirstName} ${context.candidateLastName}`.trim(),
+          positionName: context.positionName,
+        },
+      },
+    ]);
+  } catch (error) {
+    console.error("Failed to enqueue interview completed email:", error);
+  }
+}
 
 export type ResolvedInterviewToken =
   | {

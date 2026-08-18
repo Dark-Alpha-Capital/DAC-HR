@@ -1,110 +1,132 @@
-import { createElement, type ReactElement } from "react";
-import { render } from "@react-email/render";
-import { templates, type EmailTemplateName } from "./templates";
+import { Resend } from "resend";
+import { render } from "@react-email/components";
+import {
+  InterviewInviteEmail,
+  InterviewCompletedEmail,
+  OnboardingWelcomeEmail,
+} from "./emails";
+import type { EmailJobData } from "./types";
+import { EMAIL_CONFIG } from "./types";
 
-export type EmailAddress = {
-  email: string;
-  name?: string;
+// Re-export types and emails
+export * from "./types";
+export * from "./emails";
+
+// Re-export render function for email templates
+export { render } from "@react-email/components";
+
+/**
+ * Create a Resend client instance
+ */
+export const createResendClient = (apiKey: string) => {
+  return new Resend(apiKey);
 };
 
 /**
- * Minimal shape of the Cloudflare Email Service `send_email` binding.
- * Use `SendEmail` from `@cloudflare/workers-types` where available; this keeps
- * the package dependency-free and testable.
+ * Render an email template based on job data
+ * Returns the subject and HTML content
  */
-export interface EmailSender {
-  send(input: {
-    to: string | string[];
-    from: EmailAddress;
-    subject: string;
-    html?: string;
-    text?: string;
-  }): Promise<void>;
-}
+export const renderEmailTemplate = async (
+  jobData: EmailJobData,
+): Promise<{ subject: string; html: string }> => {
+  switch (jobData.type) {
+    case "auth-email": {
+      return { subject: jobData.subject, html: jobData.html };
+    }
 
-export type TemplateData<T extends EmailTemplateName> = Parameters<
-  (typeof templates)[T]["Component"]
->[0];
+    case "interview-invite": {
+      const subject = `Interview invitation — ${jobData.positionName}`;
+      const html = await render(
+        InterviewInviteEmail({
+          candidateName: jobData.candidateName,
+          positionName: jobData.positionName,
+          interviewUrl: jobData.interviewUrl,
+          // SAFETY: job payloads store expiresAt as an ISO string (queue JSON);
+          // the template formats it for the recipient.
+          expiresAt: new Date(jobData.expiresAt),
+        }),
+      );
+      return { subject, html };
+    }
 
-export interface SendMailInput<T extends EmailTemplateName> {
-  sender: EmailSender;
-  to: string;
-  from?: EmailAddress;
-  template: T;
-  data: TemplateData<T>;
-}
+    case "interview-completed": {
+      const subject = `Thank you for completing your interview`;
+      const html = await render(
+        InterviewCompletedEmail({
+          candidateName: jobData.candidateName,
+          positionName: jobData.positionName,
+        }),
+      );
+      return { subject, html };
+    }
 
-export const DEFAULT_FROM: EmailAddress = {
-  email: "noreply@darkalphacapital.com",
-  name: "Dark Alpha Capital",
-};
+    case "onboarding-welcome": {
+      const subject = `Welcome to Dark Alpha Capital — ${jobData.positionName}`;
+      const html = await render(
+        OnboardingWelcomeEmail({
+          candidateName: jobData.candidateName,
+          positionName: jobData.positionName,
+          location: jobData.location,
+          startDate: jobData.startDate,
+          contactEmail: jobData.contactEmail,
+        }),
+      );
+      return { subject, html };
+    }
 
-type RenderedEmail = {
-  subject: string;
-  html: string;
-  text: string;
+    default: {
+      const _exhaustive: never = jobData;
+      // SAFETY: unreachable default; cast reads .type for the diagnostic message only.
+      throw new Error(`Unknown email type: ${(_exhaustive as EmailJobData).type}`);
+    }
+  }
 };
 
 /**
- * Renders a named template to subject/html/text using the React Email
- * component and `@react-email/render`. `render` resolves to an async
- * implementation on both the node and Workers (edge) builds.
+ * Send an email using Resend.
+ *
+ * `idempotencyKey` guards against duplicate sends when the queue redelivers a
+ * message (at-least-once semantics): the key is stable per outbox row, so a
+ * crash-after-send-but-before-ack cannot produce a second email.
  */
-export async function renderEmail<T extends EmailTemplateName>(
-  template: T,
-  data: TemplateData<T>,
-): Promise<RenderedEmail> {
-  const entry = templates[template] as {
-    subject: (data: TemplateData<T>) => string;
-    Component: (props: TemplateData<T>) => ReactElement;
-  };
-  const element = createElement(entry.Component, data);
-  const [html, text] = await Promise.all([
-    render(element),
-    render(element, {
-      plainText: true,
-      htmlToTextOptions: {
-        selectors: [
-          { selector: "h1", options: { uppercase: false } },
-          { selector: "h2", options: { uppercase: false } },
-          { selector: "h3", options: { uppercase: false } },
-          { selector: "h4", options: { uppercase: false } },
-          { selector: "h5", options: { uppercase: false } },
-          { selector: "h6", options: { uppercase: false } },
-        ],
-      },
-    }),
-  ]);
+export const sendEmail = async (
+  resend: Resend,
+  to: string,
+  subject: string,
+  html: string,
+  opts?: { idempotencyKey?: string },
+) => {
+  const response = await resend.emails.send(
+    {
+      from: EMAIL_CONFIG.from,
+      to,
+      subject,
+      html,
+    },
+    opts?.idempotencyKey ? { idempotencyKey: opts.idempotencyKey } : undefined,
+  );
 
-  return { subject: entry.subject(data), html, text };
-}
-
-/**
- * Renders a named template and sends it via the Cloudflare Email Service
- * binding. Safe to call from server functions / workflows / DOs. Returns the
- * send result, or `false` when no sender is available (e.g. local dev without
- * the EMAIL binding) so callers can no-op gracefully.
- */
-export async function sendMail<T extends EmailTemplateName>({
-  sender,
-  to,
-  from = DEFAULT_FROM,
-  template,
-  data,
-}: SendMailInput<T>): Promise<void | false> {
-  if (!sender) {
-    return false;
+  if (response.error) {
+    throw new Error(`Failed to send email: ${response.error.message}`);
   }
 
-  const rendered = await renderEmail(template, data);
+  return response.data;
+};
 
-  return sender.send({
-    to,
-    from,
-    subject: rendered.subject,
-    html: rendered.html,
-    text: rendered.text,
-  });
-}
-
-export { templates, type EmailTemplateName } from "./templates";
+/**
+ * Process an email job - renders template and sends email
+ */
+export const processEmailJob = async (
+  resend: Resend,
+  jobData: EmailJobData,
+  opts?: { idempotencyKey?: string },
+) => {
+  const { subject, html } = await renderEmailTemplate(jobData);
+  const result = await sendEmail(resend, jobData.to, subject, html, opts);
+  return {
+    success: true,
+    emailId: result?.id,
+    to: jobData.to,
+    type: jobData.type,
+  };
+};

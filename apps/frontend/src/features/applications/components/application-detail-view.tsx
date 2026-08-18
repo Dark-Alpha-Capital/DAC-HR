@@ -227,6 +227,7 @@ export function ApplicationDetailView({
         users={users}
         application={application}
         positionSlug={application.position?.slug}
+        candidateEmail={candidate?.email ?? null}
       />
     </div>
   );

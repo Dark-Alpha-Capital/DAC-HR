@@ -1,6 +1,7 @@
 import handler from "@tanstack/react-start/server-entry";
 import { handleInterviewRealtimeWs } from "#/features/voice-interview/ws-handler";
 import { handleRecordingUpload } from "#/features/voice-interview/interview-recording-upload";
+import { handleAsyncJobQueue } from "#/lib/queues/consume";
 
 export { DocumentIndexingWorkflow } from "./workflows/document-indexing";
 export { InterviewEvaluationWorkflow } from "./workflows/interview-evaluation";
@@ -35,4 +36,6 @@ export default {
 
     return handler.fetch(request);
   },
+
+  queue: handleAsyncJobQueue,
 };

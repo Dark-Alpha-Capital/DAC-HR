@@ -232,6 +232,7 @@ interface ApplicationProgressTimelineProps {
   }>;
   application?: ApplicationProgress;
   positionSlug?: string;
+  candidateEmail?: string | null;
 }
 
 const getBundleStatusBadge = (status: InterviewBundleStatus) => {
@@ -436,6 +437,7 @@ export default function ApplicationProgressTimeline({
   users = [],
   application,
   positionSlug,
+  candidateEmail,
 }: ApplicationProgressTimelineProps) {
   const invalidate = useQueryInvalidation();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -609,6 +611,7 @@ export default function ApplicationProgressTimeline({
           <RecordInterviewDialogWrapper
             applicationId={application.id}
             application={application}
+            candidateEmail={candidateEmail}
             users={users}
             currentUserId={currentUser.id}
             positionSlug={positionSlug}

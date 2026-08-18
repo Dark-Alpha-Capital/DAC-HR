@@ -12,13 +12,13 @@
   },
   "exports": {
     ".": "./index.ts",
-    "./index": "./index.ts",
-    "./templates": "./templates.ts"
+    "./types": "./types.ts",
+    "./emails": "./emails/index.ts"
   },
   "dependencies": {
     "@react-email/components": "^1.0.12",
-    "@react-email/render": "^2.1.0",
     "react": "19.2.7",
-    "react-dom": "19.2.7"
+    "react-dom": "19.2.7",
+    "resend": "^6.5.2"
   }
 }

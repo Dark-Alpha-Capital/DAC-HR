@@ -41,12 +41,6 @@
     },
   ],
 
-  "send_email": [
-    {
-      "name": "EMAIL",
-    },
-  ],
-
   "vectorize": [
     {
       "binding": "VECTORIZE",
@@ -54,6 +48,23 @@
       "remote": true,
     },
   ],
+
+  "queues": {
+    "producers": [
+      {
+        "binding": "OUTBOUND_EMAIL_QUEUE",
+        "queue": "hr-outbound-email",
+      },
+    ],
+    "consumers": [
+      {
+        "queue": "hr-outbound-email",
+        "max_batch_size": 10,
+        "max_retries": 10,
+        "retry_delay": 30,
+      },
+    ],
+  },
 
   "workflows": [
     {

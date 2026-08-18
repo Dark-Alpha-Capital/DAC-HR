@@ -11,6 +11,7 @@ import {
 } from "#/components/ui/dialog";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
+import { Checkbox } from "#/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -32,6 +33,7 @@ type DialogMode = "ai_link" | "manual";
 interface RecordInterviewDialogProps {
   applicationId: string;
   application: Pick<ApplicationDetail, "rounds">;
+  candidateEmail?: string | null;
   users: Array<{
     id: string;
     name: string | null;
@@ -47,6 +49,7 @@ interface RecordInterviewDialogProps {
 export default function RecordInterviewDialog({
   applicationId,
   application,
+  candidateEmail,
   users,
   currentUserId,
   open,
@@ -69,6 +72,8 @@ export default function RecordInterviewDialog({
   );
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [sendInviteEmail, setSendInviteEmail] = useState(false);
+  const hasCandidateEmail = Boolean(candidateEmail);
 
   useEffect(() => {
     if (initialRoundId) {
@@ -92,6 +97,7 @@ export default function RecordInterviewDialog({
   const resetState = () => {
     setGeneratedLink(null);
     setCopied(false);
+    setSendInviteEmail(false);
     setMode("ai_link");
     if (!initialRoundId) {
       setRoundId(application.rounds[0]?.id || "");
@@ -157,6 +163,7 @@ export default function RecordInterviewDialog({
             roundId: round.id,
             deliveryMode: roundModes[round.id] ?? "form",
           })),
+          sendInviteEmail,
         },
       });
 
@@ -165,7 +172,17 @@ export default function RecordInterviewDialog({
       } else if (result.data?.token) {
         const link = `${window.location.origin}/interview/${result.data.token}`;
         setGeneratedLink(link);
-        toast.success("Interview link generated");
+        if (result.data.emailSent) {
+          toast.success(
+            `Interview link generated and invite email sent to ${candidateEmail}`,
+          );
+        } else if (sendInviteEmail && !hasCandidateEmail) {
+          toast.info(
+            "Interview link generated — no email on file for this candidate",
+          );
+        } else {
+          toast.success("Interview link generated");
+        }
         void invalidate.applicationDetail(applicationId);
       }
     } catch {
@@ -331,6 +348,33 @@ export default function RecordInterviewDialog({
                       ) : null}
                     </div>
                   ) : null}
+
+                  <div className="space-y-2 rounded-md border p-3">
+                    <label className="flex items-start gap-3">
+                      <Checkbox
+                        checked={sendInviteEmail}
+                        disabled={!hasCandidateEmail}
+                        onCheckedChange={(checked) =>
+                          setSendInviteEmail(checked === true)
+                        }
+                      />
+                      <span className="text-sm">
+                        <span className="font-medium">
+                          Send invite email to candidate
+                        </span>
+                        {hasCandidateEmail ? (
+                          <span className="block text-xs text-muted-foreground">
+                            Email the interview link to {candidateEmail}
+                          </span>
+                        ) : (
+                          <span className="block text-xs text-muted-foreground">
+                            No email on file for this candidate — copy the link
+                            instead
+                          </span>
+                        )}
+                      </span>
+                    </label>
+                  </div>
                 </div>
                 <DialogFooter>
                   <Button
