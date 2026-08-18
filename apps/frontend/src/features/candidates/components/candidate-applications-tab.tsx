@@ -1,6 +1,8 @@
+import type { MouseEvent } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "#/components/ui/badge";
 import { Briefcase, Calendar, ChevronRight } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { formatDate } from "#/lib/utils";
 import {
   getApplicationStatusLabel,
@@ -8,6 +10,7 @@ import {
 } from "#/lib/application-status";
 import type { CandidateWithApplications } from "#/features/candidates/types";
 import { CreateApplicationDialog } from "#/features/applications/components/create-application-dialog";
+import { applicationDetailQueryOptions } from "#/features/applications/query-options";
 
 type Candidate = CandidateWithApplications;
 export function CandidateApplicationsTab({
@@ -15,9 +18,27 @@ export function CandidateApplicationsTab({
 }: {
   candidate: Candidate;
 }) {
+  const navigate = useNavigate({ from: "/candidates/$uid/" });
+  const queryClient = useQueryClient();
   const existingPositionIds = candidate.applications.map(
     (app) => app.position.id,
   );
+
+  const openApplicationSheet = (applicationId: string) => {
+    void navigate({
+      search: (prev) => ({
+        ...prev,
+        applicationId,
+      }),
+    });
+  };
+
+  const shouldOpenSheet = (event: MouseEvent<HTMLAnchorElement>) =>
+    event.button === 0 &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.shiftKey &&
+    !event.altKey;
 
   return (
     <div className="space-y-6">
@@ -52,6 +73,19 @@ export function CandidateApplicationsTab({
               to="/applications/$id"
               params={{ id: app.id }}
               className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+              onPointerEnter={() => {
+                void queryClient.prefetchQuery(
+                  applicationDetailQueryOptions(app.id),
+                );
+              }}
+              onClick={(event) => {
+                if (!shouldOpenSheet(event)) {
+                  return;
+                }
+
+                event.preventDefault();
+                openApplicationSheet(app.id);
+              }}
             >
               <div className="flex-1 min-w-0 space-y-1">
                 <div className="flex items-center gap-2">

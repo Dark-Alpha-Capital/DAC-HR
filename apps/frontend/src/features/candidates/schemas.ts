@@ -38,7 +38,10 @@ export const candidateFormSchema = z
         },
       )
       .max(20, "Phone number must be at most 20 characters."),
-    locationCity: z.string().max(100, "City must be at most 100 characters."),
+    locationCity: z
+      .string()
+      .max(100, "City must be at most 100 characters.")
+      .optional(),
     locationState: z
       .string()
       .max(2, "State must be a 2-letter abbreviation.")
@@ -48,7 +51,8 @@ export const candidateFormSchema = z
           return /^[A-Za-z]{2}$/.test(val);
         },
         { message: "Invalid state abbreviation." },
-      ),
+      )
+      .optional(),
     location: z.string().max(100, "Location must be at most 100 characters."),
     source: candidateSourceEnum.optional(),
     sourceUrl: z.string(),

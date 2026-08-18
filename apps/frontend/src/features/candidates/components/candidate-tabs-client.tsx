@@ -3,11 +3,13 @@ import { Tabs } from "#/components/ui/tabs";
 
 export default function CandidateTabsClient({
   children,
+  defaultValue = "overview",
 }: {
   children: ReactNode;
+  defaultValue?: string;
 }) {
   return (
-    <Tabs defaultValue="overview" className="w-full">
+    <Tabs defaultValue={defaultValue} className="w-full">
       {children}
     </Tabs>
   );

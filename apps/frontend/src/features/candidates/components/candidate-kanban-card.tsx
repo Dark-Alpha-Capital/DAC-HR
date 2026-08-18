@@ -27,6 +27,7 @@ function CandidateKanbanCard({ candidate, status }: CandidateKanbanCardProps) {
     <Link
       to="/candidates/$uid"
       params={{ uid: candidate.id }}
+      search={{ applicationId: undefined }}
       aria-label={`View ${candidate.firstName} ${candidate.lastName}`}
       className={`block bg-white dark:bg-card border border-border rounded-md p-3 cursor-pointer ${borderColor} border-l-4 min-w-0`}
     >

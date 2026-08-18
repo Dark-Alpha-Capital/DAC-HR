@@ -1,6 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { DetailPageSkeleton } from "#/components/shared/detail-page-skeleton";
-import { Link, useParams } from "@tanstack/react-router";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useRouterState,
+} from "@tanstack/react-router";
 import { Button } from "#/components/ui/button";
 import { Badge } from "#/components/ui/badge";
 import { TabsList, TabsTrigger, TabsContent } from "#/components/ui/tabs";
@@ -21,9 +26,14 @@ import { CandidateApplicationsTab } from "#/features/candidates/components/candi
 import { CandidateDocumentsTab } from "#/features/candidates/components/candidate-documents-tab";
 import OnboardingCard from "#/features/candidates/components/onboarding-card";
 import { candidateDetailQueryOptions } from "#/features/candidates/query-options";
+import { ApplicationDetailSheet } from "#/features/applications/components/application-detail-sheet";
 
 export function CandidateDetailPage() {
   const { uid } = useParams({ from: "/_main/candidates/$uid/" });
+  const search = useRouterState({
+    select: (state) => state.location.search as { applicationId?: string },
+  });
+  const navigate = useNavigate({ from: "/candidates/$uid/" });
   const { data, isLoading } = useQuery(candidateDetailQueryOptions(uid));
 
   if (isLoading && !data) {
@@ -66,6 +76,7 @@ export function CandidateDetailPage() {
   }
 
   const fullName = `${candidate.firstName} ${candidate.lastName}`;
+  const applicationId = search.applicationId;
 
   return (
     <div className="space-y-6">
@@ -97,7 +108,9 @@ export function CandidateDetailPage() {
         </div>
       </div>
 
-      <CandidateTabsClient>
+      <CandidateTabsClient
+        defaultValue={applicationId ? "applications" : "overview"}
+      >
         <TabsList>
           <TabsTrigger value="overview">
             <User className="h-4 w-4 mr-2" />
@@ -155,6 +168,23 @@ export function CandidateDetailPage() {
           </div>
         </TabsContent>
       </CandidateTabsClient>
+
+      <ApplicationDetailSheet
+        applicationId={applicationId}
+        open={Boolean(applicationId)}
+        onOpenChange={(open) => {
+          if (open) {
+            return;
+          }
+
+          void navigate({
+            search: (prev) => ({
+              ...prev,
+              applicationId: undefined,
+            }),
+          });
+        }}
+      />
     </div>
   );
 }

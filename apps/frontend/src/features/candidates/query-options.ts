@@ -47,6 +47,18 @@ export function parseCandidatesSearch(search: CandidatesSearchInput) {
 export type CandidatesIndexSearch = ReturnType<typeof parseCandidatesSearch>;
 export type { CandidateViewMode };
 
+interface CandidateDetailSearchInput {
+  applicationId?: unknown;
+}
+
+export function parseCandidateDetailSearch(search: CandidateDetailSearchInput) {
+  return {
+    applicationId: toOptionalString(search.applicationId),
+  };
+}
+
+export type CandidateDetailSearch = ReturnType<typeof parseCandidateDetailSearch>;
+
 export const candidatesIndexQueries = defineEntityQueries(
   queryKeys.candidates.list,
   (deps: CandidatesIndexSearch): Promise<CandidatesIndexData> =>

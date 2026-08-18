@@ -168,6 +168,7 @@ const DocumentContainer = ({
                     <Link
                       to="/candidates/$uid"
                       params={{ uid: document.candidateId }}
+                      search={{ applicationId: undefined }}
                       className="text-primary hover:underline"
                     >
                       {document.candidateName}

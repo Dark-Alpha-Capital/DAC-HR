@@ -108,8 +108,8 @@ import { eq, and, or, sql, asc, desc, inArray, count, gte, lte } from "@workspac
 - Template: `apps/frontend/.env.example`.
 - No `DATABASE_URL` — D1 is bound via `wrangler.jsonc`.
 - `apps/frontend/.dev.vars` duplicates secrets for **wrangler dev** (Cloudflare Workers runtime can't read `.env`).
-- **Local dev uses a LOCAL D1 database** (`vite.config.ts` sets `remoteBindings: false`; `wrangler.jsonc` D1 binding has `remote: false`). No `wrangler login` needed for dev. Run `bun run db:migrate` after pulling schema changes so the local D1 stays in sync. Vectorize stays remote-only (used only by the document-indexing workflow).
-- To temporarily run dev against remote/production bindings, set `remoteBindings: true` in `vite.config.ts` (or set `CLOUDFLARE_VITE_FORCE_LOCAL=true` to force local regardless).
+- **Local dev currently uses REMOTE production D1** (`vite.config.ts` sets `remoteBindings: true`; `wrangler.jsonc` D1 binding has `remote: true`). Requires `wrangler login`. Writes from `bun run dev` hit production data — be careful.
+- To switch back to local D1, set `remoteBindings: false` in `vite.config.ts` and D1 `remote: false` in `wrangler.jsonc`. Vectorize stays remote-only (used only by the document-indexing workflow).
 - Secrets (OPENAI_API_KEY, NEXTCLOUD_*, BETTER_AUTH_SECRET, GOOGLE_CLIENT_*) live in the Cloudflare dashboard or `wrangler secret put` for production — never in `wrangler.jsonc` (deploy would overwrite dashboard values).
 - Non-secret config lives in `wrangler.jsonc` vars: `BETTER_AUTH_URL`, `PRISMIC_REPOSITORY_NAME` (`darkalpha`), `PRISMIC_TEAM_MEMBER_TYPE` (`teammember`), `PRISMIC_OPERATING_MEMBER_TYPE` (`operatingmember`).
 - `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` in `.env` are required only for `db:studio`.

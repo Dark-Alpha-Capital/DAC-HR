@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "#/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
 import {
   Eye,
   Trash2,
@@ -621,214 +622,249 @@ export default function ApplicationProgressTimeline({
         )}
       </div>
 
-      {bundles.length > 0 && (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between gap-4">
-            <h3 className="text-sm font-medium text-muted-foreground">
-              AI Interview Links
-            </h3>
-            <InterviewFilterControls value={aiFilter} onChange={setAiFilter} />
-          </div>
-          <div className="space-y-3">
-            {filteredBundles.length === 0 ? (
-              <div className="py-8 text-center text-sm text-muted-foreground">
-                No AI interview links match this filter.
+      <Tabs defaultValue="manual" className="w-full">
+        <TabsList>
+          <TabsTrigger value="manual" className="gap-2">
+            <UserRound className="h-4 w-4" />
+            Manual
+          </TabsTrigger>
+          <TabsTrigger value="links" className="gap-2">
+            <Bot className="h-4 w-4" />
+            Link Generated
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="manual" className="mt-6">
+          <section className="space-y-1">
+            <div className="flex items-center justify-between gap-4 mb-3">
+              <h3 className="text-sm font-medium text-muted-foreground">
+                Manual Interviews by Round
+              </h3>
+              <InterviewFilterControls
+                value={manualFilter}
+                onChange={setManualFilter}
+              />
+            </div>
+            {rounds.length === 0 ? (
+              <div className="py-12 text-center text-muted-foreground">
+                <MessageSquare className="h-8 w-8 mx-auto mb-3 opacity-50" />
+                <p className="text-sm">
+                  No interview rounds configured for this position.
+                </p>
               </div>
             ) : (
-              filteredBundles.map((item, index) => (
-                <BundleCard
-                  key={item.bundle.id}
-                  item={item}
-                  onDelete={handleDeleteBundleClick}
-                  deleting={deletingBundleId === item.bundle.id}
-                  isLatest={aiFilter.sort === "newest" && index === 0}
-                />
-              ))
-            )}
-          </div>
-        </section>
-      )}
+              <div className="divide-y divide-border">
+                {orderedRounds.map((round) => {
+                  const roundInterviews = interviewsByRound.get(round.id) || [];
+                  const hasInterviews = roundInterviews.length > 0;
 
-      <section className="space-y-1">
-        <div className="flex items-center justify-between gap-4 mb-3">
-          <h3 className="text-sm font-medium text-muted-foreground">
-            Manual Interviews by Round
-          </h3>
-          <InterviewFilterControls
-            value={manualFilter}
-            onChange={setManualFilter}
-          />
-        </div>
-        {rounds.length === 0 ? (
-          <div className="py-12 text-center text-muted-foreground">
-            <MessageSquare className="h-8 w-8 mx-auto mb-3 opacity-50" />
-            <p className="text-sm">
-              No interview rounds configured for this position.
-            </p>
-          </div>
-        ) : (
-          <div className="divide-y divide-border">
-            {orderedRounds.map((round) => {
-              const roundInterviews = interviewsByRound.get(round.id) || [];
-              const hasInterviews = roundInterviews.length > 0;
-
-              return (
-                <section key={round.id} className="py-5 first:pt-0">
-                  <div className="flex items-start justify-between gap-4 mb-4">
-                    <div className="space-y-0.5 flex-1">
-                      <h3 className="text-base font-medium flex items-center gap-2">
-                        {round.name}
-                        {manualFilter.sort === "newest" &&
-                        latestManualAt !== null &&
-                        roundInterviews.some(
-                          (i) =>
-                            new Date(i.createdAt).getTime() === latestManualAt,
-                        ) ? (
-                          <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-0">
-                            Latest
-                          </Badge>
-                        ) : null}
-                      </h3>
-                      {round.description && (
-                        <p className="text-sm text-muted-foreground">
-                          {round.description}
-                        </p>
-                      )}
-                    </div>
-                    <Badge variant="secondary" className="text-xs shrink-0">
-                      {roundInterviews.length} manual
-                    </Badge>
-                  </div>
-                  {!hasInterviews ? (
-                    <div className="py-8 text-center text-muted-foreground">
-                      <Circle className="h-8 w-8 mx-auto mb-3 opacity-50" />
-                      <p className="text-sm mb-1">
-                        No manual interviews recorded for this round.
-                      </p>
-                      <p className="text-xs">
-                        Use Record Interview to log one, or generate an AI link
-                        above.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="overflow-hidden rounded-md border">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-muted/30">
-                            <TableHead className="font-medium">Type</TableHead>
-                            <TableHead className="font-medium">
-                              Interviewer
-                            </TableHead>
-                            <TableHead className="font-medium">Date</TableHead>
-                            <TableHead className="font-medium">
-                              Created
-                            </TableHead>
-                            <TableHead className="font-medium">
-                              Status
-                            </TableHead>
-                            <TableHead className="font-medium">
-                              Rating
-                            </TableHead>
-                            <TableHead className="text-right font-medium">
-                              Actions
-                            </TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {roundInterviews.map((interview) => (
-                            <TableRow
-                              key={interview.id}
-                              className={
-                                selectedInterviewId === interview.id
-                                  ? "bg-primary/5"
-                                  : undefined
-                              }
-                            >
-                              <TableCell>
-                                <Badge variant="secondary" className="border-0">
-                                  <UserRound className="h-3 w-3 mr-1" />
-                                  Manual
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                {interview.interviewer
-                                  ? interview.interviewer.name ||
-                                    interview.interviewer.email
-                                  : "-"}
-                              </TableCell>
-                              <TableCell>
-                                {interview.scheduledAt
-                                  ? formatDate(interview.scheduledAt)
-                                  : interview.createdAt
-                                    ? formatDate(interview.createdAt)
-                                    : "-"}
-                              </TableCell>
-                              <TableCell>
-                                {interview.createdAt
-                                  ? formatDateTime(interview.createdAt)
-                                  : "-"}
-                              </TableCell>
-                              <TableCell>
-                                {getStatusBadge(interview.status)}
-                              </TableCell>
-                              <TableCell>
-                                {interview.rating ? (
-                                  <div className="flex items-center gap-1">
-                                    <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
-                                    <span className="text-sm">
-                                      {interview.rating}/5
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <span className="text-muted-foreground">
-                                    -
-                                  </span>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex items-center justify-end gap-1">
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    className="h-8 w-8 p-0"
-                                    asChild
-                                  >
-                                    <Link
-                                      to="/interviews/$id"
-                                      params={{ id: interview.id }}
+                  return (
+                    <section key={round.id} className="py-5 first:pt-0">
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        <div className="space-y-0.5 flex-1">
+                          <h3 className="text-base font-medium flex items-center gap-2">
+                            {round.name}
+                            {manualFilter.sort === "newest" &&
+                            latestManualAt !== null &&
+                            roundInterviews.some(
+                              (i) =>
+                                new Date(i.createdAt).getTime() ===
+                                latestManualAt,
+                            ) ? (
+                              <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-0">
+                                Latest
+                              </Badge>
+                            ) : null}
+                          </h3>
+                          {round.description && (
+                            <p className="text-sm text-muted-foreground">
+                              {round.description}
+                            </p>
+                          )}
+                        </div>
+                        <Badge variant="secondary" className="text-xs shrink-0">
+                          {roundInterviews.length} manual
+                        </Badge>
+                      </div>
+                      {!hasInterviews ? (
+                        <div className="py-8 text-center text-muted-foreground">
+                          <Circle className="h-8 w-8 mx-auto mb-3 opacity-50" />
+                          <p className="text-sm mb-1">
+                            No manual interviews recorded for this round.
+                          </p>
+                          <p className="text-xs">
+                            Use Record Interview to log one, or generate an AI
+                            link in the Link Generated tab.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="overflow-hidden rounded-md border">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="bg-muted/30">
+                                <TableHead className="font-medium">
+                                  Type
+                                </TableHead>
+                                <TableHead className="font-medium">
+                                  Interviewer
+                                </TableHead>
+                                <TableHead className="font-medium">
+                                  Date
+                                </TableHead>
+                                <TableHead className="font-medium">
+                                  Created
+                                </TableHead>
+                                <TableHead className="font-medium">
+                                  Status
+                                </TableHead>
+                                <TableHead className="font-medium">
+                                  Rating
+                                </TableHead>
+                                <TableHead className="text-right font-medium">
+                                  Actions
+                                </TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {roundInterviews.map((interview) => (
+                                <TableRow
+                                  key={interview.id}
+                                  className={
+                                    selectedInterviewId === interview.id
+                                      ? "bg-primary/5"
+                                      : undefined
+                                  }
+                                >
+                                  <TableCell>
+                                    <Badge
+                                      variant="secondary"
+                                      className="border-0"
                                     >
-                                      <Eye className="h-4 w-4" />
-                                    </Link>
-                                  </Button>
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                    disabled={deletingInterviewId !== null}
-                                    onClick={() =>
-                                      handleDeleteClick(interview.id)
-                                    }
-                                  >
-                                    {deletingInterviewId === interview.id ? (
-                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                      <UserRound className="h-3 w-3 mr-1" />
+                                      Manual
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    {interview.interviewer
+                                      ? interview.interviewer.name ||
+                                        interview.interviewer.email
+                                      : "-"}
+                                  </TableCell>
+                                  <TableCell>
+                                    {interview.scheduledAt
+                                      ? formatDate(interview.scheduledAt)
+                                      : interview.createdAt
+                                        ? formatDate(interview.createdAt)
+                                        : "-"}
+                                  </TableCell>
+                                  <TableCell>
+                                    {interview.createdAt
+                                      ? formatDateTime(interview.createdAt)
+                                      : "-"}
+                                  </TableCell>
+                                  <TableCell>
+                                    {getStatusBadge(interview.status)}
+                                  </TableCell>
+                                  <TableCell>
+                                    {interview.rating ? (
+                                      <div className="flex items-center gap-1">
+                                        <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                                        <span className="text-sm">
+                                          {interview.rating}/5
+                                        </span>
+                                      </div>
                                     ) : (
-                                      <Trash2 className="h-4 w-4" />
+                                      <span className="text-muted-foreground">
+                                        -
+                                      </span>
                                     )}
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
-                </section>
-              );
-            })}
-          </div>
-        )}
-      </section>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <div className="flex items-center justify-end gap-1">
+                                      <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        className="h-8 w-8 p-0"
+                                        asChild
+                                      >
+                                        <Link
+                                          to="/interviews/$id"
+                                          params={{ id: interview.id }}
+                                        >
+                                          <Eye className="h-4 w-4" />
+                                        </Link>
+                                      </Button>
+                                      <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                        disabled={deletingInterviewId !== null}
+                                        onClick={() =>
+                                          handleDeleteClick(interview.id)
+                                        }
+                                      >
+                                        {deletingInterviewId ===
+                                        interview.id ? (
+                                          <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                          <Trash2 className="h-4 w-4" />
+                                        )}
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      )}
+                    </section>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </TabsContent>
+
+        <TabsContent value="links" className="mt-6">
+          <section className="space-y-3">
+            <div className="flex items-center justify-between gap-4">
+              <h3 className="text-sm font-medium text-muted-foreground">
+                AI Interview Links
+              </h3>
+              <InterviewFilterControls
+                value={aiFilter}
+                onChange={setAiFilter}
+              />
+            </div>
+            <div className="space-y-3">
+              {bundles.length === 0 ? (
+                <div className="py-12 text-center text-muted-foreground">
+                  <Bot className="h-8 w-8 mx-auto mb-3 opacity-50" />
+                  <p className="text-sm">
+                    No AI interview links yet. Generate a link to send to the
+                    candidate.
+                  </p>
+                </div>
+              ) : filteredBundles.length === 0 ? (
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  No AI interview links match this filter.
+                </div>
+              ) : (
+                filteredBundles.map((item, index) => (
+                  <BundleCard
+                    key={item.bundle.id}
+                    item={item}
+                    onDelete={handleDeleteBundleClick}
+                    deleting={deletingBundleId === item.bundle.id}
+                    isLatest={aiFilter.sort === "newest" && index === 0}
+                  />
+                ))
+              )}
+            </div>
+          </section>
+        </TabsContent>
+      </Tabs>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>

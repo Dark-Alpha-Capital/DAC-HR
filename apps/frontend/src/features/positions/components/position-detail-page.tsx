@@ -236,7 +236,7 @@ export function PositionDetailPage() {
                           <Link
                             to="/candidates/$uid"
                             params={{ uid: candidateData.id }}
-                            search={{}}
+                            search={{ applicationId: undefined }}
                           >
                             <Eye className="h-3 w-3 mr-1" />
                             View

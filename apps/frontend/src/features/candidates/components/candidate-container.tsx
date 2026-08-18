@@ -70,7 +70,11 @@ const CandidateContainer = ({
   };
 
   const handleRowClick = (candidateId: string) => {
-    navigate({ to: "/candidates/$uid", params: { uid: candidateId } });
+    navigate({
+      to: "/candidates/$uid",
+      params: { uid: candidateId },
+      search: { applicationId: undefined },
+    });
   };
 
   return (

@@ -36,7 +36,11 @@ export function CandidateDocumentEditPage() {
             </CardContent>
             <CardContent>
               <Button asChild>
-                <Link to="/candidates/$uid" search={{}} params={{ uid }}>
+                <Link
+                  to="/candidates/$uid"
+                  search={{ applicationId: undefined }}
+                  params={{ uid }}
+                >
                   Back to Candidate
                 </Link>
               </Button>
