@@ -1,7 +1,5 @@
 import { Link, useLoaderData } from "@tanstack/react-router";
-import type {
-  InterviewResponse,
-} from "#/features/interviews/types";
+import type { InterviewResponse } from "#/features/interviews/types";
 import { Button } from "#/components/ui/button";
 import { Badge } from "#/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
@@ -231,7 +229,7 @@ export function InterviewDetailPage() {
       </header>
 
       <Tabs
-        defaultValue={isAiSessionResolved ? "session" : "questions"}
+        defaultValue={isAiSessionResolved ? "session" : "overview"}
         className="w-full"
       >
         <TabsList>
@@ -256,6 +254,10 @@ export function InterviewDetailPage() {
             </>
           ) : (
             <>
+              <TabsTrigger value="overview" className="gap-2">
+                <FileText className="h-4 w-4" />
+                Overview
+              </TabsTrigger>
               <TabsTrigger value="questions" className="gap-2">
                 <MessageSquare className="h-4 w-4" />
                 Questions
@@ -267,10 +269,6 @@ export function InterviewDetailPage() {
                     {questions.length}
                   </Badge>
                 ) : null}
-              </TabsTrigger>
-              <TabsTrigger value="summary" className="gap-2">
-                <FileText className="h-4 w-4" />
-                Summary
               </TabsTrigger>
             </>
           )}
@@ -321,18 +319,22 @@ export function InterviewDetailPage() {
                       Tab switches: {session?.session?.tabSwitches ?? 0}
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground capitalize">
-                      Delivery mode: {session?.session?.deliveryMode ?? "hybrid"}
+                      Delivery mode:{" "}
+                      {session?.session?.deliveryMode ?? "hybrid"}
                     </div>
                     {session?.session?.cheatingSummary ? (
                       <div className="rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground space-y-1">
-                        <p className="font-medium text-foreground">Cheating summary</p>
+                        <p className="font-medium text-foreground">
+                          Cheating summary
+                        </p>
                         <p>
                           Tab switches:{" "}
                           {session.session.cheatingSummary.tabSwitches ?? 0}
                         </p>
                         <p>
                           Focus lost (sec):{" "}
-                          {session.session.cheatingSummary.focusLostSeconds ?? 0}
+                          {session.session.cheatingSummary.focusLostSeconds ??
+                            0}
                         </p>
                         <p>
                           Fullscreen exits:{" "}
@@ -394,7 +396,6 @@ export function InterviewDetailPage() {
                   )}
                 </CardContent>
               </Card>
-
             </TabsContent>
 
             <TabsContent value="responses" className="mt-6">
@@ -408,7 +409,10 @@ export function InterviewDetailPage() {
                             {r.question?.category || "General"}
                           </Badge>
                           {r.inputMethod ? (
-                            <Badge variant="outline" className="text-xs capitalize">
+                            <Badge
+                              variant="outline"
+                              className="text-xs capitalize"
+                            >
                               {r.inputMethod === "voice" ? (
                                 <Mic className="h-3 w-3 mr-1" />
                               ) : null}
@@ -438,6 +442,25 @@ export function InterviewDetailPage() {
           </>
         ) : (
           <>
+            <TabsContent value="overview" className="mt-6">
+              <InterviewSummaryForm
+                interview={{
+                  id: interview.id,
+                  // SAFETY: the summary form is only rendered for non-AI
+                  // interviews whose status is one of these four values.
+                  status: interview.status as
+                    | "pending"
+                    | "move_forward"
+                    | "rejected"
+                    | "scheduled",
+                  rating: interview.rating,
+                  scheduledAt: interview.scheduledAt,
+                  overallFeedback: interview.overallFeedback,
+                }}
+                applicationId={application?.id ?? interview.applicationId}
+              />
+            </TabsContent>
+
             <TabsContent value="questions" className="mt-6">
               {questions.length > 0 ? (
                 <div className="space-y-3">
@@ -456,25 +479,6 @@ export function InterviewDetailPage() {
                   <p>No questions for this interview</p>
                 </div>
               )}
-            </TabsContent>
-
-            <TabsContent value="summary" className="mt-6">
-              <InterviewSummaryForm
-                interview={{
-                  id: interview.id,
-                  // SAFETY: the summary form is only rendered for non-AI
-                  // interviews whose status is one of these four values.
-                  status: interview.status as
-                    | "pending"
-                    | "move_forward"
-                    | "rejected"
-                    | "scheduled",
-                  rating: interview.rating,
-                  scheduledAt: interview.scheduledAt,
-                  overallFeedback: interview.overallFeedback,
-                }}
-                applicationId={application?.id ?? interview.applicationId}
-              />
             </TabsContent>
           </>
         )}

@@ -1,13 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "#/components/ui/button";
 import { Badge } from "#/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "#/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,7 +31,10 @@ import { toast } from "sonner";
 import { cn } from "#/lib/utils";
 import { formatDate } from "#/lib/utils";
 import type { InterviewAiAnalysisData } from "#/features/interviews/schemas";
-import { interviewBundleScreeningsQueryOptions } from "#/features/interviews/interview-queries";
+import {
+  interviewBundleScreeningsQueryOptions,
+  interviewScreeningsQueryOptions,
+} from "#/features/interviews/interview-queries";
 import { queryKeys } from "#/lib/query/query-keys";
 
 type InterviewScreeningsTabProps = {
@@ -286,56 +284,34 @@ export default function InterviewScreeningsTab({
   bundleId,
 }: InterviewScreeningsTabProps) {
   const queryClient = useQueryClient();
-  const [isFetchingInterview, setIsFetchingInterview] = useState(!bundleId);
-  const [interviewAnalyses, setInterviewAnalyses] = useState<StoredAnalysis[]>(
-    [],
-  );
   const [selectedAnalysis, setSelectedAnalysis] =
     useState<StoredAnalysis | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const { data: bundleScreeningsData, isLoading: isFetchingBundle } = useQuery(
-    {
-      ...interviewBundleScreeningsQueryOptions(bundleId ?? ""),
-      enabled: !!bundleId,
-    },
-  );
+  const { data: bundleScreeningsData, isLoading: isFetchingBundle } = useQuery({
+    ...interviewBundleScreeningsQueryOptions(bundleId ?? ""),
+    enabled: !!bundleId,
+  });
+
+  const { data: interviewScreeningsData, isLoading: isFetchingInterview } =
+    useQuery({
+      ...interviewScreeningsQueryOptions(interviewId ?? ""),
+      enabled: !!interviewId,
+    });
 
   const analysisEndpoint = bundleId
     ? `/api/interview-bundle/${bundleId}/ai-analysis`
     : `/api/interview/${interviewId}/ai-analysis`;
 
-  const fetchInterviewAnalyses = useCallback(async () => {
-    if (bundleId) return;
-
-    try {
-      const response = await fetch(analysisEndpoint);
-      if (response.ok) {
-        // SAFETY: the AI-analysis API returns `{ analyses: StoredAnalysis[] }`
-        // on success, with JSON-serialized records matching StoredAnalysis.
-        const data = (await response.json()) as {
-          analyses?: StoredAnalysis[];
-        };
-        setInterviewAnalyses(data.analyses ?? []);
-      }
-    } catch (error) {
-      console.error("Error fetching analyses:", error);
-    } finally {
-      setIsFetchingInterview(false);
-    }
-  }, [analysisEndpoint, bundleId]);
-
-  useEffect(() => {
-    void fetchInterviewAnalyses();
-  }, [fetchInterviewAnalyses]);
-
   const analyses: StoredAnalysis[] = bundleId
-    ? ((
-        // SAFETY: loadBundleAiAnalyses returns the serialized analyses array
-        // in the same shape StoredAnalysis declares.
-        bundleScreeningsData as { analyses: StoredAnalysis[] } | undefined
-      )?.analyses ?? [])
-    : interviewAnalyses;
+    ? (// SAFETY: loadBundleAiAnalyses returns the serialized analyses array
+      // in the same shape StoredAnalysis declares.
+      (bundleScreeningsData as { analyses: StoredAnalysis[] } | undefined)
+        ?.analyses ?? [])
+    : (// SAFETY: loadInterviewAnalyses returns the serialized analyses array
+      // in the same shape StoredAnalysis declares.
+      (interviewScreeningsData as { analyses: StoredAnalysis[] } | undefined)
+        ?.analyses ?? []);
   const isFetching = bundleId ? isFetchingBundle : isFetchingInterview;
 
   const deleteAnalysis = async (analysisId: string) => {
@@ -356,8 +332,10 @@ export default function InterviewScreeningsTab({
         await queryClient.invalidateQueries({
           queryKey: queryKeys.interviews.bundleScreenings(bundleId),
         });
-      } else {
-        setInterviewAnalyses((prev) => prev.filter((a) => a.id !== analysisId));
+      } else if (interviewId) {
+        await queryClient.invalidateQueries({
+          queryKey: queryKeys.interviews.screenings(interviewId),
+        });
       }
       if (selectedAnalysis?.id === analysisId) {
         setSelectedAnalysis(null);
@@ -442,7 +420,9 @@ export default function InterviewScreeningsTab({
             <p className="text-xs font-medium text-muted-foreground mb-1">
               Screener
             </p>
-            <p className="text-sm font-medium">{selectedAnalysis.screenerName}</p>
+            <p className="text-sm font-medium">
+              {selectedAnalysis.screenerName}
+            </p>
           </div>
         ) : null}
         {selectedAnalysis.structuredData && (

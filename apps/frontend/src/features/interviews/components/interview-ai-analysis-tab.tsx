@@ -60,26 +60,19 @@ export default function InterviewAiAnalysisTab({
     }
   }, [defaultScreenerId, screenerId]);
 
-  const positionScreenerPreselected =
-    defaultScreenerId && screenerId === defaultScreenerId;
-
   const analysisEndpoint = bundleId
     ? `/api/interview-bundle/${bundleId}/ai-analysis`
     : `/api/interview/${interviewId}/ai-analysis`;
 
   const runAnalysis = async () => {
-    if (!screenerId) {
-      toast.error("Please select a screener");
-      return;
-    }
-
     setIsLoading(true);
     try {
       const response = await fetch(analysisEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          screenerId,
+          screenerId:
+            screenerId && screenerId !== "none" ? screenerId : undefined,
           customPrompt: customPrompt.trim() || undefined,
         }),
       });
@@ -118,12 +111,12 @@ export default function InterviewAiAnalysisTab({
 
       <div className="space-y-4 max-w-xl mx-auto">
         <div className="space-y-2">
-          <Label htmlFor="screener">Screener</Label>
+          <Label htmlFor="screener">Screener (Optional)</Label>
           {screenersLoading ? (
             <div className="h-10 rounded-md border bg-muted/40 animate-pulse" />
           ) : screeners.length === 0 ? (
             <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
-              <p>No screeners available.</p>
+              <p>No screeners available — analysis will run without one.</p>
               <Button asChild variant="link" className="mt-1 h-auto p-0">
                 <Link to="/screeners/new">Create a screener</Link>
               </Button>
@@ -131,9 +124,10 @@ export default function InterviewAiAnalysisTab({
           ) : (
             <Select value={screenerId} onValueChange={setScreenerId}>
               <SelectTrigger id="screener">
-                <SelectValue placeholder="Select a screener" />
+                <SelectValue placeholder="Select a screener (optional)" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="none">No screener</SelectItem>
                 {screeners.map((s) => (
                   <SelectItem key={s.id} value={s.id}>
                     {s.name}
@@ -143,9 +137,7 @@ export default function InterviewAiAnalysisTab({
             </Select>
           )}
           <p className="text-xs text-muted-foreground">
-            {positionScreenerPreselected
-              ? "This position's screener is preselected — analysis will use it automatically when the interview completes."
-              : "Attach a screener to a position to have analysis run automatically on completion."}{" "}
+            Optional — the analysis runs with or without a screener rubric.{" "}
             <Link to="/screeners" className="underline underline-offset-2">
               Manage screeners
             </Link>
@@ -166,7 +158,7 @@ export default function InterviewAiAnalysisTab({
 
         <Button
           onClick={runAnalysis}
-          disabled={isLoading || screenersLoading || !screenerId}
+          disabled={isLoading || screenersLoading}
           className="w-full"
           size="lg"
         >

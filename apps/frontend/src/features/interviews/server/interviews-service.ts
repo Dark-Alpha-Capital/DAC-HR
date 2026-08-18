@@ -16,7 +16,10 @@ import {
 } from "@workspace/db/repositories/interview-bundle-repository";
 import { getInterviewById } from "@workspace/db/repositories/interview-repository";
 import { getRoundsByPositionId } from "@workspace/db/repositories/position-repository";
-import { getApplicationWithInterviews, getInterviewAiAnalysesByBundleId } from "@workspace/db/repositories/interview-repository";
+import {
+  getApplicationWithInterviews,
+  getInterviewAiAnalysesByBundleId,
+} from "@workspace/db/repositories/interview-repository";
 import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
 import {
   getBundleById,
@@ -46,7 +49,10 @@ import {
   insertCheatingEvents,
   upsertEvaluation,
 } from "@workspace/db/repositories/interview-session-repository";
-import { getScreenerById, getScreenerByPositionId } from "@workspace/db/repositories/screener-repository";
+import {
+  getScreenerById,
+  getScreenerByPositionId,
+} from "@workspace/db/repositories/screener-repository";
 import {
   getApplicationById,
   saveInterviewAiAnalysis,
@@ -56,9 +62,7 @@ import {
 } from "@workspace/db/repositories/interview-repository";
 import { getAiModel } from "#/lib/ai/models";
 import { generateText, Output } from "ai";
-import {
-  interviewAiAnalysisSchema,
-} from "../schemas";
+import { interviewAiAnalysisSchema } from "../schemas";
 import {
   interviewServerLog,
   truncateId,
@@ -69,10 +73,7 @@ import {
   getServerEmailSender,
   getPublicBaseUrl,
 } from "#/lib/server/email-sender";
-import type {
-  AgentConfig,
-  InterviewStatus,
-} from "#/lib/enums";
+import type { AgentConfig, InterviewStatus } from "#/lib/enums";
 
 type Actor = {
   id: string;
@@ -736,14 +737,18 @@ export const interviewsService = {
     };
   },
 
-  async getBundleById(bundleId: string): Promise<InterviewBundleDetailData | null> {
+  async getBundleById(
+    bundleId: string,
+  ): Promise<InterviewBundleDetailData | null> {
     const bundle = await getBundleById(bundleId);
 
     if (!bundle) {
       return null;
     }
 
-    const application = await getApplicationWithInterviews(bundle.applicationId);
+    const application = await getApplicationWithInterviews(
+      bundle.applicationId,
+    );
     const candidate = application
       ? await getCandidateById(application.candidateId)
       : null;
@@ -811,10 +816,7 @@ export const interviewsService = {
     return upsertEvaluation(data);
   },
 
-  async assertRecordingUploadValid(
-    token: string,
-    requestedSessionId?: string,
-  ) {
+  async assertRecordingUploadValid(token: string, requestedSessionId?: string) {
     return assertInterviewTokenValidForRecordingUpload(
       token,
       requestedSessionId,
@@ -860,7 +862,9 @@ export const interviewsService = {
     return upsertVoiceResponse(data);
   },
 
-  async syncVoiceResponsesForSession(data: Parameters<typeof syncVoiceResponsesForSession>[0]) {
+  async syncVoiceResponsesForSession(
+    data: Parameters<typeof syncVoiceResponsesForSession>[0],
+  ) {
     return syncVoiceResponsesForSession(data);
   },
 
@@ -872,7 +876,7 @@ export const interviewsService = {
 
   async runSingleAiAnalysis(params: {
     scope: { kind: "interview"; id: string } | { kind: "bundle"; id: string };
-    screenerId: string;
+    screenerId?: string | null;
     customPrompt?: string | null;
   }) {
     return runAiAnalysis(params);
@@ -1005,7 +1009,7 @@ function buildManualResponseBlock(interview: InterviewRow): string {
 }
 
 async function buildInterviewAnalysisPrompt(params: {
-  screener: NonNullable<ScreenerRow>;
+  screener: NonNullable<ScreenerRow> | null;
   interview: InterviewRow;
   application: {
     position: { name: string; description: string | null };
@@ -1026,7 +1030,9 @@ async function buildInterviewAnalysisPrompt(params: {
   } else {
     responseBlock = buildManualResponseBlock(interview);
     if (interview.overallFeedback?.trim()) {
-      extraContext.push(`Overall recruiter feedback: ${interview.overallFeedback}`);
+      extraContext.push(
+        `Overall recruiter feedback: ${interview.overallFeedback}`,
+      );
     }
     if (interview.rating != null) {
       extraContext.push(`Overall recruiter rating: ${interview.rating}/5`);
@@ -1042,8 +1048,8 @@ async function buildInterviewAnalysisPrompt(params: {
     : "";
 
   return [
-    "## Screener criteria",
-    screener.content,
+    screener ? "## Screener criteria" : null,
+    screener?.content,
     "",
     "## Context",
     `Position: ${application.position.name}${positionDescription}`,
@@ -1057,7 +1063,9 @@ async function buildInterviewAnalysisPrompt(params: {
       ? `\n## Additional instructions\n${customPrompt.trim()}`
       : null,
     "",
-    "Analyze the candidate against the screener criteria. Output: performance, alignment with position requirements, strengths/concerns, per-question breakdown, and hiring recommendation.",
+    screener
+      ? "Analyze the candidate against the screener criteria. Output: performance, alignment with position requirements, strengths/concerns, per-question breakdown, and hiring recommendation."
+      : "Analyze the candidate's interview responses. Output: performance, alignment with position requirements, strengths/concerns, per-question breakdown, and hiring recommendation.",
   ]
     .filter(Boolean)
     .join("\n");
@@ -1079,7 +1087,7 @@ function formatBundleSessionResponses(
 }
 
 async function buildBundleInterviewAnalysisPrompt(params: {
-  screener: NonNullable<ScreenerRow>;
+  screener: NonNullable<ScreenerRow> | null;
   bundleId: string;
   application: {
     position: { name: string; description: string | null };
@@ -1128,8 +1136,8 @@ async function buildBundleInterviewAnalysisPrompt(params: {
     : "";
 
   return [
-    "## Screener criteria",
-    screener.content,
+    screener ? "## Screener criteria" : null,
+    screener?.content,
     "",
     "## Context",
     `Position: ${application.position.name}${positionDescription}`,
@@ -1142,7 +1150,9 @@ async function buildBundleInterviewAnalysisPrompt(params: {
       ? `\n## Additional instructions\n${customPrompt.trim()}`
       : null,
     "",
-    "Analyze the candidate holistically across every round above against the screener criteria. Consider voice and form rounds together. Output: performance, alignment with position requirements, strengths/concerns, per-question breakdown grouped by round, and hiring recommendation.",
+    screener
+      ? "Analyze the candidate holistically across every round above against the screener criteria. Consider voice and form rounds together. Output: performance, alignment with position requirements, strengths/concerns, per-question breakdown grouped by round, and hiring recommendation."
+      : "Analyze the candidate holistically across every round above. Consider voice and form rounds together. Output: performance, alignment with position requirements, strengths/concerns, per-question breakdown grouped by round, and hiring recommendation.",
   ]
     .filter(Boolean)
     .join("\n");
@@ -1161,11 +1171,11 @@ async function runAiAnalysis({
   customPrompt,
 }: {
   scope: { kind: "interview"; id: string } | { kind: "bundle"; id: string };
-  screenerId: string;
+  screenerId?: string | null;
   customPrompt?: string | null;
 }): Promise<AiAnalysisResult> {
-  const screener = await getScreenerById(screenerId);
-  if (!screener) {
+  const screener = screenerId ? await getScreenerById(screenerId) : null;
+  if (screenerId && !screener) {
     return { error: "Screener not found" };
   }
 
@@ -1203,7 +1213,7 @@ async function runAiAnalysis({
       interviewId: scope.id,
       applicationId: application.id,
       positionId: application.position.id,
-      screenerId: screener.id,
+      screenerId: screener?.id ?? null,
       analysis: structuredData.overallSummary,
       customPrompt: customPrompt || null,
       model: "gpt-4o-mini",
@@ -1213,7 +1223,7 @@ async function runAiAnalysis({
     return {
       analysis: structuredData,
       analysisId: savedAnalysis?.id || null,
-      screenerName: screener.name,
+      screenerName: screener?.name,
     };
   }
 
@@ -1259,7 +1269,7 @@ async function runAiAnalysis({
     bundleId: scope.id,
     applicationId: application.id,
     positionId: application.position.id,
-    screenerId: screener.id,
+    screenerId: screener?.id ?? null,
     analysis: structuredData.overallSummary,
     customPrompt: customPrompt || null,
     model: "gpt-4o-mini",
@@ -1269,7 +1279,7 @@ async function runAiAnalysis({
   return {
     analysis: structuredData,
     analysisId: savedAnalysis?.id || null,
-    screenerName: screener.name,
+    screenerName: screener?.name,
   };
 }
 
@@ -1329,7 +1339,9 @@ type ResolvedSessionOk = Extract<
 
 type ResolvedInterviewSession = ResolvedSessionOk["session"];
 
-type TokenValidationResult = Awaited<ReturnType<typeof assertInterviewTokenValid>>;
+type TokenValidationResult = Awaited<
+  ReturnType<typeof assertInterviewTokenValid>
+>;
 
 export type ResolvedInterviewToken =
   | {

@@ -20,7 +20,9 @@ export const Route = createFileRoute("/api/interview/$id/ai-analysis")({
           const authSession = await getSession();
           if (!authSession?.user)
             return Response.json({ error: "Unauthorized" }, { status: 401 });
-          const { analyses } = await interviewsService.getInterviewAnalyses(params.id);
+          const { analyses } = await interviewsService.getInterviewAnalyses(
+            params.id,
+          );
           return Response.json({ analyses }, { status: 200 });
         } catch (error) {
           return Response.json(
@@ -55,13 +57,6 @@ export const Route = createFileRoute("/api/interview/$id/ai-analysis")({
           const { screenerId, customPrompt } = parsedBody.success
             ? parsedBody.data
             : {};
-
-          if (!screenerId?.trim()) {
-            return Response.json(
-              { error: "Screener is required" },
-              { status: 400 },
-            );
-          }
 
           const result = await interviewsService.runSingleAiAnalysis({
             scope: { kind: "interview", id: interviewId },

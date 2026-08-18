@@ -64,13 +64,6 @@ export const Route = createFileRoute(
             ? parsedBody.data
             : {};
 
-          if (!screenerId?.trim()) {
-            return Response.json(
-              { error: "Screener is required" },
-              { status: 400 },
-            );
-          }
-
           const result = await interviewsService.runSingleAiAnalysis({
             scope: { kind: "bundle", id: bundleId },
             screenerId,

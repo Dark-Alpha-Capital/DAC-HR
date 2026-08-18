@@ -93,6 +93,8 @@ export const queryKeys = {
       ["interviews", "bundle", bundleId] as const,
     bundleScreenings: (bundleId: string) =>
       ["interviews", "bundle", bundleId, "screenings"] as const,
+    screenings: (interviewId: string) =>
+      ["interviews", "detail", interviewId, "screenings"] as const,
   },
   attendance: {
     all: ["attendance"] as const,
