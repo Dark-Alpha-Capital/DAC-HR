@@ -10,6 +10,7 @@ import {
   User,
   Briefcase,
   ClipboardList,
+  Plus,
 } from "lucide-react";
 import DeletePositionButton from "#/features/positions/components/delete-position-button";
 import PositionTabsClient from "#/features/positions/components/position-tabs-client";
@@ -70,7 +71,16 @@ export function PositionDetailPage() {
               ) : null}
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button size="sm" asChild>
+              <Link
+                to="/candidates/new"
+                search={{ position: position.id }}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Candidate
+              </Link>
+            </Button>
             <Button variant="secondary" size="sm" asChild>
               <Link to="/positions/$slug/edit" params={{ slug: position.slug }}>
                 <Pencil className="h-4 w-4 mr-2" />
@@ -197,7 +207,18 @@ export function PositionDetailPage() {
           <TabsContent value="candidates" className="mt-6">
             <div className="space-y-4">
               <div className="flex items-center justify-between gap-2">
-                <h2 className="text-lg font-semibold">Candidates</h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-semibold">Candidates</h2>
+                  <Button variant="secondary" size="sm" asChild>
+                    <Link
+                      to="/candidates/new"
+                      search={{ position: position.id }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add candidate
+                    </Link>
+                  </Button>
+                </div>
                 <Badge variant="secondary">{candidates.length}</Badge>
               </div>
 
@@ -207,11 +228,12 @@ export function PositionDetailPage() {
                   <p className="text-sm mb-4">
                     No candidates have applied for this position yet.
                   </p>
-                  <Button size="sm" variant="secondary" asChild>
+                  <Button size="sm" asChild>
                     <Link
                       to="/candidates/new"
                       search={{ position: position.id }}
                     >
+                      <Plus className="h-4 w-4 mr-2" />
                       Add a candidate
                     </Link>
                   </Button>

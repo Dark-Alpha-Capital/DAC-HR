@@ -57,7 +57,7 @@ export function CandidatesListPage() {
         <div className="flex items-center gap-2">
           <BulkUploadCandidatesDialog positions={positions} />
           <Button asChild>
-            <Link to="/candidates/new" search={{ view: "kanban" }}>
+            <Link to="/candidates/new" search={{ position: undefined }}>
               New Candidate
             </Link>
           </Button>
@@ -74,7 +74,7 @@ export function CandidatesListPage() {
               : "No candidates found."}
           </p>
           <Button asChild className="mt-4">
-            <Link to="/candidates/new" search={{ view: "kanban" }}>
+            <Link to="/candidates/new" search={{ position: undefined }}>
               Add your first candidate
             </Link>
           </Button>
