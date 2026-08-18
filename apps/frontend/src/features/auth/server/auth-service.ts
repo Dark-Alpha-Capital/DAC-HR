@@ -37,8 +37,8 @@ async function sendAuthEmail(
       },
     ]);
   } catch (error) {
+    // Never fail sign-in/sign-up because the email outbox is unavailable.
     console.error(`[auth] Failed to enqueue ${kind} email to ${to}:`, error);
-    throw error;
   }
 }
 

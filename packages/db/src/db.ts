@@ -12,7 +12,9 @@ export function getDb(): Database {
   }
 
   if (!env.DB) {
-    throw new Error("D1 binding DB is not available");
+    throw new Error(
+      "D1 binding DB is not available. Ensure wrangler production env includes d1_databases.",
+    );
   }
 
   cachedDb = drizzle(env.DB, { schema });

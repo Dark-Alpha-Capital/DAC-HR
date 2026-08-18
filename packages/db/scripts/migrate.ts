@@ -4,14 +4,25 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const webDir = path.resolve(__dirname, "../../../apps/frontend");
-const target = process.argv.includes("--remote") ? "--remote" : "--local";
+const isRemote = process.argv.includes("--remote");
+const target = isRemote ? "--remote" : "--local";
 
 console.log(`⏳ Applying D1 migrations (${target.replace("--", "")})...`);
 
-const result = spawnSync(
-  "bunx",
-  ["wrangler", "d1", "migrations", "apply", "hr-automation-db", target],
-  {
+const wranglerArgs = [
+  "wrangler",
+  "d1",
+  "migrations",
+  "apply",
+  "hr-automation-db",
+  target,
+];
+// Remote migrations must use the same wrangler env as production deploy.
+if (isRemote) {
+  wranglerArgs.push("--env", "production");
+}
+
+const result = spawnSync("bunx", wranglerArgs, {
     cwd: webDir,
     stdio: "inherit",
     env: process.env,
