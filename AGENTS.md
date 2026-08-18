@@ -51,9 +51,9 @@ Shadcn/ui components live in `apps/frontend/src/components/ui/` (no separate `pa
 
 - Driver: `drizzle-orm/d1` via `cloudflare:workers` environment binding.
 - D1 database: `hr-automation-db` (binding `DB` in `apps/frontend/wrangler.jsonc`).
-- Schema: `packages/db/schema.ts` (SQLite dialect, ~36 tables).
+- Schema: `packages/db/src/schema.ts` (SQLite dialect, ~36 tables).
 - Migrations: `packages/db/drizzle/` (SQL files `0000`–`0020`) — applied via `wrangler d1 migrations apply` / scripts below. `drizzle/meta/_journal.json` + snapshots are kept in sync (last snapshot `0020_snapshot.json` reflects the current schema); `db:generate` should print "No schema changes, nothing to migrate" when the schema hasn't changed, and `db:check` fails the build if it would produce a new migration. If `db:generate` ever proposes re-creating existing tables, the journal/snapshot drifted — re-sync it (see git history) rather than applying that migration.
-- Query layer: `packages/db/repositories/` is the **single home for all D1 queries** — one `*-repository.ts` file per domain/aggregate, bound to the production `db` (12 files: audit, candidate, candidate-import, dashboard, document, interview, interview-bundle, interview-session, kanban, position, screener). Feature services are the only files that import them. The only exception: `packages/db/modules/audit.ts` is a pure (db-injected) module with `repositories/audit-repository.ts` as its thin adapter, kept separate for unit-testability. Pure logic/cursor helpers live at the package root (`kanban-cursor.ts`, `round-progression.ts`, `location.ts`). When adding a query that serves 2+ features, put it in `repositories/`; single-consumer queries may live directly in the owning feature service.
+- Query layer: `packages/db/src/repositories/` is the **single home for all D1 queries** — one `*-repository.ts` file per domain/aggregate, bound to the production `db` (12 files: audit, candidate, candidate-import, dashboard, document, interview, interview-bundle, interview-session, kanban, position, screener). Feature services are the only files that import them. The only exception: `packages/db/src/modules/audit.ts` is a pure (db-injected) module with `repositories/audit-repository.ts` as its thin adapter, kept separate for unit-testability. Pure logic/cursor helpers live in `packages/db/src/` (`kanban-cursor.ts`, `round-progression.ts`, `location.ts`). When adding a query that serves 2+ features, put it in `repositories/`; single-consumer queries may live directly in the owning feature service.
 
 ```bash
 cd packages/db
@@ -70,18 +70,18 @@ bun run db:reset-rounds          # + :remote variant
 bun run db:finalize-interview-schema  # + :remote variant
 ```
 
-**Sync model (schema → local → remote):** `packages/db/schema.ts` is the single source of truth. Schema changes go through `db:generate` (creates a numbered SQL file + journal/snapshot), then `db:migrate` (local) and `db:migrate:remote` (remote). `deploy` runs `db:migrate:remote` before building, so remote applies every migration in order before serving the new code. Run `db:migrate` + `db:check` locally after pulling schema changes so the local D1 matches the migration journal.
+**Sync model (schema → local → remote):** `packages/db/src/schema.ts` is the single source of truth. Schema changes go through `db:generate` (creates a numbered SQL file + journal/snapshot), then `db:migrate` (local) and `db:migrate:remote` (remote). `deploy` runs `db:migrate:remote` before building, so remote applies every migration in order before serving the new code. Run `db:migrate` + `db:check` locally after pulling schema changes so the local D1 matches the migration journal.
 
 **Local state corruption (`_cf_ALARM ... SQLITE_ERROR`):** when workerd/wrangler is upgraded, the on-disk `.wrangler/state` sqlite (D1, Durable Object alarms, workflows) can become unreadable — every local wrangler command dies with a SQLite error before running. The state is dev-ephemeral and gitignored; fix with `bun run db:reset:local` (clears `.wrangler/state` and re-applies all migrations). Note `db:seed`/`db:seed-positions` currently fail under plain `bun` because `@workspace/db/db` imports `cloudflare:workers`; run seeds through a Workers-context (wrangler dev) if needed.
 
-The package exports many submodules beyond `.`/`./db`: `./repositories/*`, `./modules/*`, `./schema`, `./question-types`, `./enums`, `./application-status`, `./candidate-list-filters`, `./document-list-filters`, `./default-rounds`, `./create-default-rounds`, `./kanban-cursor`, `./sqlite-helpers`, `./round-progression`, `./location`, `./testing`. Add new exports to both the `exports` map in `package.json` and `index.ts` (or the relevant module).
+The package exports many submodules beyond `.`/`./db`: `./repositories/*`, `./modules/*`, `./schema`, `./question-types`, `./enums`, `./application-status`, `./candidate-list-filters`, `./document-list-filters`, `./default-rounds`, `./kanban-cursor`, `./sqlite-helpers`, `./round-progression`, `./location`, `./testing`. Add new exports to both the `exports` map in `package.json` and `index.ts` (or the relevant module).
 
 ### DB import — critical: server-only with client stub
 
-`packages/db/db.ts` imports `env` from `cloudflare:workers` directly. This will crash on the client. To protect against this, `vite.config.ts` has a custom `environmentAlias()` plugin that **swaps `@workspace/db/db`** depending on the Vite environment:
+`packages/db/src/db.ts` imports `env` from `cloudflare:workers` directly. This will crash on the client. To protect against this, `vite.config.ts` has a custom `environmentAlias()` plugin that **swaps `@workspace/db/db`** depending on the Vite environment:
 
-- **Server (SSR)**: resolves to `packages/db/db.ts` (real D1 binding)
-- **Client**: resolves to `packages/db/db.stub.ts` (throws on all access)
+- **Server (SSR)**: resolves to `packages/db/src/db.ts` (real D1 binding)
+- **Client**: resolves to `packages/db/src/db.stub.ts` (throws on all access)
 
 The same `environmentAlias()` plugin also stubs `cloudflare:workers` → `src/lib/cloudflare-workers-stub.ts` on the client.
 
@@ -91,7 +91,7 @@ When you import `db`, always use `@workspace/db/db` as the module specifier:
 import { db } from "@workspace/db/db"; // server-only
 ```
 
-The alias plumbing depends on exact import specifiers — do not rename or re-export this module without updating both `db.ts`, `db.stub.ts`, and `environmentAlias()` in `vite.config.ts`.
+The alias plumbing depends on exact import specifiers — do not rename or re-export this module without updating both `src/db.ts`, `src/db.stub.ts`, and `environmentAlias()` in `vite.config.ts`.
 
 ### Drizzle operators
 
@@ -183,4 +183,4 @@ bun run test                     # all packages via turbo
 
 Import from `bun:test`: `import { test, expect } from "bun:test";`
 
-Test files exist in `apps/frontend/src/lib/__tests__/` and `attendance/__tests__/`, `packages/db/`, `packages/nextcloud/`, `packages/candidate-import/`, `packages/interview-realtime/`. No mocks for D1/WebDAV — pure-logic units only.
+Test files exist in `apps/frontend/src/lib/__tests__/` and `attendance/__tests__/`, `packages/db/src/`, `packages/nextcloud/`, `packages/candidate-import/`, `packages/interview-realtime/`. No mocks for D1/WebDAV — pure-logic units only.

@@ -109,6 +109,17 @@ export const sourcingChannels = [
 ] as const;
 export type SourcingChannel = (typeof sourcingChannels)[number];
 
+export const sourcingChannelLabels = {
+  linkedin: "LinkedIn",
+  indeed: "Indeed",
+  upwork: "Upwork",
+  handshake: "Handshake",
+  "internal-referrals": "Internal Referrals",
+  "university-portals": "University Portals",
+  agency: "Agency",
+  other: "Other",
+} satisfies Record<SourcingChannel, string>;
+
 export const interviewSessionStatuses = [
   "pending",
   "invited",

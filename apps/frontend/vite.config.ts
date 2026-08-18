@@ -10,8 +10,8 @@ const appRoot = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(appRoot, "../..");
 const dbPackage = path.resolve(repoRoot, "packages/db");
 const dbModuleId = "@workspace/db/db";
-const dbReal = path.resolve(dbPackage, "db.ts");
-const dbStub = path.resolve(dbPackage, "db.stub.ts");
+const dbReal = path.resolve(dbPackage, "src/db.ts");
+const dbStub = path.resolve(dbPackage, "src/db.stub.ts");
 const cfWorkersStub = path.resolve(appRoot, "src/lib/cloudflare-workers-stub.ts");
 
 const repoPackages = [

@@ -4,7 +4,7 @@ import { position } from "@workspace/db/schema";
 import type { Department, HireLevel, PositionStatus } from "#/lib/enums";
 import slugify from "slugify";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
-import { createDefaultRoundsForPosition } from "@workspace/db/create-default-rounds";
+import { createDefaultRoundsForPosition } from "@workspace/db/default-rounds";
 import {
   getCandidatesByPositionId,
   getPositionBySlug,

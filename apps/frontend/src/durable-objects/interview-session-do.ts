@@ -236,7 +236,7 @@ function parseRealtimeEvent(raw: string): RealtimeEvent | null {
 }
 
 declare const WebSocketPair: {
-  new (): { 0: WebSocket; 1: WebSocket };
+  new(): { 0: WebSocket; 1: WebSocket };
 };
 
 const CHEATING_RATE_LIMIT_MS = 1000;

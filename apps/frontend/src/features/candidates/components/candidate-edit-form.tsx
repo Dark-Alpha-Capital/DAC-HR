@@ -296,13 +296,14 @@ const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
                     value={field.state.value || ""}
                     onValueChange={(value) => {
                       // SAFETY: the Select only renders the four fixed
-                      // SOURCE options, so any non-empty value is a Source.
+                      // SOURCE options (or the "none" sentinel).
                       const newSource =
-                        value === "" ? undefined : (value as Source);
+                        value === "" || value === "none"
+                          ? undefined
+                          : (value as Source);
                       field.handleChange(newSource);
                       setSelectedSource(newSource);
-                      // Clear sourceUrl when source is cleared
-                      if (value === "") {
+                      if (!newSource) {
                         form.setFieldValue("sourceUrl", "");
                       }
                     }}
@@ -315,6 +316,7 @@ const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
                       <SelectValue placeholder="Select a source (optional)" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
                       <SelectItem value="LinkedIn">LinkedIn</SelectItem>
                       <SelectItem value="Upwork">Upwork</SelectItem>
                       <SelectItem value="Handshake">Handshake</SelectItem>

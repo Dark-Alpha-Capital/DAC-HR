@@ -11,9 +11,9 @@ import { drizzle } from "drizzle-orm/bun-sqlite";
 import {
   DEFAULT_SCREENING_ROUND,
   DEFAULT_TECHNICAL_ROUND,
-} from "../default-rounds";
-import { position } from "../schema";
-import { formatSqlValue } from "../sql-value";
+} from "../src/default-rounds";
+import { position } from "../src/schema";
+import { formatSqlValue } from "./sql-value";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const webDir = path.resolve(__dirname, "../../../apps/frontend");

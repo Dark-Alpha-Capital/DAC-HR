@@ -6,14 +6,14 @@ import { fileURLToPath } from "node:url";
 import { Database } from "bun:sqlite";
 import { inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/bun-sqlite";
-import type { Department, HireLevel, PositionStatus } from "./enums";
-import { position } from "./schema";
-import { createDefaultRoundsForPosition } from "./create-default-rounds";
+import type { Department, HireLevel, PositionStatus } from "../src/enums";
+import { position } from "../src/schema";
+import { createDefaultRoundsForPosition } from "../src/default-rounds";
 import { formatSqlValue } from "./sql-value";
 
 const webDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  "../../apps/frontend",
+  "../../../apps/frontend",
 );
 
 const SCREENING_ROUND_NAME = "Screening/Recruiter Round";

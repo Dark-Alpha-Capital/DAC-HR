@@ -541,12 +541,14 @@ const CandidateUploadForm = ({
                     value={field.state.value || ""}
                     onValueChange={(value) => {
                       // SAFETY: the <SelectItem> values below are exactly the
-                      // CandidateSource literals, so the selected value is one of them.
+                      // CandidateSource literals (or the "none" sentinel).
                       const newSource =
-                        value === "" ? undefined : (value as CandidateSource);
+                        value === "" || value === "none"
+                          ? undefined
+                          : (value as CandidateSource);
                       field.handleChange(newSource);
                       setSelectedSource(newSource);
-                      if (value === "") {
+                      if (!newSource) {
                         form.setFieldValue("sourceUrl", "");
                       }
                     }}
@@ -559,6 +561,7 @@ const CandidateUploadForm = ({
                       <SelectValue placeholder="Select a source (optional)" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
                       <SelectItem value="LinkedIn">LinkedIn</SelectItem>
                       <SelectItem value="Upwork">Upwork</SelectItem>
                       <SelectItem value="Handshake">Handshake</SelectItem>

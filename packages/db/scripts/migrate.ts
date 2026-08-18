@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const webDir = path.resolve(__dirname, "../../apps/frontend");
+const webDir = path.resolve(__dirname, "../../../apps/frontend");
 const target = process.argv.includes("--remote") ? "--remote" : "--local";
 
 console.log(`⏳ Applying D1 migrations (${target.replace("--", "")})...`);
@@ -26,7 +26,7 @@ if (result.status !== 0) {
 const finalizeArgs = process.argv.includes("--remote") ? ["--remote"] : [];
 const finalizeResult = spawnSync(
   "bun",
-  ["run", "scripts/finalize-interview-schema.ts", ...finalizeArgs],
+  ["run", "./finalize-interview-schema.ts", ...finalizeArgs],
   {
     cwd: __dirname,
     stdio: "inherit",
@@ -42,7 +42,7 @@ if (finalizeResult.status !== 0) {
 if (!process.argv.includes("--remote")) {
   const sharedRoundsResult = spawnSync(
     "bun",
-    ["run", "scripts/migrate-shared-rounds.ts"],
+    ["run", "./migrate-shared-rounds.ts"],
     {
       cwd: __dirname,
       stdio: "inherit",

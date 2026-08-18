@@ -4,7 +4,6 @@ import {
   Users,
   Briefcase,
   Folders,
-  CircleDot,
   Shield,
   Building2,
   ScrollText,
@@ -95,7 +94,6 @@ const peopleOpsLinks: readonly NavLink[] = [
 
 const configurationLinks: readonly NavLink[] = [
   { href: "/positions", label: "Positions", icon: Briefcase },
-  { href: "/rounds", label: "Rounds", icon: CircleDot },
   { href: "/screeners", label: "Screeners", icon: ScanSearch },
 ];
 

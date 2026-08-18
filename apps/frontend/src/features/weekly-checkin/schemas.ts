@@ -1,26 +1,7 @@
 import * as z from "zod";
+import { sourcingChannels } from "#/lib/enums";
 
-export const sourcingChannels = [
-  "linkedin",
-  "indeed",
-  "upwork",
-  "handshake",
-  "internal-referrals",
-  "university-portals",
-  "agency",
-  "other",
-] as const;
-
-export const sourcingChannelLabels = {
-  linkedin: "LinkedIn",
-  indeed: "Indeed",
-  upwork: "Upwork",
-  handshake: "Handshake",
-  "internal-referrals": "Internal Referrals",
-  "university-portals": "University Portals",
-  agency: "Agency",
-  other: "Other",
-} satisfies Record<(typeof sourcingChannels)[number], string>;
+export { sourcingChannels };
 
 export const weeklyCheckinFormSchema = z.object({
   // Tab 1: This Week's Information

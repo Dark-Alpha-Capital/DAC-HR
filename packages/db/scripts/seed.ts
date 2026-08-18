@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Database } from "bun:sqlite";
 import { drizzle } from "drizzle-orm/bun-sqlite";
-import type { ApplicationStatus } from "./enums";
+import type { ApplicationStatus } from "../src/enums";
 import {
   application,
   candidate,
@@ -17,14 +17,14 @@ import {
   roundTemplate,
   roundTemplateQuestions,
   user,
-} from "./schema";
+} from "../src/schema";
 import { CLEAR_SEED_SQL, exportSeedDataSql } from "./seed-sql";
-import { splitLocation } from "./location";
-import { createPositionInterviewBundle } from "./repositories/interview-bundle-repository";
+import { splitLocation } from "../src/location";
+import { createPositionInterviewBundle } from "../src/repositories/interview-bundle-repository";
 
 const webDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  "../../apps/frontend",
+  "../../../apps/frontend",
 );
 
 const SEED_USER_ID = "00000000-0000-4000-8000-000000000001";

@@ -13,7 +13,7 @@ import {
   interviewSession,
   roundTemplate,
   roundTemplateQuestions,
-} from "../schema";
+} from "../src/schema";
 
 type PositionRoundTemplateRow = {
   id: string;

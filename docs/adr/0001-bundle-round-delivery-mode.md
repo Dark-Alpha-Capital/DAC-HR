@@ -29,7 +29,7 @@ copy for legacy (non-bundle) sessions and for admin display. New code must not
 derive behavior from the session copy when the session belongs to a bundle.
 
 The coercion rule `deliveryMode === "voice" ? "voice" : "form"` lives in exactly
-one place: `packages/db/round-progression.ts` (`coerceDeliveryMode`). Callers
+one place: `packages/db/src/round-progression.ts` (`coerceDeliveryMode`). Callers
 import it; they do not re-implement it.
 
 ## Consequences

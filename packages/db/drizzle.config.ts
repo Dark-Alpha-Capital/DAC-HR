@@ -11,7 +11,7 @@ config({ path: path.join(webDir, ".env") });
 
 export default defineConfig({
   out: "./drizzle",
-  schema: "./schema.ts",
+  schema: "./src/schema.ts",
   dialect: "sqlite",
   driver: "d1-http",
   dbCredentials: {

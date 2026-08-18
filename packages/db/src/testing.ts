@@ -27,7 +27,7 @@ export function createTestDb() {
   const sqlite = new Database(":memory:");
   sqlite.exec("PRAGMA foreign_keys = ON");
 
-  const migrationsDir = path.join(__dirname, "drizzle");
+  const migrationsDir = path.join(__dirname, "../drizzle");
   const files = readdirSync(migrationsDir)
     .filter((file) => file.endsWith(".sql"))
     .sort();

@@ -29,11 +29,8 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
-import {
-  weeklyCheckinFormSchema,
-  sourcingChannels,
-  sourcingChannelLabels,
-} from "#/features/weekly-checkin/schemas";
+import { weeklyCheckinFormSchema } from "#/features/weekly-checkin/schemas";
+import { sourcingChannels, sourcingChannelLabels } from "#/lib/enums";
 import { createWeeklyCheckin } from "#/features/weekly-checkin/server/mutations/create-weekly-checkin";
 
 interface WeeklyCheckinFormProps {

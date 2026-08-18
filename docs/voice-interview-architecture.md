@@ -349,7 +349,7 @@ After the interview completes, `InterviewEvaluationWorkflow` runs:
 | 8 | `apps/frontend/src/hooks/useCheatingPrevention.ts` | Anti-cheat monitoring |
 | 9 | `apps/frontend/src/components/interview/VoiceInterview.tsx` | The UI |
 | 10 | `apps/frontend/src/workflows/interview-evaluation.ts` | Post-interview AI scoring |
-| 11 | `packages/db/repositories/interview-session-repository.ts` | Database layer |
+| 11 | `packages/db/src/repositories/interview-session-repository.ts` | Database layer |
 
 ---
 
@@ -491,4 +491,4 @@ CANDIDATE BROWSER                           SERVER (Cloudflare Worker)          
 | 21 | `apps/frontend/src/routes/api/interview-token/$token/responses.tsx` | 124 | API: Save typed/MCQ responses |
 | 22 | `apps/frontend/src/routes/api/interview-token/$token/complete.tsx` | 79 | API: Complete interview |
 | 23 | `apps/frontend/src/routes/api/interview-token/$token/upload-audio.tsx` | 110 | API: Upload session recording |
-| 24 | `packages/db/repositories/interview-session-repository.ts` | 642 | All DB ops for sessions, responses, evaluations |
+| 24 | `packages/db/src/repositories/interview-session-repository.ts` | 642 | All DB ops for sessions, responses, evaluations |

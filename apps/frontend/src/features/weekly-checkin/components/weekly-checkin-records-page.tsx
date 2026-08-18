@@ -27,7 +27,7 @@ import {
   BarChart3,
   FileText,
 } from "lucide-react";
-import { sourcingChannelLabels } from "#/features/weekly-checkin/schemas";
+import { sourcingChannelLabels } from "#/lib/enums";
 import PaginationControls from "#/components/shared/pagination-controls";
 
 function formatDate(date: Date) {

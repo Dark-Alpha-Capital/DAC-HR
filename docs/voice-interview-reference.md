@@ -84,9 +84,9 @@
 | 24 | `src/lib/server/openai-api-key.ts` | 66 | **API key** — resolves from env binding or process.env |
 | 25 | `src/lib/queries/interview-token.ts` | 224 | **Query options** — React Query wrappers |
 | 26 | `src/components/interview-session-recording.tsx` | 41 | **Admin UI** — playback recorded sessions |
-| 27 | `packages/db/schema.ts` | ~150 | **Schema** — interview_session, interview_response, cheating_event, interview_evaluation |
-| 28 | `packages/db/enums.ts` | ~50 | **Enums** — DeliveryMode, InputMethod, CheatingEventType |
-| 29 | `packages/db/repositories/interview-session-repository.ts` | 572 | **Repository** — all voice-related DB operations |
+| 27 | `packages/db/src/schema.ts` | ~150 | **Schema** — interview_session, interview_response, cheating_event, interview_evaluation |
+| 28 | `packages/db/src/enums.ts` | ~50 | **Enums** — DeliveryMode, InputMethod, CheatingEventType |
+| 29 | `packages/db/src/repositories/interview-session-repository.ts` | 572 | **Repository** — all voice-related DB operations |
 | 30 | `src/server.ts` | 21 | **Worker entry** — WS routing, DO/workflow exports |
 | 31 | `apps/frontend/wrangler.jsonc` | 87 | **Cloudflare** — bindings (D1, DO, Workflows) |
 
