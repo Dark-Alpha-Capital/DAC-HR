@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
 import { createInterview } from "#/features/interviews/server/mutations/interviews";
 import { createInterviewSession } from "#/features/interviews/server/mutations/interviews";
 import type { RoundDeliveryMode } from "#/lib/enums";
+import { cn } from "#/lib/utils";
 import { toast } from "sonner";
 import { Bot, Calendar, Check, Copy, Link2, Mic, Plus } from "lucide-react";
 import { Link } from "@tanstack/react-router";
@@ -70,6 +71,9 @@ export default function RecordInterviewDialog({
   >(() =>
     Object.fromEntries(application.rounds.map((r) => [r.id, "form" as const])),
   );
+  const [selectedRoundIds, setSelectedRoundIds] = useState<string[]>(() =>
+    application.rounds.map((r) => r.id),
+  );
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [sendInviteEmail, setSendInviteEmail] = useState(false);
@@ -99,6 +103,7 @@ export default function RecordInterviewDialog({
     setCopied(false);
     setSendInviteEmail(false);
     setMode("ai_link");
+    setSelectedRoundIds(application.rounds.map((r) => r.id));
     if (!initialRoundId) {
       setRoundId(application.rounds[0]?.id || "");
     }
@@ -153,16 +158,23 @@ export default function RecordInterviewDialog({
       return;
     }
 
+    if (selectedRoundIds.length === 0) {
+      toast.error("Select at least one round to include");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const result = await createInterviewSession({
         data: {
           applicationId,
-          roundConfigs: application.rounds.map((round) => ({
-            roundId: round.id,
-            deliveryMode: roundModes[round.id] ?? "form",
-          })),
+          roundConfigs: application.rounds
+            .filter((round) => selectedRoundIds.includes(round.id))
+            .map((round) => ({
+              roundId: round.id,
+              deliveryMode: roundModes[round.id] ?? "form",
+            })),
           sendInviteEmail,
         },
       });
@@ -212,6 +224,22 @@ export default function RecordInterviewDialog({
     setRoundModes((prev) => ({ ...prev, [roundIdKey]: deliveryMode }));
   };
 
+  const toggleRound = (roundIdKey: string) => {
+    setSelectedRoundIds((prev) =>
+      prev.includes(roundIdKey)
+        ? prev.filter((id) => id !== roundIdKey)
+        : [...prev, roundIdKey],
+    );
+  };
+
+  const selectAllRounds = () => {
+    setSelectedRoundIds(application.rounds.map((r) => r.id));
+  };
+
+  const selectNoRounds = () => {
+    setSelectedRoundIds([]);
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="overflow-hidden sm:max-w-[560px]">
@@ -246,7 +274,8 @@ export default function RecordInterviewDialog({
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Covers all {application.rounds.length} round
+                Covers {selectedRoundIds.length} of{" "}
+                {application.rounds.length} round
                 {application.rounds.length !== 1 ? "s" : ""} for this position.
                 Expires in 72 hours.
               </p>
@@ -285,45 +314,93 @@ export default function RecordInterviewDialog({
                     Generates a link you can send to the candidate — they will
                     take the interview using that link. Select which rounds of
                     this position are included, and choose how the candidate
-                    answers each round: a real-time voice AI agent interview or
-                    a simple form interview the candidate fills out.
+                    answers each included round: a real-time voice AI agent
+                    interview or a simple form interview the candidate fills
+                    out.
                   </p>
-                  <div className="space-y-3">
-                    {application.rounds.map((round) => (
-                      <div
-                        key={round.id}
-                        className="flex items-center justify-between gap-3 rounded-md border p-3"
-                      >
-                        <span className="text-sm font-medium">
-                          {round.name}
-                        </span>
-                        <Select
-                          value={roundModes[round.id] ?? "form"}
-                          onValueChange={(value) =>
-                            // SAFETY: the <SelectItem> values are exactly the
-                            // RoundDeliveryMode literals ("form", "voice").
-                            setRoundMode(round.id, value as RoundDeliveryMode)
-                          }
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {selectedRoundIds.length} of {application.rounds.length}{" "}
+                        round{application.rounds.length !== 1 ? "s" : ""}{" "}
+                        selected
+                      </span>
+                      <span className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={selectAllRounds}
+                          className="text-xs font-medium text-primary hover:underline"
                         >
-                          <SelectTrigger className="w-[140px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="form">
-                              <span className="flex items-center gap-2">
-                                Form
+                          Select all
+                        </button>
+                        <button
+                          type="button"
+                          onClick={selectNoRounds}
+                          className="text-xs font-medium text-muted-foreground hover:underline"
+                        >
+                          None
+                        </button>
+                      </span>
+                    </div>
+                    <div className="space-y-3">
+                      {application.rounds.map((round) => {
+                        const selected = selectedRoundIds.includes(round.id);
+                        return (
+                          <div
+                            key={round.id}
+                            className={cn(
+                              "flex items-center justify-between gap-3 rounded-md border p-3",
+                              !selected && "opacity-50",
+                            )}
+                          >
+                            <label
+                              className="flex min-w-0 items-center gap-3"
+                              onClick={() => toggleRound(round.id)}
+                            >
+                              <Checkbox
+                                checked={selected}
+                                onCheckedChange={() => toggleRound(round.id)}
+                                onClick={(e) => e.stopPropagation()}
+                                aria-label={`Include ${round.name} round`}
+                              />
+                              <span className="text-sm font-medium">
+                                {round.name}
                               </span>
-                            </SelectItem>
-                            <SelectItem value="voice">
-                              <span className="flex items-center gap-2">
-                                <Mic className="h-3.5 w-3.5" />
-                                Voice
-                              </span>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    ))}
+                            </label>
+                            <Select
+                              value={roundModes[round.id] ?? "form"}
+                              onValueChange={(value) =>
+                                // SAFETY: the <SelectItem> values are exactly
+                                // the RoundDeliveryMode literals ("form",
+                                // "voice").
+                                setRoundMode(
+                                  round.id,
+                                  value as RoundDeliveryMode,
+                                )
+                              }
+                              disabled={!selected}
+                            >
+                              <SelectTrigger className="w-[140px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="form">
+                                  <span className="flex items-center gap-2">
+                                    Form
+                                  </span>
+                                </SelectItem>
+                                <SelectItem value="voice">
+                                  <span className="flex items-center gap-2">
+                                    <Mic className="h-3.5 w-3.5" />
+                                    Voice
+                                  </span>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                   {application.rounds.length === 0 ? (
                     <div className="rounded-md border border-dashed p-3">
@@ -386,7 +463,11 @@ export default function RecordInterviewDialog({
                   </Button>
                   <Button
                     type="submit"
-                    disabled={loading || application.rounds.length === 0}
+                    disabled={
+                      loading ||
+                      application.rounds.length === 0 ||
+                      selectedRoundIds.length === 0
+                    }
                   >
                     <Link2 className="h-4 w-4 mr-2" />
                     {loading ? "Generating..." : "Generate Link"}

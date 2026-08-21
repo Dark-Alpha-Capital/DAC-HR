@@ -6,31 +6,33 @@
 bun install          # always use bun, never npm/pnpm/yarn
 bun run dev          # turbo dev (Vite on :3000, runs apps/frontend)
 bun run build        # turbo build
-bun run lint         # turbo lint (ESLint 9 flat config)
+bun run lint:oxlint  # real lint: oxlint + anti-slop rules (root oxlint.config.ts)
 bun run test         # turbo run test (bun test in each package)
 bun run format       # prettier --write "**/*.{ts,tsx,md}" (no config file)
 ```
 
+Note: `bun run lint` (root `turbo lint`) is a no-op — no workspace package defines a `lint` script. The actual linter is oxlint (`bun run lint:oxlint`), configured at the root with an `anti-slop` plugin in `tools/oxlint/anti-slop/`. There is no ESLint flat config; the legacy `.eslintrc.js` ignores `apps/**` and `packages/**`.
+
 **Typecheck:** `tsc --noEmit` from `apps/frontend/` (no root-level typecheck script; `tsconfig.json` sets `noEmit: true`).
-**Deploy:** `bun run deploy` from `apps/frontend/` = `db:migrate:remote && vite build && wrangler deploy --env production`. Migrations run before the deploy — don't skip that step.
+**Deploy:** `bun run deploy` from `apps/frontend/` = `db:migrate:remote && vite build && wrangler deploy` (no `--env production` flag since commit 27f1ac0). Migrations run before the deploy — don't skip that step.
 **Cloudflare dashboard (Workers Builds):** set the build command to `cd apps/frontend && bun install && bun run build:prod` (`build:prod` = `db:migrate:remote && vite build`) so remote D1 migrations apply before every build/deploy. It must run from `apps/frontend/` so `wrangler.jsonc` + the `db:migrate:remote` script resolve.
 
 ## Architecture overview
 
 Turborepo monorepo with `bun@1.1.38`. Deployed on **Cloudflare Workers**.
 
-| Directory                     | Package                        | Role                                                                  |
-| ----------------------------- | ------------------------------ | --------------------------------------------------------------------- |
-| `apps/frontend/`              | `hr-automation`                | TanStack Start app (React 19, Vite 8, Tailwind v4, shadcn/ui)         |
-| `apps/agents/`                | `agents`                       | Standalone Bun app (stub — still `console.log` in `index.ts`)         |
-| `packages/db/`                | `@workspace/db`                | Drizzle ORM + Cloudflare D1 (SQLite) via `drizzle-orm/d1`             |
-| `packages/candidate-import/`  | `@workspace/candidate-import`  | Candidate import pipeline (CSV/ZIP/Handshake PDF, dedup, matching)    |
-| `packages/nextcloud/`         | `@workspace/nextcloud`         | Nextcloud WebDAV client                                               |
-| `packages/ai-config/`         | `@workspace/ai-config`         | OpenAI / AI SDK provider, embeddings, realtime client                |
-| `packages/interview-realtime/`| `@workspace/interview-realtime`| Shared types, events, prompts, answer evaluation for interview sessions |
-| `packages/mail/`              | `mail`                         | Stub (has package.json, unused)                                       |
-| `packages/eslint-config/`     | `@workspace/eslint-config`     | Shared ESLint configs (base, next-js, react-internal)                 |
-| `packages/typescript-config/` | `@workspace/typescript-config` | Shared tsconfig extends                                               |
+| Directory                      | Package                         | Role                                                                                                         |
+| ------------------------------ | ------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `apps/frontend/`               | `hr-automation`                 | TanStack Start app (React 19, Vite 8, Tailwind v4, shadcn/ui)                                                |
+| `apps/agents/`                 | `agents`                        | Standalone Bun app (stub — still `console.log` in `index.ts`)                                                |
+| `packages/db/`                 | `@workspace/db`                 | Drizzle ORM + Cloudflare D1 (SQLite) via `drizzle-orm/d1`                                                    |
+| `packages/candidate-import/`   | `@workspace/candidate-import`   | Candidate import pipeline (CSV/ZIP/Handshake PDF, dedup, matching)                                           |
+| `packages/nextcloud/`          | `@workspace/nextcloud`          | Nextcloud WebDAV client                                                                                      |
+| `packages/ai-config/`          | `@workspace/ai-config`          | OpenAI / AI SDK provider, embeddings, realtime client                                                        |
+| `packages/interview-realtime/` | `@workspace/interview-realtime` | Shared types, events, prompts, answer evaluation for interview sessions                                      |
+| `packages/mail/`               | `@workspace/mail`               | Email: Resend client + react-email templates (interview invite/completed, onboarding), `renderEmailTemplate` |
+| `packages/eslint-config/`      | `@workspace/eslint-config`      | Shared ESLint configs (base, next-js, react-internal)                                                        |
+| `packages/typescript-config/`  | `@workspace/typescript-config`  | Shared tsconfig extends                                                                                      |
 
 Shadcn/ui components live in `apps/frontend/src/components/ui/` (no separate `packages/ui/`).
 
@@ -52,8 +54,8 @@ Shadcn/ui components live in `apps/frontend/src/components/ui/` (no separate `pa
 - Driver: `drizzle-orm/d1` via `cloudflare:workers` environment binding.
 - D1 database: `hr-automation-db` (binding `DB` in `apps/frontend/wrangler.jsonc`).
 - Schema: `packages/db/src/schema.ts` (SQLite dialect, ~36 tables).
-- Migrations: `packages/db/drizzle/` (SQL files `0000`–`0020`) — applied via `wrangler d1 migrations apply` / scripts below. `drizzle/meta/_journal.json` + snapshots are kept in sync (last snapshot `0020_snapshot.json` reflects the current schema); `db:generate` should print "No schema changes, nothing to migrate" when the schema hasn't changed, and `db:check` fails the build if it would produce a new migration. If `db:generate` ever proposes re-creating existing tables, the journal/snapshot drifted — re-sync it (see git history) rather than applying that migration.
-- Query layer: `packages/db/src/repositories/` is the **single home for all D1 queries** — one `*-repository.ts` file per domain/aggregate, bound to the production `db` (12 files: audit, candidate, candidate-import, dashboard, document, interview, interview-bundle, interview-session, kanban, position, screener). Feature services are the only files that import them. The only exception: `packages/db/src/modules/audit.ts` is a pure (db-injected) module with `repositories/audit-repository.ts` as its thin adapter, kept separate for unit-testability. Pure logic/cursor helpers live in `packages/db/src/` (`kanban-cursor.ts`, `round-progression.ts`, `location.ts`). When adding a query that serves 2+ features, put it in `repositories/`; single-consumer queries may live directly in the owning feature service.
+- Migrations: `packages/db/drizzle/` (SQL files `0000`–`0022`) — applied via `wrangler d1 migrations apply` / scripts below. `drizzle/meta/_journal.json` + snapshots are kept in sync (last snapshot `0022_snapshot.json` reflects the current schema); `db:generate` should print "No schema changes, nothing to migrate" when the schema hasn't changed, and `db:check` fails the build if it would produce a new migration. If `db:generate` ever proposes re-creating existing tables, the journal/snapshot drifted — re-sync it (see git history) rather than applying that migration.
+- Query layer: `packages/db/src/repositories/` is the **single home for all D1 queries** — one `*-repository.ts` file per domain/aggregate, bound to the production `db` (11 files: audit, candidate, candidate-import, dashboard, document, interview, interview-bundle, interview-session, kanban, position, screener). Feature services are the only files that import them. The only exception: `packages/db/src/modules/audit.ts` is a pure (db-injected) module with `repositories/audit-repository.ts` as its thin adapter, kept separate for unit-testability. Pure logic/cursor helpers live in `packages/db/src/` (`kanban-cursor.ts`, `round-progression.ts`, `location.ts`, `personality-screening.ts`, `candidate-list-sort.ts`). When adding a query that serves 2+ features, put it in `repositories/`; single-consumer queries may live directly in the owning feature service.
 
 ```bash
 cd packages/db
@@ -70,7 +72,7 @@ bun run db:reset-rounds          # + :remote variant
 bun run db:finalize-interview-schema  # + :remote variant
 ```
 
-**Sync model (schema → local → remote):** `packages/db/src/schema.ts` is the single source of truth. Schema changes go through `db:generate` (creates a numbered SQL file + journal/snapshot), then `db:migrate` (local) and `db:migrate:remote` (remote). `deploy` runs `db:migrate:remote` before building, so remote applies every migration in order before serving the new code. Run `db:migrate` + `db:check` locally after pulling schema changes so the local D1 matches the migration journal.
+**Sync model (schema → local → remote):** `packages/db/src/schema.ts` is the single source of truth. Schema changes go through `db:generate` (creates a numbered SQL file + journal/snapshot), then `db:migrate` (local) and `db:migrate:remote` (remote). `deploy` runs `db:migrate:remote` before building, so remote applies every migration in order before serving the new code. Run `db:migrate` + `db:check` locally after pulling schema changes so the local D1 matches the migration journal. Note `db:migrate*` also runs `finalize-interview-schema.ts` after applying the numbered migrations (see `scripts/migrate.ts`).
 
 **Local state corruption (`_cf_ALARM ... SQLITE_ERROR`):** when workerd/wrangler is upgraded, the on-disk `.wrangler/state` sqlite (D1, Durable Object alarms, workflows) can become unreadable — every local wrangler command dies with a SQLite error before running. The state is dev-ephemeral and gitignored; fix with `bun run db:reset:local` (clears `.wrangler/state` and re-applies all migrations). Note `db:seed`/`db:seed-positions` currently fail under plain `bun` because `@workspace/db/db` imports `cloudflare:workers`; run seeds through a Workers-context (wrangler dev) if needed.
 
@@ -98,7 +100,18 @@ The alias plumbing depends on exact import specifiers — do not rename or re-ex
 All common Drizzle operators re-exported from `@workspace/db`:
 
 ```ts
-import { eq, and, or, sql, asc, desc, inArray, count, gte, lte } from "@workspace/db";
+import {
+  eq,
+  and,
+  or,
+  sql,
+  asc,
+  desc,
+  inArray,
+  count,
+  gte,
+  lte,
+} from "@workspace/db";
 // also exports InferSelectModel, InferInsertModel
 ```
 
@@ -110,7 +123,7 @@ import { eq, and, or, sql, asc, desc, inArray, count, gte, lte } from "@workspac
 - `apps/frontend/.dev.vars` duplicates secrets for **wrangler dev** (Cloudflare Workers runtime can't read `.env`).
 - **Local dev currently uses REMOTE production D1** (`vite.config.ts` sets `remoteBindings: true`; `wrangler.jsonc` D1 binding has `remote: true`). Requires `wrangler login`. Writes from `bun run dev` hit production data — be careful.
 - To switch back to local D1, set `remoteBindings: false` in `vite.config.ts` and D1 `remote: false` in `wrangler.jsonc`. Vectorize stays remote-only (used only by the document-indexing workflow).
-- Secrets (OPENAI_API_KEY, NEXTCLOUD_*, BETTER_AUTH_SECRET, GOOGLE_CLIENT_*) live in the Cloudflare dashboard or `wrangler secret put` for production — never in `wrangler.jsonc` (deploy would overwrite dashboard values).
+- Secrets (OPENAI*API_KEY, NEXTCLOUD*_, BETTER*AUTH_SECRET, GOOGLE_CLIENT*_, RESEND_API_KEY) live in the Cloudflare dashboard or `wrangler secret put` for production — never in `wrangler.jsonc` (deploy would overwrite dashboard values).
 - Non-secret config lives in `wrangler.jsonc` vars: `BETTER_AUTH_URL`, `PRISMIC_REPOSITORY_NAME` (`darkalpha`), `PRISMIC_TEAM_MEMBER_TYPE` (`teammember`), `PRISMIC_OPERATING_MEMBER_TYPE` (`operatingmember`).
 - `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` in `.env` are required only for `db:studio`.
 
@@ -135,7 +148,7 @@ import { eq, and, or, sql, asc, desc, inArray, count, gte, lte } from "@workspac
 - Client query options/parse helpers live in `features/<domain>/query-options.ts` (not in `server/queries/`).
 - Routes are shells: `createFileRoute` + optional `beforeLoad`/`loader` calling a server fn + a component that renders the feature component.
 - API routes (`routes/api/*`) delegate to `<domain>Service` methods — they never import `@workspace/db` directly. Audit logging lives inside service methods (fire-and-forget `.catch()`).
-- Cross-feature shared constants/types are promoted: `lib/application-status.ts`, `lib/enums.ts`, `lib/question-types.ts` re-export the db package's pure submodules. Sweep invariant: `rg 'from "@workspace/db'` in `apps/frontend/src` matches only `*-service.ts`, feature `types.ts`/`constants.ts`, and the three `lib/` hubs above.
+- Cross-feature shared constants/types are promoted: `lib/application-status.ts`, `lib/enums.ts`, `lib/question-types.ts` re-export the db package's pure submodules. Sweep invariant: `rg 'from "@workspace/db'` in `apps/frontend/src` matches only `*-service.ts`, feature `types.ts`/`constants.ts`, the three `lib/` hubs above, and `routes/api/health.tsx` (the health check pings D1 directly).
 
 ## File storage
 
@@ -149,15 +162,23 @@ import { eq, and, or, sql, asc, desc, inArray, count, gte, lte } from "@workspac
 - Vectorize binding `VECTORIZE` → index `hr-documents-index` (reserved for RAG).
 - Workflow `DOCUMENT_INDEXING_WORKFLOW` → `DocumentIndexingWorkflow` (`src/workflows/document-indexing.ts`).
 - Workflow `INTERVIEW_EVALUATION_WORKFLOW` → `InterviewEvaluationWorkflow` (`src/workflows/interview-evaluation.ts`).
-- Workflow `CANDIDATE_IMPORT_WORKFLOW` → `CandidateImportWorkflow` (`src/workflows/candidate-import.ts`, ~440 lines; delegates to `@workspace/candidate-import`).
-- Durable Object `INTERVIEW_SESSION_DO` → `InterviewSessionDO` (`src/durable-objects/interview-session-do.ts`, ~2050 lines — realtime WebSocket + voice interviews).
+- Workflow `CANDIDATE_IMPORT_WORKFLOW` → `CandidateImportWorkflow` (`src/workflows/candidate-import.ts`, ~465 lines; delegates to `@workspace/candidate-import`).
+- Durable Object `INTERVIEW_SESSION_DO` → `InterviewSessionDO` (`src/durable-objects/interview-session-do.ts`, ~2400 lines — realtime WebSocket + voice interviews).
+- Queue `OUTBOUND_EMAIL_QUEUE` → `hr-outbound-email` (producer + consumer; consumer wired as `queue` handler in `src/server.ts`). Messages carry only `{ outboxId }` — the full job payload lives in D1.
+- `src/server.ts` is the Worker entry: it re-exports the workflows + DO, handles `/api/interview-realtime/ws` and the `/upload-audio` POST directly, and delegates everything else to TanStack Start.
 - `@cloudflare/vite-plugin` handles Workers integration (configured in `vite.config.ts`).
+
+## Transactional email (outbox + queue)
+
+- Feature services never send email inline. They insert into `side_effect_outbox` (UNIQUE `dedupe_key`) via `src/lib/queues/enqueue.ts` (`enqueueSideEffect` / `enqueueEmail`), then a dispatch loop (`outbox-core.ts`, claims pending/failed rows) publishes `{ outboxId }` pointers to the `OUTBOUND_EMAIL_QUEUE`.
+- The queue consumer (`src/lib/queues/consume.ts`, `handleAsyncJobQueue` in `server.ts`) re-reads the outbox row and sends via Resend (`outbound-email-send.ts`); results are marked `sent`/`failed` on the row. At-least-once + idempotent (Resend `idempotencyKey` = outboxId). Sweep of stale `dispatched` rows happens in the dispatch loop.
+- Templates + rendering live in `packages/mail/` (react-email: interview invite/completed, onboarding welcome). Requires `RESEND_API_KEY`.
 
 ## Voice interview system
 
 - Docs: `docs/voice-interview-*.md` (architecture, client-side, prompting, reference) — read before touching this area.
 - Audio flows browser↔OpenAI Realtime via WebRTC; `InterviewSessionDO` sends text commands over a separate "sideband" WebSocket (it never relays audio).
-- Live voice flow: `interview/$token/index.tsx` + `hooks/useVoiceInterview.ts` + `lib/interview-realtime/ws-handler.ts`.
+- Live voice flow: `interview/$token/index.tsx` + `hooks/useVoiceInterview.ts` + `features/voice-interview/ws-handler.ts`.
 - Token API routes: `routes/api/interview-token/$token/*` (validate, schema, responses, start-voice, upload-audio, complete). Recordings → Nextcloud; session audio path persisted via `0008_session_audio_path` migration.
 - Prompts/eval shared in `packages/interview-realtime/` (`prompts.ts`, `answer-evaluation.ts`).
 
@@ -165,8 +186,8 @@ import { eq, and, or, sql, asc, desc, inArray, count, gte, lte } from "@workspac
 
 - Ported from `dac-googlemeet`. D1 tables `meet_conference` + `meet_attendee` hold persisted firm-wide Meet attendance (relies on the Google Calendar/Meet OAuth scopes above).
 - Routes under `_main/employees/attendance/`: `index.tsx` (Meetings list), `$conferenceId.tsx` (per-meeting attendance), `meeting-attendance.tsx` (firm-wide data table + Sync button).
-- `src/lib/attendance/meet-auth.ts` resolves the Google access token; `meet-attendance.ts` is the client-safe Meet API + Calendar-title-matching core (fetch only).
-- Server functions in `lib/actions/sync-meet-attendance.ts`: `getMeetConferences`, `getMeetConferenceDetail`, `getStoredAttendance`, `prepareAttendanceSync`, `syncAttendanceChunk`.
+- `features/attendance/meet-auth.ts` resolves the Google access token; `features/attendance/meet-attendance.ts` is the client-safe Meet API + Calendar-title-matching core (fetch only).
+- Server functions in `features/attendance/server/meet-attendance.ts`: `getMeetConferences`, `getMeetConferenceDetail`, `getStoredAttendance`, `prepareAttendanceSync`, `syncAttendanceChunk`.
 - Persistence: `features/attendance/server/attendance-service.ts` owns `persistConferenceAttendance` + `listStoredAttendanceRows` (inlined — single-consumer queries live in the feature service, not `repositories/`).
 
 ## Prismic (headless CMS)
@@ -184,4 +205,10 @@ bun run test                     # all packages via turbo
 
 Import from `bun:test`: `import { test, expect } from "bun:test";`
 
-Test files exist in `apps/frontend/src/lib/__tests__/` and `attendance/__tests__/`, `packages/db/src/`, `packages/nextcloud/`, `packages/candidate-import/`, `packages/interview-realtime/`. No mocks for D1/WebDAV — pure-logic units only.
+Test files live next to what they test: `apps/frontend/src/lib/__tests__/`, `lib/queues/`, `features/voice-interview/__tests__/`, `packages/db/src/`, `packages/nextcloud/`, `packages/candidate-import/`, `packages/interview-realtime/`, `packages/mail/`, `packages/ai-config/`. No mocks for D1/WebDAV — pure-logic units only.
+
+## Docs & ADRs
+
+- `docs/voice-interview-*.md` (architecture, client-side, prompting, reference) — read before touching the voice interview area.
+- `docs/adr/0001-bundle-round-delivery-mode.md` — delivery mode (`form` vs `voice`) is authoritative on the bundle round, not the session. New code must not re-derive mode from `interview_session.delivery_mode` for bundle sessions; the coercion rule lives in `packages/db/src/round-progression.ts` (`coerceDeliveryMode`).
+- `CONTEXT.md` at the repo root is the domain glossary — use its canonical terms for new modules/seams.

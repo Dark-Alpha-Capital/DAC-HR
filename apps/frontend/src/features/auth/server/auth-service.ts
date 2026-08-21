@@ -140,8 +140,11 @@ export const auth = betterAuth({
         "openid",
         "email",
         "profile",
-        "https://www.googleapis.com/auth/calendar.readonly",
-        "https://www.googleapis.com/auth/meetings.space.readonly",
+        // TODO: Google Meet attendance scopes are temporarily disabled to
+        // avoid consent-screen errors. Re-enable once the consent flow is
+        // stable:
+        // "https://www.googleapis.com/auth/calendar.readonly",
+        // "https://www.googleapis.com/auth/meetings.space.readonly",
       ],
       accessType: "offline",
       prompt: "select_account consent",
