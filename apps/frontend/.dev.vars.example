@@ -1,6 +1,7 @@
 # Copy to apps/frontend/.dev.vars for local Wrangler dev (Workers runtime).
-# BETTER_AUTH_URL defaults to http://localhost:3000 via wrangler.jsonc top-level vars.
-# Override here only if you use a different local port.
+# Auth baseURL is derived per-request (localhost vs production) in auth-service.ts.
+# wrangler.jsonc BETTER_AUTH_URL is the production fallback / email link origin.
+# Override here only if you need a different fallback during local dev.
 
 BETTER_AUTH_SECRET=your-secret-here
 GOOGLE_CLIENT_ID=

@@ -13,6 +13,7 @@ import { admin } from "better-auth/plugins";
 import { createAuthMiddleware, APIError } from "better-auth/api";
 import { enqueueEmail } from "#/lib/queues/enqueue";
 import {
+  authBaseURLConfig,
   isAllowedEmail,
   UNAUTHORIZED_DOMAIN_MESSAGE,
 } from "../helpers";
@@ -65,7 +66,11 @@ const redactEmail = (email: string | null | undefined): string => {
 
 export const auth = betterAuth({
   secret: workerEnv.BETTER_AUTH_SECRET,
-  baseURL: workerEnv.BETTER_AUTH_URL,
+  // Per-request origin so local Google OAuth callbacks stay on localhost.
+  baseURL: {
+    ...authBaseURLConfig,
+    fallback: workerEnv.BETTER_AUTH_URL || authBaseURLConfig.fallback,
+  },
   trustedOrigins: [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
