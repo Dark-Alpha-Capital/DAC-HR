@@ -165,14 +165,14 @@ function buildImportServices(env: Env): ImportServices {
     },
     triggerDocumentIndexing: env.DOCUMENT_INDEXING_WORKFLOW
       ? async (args) => {
-          await env.DOCUMENT_INDEXING_WORKFLOW!.create({
-            id: `index-${args.documentId}`,
-            params: {
-              documentId: args.documentId,
-              nextcloudFilePath: args.nextcloudFilePath,
-            },
-          });
-        }
+        await env.DOCUMENT_INDEXING_WORKFLOW!.create({
+          id: `index-${args.documentId}`,
+          params: {
+            documentId: args.documentId,
+            nextcloudFilePath: args.nextcloudFilePath,
+          },
+        });
+      }
       : undefined,
     updateImportProgress: async ({
       importId,
