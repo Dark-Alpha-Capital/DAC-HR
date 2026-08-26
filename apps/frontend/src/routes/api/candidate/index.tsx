@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { fetchSession as getSession } from "#/lib/auth-session";
 import { candidateFormSchema } from "#/features/candidates/schemas";
 import { candidatesService } from "#/features/candidates/server/candidates-service";
+import { CandidateConflictError } from "#/features/candidates/server/unique-constraint";
 
 export const Route = createFileRoute("/api/candidate/")({
   server: {
@@ -117,6 +118,15 @@ export const Route = createFileRoute("/api/candidate/")({
             `Error creating candidate after ${Date.now() - startTime}ms:`,
             error,
           );
+          if (error instanceof CandidateConflictError) {
+            return Response.json(
+              {
+                error: error.message,
+                existingCandidateId: error.existingCandidateId,
+              },
+              { status: 409 },
+            );
+          }
           return Response.json(
             {
               error:

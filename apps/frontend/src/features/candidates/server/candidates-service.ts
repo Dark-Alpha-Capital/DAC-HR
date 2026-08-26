@@ -1,5 +1,5 @@
 import { db } from "@workspace/db/db";
-import { eq, asc, desc } from "@workspace/db";
+import { eq, asc, desc, sql } from "@workspace/db";
 import {
   application,
   candidate,
@@ -10,6 +10,12 @@ import {
   candidatePosition,
   type Candidate,
 } from "@workspace/db/schema";
+import {
+  CandidateConflictError,
+  emailConflictMessage,
+  errorText,
+  mapCandidateUniqueConstraint,
+} from "./unique-constraint";
 import type { BatchItem } from "drizzle-orm/batch";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
@@ -61,11 +67,51 @@ export type CreateCandidateWithPositionsInput = {
   positionIds?: string[];
 };
 
+async function findCandidateByEmail(email: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) return null;
+
+  const [existing] = await db
+    .select({
+      id: candidate.id,
+      firstName: candidate.firstName,
+      lastName: candidate.lastName,
+    })
+    .from(candidate)
+    .where(sql`lower(${candidate.email}) = ${normalizedEmail}`)
+    .limit(1);
+
+  return existing ?? null;
+}
+
+async function toCandidateConflictError(
+  error: Error,
+  email: string,
+): Promise<CandidateConflictError | null> {
+  const conflict = mapCandidateUniqueConstraint(errorText(error));
+  if (!conflict) return null;
+
+  if (conflict.code === "CANDIDATE_EMAIL_EXISTS") {
+    const existing = await findCandidateByEmail(email);
+    if (existing) {
+      return new CandidateConflictError(emailConflictMessage(existing), {
+        code: conflict.code,
+        existingCandidateId: existing.id,
+      });
+    }
+  }
+
+  return new CandidateConflictError(conflict.message, { code: conflict.code });
+}
+
 export const createCandidateWithPositions = async (
   input: CreateCandidateWithPositionsInput,
 ) => {
-  const positionIds =
-    input.positionIds?.map((id) => id.trim()).filter(Boolean) ?? [];
+  const positionIds = [
+    ...new Set(
+      input.positionIds?.map((id) => id.trim()).filter(Boolean) ?? [],
+    ),
+  ];
 
   const candidateId = crypto.randomUUID();
   const applicationIds = positionIds.map(() => crypto.randomUUID());
@@ -112,21 +158,29 @@ export const createCandidateWithPositions = async (
     ...candidatePositionInserts,
   ] as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]];
 
-  const results = await db.batch(statements);
+  try {
+    const results = await db.batch(statements);
 
-  // SAFETY: results[0] is the .returning() result of candidateInsert, so it is
-  // exactly the Candidate[] matching the newly inserted row.
-  const [newCandidate] = results[0] as Candidate[];
+    // SAFETY: results[0] is the .returning() result of candidateInsert, so it is
+    // exactly the Candidate[] matching the newly inserted row.
+    const [newCandidate] = results[0] as Candidate[];
 
-  if (!newCandidate) {
-    throw new Error("Failed to create candidate");
+    if (!newCandidate) {
+      throw new Error("Failed to create candidate");
+    }
+
+    return {
+      candidate: newCandidate,
+      applicationIds,
+      positionIds,
+    };
+  } catch (error) {
+    if (error instanceof Error) {
+      const conflict = await toCandidateConflictError(error, input.email);
+      if (conflict) throw conflict;
+    }
+    throw error;
   }
-
-  return {
-    candidate: newCandidate,
-    applicationIds,
-    positionIds,
-  };
 };
 
 export type DeleteCandidateResult = {
@@ -321,6 +375,14 @@ export const updateCandidate = async (
     return { success: true, data: updatedCandidate };
   } catch (error) {
     console.error(error);
+
+    const conflict =
+      error instanceof Error
+        ? await toCandidateConflictError(error, email)
+        : null;
+    if (conflict) {
+      return { error: conflict.message };
+    }
 
     if (error instanceof Error) {
       return { error: error.message };

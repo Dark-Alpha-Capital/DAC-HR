@@ -47,6 +47,7 @@ type CreateCandidateResponse = {
   data?: { id?: string } | null;
   applicationIds?: string[];
   error?: string | object;
+  existingCandidateId?: string;
 };
 
 type CreateInterviewSessionResponse = {
@@ -144,6 +145,21 @@ const CandidateUploadForm = ({
             const errorMessage = stringError.success
               ? stringError.data
               : (JSON.stringify(result.error) ?? "Failed to create candidate");
+            const existingCandidateId = result.existingCandidateId;
+            if (existingCandidateId) {
+              toast.error(errorMessage, {
+                position: "bottom-right",
+                action: {
+                  label: "View existing",
+                  onClick: () => {
+                    router.navigate({
+                      to: `/candidates/${existingCandidateId}`,
+                    });
+                  },
+                },
+              });
+              return;
+            }
             toast.error(errorMessage, {
               position: "bottom-right",
             });
