@@ -69,6 +69,8 @@ import {
   truncateId,
 } from "@workspace/interview-realtime/debug-log";
 import { getOptionLabel } from "#/features/questions/helpers";
+import { unansweredStoredFormQuestionIndexes } from "#/features/voice-interview/form-interview";
+import { coerceDeliveryMode } from "@workspace/db/round-progression";
 import { enqueueEmail } from "#/lib/queues/enqueue";
 import { getPublicBaseUrl } from "#/lib/server/email-sender";
 import type { AgentConfig, InterviewStatus } from "#/lib/enums";
@@ -832,6 +834,23 @@ export const interviewsService = {
 
   async getSessionQuestions(sessionRoundId: string) {
     return getQuestionsForInterviewSession(sessionRoundId);
+  },
+
+  async findUnansweredFormQuestions(sessionId: string, roundId: string) {
+    const [questions, responses] = await Promise.all([
+      getQuestionsForInterviewSession(roundId),
+      getResponsesBySessionId(sessionId),
+    ]);
+    return unansweredStoredFormQuestionIndexes(questions, responses);
+  },
+
+  formDeliveryMode(
+    resolved: Extract<ResolvedInterviewToken, { ok: true }>,
+  ): "form" | "voice" {
+    if (resolved.type === "bundle") {
+      return resolved.deliveryMode;
+    }
+    return coerceDeliveryMode(resolved.session.deliveryMode);
   },
 
   async getQuestionById(questionId: string) {

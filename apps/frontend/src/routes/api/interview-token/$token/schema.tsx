@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { interviewsService } from "#/features/interviews/server/interviews-service";
+import { sortQuestionsByOrder } from "#/features/voice-interview/form-interview";
 import {
   interviewServerLog,
   truncateId,
@@ -59,8 +60,8 @@ export const Route = createFileRoute("/api/interview-token/$token/schema")({
             );
           }
 
-          const questions = await interviewsService.getSessionQuestions(
-            session.roundId,
+          const questions = sortQuestionsByOrder(
+            await interviewsService.getSessionQuestions(session.roundId),
           );
 
           if (session.status === "pending" || session.status === "invited") {

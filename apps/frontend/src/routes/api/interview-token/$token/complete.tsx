@@ -142,6 +142,27 @@ export const Route = createFileRoute("/api/interview-token/$token/complete")({
             });
           }
 
+          if (interviewsService.formDeliveryMode(resolved) === "form") {
+            const unansweredIndexes =
+              await interviewsService.findUnansweredFormQuestions(
+                session.id,
+                session.roundId,
+              );
+            if (unansweredIndexes.length > 0) {
+              interviewServerLog.warn("form", COMPONENT, "incomplete_form_rejected", {
+                sessionId: truncateId(session.id),
+                unansweredCount: unansweredIndexes.length,
+              });
+              return Response.json(
+                {
+                  error: "Please answer all questions before submitting",
+                  unansweredQuestionIndexes: unansweredIndexes,
+                },
+                { status: 400 },
+              );
+            }
+          }
+
           const cheatingSummary = parsed.data.cheatingSummary ?? {
             tabSwitches: parsed.data.tabSwitches,
           };

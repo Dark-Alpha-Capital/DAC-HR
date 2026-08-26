@@ -11,7 +11,7 @@ import {
   candidate,
   candidatePosition,
 } from "../schema";
-import { eq, and, or, inArray } from "drizzle-orm";
+import { eq, and, or, inArray, asc } from "drizzle-orm";
 import { ilike } from "../sqlite-helpers";
 import {
   hireLevels as hireLevelValues,
@@ -591,7 +591,8 @@ export const getQuestionsByRoundId = async (roundId: string) => {
         questionBank,
         eq(roundTemplateQuestions.questionId, questionBank.id),
       )
-      .where(eq(roundTemplateQuestions.roundTemplateId, roundId));
+      .where(eq(roundTemplateQuestions.roundTemplateId, roundId))
+      .orderBy(asc(questionBank.orderIndex), asc(questionBank.createdAt));
 
     return results;
   } catch (error) {
@@ -624,7 +625,8 @@ export const getQuestionsForInterviewSession = async (roundId: string) => {
           eq(roundTemplateQuestions.roundTemplateId, roundId),
           eq(questionBank.isActive, true),
         ),
-      );
+      )
+      .orderBy(asc(questionBank.orderIndex), asc(questionBank.createdAt));
   } catch (error) {
     console.error("Error fetching questions for interview session", error);
     return [];

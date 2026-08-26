@@ -207,7 +207,12 @@ export async function completeInterview(
   });
   // SAFETY: the complete endpoint returns a CompleteInterviewResponse; on a
   // non-JSON failure response we fall back to an empty payload.
-  return (await response.json().catch(() => ({}))) as CompleteInterviewResponse;
+  const body = ((await response.json().catch(() => ({}))) ??
+    {}) as CompleteInterviewResponse;
+  if (!response.ok) {
+    throw new Error(body.error || "Failed to complete interview");
+  }
+  return body;
 }
 
 export function interviewTokenValidateOptions(token: string) {

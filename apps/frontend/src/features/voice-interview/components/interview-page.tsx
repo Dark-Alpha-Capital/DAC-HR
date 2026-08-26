@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "@tanstack/react-router";
+import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import { Textarea } from "#/components/ui/textarea";
 import { Badge } from "#/components/ui/badge";
@@ -30,6 +31,13 @@ import {
   type InterviewSchemaData,
   type WelcomeData,
 } from "#/features/voice-interview/interview-token";
+import {
+  FIRST_FORM_QUESTION_INDEX,
+  formatUnansweredQuestionLabel,
+  hasFormAnswer,
+  unansweredFormQuestionIndexes,
+  type FormAnswerValue,
+} from "#/features/voice-interview/form-interview";
 import {
   planNextRoundFromValidation,
   planRoundTransition,
@@ -62,32 +70,13 @@ import {
 
 type Question = InterviewQuestion;
 type InterviewData = InterviewSchemaData;
-
-type AnswerValue =
-  | { type: "text"; text: string }
-  | { type: "mcq"; selectedOptionId: string };
-
-
-
-function hasAnswer(answer: AnswerValue | undefined): boolean {
-  if (!answer) {
-    return false;
-  }
-
-  if (answer.type === "text") {
-    return answer.text.trim().length > 0;
-  }
-
-  return answer.selectedOptionId.length > 0;
-}
+type AnswerValue = FormAnswerValue;
 
 function formatCountdown(seconds: number) {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${mins}:${String(secs).padStart(2, "0")}`;
 }
-
-const SESSION_CAP_SECONDS = 60 * 60;
 
 const INSTRUCTIONS = [
   {
@@ -557,6 +546,7 @@ export function InterviewPage() {
   const [tabSwitchWarningVisible, setTabSwitchWarningVisible] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [totalElapsed, setTotalElapsed] = useState(0);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   const answersRef = useRef(answers);
   const wasPracticeSessionRef = useRef(false);
   const hasInitializedRef = useRef(false);
@@ -605,8 +595,9 @@ export function InterviewPage() {
           planRoundTransition(body.nextRound, body.totalRounds ?? 1),
         );
         setData(null);
-        setCurrentStep(0);
+        setCurrentStep(FIRST_FORM_QUESTION_INDEX);
         setAnswers({});
+        setSubmitAttempted(false);
         setStatus("round_complete");
       } else {
         setStatus("completed");
@@ -617,7 +608,7 @@ export function InterviewPage() {
         token: truncateId(token),
         error: err instanceof Error ? err.message : String(err),
       });
-      setStatus("completed");
+      setSubmitAttempted(true);
     },
   });
 
@@ -629,7 +620,8 @@ export function InterviewPage() {
     wasPracticeSessionRef.current = false;
     setData(null);
     setAnswers({});
-    setCurrentStep(0);
+    setCurrentStep(FIRST_FORM_QUESTION_INDEX);
+    setSubmitAttempted(false);
     setStatus("loading");
     setRoundTransition(null);
     setSessionMode(null);
@@ -829,6 +821,7 @@ export function InterviewPage() {
     }
 
     setData(schemaData);
+    setCurrentStep(FIRST_FORM_QUESTION_INDEX);
     logInterview.info("form", "schema_loaded_resume", {
       token: truncateId(token),
       questionCount: schemaData.questions.length,
@@ -868,8 +861,9 @@ export function InterviewPage() {
         interviewSchemaOptions(token, validation?.sessionId ?? undefined),
       );
       setData(interviewData);
-      setCurrentStep(0);
+      setCurrentStep(FIRST_FORM_QUESTION_INDEX);
       setAnswers({});
+      setSubmitAttempted(false);
       logInterview.success("form", "start_interview_ok", {
         token: truncateId(token),
         questionCount: interviewData.questions.length,
@@ -893,7 +887,7 @@ export function InterviewPage() {
 
   const saveAnswer = useCallback(
     async (question: Question, answer: AnswerValue) => {
-      if (!hasAnswer(answer)) {
+      if (!hasFormAnswer(answer)) {
         return;
       }
 
@@ -937,8 +931,9 @@ export function InterviewPage() {
   const handleNext = useCallback(async () => {
     if (!data) return;
     const question = data.questions[currentStep];
+    if (!question) return;
     const answer = answers[question.id];
-    if (answer && hasAnswer(answer)) {
+    if (answer && hasFormAnswer(answer)) {
       await saveAnswer(question, answer);
     }
     if (currentStep < data.questions.length - 1) {
@@ -950,8 +945,9 @@ export function InterviewPage() {
     if (!data) return;
 
     const question = data.questions[currentStep];
+    if (!question) return;
     const answer = answers[question.id];
-    if (answer && hasAnswer(answer)) {
+    if (answer && hasFormAnswer(answer)) {
       await saveAnswer(question, answer);
     }
     if (currentStep > 0) {
@@ -966,54 +962,20 @@ export function InterviewPage() {
       currentStep,
       questionCount: data.questions.length,
     });
-    const question = data.questions[currentStep];
-    const answer = answers[question.id];
-    if (answer && hasAnswer(answer)) {
-      await saveAnswer(question, answer);
+    const unanswered = unansweredFormQuestionIndexes(data.questions, answers);
+    if (unanswered.length > 0) {
+      setSubmitAttempted(true);
+      setCurrentStep(unanswered[0] ?? FIRST_FORM_QUESTION_INDEX);
+      return;
+    }
+    for (const q of data.questions) {
+      const filled = answers[q.id];
+      if (filled && hasFormAnswer(filled)) {
+        await saveAnswer(q, filled);
+      }
     }
     completeMutation.mutate();
-  }, [data, currentStep, answers, saveAnswer, completeMutation]);
-
-  const handleAutoAdvance = useCallback(async () => {
-    if (status !== "in_progress" || !data) return;
-    logInterview.info("api", "question_timer_elapsed", {
-      token: truncateId(token),
-      currentStep,
-      questionCount: data.questions.length,
-    });
-    const question = data.questions[currentStep];
-    const answer = answers[question.id];
-    if (answer && hasAnswer(answer)) {
-      await saveAnswer(question, answer);
-    }
-    if (currentStep >= data.questions.length - 1) {
-      handleComplete();
-    } else {
-      handleNext();
-    }
-  }, [
-    status,
-    data,
-    currentStep,
-    answers,
-    saveAnswer,
-    handleNext,
-    handleComplete,
-    token,
-  ]);
-
-  const handleSessionTimeLimit = useCallback(async () => {
-    if (status !== "in_progress" || !data) return;
-    logInterview.info("api", "session_timer_elapsed", {
-      token: truncateId(token),
-    });
-    const question = data.questions[currentStep];
-    const answer = answers[question.id];
-    if (answer && hasAnswer(answer)) {
-      await saveAnswer(question, answer);
-    }
-    handleComplete();
-  }, [status, data, currentStep, answers, saveAnswer, handleComplete, token]);
+  }, [data, currentStep, answers, saveAnswer, completeMutation, token]);
 
   const handleContinueToNextRound = useCallback(async () => {
     logInterview.info("bundle", "continue_next_round", {
@@ -1057,8 +1019,9 @@ export function InterviewPage() {
           interviewSchemaOptions(token, sessionId ?? undefined),
         );
         setData(interviewData);
-        setCurrentStep(0);
+        setCurrentStep(FIRST_FORM_QUESTION_INDEX);
         setAnswers({});
+        setSubmitAttempted(false);
         setStatus("in_progress");
       }
 
@@ -1186,12 +1149,6 @@ export function InterviewPage() {
   }, [status, countdown]);
 
   useEffect(() => {
-    if (status === "in_progress" && countdown === 0 && data) {
-      void handleAutoAdvance();
-    }
-  }, [status, countdown, data, handleAutoAdvance]);
-
-  useEffect(() => {
     if (status !== "in_progress") {
       setTotalElapsed(0);
       return;
@@ -1203,12 +1160,6 @@ export function InterviewPage() {
     }, 1000);
     return () => window.clearInterval(id);
   }, [status]);
-
-  useEffect(() => {
-    if (status === "in_progress" && totalElapsed >= SESSION_CAP_SECONDS) {
-      void handleSessionTimeLimit();
-    }
-  }, [status, totalElapsed, handleSessionTimeLimit]);
 
   if (
     status === "loading" &&
@@ -1366,11 +1317,19 @@ export function InterviewPage() {
 
   if (!data) return null;
 
-  const question = data.questions[currentStep];
+  const question =
+    data.questions[currentStep] ?? data.questions[FIRST_FORM_QUESTION_INDEX];
+  if (!question) return null;
   const isLast = currentStep === data.questions.length - 1;
   const progress = ((currentStep + 1) / data.questions.length) * 100;
   const currentAnswer = answers[question.id];
   const isMcq = question.questionType === "mcq";
+  const unansweredIndexes = unansweredFormQuestionIndexes(
+    data.questions,
+    answers,
+  );
+  const showUnansweredError = submitAttempted && unansweredIndexes.length > 0;
+  const currentIsBlank = showUnansweredError && !hasFormAnswer(currentAnswer);
 
   return (
     <div className="flex min-h-svh flex-col bg-background">
@@ -1418,6 +1377,19 @@ export function InterviewPage() {
       </header>
 
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-6">
+        {showUnansweredError ? (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle />
+            <AlertTitle>Answer every question before submitting</AlertTitle>
+            <AlertDescription>
+              {formatUnansweredQuestionLabel(unansweredIndexes)}{" "}
+              {unansweredIndexes.length === 1 ? "is" : "are"} still blank.
+              Please fill {unansweredIndexes.length === 1 ? "it" : "them"} in
+              to finish this round.
+            </AlertDescription>
+          </Alert>
+        ) : null}
+
         <div className="mb-6 select-none">
           <Badge variant="secondary" className="mb-2">
             {question.category || "General"}
@@ -1451,7 +1423,10 @@ export function InterviewPage() {
               {(question.options ?? []).map((option) => (
                 <div
                   key={option.id}
-                  className="flex items-center gap-3 rounded-lg border p-4 select-none"
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg border p-4 select-none",
+                    currentIsBlank && "border-destructive",
+                  )}
                 >
                   <RadioGroupItem value={option.id} id={option.id} />
                   <Label
@@ -1473,7 +1448,11 @@ export function InterviewPage() {
                 }))
               }
               placeholder="Type your answer here..."
-              className="min-h-[200px] resize-y text-base leading-relaxed"
+              aria-invalid={currentIsBlank}
+              className={cn(
+                "min-h-[200px] resize-y text-base leading-relaxed",
+                currentIsBlank && "border-destructive focus-visible:ring-destructive",
+              )}
             />
           )}
         </div>
@@ -1513,29 +1492,42 @@ export function InterviewPage() {
         </div>
 
         <div className="mt-4 flex flex-wrap gap-1">
-          {data.questions.map((q, i) => (
-            <button
-              key={q.id}
-              type="button"
-              onClick={async () => {
-                const currentQ = data.questions[currentStep];
-                const currentA = answersRef.current[currentQ.id];
-                if (currentA && hasAnswer(currentA)) {
-                  await saveAnswer(currentQ, currentA);
-                }
-                setCurrentStep(i);
-              }}
-              className={`flex size-7 items-center justify-center rounded text-xs font-medium transition-colors ${
-                i === currentStep
-                  ? "bg-primary text-primary-foreground"
-                  : hasAnswer(answers[q.id])
-                    ? "bg-primary/20 text-primary"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
-            >
-              {i + 1}
-            </button>
-          ))}
+          {data.questions.map((q, i) => {
+            const answered = hasFormAnswer(answers[q.id]);
+            const isCurrent = i === currentStep;
+            const highlightBlank = showUnansweredError && !answered;
+            return (
+              <button
+                key={q.id}
+                type="button"
+                onClick={async () => {
+                  const currentQ = data.questions[currentStep];
+                  if (currentQ) {
+                    const currentA = answersRef.current[currentQ.id];
+                    if (currentA && hasFormAnswer(currentA)) {
+                      await saveAnswer(currentQ, currentA);
+                    }
+                  }
+                  setCurrentStep(i);
+                }}
+                className={cn(
+                  "flex size-7 items-center justify-center rounded text-xs font-medium transition-colors",
+                  isCurrent && highlightBlank && "bg-destructive text-white",
+                  isCurrent && !highlightBlank && "bg-primary text-primary-foreground",
+                  !isCurrent && answered && "bg-primary/20 text-primary",
+                  !isCurrent &&
+                    highlightBlank &&
+                    "bg-destructive/15 text-destructive ring-1 ring-destructive",
+                  !isCurrent &&
+                    !answered &&
+                    !showUnansweredError &&
+                    "bg-muted text-muted-foreground hover:bg-muted/80",
+                )}
+              >
+                {i + 1}
+              </button>
+            );
+          })}
         </div>
       </main>
     </div>
