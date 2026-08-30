@@ -24,6 +24,10 @@ export interface InterviewInviteJobData extends BaseEmailJobData {
   interviewUrl: string;
   /** ISO-8601 timestamp the interview link expires. */
   expiresAt: string;
+  /** Optional personalized subject line (placeholders already substituted). */
+  subject?: string;
+  /** Optional personalized intro paragraph (placeholders already substituted). */
+  customMessage?: string;
 }
 
 /** Auto-fired when the candidate completes every round of their interview. */

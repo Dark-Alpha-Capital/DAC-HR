@@ -857,3 +857,28 @@ export const sideEffectOutbox = sqliteTable(
 );
 
 export type SideEffectOutbox = InferSelectModel<typeof sideEffectOutbox>;
+
+/** Email template type key (matches the `EmailJobType` union in packages/mail). */
+export type EmailTemplateType = "interview-invite";
+
+/**
+ * Saved email templates with placeholders (`{candidateName}`, `{positionName}`,
+ * `{link}`, `{expiresAt}`). A single row per type, edited by admins; feature
+ * services resolve placeholders at send time so the outbox payload always
+ * carries fully-substituted text.
+ */
+export const emailTemplate = sqliteTable(
+  "email_template",
+  {
+    type: text("type").$type<EmailTemplateType>().primaryKey(),
+    subjectTemplate: text("subject_template").notNull(),
+    bodyTemplate: text("body_template").notNull(),
+    updatedBy: text("updated_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: createdAtCol(),
+    updatedAt: updatedAtCol(),
+  },
+);
+
+export type EmailTemplate = InferSelectModel<typeof emailTemplate>;

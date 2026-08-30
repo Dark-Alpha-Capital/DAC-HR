@@ -77,3 +77,9 @@ export async function invalidateWeeklyCheckinRecords(queryClient: QueryClient) {
     queryKey: queryKeys.weeklyCheckin.all,
   });
 }
+
+export async function invalidateEmailTemplates(queryClient: QueryClient) {
+  await queryClient.invalidateQueries({
+    queryKey: queryKeys.emailTemplates.all,
+  });
+}

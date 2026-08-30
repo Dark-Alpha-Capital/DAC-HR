@@ -95,6 +95,12 @@ export const queryKeys = {
       ["interviews", "bundle", bundleId, "screenings"] as const,
     screenings: (interviewId: string) =>
       ["interviews", "detail", interviewId, "screenings"] as const,
+    bundleEmails: (bundleId: string) =>
+      ["interviews", "bundle", bundleId, "emails"] as const,
+  },
+  emailTemplates: {
+    all: ["email-templates"] as const,
+    detail: (type: string) => ["email-templates", "detail", type] as const,
   },
   attendance: {
     all: ["attendance"] as const,

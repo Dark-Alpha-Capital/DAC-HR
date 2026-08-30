@@ -31,6 +31,27 @@ test("interview-invite renders subject, html with data", async () => {
   expect(rendered.html).toContain(
     "https://recruiting.darkalphacapital.com/interview/abc123",
   );
+  expect(rendered.html).toContain("Start my interview");
+});
+
+test("interview-invite uses personalized subject + customMessage when provided", async () => {
+  const jobData: EmailJobData = {
+    type: "interview-invite",
+    to: "candidate@example.com",
+    candidateName: "Jane Doe",
+    positionName: "Analyst",
+    interviewUrl: "https://recruiting.darkalphacapital.com/interview/abc123",
+    expiresAt: new Date("2026-08-10T12:00:00Z").toISOString(),
+    subject: "Jane, let's talk about the Analyst role",
+    customMessage:
+      "We loved your profile and would like you to complete a short interview.",
+  };
+
+  const rendered = await renderEmailTemplate(jobData);
+  expect(rendered.subject).toBe("Jane, let's talk about the Analyst role");
+  expect(rendered.html).toContain("We loved your profile and would like you");
+  expect(rendered.html).toContain("Start my interview");
+  expect(rendered.html).not.toContain("Click the button below to begin");
 });
 
 test("interview-completed renders thanks message with data", async () => {

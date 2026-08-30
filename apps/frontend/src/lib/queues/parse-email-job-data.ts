@@ -16,6 +16,8 @@ const emailJobDataSchema = z.discriminatedUnion("type", [
     positionName: z.string(),
     interviewUrl: z.string(),
     expiresAt: z.string(),
+    subject: z.string().optional(),
+    customMessage: z.string().optional(),
   }),
   z.object({
     type: z.literal("interview-completed"),

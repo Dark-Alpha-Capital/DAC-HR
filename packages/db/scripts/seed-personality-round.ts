@@ -41,6 +41,7 @@ function queryD1<T extends object>(sql: string): T[] {
     );
   }
 
+  // SAFETY: wrangler d1 query --json stdout is always an array of { results, success }.
   const parsed = JSON.parse(result.stdout) as Array<{
     results: T[];
     success: boolean;

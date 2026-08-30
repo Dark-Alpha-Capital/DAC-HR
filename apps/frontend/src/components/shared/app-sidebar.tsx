@@ -13,6 +13,7 @@ import {
   CalendarCheck,
   Video,
   ChevronDown,
+  Mail,
   type LucideIcon,
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
@@ -104,6 +105,12 @@ const adminLinks: readonly NavLink[] = [
     href: "/admin/audit-logs",
     label: "Audit Logs",
     icon: ScrollText,
+    withEmptySearch: true,
+  },
+  {
+    href: "/admin/email-templates",
+    label: "Email Templates",
+    icon: Mail,
     withEmptySearch: true,
   },
 ];

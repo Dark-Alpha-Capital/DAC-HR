@@ -10,12 +10,15 @@ import {
   Section,
   Text,
 } from "@react-email/components";
+import { formatEmailExpiry } from "../template-utils";
 
 export interface InterviewInviteTemplateData {
   candidateName: string;
   positionName: string;
   interviewUrl: string;
   expiresAt: Date;
+  /** Optional personalized intro paragraph (placeholders already substituted). */
+  customMessage?: string;
 }
 
 const main = {
@@ -75,27 +78,14 @@ const footer = {
   borderTop: "1px solid #e4e4e7",
 };
 
-function formatExpiry(expiresAt: Date): string {
-  const expires = new Date(expiresAt);
-  if (Number.isNaN(expires.getTime())) {
-    return "72 hours";
-  }
-  return new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(expires);
-}
-
 export function InterviewInviteEmail({
   candidateName,
   positionName,
   interviewUrl,
   expiresAt,
+  customMessage,
 }: InterviewInviteTemplateData) {
-  const expiresText = formatExpiry(expiresAt);
+  const expiresText = formatEmailExpiry(expiresAt);
 
   return (
     <Html lang="en">
@@ -108,14 +98,20 @@ export function InterviewInviteEmail({
         <Container style={container}>
           <Section style={card}>
             <Heading style={heading}>Hi {candidateName},</Heading>
-            <Text style={paragraph}>
-              You have been invited to complete a round of interviews for the{" "}
-              <strong>{positionName}</strong> position at Dark Alpha Capital.
-            </Text>
-            <Text style={paragraph}>
-              Click the button below to begin. The link is valid until{" "}
-              <strong>{expiresText}</strong>.
-            </Text>
+            {customMessage ? (
+              <Text style={paragraph}>{customMessage}</Text>
+            ) : (
+              <>
+                <Text style={paragraph}>
+                  You have been invited to complete a round of interviews for the{" "}
+                  <strong>{positionName}</strong> position at Dark Alpha Capital.
+                </Text>
+                <Text style={paragraph}>
+                  Click the button below to begin. The link is valid until{" "}
+                  <strong>{expiresText}</strong>.
+                </Text>
+              </>
+            )}
             <Section style={{ margin: "24px 0" }}>
               <Button href={interviewUrl} style={button}>
                 Start my interview

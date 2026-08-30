@@ -1,34 +1,30 @@
 {
-  "name": "shadcn-ui-monorepo",
+  "name": "hr-automation",
   "version": "0.0.1",
   "private": true,
+  "type": "module",
   "packageManager": "bun@1.1.38",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "build": "turbo build",
-    "dev": "turbo dev",
-    "lint": "turbo lint",
-    "lint:oxlint": "oxlint",
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "check-types": "turbo run check-types",
     "test": "turbo run test",
-    "test:watch": "turbo run test --watch",
+    "test:watch": "turbo watch test",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
-  "dependencies": {
-    "minimatch": "^10.1.1",
-    "zod": "^4.1.12"
-  },
   "devDependencies": {
-    "@oxlint/plugins": "1.78.0",
-    "@workspace/eslint-config": "*",
-    "@workspace/typescript-config": "*",
+    "@workspace/typescript-config": "workspace:*",
     "oxlint": "1.78.0",
+    "@oxlint/plugins": "1.78.0",
     "prettier": "^3.6.2",
     "shadcn": "^4.11.0",
     "turbo": "^2.5.5",
-    "typescript": "5.7.3"
+    "typescript": "^5.9.2"
   },
   "engines": {
     "node": ">=20"

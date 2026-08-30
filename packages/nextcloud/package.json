@@ -5,10 +5,12 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "lint": "oxlint .",
+    "check-types": "tsc --noEmit",
     "test": "bun test --pass-with-no-tests"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5.9.2"
   },
   "dependencies": {
     "webdav": "^5.8.0"

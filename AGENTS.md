@@ -4,16 +4,16 @@
 
 ```bash
 bun install          # always use bun, never npm/pnpm/yarn
-bun run dev          # turbo dev (Vite on :3000, runs apps/frontend)
-bun run build        # turbo build
-bun run lint:oxlint  # real lint: oxlint + anti-slop rules (root oxlint.config.ts)
+bun run dev          # turbo run dev (Vite on :3000, runs apps/frontend)
+bun run build        # turbo run build
+bun run lint         # turbo run lint — oxlint per package (root oxlint.config.ts + anti-slop)
+bun run check-types  # turbo run check-types — tsc --noEmit per package
 bun run test         # turbo run test (bun test in each package)
 bun run format       # prettier --write "**/*.{ts,tsx,md}" (no config file)
 ```
 
-Note: `bun run lint` (root `turbo lint`) is a no-op — no workspace package defines a `lint` script. The actual linter is oxlint (`bun run lint:oxlint`), configured at the root with an `anti-slop` plugin in `tools/oxlint/anti-slop/`. There is no ESLint flat config; the legacy `.eslintrc.js` ignores `apps/**` and `packages/**`.
+Lint is oxlint (not ESLint), configured at the root with an `anti-slop` plugin in `tools/oxlint/anti-slop/`. Each code package has a `lint` script; turbo runs them in parallel via a transit dependency for correct cache invalidation.
 
-**Typecheck:** `tsc --noEmit` from `apps/frontend/` (no root-level typecheck script; `tsconfig.json` sets `noEmit: true`).
 **Deploy:** `bun run deploy` from `apps/frontend/` = `db:migrate:remote && vite build && wrangler deploy` (no `--env production` flag since commit 27f1ac0). Migrations run before the deploy — don't skip that step.
 **Cloudflare dashboard (Workers Builds):** set the build command to `cd apps/frontend && bun install && bun run build:prod` (`build:prod` = `db:migrate:remote && vite build`) so remote D1 migrations apply before every build/deploy. It must run from `apps/frontend/` so `wrangler.jsonc` + the `db:migrate:remote` script resolve.
 
@@ -23,15 +23,13 @@ Turborepo monorepo with `bun@1.1.38`. Deployed on **Cloudflare Workers**.
 
 | Directory                      | Package                         | Role                                                                                                         |
 | ------------------------------ | ------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `apps/frontend/`               | `hr-automation`                 | TanStack Start app (React 19, Vite 8, Tailwind v4, shadcn/ui)                                                |
-| `apps/agents/`                 | `agents`                        | Standalone Bun app (stub — still `console.log` in `index.ts`)                                                |
+| `apps/frontend/`               | `hr-automation`                 | TanStack Start app (React 19, Vite 8, Tailwind v4, shadcn/ui) — the only app |
 | `packages/db/`                 | `@workspace/db`                 | Drizzle ORM + Cloudflare D1 (SQLite) via `drizzle-orm/d1`                                                    |
 | `packages/candidate-import/`   | `@workspace/candidate-import`   | Candidate import pipeline (CSV/ZIP/Handshake PDF, dedup, matching)                                           |
 | `packages/nextcloud/`          | `@workspace/nextcloud`          | Nextcloud WebDAV client                                                                                      |
 | `packages/ai-config/`          | `@workspace/ai-config`          | OpenAI / AI SDK provider, embeddings, realtime client                                                        |
 | `packages/interview-realtime/` | `@workspace/interview-realtime` | Shared types, events, prompts, answer evaluation for interview sessions                                      |
 | `packages/mail/`               | `@workspace/mail`               | Email: Resend client + react-email templates (interview invite/completed, onboarding), `renderEmailTemplate` |
-| `packages/eslint-config/`      | `@workspace/eslint-config`      | Shared ESLint configs (base, next-js, react-internal)                                                        |
 | `packages/typescript-config/`  | `@workspace/typescript-config`  | Shared tsconfig extends                                                                                      |
 
 Shadcn/ui components live in `apps/frontend/src/components/ui/` (no separate `packages/ui/`).
@@ -53,8 +51,8 @@ Shadcn/ui components live in `apps/frontend/src/components/ui/` (no separate `pa
 
 - Driver: `drizzle-orm/d1` via `cloudflare:workers` environment binding.
 - D1 database: `hr-automation-db` (binding `DB` in `apps/frontend/wrangler.jsonc`).
-- Schema: `packages/db/src/schema.ts` (SQLite dialect, ~36 tables).
-- Migrations: `packages/db/drizzle/` (SQL files `0000`–`0022`) — applied via `wrangler d1 migrations apply` / scripts below. `drizzle/meta/_journal.json` + snapshots are kept in sync (last snapshot `0022_snapshot.json` reflects the current schema); `db:generate` should print "No schema changes, nothing to migrate" when the schema hasn't changed, and `db:check` fails the build if it would produce a new migration. If `db:generate` ever proposes re-creating existing tables, the journal/snapshot drifted — re-sync it (see git history) rather than applying that migration.
+- Schema: `packages/db/src/schema.ts` (SQLite dialect, ~39 tables).
+- Migrations: `packages/db/drizzle/` (SQL files `0000`–`0023`) — applied via `wrangler d1 migrations apply` / scripts below. `drizzle/meta/_journal.json` + snapshots are kept in sync (last snapshot `0023_snapshot.json` reflects the current schema); `db:generate` should print "No schema changes, nothing to migrate" when the schema hasn't changed, and `db:check` fails the build if it would produce a new migration. If `db:generate` ever proposes re-creating existing tables, the journal/snapshot drifted — re-sync it (see git history) rather than applying that migration.
 - Query layer: `packages/db/src/repositories/` is the **single home for all D1 queries** — one `*-repository.ts` file per domain/aggregate, bound to the production `db` (11 files: audit, candidate, candidate-import, dashboard, document, interview, interview-bundle, interview-session, kanban, position, screener). Feature services are the only files that import them. The only exception: `packages/db/src/modules/audit.ts` is a pure (db-injected) module with `repositories/audit-repository.ts` as its thin adapter, kept separate for unit-testability. Pure logic/cursor helpers live in `packages/db/src/` (`kanban-cursor.ts`, `round-progression.ts`, `location.ts`, `personality-screening.ts`, `candidate-list-sort.ts`). When adding a query that serves 2+ features, put it in `repositories/`; single-consumer queries may live directly in the owning feature service.
 
 ```bash
@@ -121,8 +119,8 @@ import {
 - Template: `apps/frontend/.env.example`.
 - No `DATABASE_URL` — D1 is bound via `wrangler.jsonc`.
 - `apps/frontend/.dev.vars` duplicates secrets for **wrangler dev** (Cloudflare Workers runtime can't read `.env`).
-- **Local dev currently uses REMOTE production D1** (`vite.config.ts` sets `remoteBindings: true`; `wrangler.jsonc` D1 binding has `remote: true`). Requires `wrangler login`. Writes from `bun run dev` hit production data — be careful.
-- To switch back to local D1, set `remoteBindings: false` in `vite.config.ts` and D1 `remote: false` in `wrangler.jsonc`. Vectorize stays remote-only (used only by the document-indexing workflow).
+- **Local dev uses LOCAL D1** (`vite.config.ts` sets `remoteBindings: false`; `wrangler.jsonc` D1 binding has `remote: false`) — `bun run dev` reads/writes `.wrangler/state`, production data stays untouched, no `wrangler login` needed. Vectorize stays remote-only (`remote: true`; used only by the document-indexing workflow). Deploys always target the remote `database_id` regardless.
+- Run `cd packages/db && bun run db:migrate` after pulling schema changes so local D1 matches; `db:reset:local` rebuilds it from scratch if it's corrupted or stale.
 - Secrets (OPENAI*API_KEY, NEXTCLOUD*_, BETTER*AUTH_SECRET, GOOGLE_CLIENT*_, RESEND_API_KEY) live in the Cloudflare dashboard or `wrangler secret put` for production — never in `wrangler.jsonc` (deploy would overwrite dashboard values).
 - Non-secret config lives in `wrangler.jsonc` vars: `BETTER_AUTH_URL`, `PRISMIC_REPOSITORY_NAME` (`darkalpha`), `PRISMIC_TEAM_MEMBER_TYPE` (`teammember`), `PRISMIC_OPERATING_MEMBER_TYPE` (`operatingmember`).
 - `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` in `.env` are required only for `db:studio`.
@@ -148,7 +146,7 @@ import {
 - Client query options/parse helpers live in `features/<domain>/query-options.ts` (not in `server/queries/`).
 - Routes are shells: `createFileRoute` + optional `beforeLoad`/`loader` calling a server fn + a component that renders the feature component.
 - API routes (`routes/api/*`) delegate to `<domain>Service` methods — they never import `@workspace/db` directly. Audit logging lives inside service methods (fire-and-forget `.catch()`).
-- Cross-feature shared constants/types are promoted: `lib/application-status.ts`, `lib/enums.ts`, `lib/question-types.ts` re-export the db package's pure submodules. Sweep invariant: `rg 'from "@workspace/db'` in `apps/frontend/src` matches only `*-service.ts`, feature `types.ts`/`constants.ts`, the three `lib/` hubs above, and `routes/api/health.tsx` (the health check pings D1 directly).
+- Cross-feature shared constants/types are promoted: `lib/application-status.ts`, `lib/enums.ts`, `lib/question-types.ts` re-export the db package's pure submodules. Sweep invariant: `rg 'from "@workspace/db'` in `apps/frontend/src` matches only `*-service.ts`, feature `types.ts`/`constants.ts`, the three `lib/` hubs above, `lib/queues/*` + `lib/workflows/*` (outbox/queue plumbing), and `routes/api/health.tsx` (the health check pings D1 directly).
 
 ## File storage
 

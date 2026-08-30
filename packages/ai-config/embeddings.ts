@@ -39,7 +39,11 @@ export async function generateEmbedding(text: string): Promise<number[]> {
     dimensions: EMBEDDING_DIMENSIONS,
   });
 
-  return response.data[0].embedding;
+  const embedding = response.data[0]?.embedding;
+  if (!embedding) {
+    throw new Error("OpenAI embeddings response missing data[0].embedding");
+  }
+  return embedding;
 }
 
 export async function generateEmbeddings(

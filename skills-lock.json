@@ -230,6 +230,12 @@
       "skillPath": "skills/engineering/triage/SKILL.md",
       "computedHash": "1bc5349f0b61e19a6df61496b5a03d88cd69595dd303353f87945997a9e4a884"
     },
+    "turborepo": {
+      "source": "vercel/turborepo",
+      "sourceType": "github",
+      "skillPath": "skills/turborepo/SKILL.md",
+      "computedHash": "799ac3cf9ec94f14c37be76f0be14c896727c968c2d49501cd77713d724d1e33"
+    },
     "ubiquitous-language": {
       "source": "mattpocock/skills",
       "sourceType": "github",

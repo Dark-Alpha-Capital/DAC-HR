@@ -3,29 +3,33 @@
   "ui": "tui",
   "globalEnv": ["NODE_ENV"],
   "tasks": {
+    "transit": {
+      "dependsOn": ["^transit"]
+    },
     "build": {
       "env": [
-        "DATABASE_URL",
         "GOOGLE_CLIENT_ID",
         "GOOGLE_CLIENT_SECRET",
         "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
         "NEXTCLOUD_URL",
         "NEXTCLOUD_USER",
         "NEXTCLOUD_PASSWORD",
-        "OPENAI_API_KEY"
+        "OPENAI_API_KEY",
+        "RESEND_API_KEY"
       ],
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".output/**", ".next/**", "!.next/cache/**"]
+      "outputs": [".output/**", "dist/**"]
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": ["transit"]
     },
     "check-types": {
-      "dependsOn": ["^check-types"]
+      "dependsOn": ["transit"]
     },
     "test": {
-      "dependsOn": ["^test"],
+      "dependsOn": ["transit"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": []
     },
