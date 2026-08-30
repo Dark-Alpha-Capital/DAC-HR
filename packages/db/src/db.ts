@@ -1,3 +1,5 @@
+/// <reference types="@cloudflare/workers-types" />
+/// <reference path="./cloudflare-workers.d.ts" />
 import { drizzle, type DrizzleD1Database } from "drizzle-orm/d1";
 import { env } from "cloudflare:workers";
 import * as schema from "./schema";

@@ -57,3 +57,10 @@ export const removeInterviewBundle = createServerFn({ method: "POST" })
   .handler(async ({ data: bundleId, context: { session } }) =>
     interviewsService.removeBundle(bundleId, session.user),
   );
+
+export const resendInterviewInvite = createServerFn({ method: "POST" })
+  .middleware([serverFnAuthGuard])
+  .validator((data: string) => data)
+  .handler(async ({ data: bundleId, context: { session } }) =>
+    interviewsService.resendInterviewInvite(bundleId, session.user),
+  );

@@ -5,15 +5,17 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "lint": "oxlint .",
+    "check-types": "tsc --noEmit",
     "test": "bun test --pass-with-no-tests"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5.9.2"
   },
   "dependencies": {
-    "@workspace/ai-config": "*",
-    "@workspace/db": "*",
-    "@workspace/nextcloud": "*",
+    "@workspace/ai-config": "workspace:*",
+    "@workspace/db": "workspace:*",
+    "@workspace/nextcloud": "workspace:*",
     "jszip": "^3.10.1",
     "pdf-lib": "^1.17.1",
     "slugify": "^1.6.6",

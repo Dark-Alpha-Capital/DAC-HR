@@ -27,3 +27,17 @@ export const loadInterviewAnalyses = createServerFn({ method: "GET" })
   .handler(async ({ data: interviewId }) =>
     interviewsService.getInterviewAnalyses(interviewId),
   );
+
+export const loadBundleInviteEmails = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
+  .validator((data: string) => data)
+  .handler(async ({ data: bundleId }) =>
+    interviewsService.listBundleInviteEmails(bundleId),
+  );
+
+export const renderBundleEmailPreview = createServerFn({ method: "GET" })
+  .middleware([serverFnAuthGuard])
+  .validator((data: string) => data)
+  .handler(async ({ data: bundleId }) =>
+    interviewsService.renderBundleEmailPreview(bundleId),
+  );

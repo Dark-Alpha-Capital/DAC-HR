@@ -1,6 +1,6 @@
 import { Link, useSearch } from "@tanstack/react-router";
 
-const ERROR_MESSAGES: Record<string, { title: string; body: string }> = {
+const ERROR_MESSAGES = {
   internal_server_error: {
     title: "Sign-in failed",
     body: "Something went wrong during sign-in. This is usually a temporary server issue — please try again. If it keeps happening, contact your administrator.",
@@ -9,11 +9,14 @@ const ERROR_MESSAGES: Record<string, { title: string; body: string }> = {
     title: "Access denied",
     body: "Google sign-in was cancelled or denied. Please try again and approve access when prompted.",
   },
-};
+} as const satisfies Record<string, { title: string; body: string }>;
 
 export function UnauthorizedPage() {
   const { error } = useSearch({ from: "/_auth/unauthorized" });
-  const knownError = error ? ERROR_MESSAGES[error] : undefined;
+  const knownError =
+    error === "internal_server_error" || error === "access_denied"
+      ? ERROR_MESSAGES[error]
+      : undefined;
 
   if (knownError) {
     return (

@@ -2,8 +2,9 @@
   "extends": "@workspace/typescript-config/node.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "lib": ["ESNext"]
+    "lib": ["ESNext"],
+    "types": ["@cloudflare/workers-types", "bun"]
   },
-  "include": ["**/*.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules"]
 }

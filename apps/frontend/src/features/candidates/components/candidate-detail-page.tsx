@@ -31,6 +31,8 @@ import { ApplicationDetailSheet } from "#/features/applications/components/appli
 export function CandidateDetailPage() {
   const { uid } = useParams({ from: "/_main/candidates/$uid/" });
   const search = useRouterState({
+    // SAFETY: location.search for this route is the candidates detail search
+    // shape (`applicationId?`); router state is untyped at this select.
     select: (state) => state.location.search as { applicationId?: string },
   });
   const navigate = useNavigate({ from: "/candidates/$uid/" });

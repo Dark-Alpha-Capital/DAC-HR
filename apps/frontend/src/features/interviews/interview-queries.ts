@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import {
   loadBundleAiAnalyses,
+  loadBundleInviteEmails,
   loadInterviewAnalyses,
   loadInterviewBundleById,
 } from "#/features/interviews/server/queries/interviews";
@@ -50,6 +51,17 @@ export function interviewScreeningsQueryOptions(interviewId: string) {
       // server fn declares; this restores the declared return type after the
       // client-side serialization wrapper is applied.
       return result as Awaited<ReturnType<typeof loadInterviewAnalyses>>;
+    },
+  });
+}
+
+export function interviewBundleEmailsQueryOptions(bundleId: string) {
+  return queryOptions({
+    queryKey: queryKeys.interviews.bundleEmails(bundleId),
+    queryFn: async () => {
+      const result = await loadBundleInviteEmails({ data: bundleId });
+      // SAFETY: the handler returns the same type the server fn declares.
+      return result as Awaited<ReturnType<typeof loadBundleInviteEmails>>;
     },
   });
 }

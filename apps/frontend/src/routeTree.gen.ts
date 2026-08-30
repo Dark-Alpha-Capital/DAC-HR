@@ -63,6 +63,7 @@ import { Route as MainDocsCandidatesRouteImport } from './routes/_main/docs/cand
 import { Route as MainDocsApplicationsRouteImport } from './routes/_main/docs/applications'
 import { Route as MainDocsAiFeaturesRouteImport } from './routes/_main/docs/ai-features'
 import { Route as MainCandidatesNewRouteImport } from './routes/_main/candidates/new'
+import { Route as MainAdminEmailTemplatesRouteImport } from './routes/_main/admin/email-templates'
 import { Route as MainAdminAuditLogsRouteImport } from './routes/_main/admin/audit-logs'
 import { Route as ApiCandidateImportIndexRouteImport } from './routes/api/candidate/import/index'
 import { Route as ApiCandidateIdIndexRouteImport } from './routes/api/candidate/$id/index'
@@ -371,6 +372,11 @@ const MainCandidatesNewRoute = MainCandidatesNewRouteImport.update({
   path: '/candidates/new',
   getParentRoute: () => MainRouteRoute,
 } as any)
+const MainAdminEmailTemplatesRoute = MainAdminEmailTemplatesRouteImport.update({
+  id: '/email-templates',
+  path: '/email-templates',
+  getParentRoute: () => MainAdminRouteRoute,
+} as any)
 const MainAdminAuditLogsRoute = MainAdminAuditLogsRouteImport.update({
   id: '/audit-logs',
   path: '/audit-logs',
@@ -586,6 +592,7 @@ export interface FileRoutesByFullPath {
   '/api/interview-sessions': typeof ApiInterviewSessionsRouteWithChildren
   '/api/screeners': typeof ApiScreenersRoute
   '/admin/audit-logs': typeof MainAdminAuditLogsRoute
+  '/admin/email-templates': typeof MainAdminEmailTemplatesRoute
   '/candidates/new': typeof MainCandidatesNewRoute
   '/docs/ai-features': typeof MainDocsAiFeaturesRoute
   '/docs/applications': typeof MainDocsApplicationsRoute
@@ -675,6 +682,7 @@ export interface FileRoutesByTo {
   '/api/interview-sessions': typeof ApiInterviewSessionsRouteWithChildren
   '/api/screeners': typeof ApiScreenersRoute
   '/admin/audit-logs': typeof MainAdminAuditLogsRoute
+  '/admin/email-templates': typeof MainAdminEmailTemplatesRoute
   '/candidates/new': typeof MainCandidatesNewRoute
   '/docs/ai-features': typeof MainDocsAiFeaturesRoute
   '/docs/applications': typeof MainDocsApplicationsRoute
@@ -769,6 +777,7 @@ export interface FileRoutesById {
   '/api/screeners': typeof ApiScreenersRoute
   '/_main/': typeof MainIndexRoute
   '/_main/admin/audit-logs': typeof MainAdminAuditLogsRoute
+  '/_main/admin/email-templates': typeof MainAdminEmailTemplatesRoute
   '/_main/candidates/new': typeof MainCandidatesNewRoute
   '/_main/docs/ai-features': typeof MainDocsAiFeaturesRoute
   '/_main/docs/applications': typeof MainDocsApplicationsRoute
@@ -862,6 +871,7 @@ export interface FileRouteTypes {
     | '/api/interview-sessions'
     | '/api/screeners'
     | '/admin/audit-logs'
+    | '/admin/email-templates'
     | '/candidates/new'
     | '/docs/ai-features'
     | '/docs/applications'
@@ -951,6 +961,7 @@ export interface FileRouteTypes {
     | '/api/interview-sessions'
     | '/api/screeners'
     | '/admin/audit-logs'
+    | '/admin/email-templates'
     | '/candidates/new'
     | '/docs/ai-features'
     | '/docs/applications'
@@ -1044,6 +1055,7 @@ export interface FileRouteTypes {
     | '/api/screeners'
     | '/_main/'
     | '/_main/admin/audit-logs'
+    | '/_main/admin/email-templates'
     | '/_main/candidates/new'
     | '/_main/docs/ai-features'
     | '/_main/docs/applications'
@@ -1536,6 +1548,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainCandidatesNewRouteImport
       parentRoute: typeof MainRouteRoute
     }
+    '/_main/admin/email-templates': {
+      id: '/_main/admin/email-templates'
+      path: '/email-templates'
+      fullPath: '/admin/email-templates'
+      preLoaderRoute: typeof MainAdminEmailTemplatesRouteImport
+      parentRoute: typeof MainAdminRouteRoute
+    }
     '/_main/admin/audit-logs': {
       id: '/_main/admin/audit-logs'
       path: '/audit-logs'
@@ -1816,11 +1835,13 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 
 interface MainAdminRouteRouteChildren {
   MainAdminAuditLogsRoute: typeof MainAdminAuditLogsRoute
+  MainAdminEmailTemplatesRoute: typeof MainAdminEmailTemplatesRoute
   MainAdminIndexRoute: typeof MainAdminIndexRoute
 }
 
 const MainAdminRouteRouteChildren: MainAdminRouteRouteChildren = {
   MainAdminAuditLogsRoute: MainAdminAuditLogsRoute,
+  MainAdminEmailTemplatesRoute: MainAdminEmailTemplatesRoute,
   MainAdminIndexRoute: MainAdminIndexRoute,
 }
 

@@ -11,6 +11,7 @@ import { EMAIL_CONFIG } from "./types";
 // Re-export types and emails
 export * from "./types";
 export * from "./emails";
+export * from "./template-utils";
 
 // Re-export render function for email templates
 export { render } from "@react-email/components";
@@ -35,7 +36,7 @@ export const renderEmailTemplate = async (
     }
 
     case "interview-invite": {
-      const subject = `Interview invitation — ${jobData.positionName}`;
+      const subject = jobData.subject ?? `Interview invitation — ${jobData.positionName}`;
       const html = await render(
         InterviewInviteEmail({
           candidateName: jobData.candidateName,
@@ -44,6 +45,7 @@ export const renderEmailTemplate = async (
           // SAFETY: job payloads store expiresAt as an ISO string (queue JSON);
           // the template formats it for the recipient.
           expiresAt: new Date(jobData.expiresAt),
+          customMessage: jobData.customMessage,
         }),
       );
       return { subject, html };

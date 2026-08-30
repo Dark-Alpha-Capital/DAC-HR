@@ -1,4 +1,4 @@
-import { Link, useParams } from "@tanstack/react-router";
+import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { isServer, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DetailPageSkeleton } from "#/components/shared/detail-page-skeleton";
 import {
@@ -11,16 +11,19 @@ import { Badge } from "#/components/ui/badge";
 import { Progress } from "#/components/ui/progress";
 import { Avatar, AvatarFallback } from "#/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "#/components/ui/tabs";
-import { Bot, Check, Copy, History, Sparkles } from "lucide-react";
+import { Bot, Check, Copy, History, Mail, Sparkles } from "lucide-react";
 import { formatDate } from "#/lib/utils";
 import ApplicationBreadcrumb from "#/components/shared/application-breadcrumb";
 import { BundleRoundStepper } from "#/features/interviews/components/bundle-round-stepper";
 import { BundleRoundPanel } from "#/features/interviews/components/bundle-round-panel";
+import { BundleEmailsTab } from "#/features/interviews/components/bundle-emails-tab";
 import InterviewAiAnalysisTab from "#/features/interviews/components/interview-ai-analysis-tab";
 import InterviewScreeningsTab from "#/features/interviews/components/interview-screenings-tab";
 import { useState } from "react";
-
-type BundleDetailTab = "rounds" | "ai-analysis" | "screenings";
+import {
+  BUNDLE_DETAIL_TABS,
+  type BundleDetailTab,
+} from "#/features/interviews/search";
 
 function BundleStatusBadge({ status }: { status: string }) {
   if (status === "expired") {
@@ -53,8 +56,10 @@ export function InterviewBundleDetailPage() {
     from: "/_main/interviews/bundle/$bundleId/",
   });
   const queryClient = useQueryClient();
+  const search = useSearch({ from: "/_main/interviews/bundle/$bundleId/" });
+  const navigate = useNavigate({ from: "/interviews/bundle/$bundleId/" });
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<BundleDetailTab>("rounds");
+  const activeTab = search.tab ?? "rounds";
   const [activeRoundIndex, setActiveRoundIndex] = useState<number | null>(null);
 
   const { data, isLoading } = useQuery(
@@ -141,9 +146,15 @@ export function InterviewBundleDetailPage() {
   };
 
   const handleTabChange = (tab: string) => {
-    // SAFETY: the Tabs only render the three BundleDetailTab triggers, so
-    // the callback value is always one of them.
-    setActiveTab(tab as BundleDetailTab);
+    // SAFETY: the Tabs only render triggers from BUNDLE_DETAIL_TABS, so the
+    // callback value is always one of them.
+    const nextTab = BUNDLE_DETAIL_TABS.find(
+      (candidate) => candidate === tab,
+    ) as BundleDetailTab;
+    void navigate({
+      search: { ...search, tab: nextTab },
+      replace: true,
+    });
   };
 
   const handleRoundSelect = (round: number) => {
@@ -233,6 +244,10 @@ export function InterviewBundleDetailPage() {
             <History className="h-4 w-4" />
             Screenings
           </TabsTrigger>
+          <TabsTrigger value="emails" className="gap-2">
+            <Mail className="h-4 w-4" />
+            Emails
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="rounds" className="mt-4 space-y-5">
@@ -269,6 +284,10 @@ export function InterviewBundleDetailPage() {
 
         <TabsContent value="screenings" className="mt-4">
           <InterviewScreeningsTab bundleId={bundle.id} />
+        </TabsContent>
+
+        <TabsContent value="emails" className="mt-4">
+          <BundleEmailsTab bundleId={bundle.id} />
         </TabsContent>
       </Tabs>
     </div>

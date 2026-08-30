@@ -1,12 +1,16 @@
+import { randomUUID } from "crypto";
 import { db } from "@workspace/db/db";
-import { eq } from "@workspace/db";
+import { eq, desc, or, sql } from "@workspace/db";
 import {
   interview,
   interviewFeedback,
   interviewSession,
+  interviewBundle,
   application,
   candidate,
   position,
+  sideEffectOutbox,
+  type OutboxStatus,
 } from "@workspace/db/schema";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
 import {
@@ -73,6 +77,10 @@ import { unansweredStoredFormQuestionIndexes } from "#/features/voice-interview/
 import { coerceDeliveryMode } from "@workspace/db/round-progression";
 import { enqueueEmail } from "#/lib/queues/enqueue";
 import { getPublicBaseUrl } from "#/lib/server/email-sender";
+import { renderEmailTemplate } from "@workspace/mail";
+import { parseEmailJobData } from "#/lib/queues/parse-email-job-data";
+import { parseQueuePayload } from "#/lib/queues/parse-queue-payload";
+import { resolveInterviewInviteContent } from "#/features/email-templates/server/email-templates-service";
 import type { AgentConfig, InterviewStatus } from "#/lib/enums";
 
 type Actor = {
@@ -333,13 +341,23 @@ export type CreateInterviewSessionInput = {
   agentConfig?: AgentConfig;
   /** When true (and the candidate has an email), enqueue the interview-invite email. */
   sendInviteEmail?: boolean;
+  /** Raw personalized subject (placeholders allowed) — overrides the saved template. */
+  emailSubject?: string;
+  /** Raw personalized message (placeholders allowed) — overrides the saved template. */
+  emailMessage?: string;
 };
 
 export const createInterviewSession = async (
   input: CreateInterviewSessionInput,
   actor: Actor,
 ) => {
-  const { applicationId, expiryHours = 72, agentConfig } = input;
+  const {
+    applicationId,
+    expiryHours = 72,
+    agentConfig,
+    emailSubject,
+    emailMessage,
+  } = input;
   const expiresAt = new Date(Date.now() + expiryHours * 60 * 60 * 1000);
 
   try {
@@ -402,6 +420,15 @@ export const createInterviewSession = async (
     if (input.sendInviteEmail && app.candidateEmail) {
       const origin = getPublicBaseUrl();
       try {
+        const interviewUrl = `${origin}/interview/${result.token}`;
+        const { subject, customMessage } = await resolveInterviewInviteContent({
+          candidateName: `${app.candidateName} ${app.candidateLastName}`.trim(),
+          positionName: app.positionName,
+          interviewUrl,
+          expiresAt: result.bundle.expiresAt,
+          overrideSubject: emailSubject,
+          overrideMessage: emailMessage,
+        });
         await enqueueEmail(db, [
           {
             jobName: "interview-invite",
@@ -413,8 +440,10 @@ export const createInterviewSession = async (
               candidateName:
                 `${app.candidateName} ${app.candidateLastName}`.trim(),
               positionName: app.positionName,
-              interviewUrl: `${origin}/interview/${result.token}`,
+              interviewUrl,
               expiresAt: result.bundle.expiresAt.toISOString(),
+              subject,
+              customMessage,
             },
           },
         ]);
@@ -697,6 +726,105 @@ const emptyInterviewDetail: InterviewDetailData = {
   evaluation: null,
 };
 
+// ---- Invite email history (outbox) ----
+
+export type BundleInviteEmail = {
+  id: string;
+  status: OutboxStatus;
+  createdAt: string;
+  dispatchedAt: string | null;
+  to: string;
+  candidateName: string;
+  positionName: string;
+  interviewUrl: string;
+  expiresAt: string;
+  subject: string;
+  customMessage: string;
+};
+
+type InviteEmailRow = BundleInviteEmail & {
+  /** The outbox dedupeKey (`interview-invite:<bundleId>:<email>`). */
+  dedupeKey: string;
+  jobData: Extract<
+    ReturnType<typeof parseEmailJobData>,
+    { type: "interview-invite" }
+  >;
+};
+
+/**
+ * Load invite outbox rows for an application, newest first. Every "Generate AI
+ * link" creates a new bundle for the application, so invite emails are matched
+ * across all of the application's bundles — the HR sees every link email they
+ * sent for this interview regardless of which bundle the URL currently shows.
+ */
+async function loadInviteEmailRows(bundleId: string): Promise<InviteEmailRow[]> {
+  const [bundleRow] = await db
+    .select({ applicationId: interviewBundle.applicationId })
+    .from(interviewBundle)
+    .where(eq(interviewBundle.id, bundleId))
+    .limit(1);
+
+  if (!bundleRow) return [];
+
+  const bundles = await db
+    .select({ id: interviewBundle.id })
+    .from(interviewBundle)
+    .where(eq(interviewBundle.applicationId, bundleRow.applicationId));
+
+  const prefixes = bundles.map((b) => `interview-invite:${b.id}:*`);
+  if (prefixes.length === 0) return [];
+
+  // GLOB is case-sensitive (dedupeKeys embed lowercase UUIDs + a static prefix)
+  // and — unlike LIKE on this D1/workerd build — accepts the prefix+wildcard
+  // pattern reliably. The `*` only matches the candidate email portion.
+  const rows = await db
+    .select({
+      id: sideEffectOutbox.id,
+      status: sideEffectOutbox.status,
+      payload: sideEffectOutbox.payload,
+      createdAt: sideEffectOutbox.createdAt,
+      dispatchedAt: sideEffectOutbox.dispatchedAt,
+      dedupeKey: sideEffectOutbox.dedupeKey,
+    })
+    .from(sideEffectOutbox)
+    .where(
+      or(
+        ...prefixes.map((p) =>
+          sql`${sideEffectOutbox.dedupeKey} GLOB ${p}`,
+        ),
+      ),
+    )
+    .orderBy(desc(sideEffectOutbox.createdAt));
+
+  const emails: InviteEmailRow[] = [];
+  for (const row of rows) {
+    // SAFETY: the outbox row payload is JSON; parseQueuePayload + parseEmailJobData
+    // validate it at the boundary before we read fields off it.
+    const queuePayload = parseQueuePayload(
+      structuredClone(row.payload) as JsonValue,
+    );
+    const jobData = parseEmailJobData(queuePayload.data);
+    if (jobData.type !== "interview-invite") continue;
+
+    emails.push({
+      id: row.id,
+      status: row.status,
+      createdAt: row.createdAt.toISOString(),
+      dispatchedAt: row.dispatchedAt?.toISOString() ?? null,
+      to: jobData.to,
+      candidateName: jobData.candidateName,
+      positionName: jobData.positionName,
+      interviewUrl: jobData.interviewUrl,
+      expiresAt: jobData.expiresAt,
+      subject: jobData.subject ?? "",
+      customMessage: jobData.customMessage ?? "",
+      dedupeKey: row.dedupeKey,
+      jobData,
+    });
+  }
+  return emails;
+}
+
 export const interviewsService = {
   create: createInterview,
   update: updateInterview,
@@ -793,6 +921,77 @@ export const interviewsService = {
         structuredData: row.structuredData as JsonValue | null,
       })),
     };
+  },
+
+  // ---- Invite email history (outbox) ----
+
+  async listBundleInviteEmails(bundleId: string): Promise<BundleInviteEmail[]> {
+    const rows = await loadInviteEmailRows(bundleId);
+    return rows.map(({ dedupeKey: _dedupeKey, jobData: _jobData, ...rest }) => rest);
+  },
+
+  async renderBundleEmailPreview(bundleId: string) {
+    const emails = await loadInviteEmailRows(bundleId);
+    const latest = emails[0];
+    if (!latest) {
+      return { preview: null };
+    }
+    const { subject, html } = await renderEmailTemplate(latest.jobData);
+    return {
+      preview: {
+        subject,
+        html,
+        to: latest.jobData.to,
+      },
+    };
+  },
+
+  async resendInterviewInvite(bundleId: string, actor: Actor) {
+    const emails = await loadInviteEmailRows(bundleId);
+    const latest = emails[0];
+    if (!latest) {
+      return { error: "No invite email found for this interview" };
+    }
+
+    const jobData = latest.jobData;
+    // Key the resend to the email's original bundle so it still matches the
+    // application-scoped history query (dedupeKey = interview-invite:<bundleId>:*).
+    const originalBundleId = latest.dedupeKey.split(":")[1] ?? bundleId;
+    const data: JsonValue = {
+      type: jobData.type,
+      to: jobData.to,
+      candidateName: jobData.candidateName,
+      positionName: jobData.positionName,
+      interviewUrl: jobData.interviewUrl,
+      expiresAt: jobData.expiresAt,
+    };
+    if (jobData.subject) data.subject = jobData.subject;
+    if (jobData.customMessage) data.customMessage = jobData.customMessage;
+    await enqueueEmail(db, [
+      {
+        jobName: "interview-invite",
+        jobId: `interview-invite-${originalBundleId}-resend-${Date.now()}`,
+        dedupeKey: `interview-invite:${originalBundleId}:${jobData.to}:${randomUUID()}`,
+        data,
+      },
+    ]);
+
+    insertAuditLog({
+      userId: actor.id,
+      action: "resend_interview_invite",
+      entityType: "interview_bundle",
+      entityId: bundleId,
+      details: {
+        to: jobData.to,
+        resentBy: {
+          id: actor.id,
+          email: actor.email,
+          name: actor.name,
+        },
+      },
+    }).catch((error) => console.error("Audit log error:", error));
+
+    return { success: true };
   },
 
   // ---- Token resolution (voice/form interview flows) ----

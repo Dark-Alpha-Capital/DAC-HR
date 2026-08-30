@@ -12,6 +12,7 @@ import {
   invalidateQuestionLists,
   invalidateRoundLists,
   invalidateWeeklyCheckinRecords,
+  invalidateEmailTemplates,
 } from "#/lib/query/invalidate";
 
 export function useQueryInvalidation() {
@@ -32,5 +33,6 @@ export function useQueryInvalidation() {
     questionLists: () => invalidateQuestionLists(queryClient),
     adminUsers: () => invalidateAdminUsers(queryClient),
     weeklyCheckinRecords: () => invalidateWeeklyCheckinRecords(queryClient),
+    emailTemplates: () => invalidateEmailTemplates(queryClient),
   };
 }

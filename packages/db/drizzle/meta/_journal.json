@@ -162,6 +162,13 @@
       "when": 1787074970127,
       "tag": "0022_misty_warhawk",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1788006366353,
+      "tag": "0023_fine_shatterstar",
+      "breakpoints": true
     }
   ]
 }

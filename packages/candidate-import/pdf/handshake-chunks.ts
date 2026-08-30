@@ -92,7 +92,7 @@ function assignPageOwners(
     }
 
     const prevOwner = owners[pageIndex - 1];
-    if (prevOwner === null) {
+    if (prevOwner == null) {
       continue;
     }
 
@@ -134,7 +134,7 @@ function ownersToChunks(
 
   while (pageIndex < pages.length) {
     const owner = owners[pageIndex];
-    if (owner === null) {
+    if (owner == null) {
       pageIndex++;
       continue;
     }
