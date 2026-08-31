@@ -15,6 +15,7 @@ import {
   ImportCancelledError,
   processCsvImport,
   processHandshakePdfImport,
+  processSingleDocumentImport,
   processZipImport,
   type ImportLogContext,
   type ImportLogLevel,
@@ -165,14 +166,14 @@ function buildImportServices(env: Env): ImportServices {
     },
     triggerDocumentIndexing: env.DOCUMENT_INDEXING_WORKFLOW
       ? async (args) => {
-        await env.DOCUMENT_INDEXING_WORKFLOW!.create({
-          id: `index-${args.documentId}`,
-          params: {
-            documentId: args.documentId,
-            nextcloudFilePath: args.nextcloudFilePath,
-          },
-        });
-      }
+          await env.DOCUMENT_INDEXING_WORKFLOW!.create({
+            id: `index-${args.documentId}`,
+            params: {
+              documentId: args.documentId,
+              nextcloudFilePath: args.nextcloudFilePath,
+            },
+          });
+        }
       : undefined,
     updateImportProgress: async ({
       importId,
@@ -223,6 +224,12 @@ async function processImportBuffer(
       return processZipImport({
         ...commonArgs,
         buffer: fileBuffer,
+      });
+    case "document":
+      return processSingleDocumentImport({
+        ...commonArgs,
+        buffer: fileBuffer,
+        fileName: importRecord.filename,
       });
     case "pdf":
       return processHandshakePdfImport({

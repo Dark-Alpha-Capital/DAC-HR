@@ -40,6 +40,7 @@ export {
 } from "./processors/csv";
 export { processCsvImport } from "./processors/process-csv";
 export { processZipImport } from "./processors/zip";
+export { processSingleDocumentImport } from "./processors/single-document";
 export { processHandshakePdfImport } from "./processors/handshake-pdf";
 export {
   extractHandshakeResumeChunks,
@@ -48,6 +49,7 @@ export {
 export { extractPerPageText, joinPagesText } from "./pdf/extract-chunks";
 export { writeChunkPdf } from "./pdf/write-chunk-pdf";
 export { extractDocumentText } from "./pdf/extract-text";
+export { extractDocxText } from "./parsers/extract-docx-text";
 export {
   extractResumeFieldsFromText,
   extractHandshakeRosterWithOpenAI,

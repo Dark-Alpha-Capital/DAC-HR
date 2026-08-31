@@ -21,13 +21,7 @@ const HEADER_ALIASES = {
   email: ["email", "email address", "e-mail", "student email"],
   phone: ["phone", "phone number", "mobile", "telephone"],
   location: ["location", "city", "address"],
-  school: [
-    "school",
-    "university",
-    "college",
-    "institution",
-    "student school",
-  ],
+  school: ["school", "university", "college", "institution", "student school"],
   major: ["major", "majors", "field of study", "degree", "program"],
   graduationYear: [
     "graduation year",
@@ -154,20 +148,26 @@ export function parseCsvContent(content: string): CsvRow[] {
 /** All import types the pipeline can process (including Handshake PDF). */
 export function detectImportTypeFromFilename(
   filename: string,
-): "csv" | "zip" | "pdf" | null {
+): "csv" | "zip" | "pdf" | "document" | null {
   const ext = filename.toLowerCase().split(".").pop();
   if (ext === "csv") return "csv";
   if (ext === "zip") return "zip";
+  if (ext === "docx") return "document";
   if (ext === "pdf") return "pdf";
   return null;
 }
 
-/** Bulk-upload UI/API entry — PDF Handshake flow is unlinked but still in processors. */
+/**
+ * Bulk-upload UI/API entry. Individual PDF/DOCX resumes import as a single
+ * candidate each (`document`); the legacy Handshake multi-resume PDF flow
+ * (`pdf`) is not exposed here.
+ */
 export function detectBulkUploadTypeFromFilename(
   filename: string,
-): "csv" | "zip" | null {
+): "csv" | "zip" | "document" | null {
   const ext = filename.toLowerCase().split(".").pop();
   if (ext === "csv") return "csv";
   if (ext === "zip") return "zip";
+  if (ext === "pdf" || ext === "docx") return "document";
   return null;
 }

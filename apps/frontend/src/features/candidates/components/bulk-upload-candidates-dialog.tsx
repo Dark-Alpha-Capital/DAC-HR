@@ -92,7 +92,7 @@ type BulkUploadCandidatesDialogProps = {
   positions?: PositionOption[];
 };
 
-const ACCEPTED_EXTENSIONS = [".csv", ".zip"];
+const ACCEPTED_EXTENSIONS = [".csv", ".zip", ".pdf", ".docx"];
 
 export default function BulkUploadCandidatesDialog({
   positions = [],
@@ -173,7 +173,7 @@ export default function BulkUploadCandidatesDialog({
       .substring(selected.name.lastIndexOf("."));
 
     if (!ACCEPTED_EXTENSIONS.includes(extension)) {
-      toast.error("Please upload a CSV or ZIP file");
+      toast.error("Please upload a CSV, ZIP, PDF, or DOCX file");
       return;
     }
 
@@ -298,8 +298,8 @@ export default function BulkUploadCandidatesDialog({
         <DialogHeader className="shrink-0 space-y-1.5 px-4 pt-4 pr-12">
           <DialogTitle>Bulk Upload Candidates</DialogTitle>
           <DialogDescription className="text-pretty">
-            Upload a CSV or ZIP of resumes. Files are processed on the server —
-            nothing is parsed in your browser.
+            Upload a CSV, a ZIP of resumes, or a single PDF/DOCX resume. Files
+            are processed on the server — nothing is parsed in your browser.
           </DialogDescription>
         </DialogHeader>
 
@@ -349,14 +349,14 @@ export default function BulkUploadCandidatesDialog({
                 key={fileInputKey}
                 id="bulk-upload-file"
                 type="file"
-                accept=".csv,.zip"
+                accept=".csv,.zip,.pdf,.docx"
                 onChange={handleFileChange}
                 disabled={isPending || isProcessing}
                 className="sr-only"
               />
               {!file ? (
                 <p className="min-w-0 text-sm text-muted-foreground sm:flex-1">
-                  CSV or ZIP
+                  CSV, ZIP, PDF, or DOCX
                 </p>
               ) : null}
             </div>

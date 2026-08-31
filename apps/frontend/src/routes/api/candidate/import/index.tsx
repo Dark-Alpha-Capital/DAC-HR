@@ -10,9 +10,7 @@ import {
 } from "@workspace/nextcloud";
 import { getServerNextcloudClient } from "#/lib/nextcloud-server";
 import { fetchSession as getSession } from "#/lib/auth-session";
-import {
-  candidatesService,
-} from "#/features/candidates/server/candidates-service";
+import { candidatesService } from "#/features/candidates/server/candidates-service";
 
 const MAX_IMPORT_SIZE = 500 * 1024 * 1024;
 
@@ -34,7 +32,10 @@ export const Route = createFileRoute("/api/candidate/import/")({
           )?.trim();
 
           if (!(file instanceof File)) {
-            return Response.json({ error: "File is required" }, { status: 400 });
+            return Response.json(
+              { error: "File is required" },
+              { status: 400 },
+            );
           }
 
           if (file.size > MAX_IMPORT_SIZE) {
@@ -47,7 +48,10 @@ export const Route = createFileRoute("/api/candidate/import/")({
           const importType = detectBulkUploadTypeFromFilename(file.name);
           if (!importType) {
             return Response.json(
-              { error: "Unsupported file type. Use CSV or ZIP." },
+              {
+                error:
+                  "Unsupported file type. Use CSV, ZIP, or a single PDF/DOCX resume.",
+              },
               { status: 400 },
             );
           }
@@ -99,9 +103,13 @@ export const Route = createFileRoute("/api/candidate/import/")({
               fileType: importType,
               error: uploadResult.error ?? "Upload failed",
             });
-            await candidatesService.updateImportStatus(importRecord.id, "failed", {
-              error: uploadResult.error ?? "Upload failed",
-            });
+            await candidatesService.updateImportStatus(
+              importRecord.id,
+              "failed",
+              {
+                error: uploadResult.error ?? "Upload failed",
+              },
+            );
             return Response.json(
               { error: uploadResult.error ?? "Failed to upload file" },
               { status: 500 },
@@ -140,33 +148,43 @@ export const Route = createFileRoute("/api/candidate/import/")({
                 });
               })
               .catch((error) => {
-                importLog("error", "Failed to start candidate import workflow", {
-                  step: "api.upload.workflow_failed",
-                  importId: importRecord.id,
-                  fileType: importType,
-                  error:
-                    error instanceof Error ? error.message : String(error),
-                });
+                importLog(
+                  "error",
+                  "Failed to start candidate import workflow",
+                  {
+                    step: "api.upload.workflow_failed",
+                    importId: importRecord.id,
+                    fileType: importType,
+                    error:
+                      error instanceof Error ? error.message : String(error),
+                  },
+                );
               });
           } else {
-            importLog("warn", "Workflow binding missing — import will not process", {
-              step: "api.upload.workflow_missing",
-              importId: importRecord.id,
-              fileType: importType,
-            });
+            importLog(
+              "warn",
+              "Workflow binding missing — import will not process",
+              {
+                step: "api.upload.workflow_missing",
+                importId: importRecord.id,
+                fileType: importType,
+              },
+            );
           }
 
-          candidatesService.insertAudit({
-            userId: authSession.user.id,
-            action: "candidate_import_started",
-            entityType: "candidate_import",
-            entityId: importRecord.id,
-            details: {
-              filename: file.name,
-              type: importType,
-              positionId: positionId || null,
-            },
-          }).catch(() => {});
+          candidatesService
+            .insertAudit({
+              userId: authSession.user.id,
+              action: "candidate_import_started",
+              entityType: "candidate_import",
+              entityId: importRecord.id,
+              details: {
+                filename: file.name,
+                type: importType,
+                positionId: positionId || null,
+              },
+            })
+            .catch(() => {});
 
           return Response.json(
             {
@@ -179,7 +197,9 @@ export const Route = createFileRoute("/api/candidate/import/")({
           return Response.json(
             {
               error:
-                error instanceof Error ? error.message : "Internal server error",
+                error instanceof Error
+                  ? error.message
+                  : "Internal server error",
             },
             { status: 500 },
           );
@@ -200,7 +220,9 @@ export const Route = createFileRoute("/api/candidate/import/")({
           return Response.json(
             {
               error:
-                error instanceof Error ? error.message : "Internal server error",
+                error instanceof Error
+                  ? error.message
+                  : "Internal server error",
             },
             { status: 500 },
           );

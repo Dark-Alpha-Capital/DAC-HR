@@ -188,7 +188,7 @@ export interface CheatingSummary {
   pasteAttempts?: number;
 }
 
-export const candidateImportTypes = ["csv", "zip", "pdf"] as const;
+export const candidateImportTypes = ["csv", "zip", "pdf", "document"] as const;
 export type CandidateImportType = (typeof candidateImportTypes)[number];
 
 export const candidateImportStatuses = [

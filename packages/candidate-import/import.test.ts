@@ -1,4 +1,5 @@
 import { test, expect } from "bun:test";
+import JSZip from "jszip";
 import { normalizeName, splitFullName } from "./dedup/normalize-name";
 import {
   nameAppearsInText,
@@ -6,6 +7,10 @@ import {
   namesMatch,
 } from "./dedup/name-matching";
 import { parseCsvContent } from "./processors/csv";
+import {
+  detectBulkUploadTypeFromFilename,
+  detectImportTypeFromFilename,
+} from "./processors/csv";
 import { parseHandshakeRosterFromText } from "./parsers/extract-handshake-roster";
 import {
   matchHandshakeExport,
@@ -17,6 +22,8 @@ import {
   resolveDuplicateAction,
 } from "./unified/resolve-duplicate-action";
 import { tallyImportResult } from "./types";
+import { extractDocxText } from "./parsers/extract-docx-text";
+import { extractDocumentText } from "./pdf/extract-text";
 
 test("normalizeName matches variants", () => {
   expect(normalizeName("Alexander Barto")).toBe(
@@ -171,6 +178,23 @@ test("resolveDuplicateAction covers link and resume update combinations", () => 
   expect(duplicateActionLabel("linked")).toBe("Linked to position");
 });
 
+test("detectBulkUploadTypeFromFilename routes single PDF/DOCX to document", () => {
+  expect(detectBulkUploadTypeFromFilename("resume.pdf")).toBe("document");
+  expect(detectBulkUploadTypeFromFilename("resume.docx")).toBe("document");
+  expect(detectBulkUploadTypeFromFilename("resumes.csv")).toBe("csv");
+  expect(detectBulkUploadTypeFromFilename("resumes.zip")).toBe("zip");
+  expect(detectBulkUploadTypeFromFilename("readme.txt")).toBeNull();
+  expect(detectBulkUploadTypeFromFilename("resume.PDF")).toBe("document");
+});
+
+test("detectImportTypeFromFilename keeps pdf legacy and maps docx to document", () => {
+  expect(detectImportTypeFromFilename("export.pdf")).toBe("pdf");
+  expect(detectImportTypeFromFilename("export.docx")).toBe("document");
+  expect(detectImportTypeFromFilename("export.csv")).toBe("csv");
+  expect(detectImportTypeFromFilename("export.zip")).toBe("zip");
+  expect(detectImportTypeFromFilename("export.txt")).toBeNull();
+});
+
 test("tallyImportResult counts updated separately from created and skipped", () => {
   const counters = { created: 0, updated: 0, skipped: 0, failed: 0 };
   tallyImportResult({ status: "created" }, counters);
@@ -184,4 +208,49 @@ test("tallyImportResult counts updated separately from created and skipped", () 
     skipped: 1,
     failed: 1,
   });
+});
+
+async function buildDocxBuffer(paragraphs: string[]): Promise<Uint8Array> {
+  const body = paragraphs
+    .map((paragraph) => {
+      const text = paragraph
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+      return `<w:p><w:r><w:t>${text}</w:t></w:r></w:p>`;
+    })
+    .join("");
+  const xml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}</w:body></w:document>`;
+
+  const zip = new JSZip();
+  zip.file("word/document.xml", xml);
+  return zip.generateAsync({ type: "uint8array", compression: "DEFLATE" });
+}
+
+test("extractDocxText reads text runs from word/document.xml", async () => {
+  const buffer = await buildDocxBuffer([
+    "Jane Doe",
+    "jane.doe@example.com",
+    "Software Engineer & Product Lead",
+  ]);
+
+  const text = await extractDocxText(buffer);
+  expect(text).toContain("Jane Doe");
+  expect(text).toContain("jane.doe@example.com");
+  expect(text).toContain("Software Engineer & Product Lead");
+});
+
+test("extractDocumentText dispatches docx by file extension", async () => {
+  const buffer = await buildDocxBuffer([
+    "Benedicta Obeng",
+    "bobeng@example.com",
+  ]);
+  const text = await extractDocumentText(buffer, "resume.docx");
+  expect(text).toContain("Benedicta Obeng");
+
+  const pdfText = await extractDocumentText(
+    new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x00]),
+    "resume.pdf",
+  );
+  expect(pdfText).toBe("");
 });

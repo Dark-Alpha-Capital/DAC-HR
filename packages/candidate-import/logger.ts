@@ -1,6 +1,6 @@
 import type { JsonObject } from "./types";
 
-export type ImportFileType = "csv" | "zip" | "pdf";
+export type ImportFileType = "csv" | "zip" | "pdf" | "docx" | "document";
 
 export type ImportLogLevel = "log" | "warn" | "error";
 
@@ -20,6 +20,9 @@ export type ImportLogContext = {
   email?: string;
   rowCount?: number;
   pdfCount?: number;
+  docxCount?: number;
+  candidateCount?: number;
+  totalFiles?: number;
   pageCount?: number;
   matchedCount?: number;
   total?: number;
@@ -40,9 +43,12 @@ const VERBOSE_STEPS = new Set([
   "unified.start",
   "unified.dedup_check",
   "csv.row.start",
-  "zip.pdf.start",
-  "zip.pdf.text_extract",
-  "zip.pdf.openai_start",
+  "zip.entry.start",
+  "zip.entry.text_extract",
+  "zip.entry.openai_start",
+  "single.entry.start",
+  "single.entry.text_extract",
+  "single.entry.openai_start",
   "pdf.match.start",
   "pdf.match.write_chunk",
   "pdf.roster_extract_start",
@@ -125,9 +131,7 @@ function pickIcon(
 }
 
 function formatStepLabel(step: string): string {
-  return step
-    .replace(/\./g, " › ")
-    .replace(/_/g, " ");
+  return step.replace(/\./g, " › ").replace(/_/g, " ");
 }
 
 function buildDetailParts(
@@ -145,7 +149,9 @@ function buildDetailParts(
   }
 
   if (context.rowIndex != null) {
-    if (context.totalPdfs != null) {
+    if (context.totalFiles != null) {
+      parts.push(`entry ${context.rowIndex}/${context.totalFiles}`);
+    } else if (context.totalPdfs != null) {
       parts.push(`PDF ${context.rowIndex}/${context.totalPdfs}`);
     } else {
       parts.push(`row ${context.rowIndex}`);
@@ -245,6 +251,7 @@ const PHASE_STARTS = new Set([
   "workflow.dispatch",
   "workflow.download_and_process.start",
   "zip.start",
+  "single.start",
 ]);
 
 export function importLog(

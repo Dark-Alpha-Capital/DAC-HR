@@ -1,9 +1,14 @@
 import { extractText } from "unpdf";
+import { extractDocxText } from "../parsers/extract-docx-text";
 
 export async function extractDocumentText(
   buffer: Uint8Array,
   fileName: string,
 ): Promise<string> {
+  if (fileName.toLowerCase().endsWith(".docx")) {
+    return extractDocxText(buffer);
+  }
+
   try {
     const result = await extractText(buffer, { mergePages: true });
     if (Array.isArray(result.text)) {

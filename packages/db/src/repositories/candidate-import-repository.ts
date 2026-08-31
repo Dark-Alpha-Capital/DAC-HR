@@ -40,6 +40,7 @@ function duplicatePolicyForImportType(
       return "skip";
     case "zip":
     case "pdf":
+    case "document":
       return "update_resume";
     default: {
       const _exhaustive: never = type;
