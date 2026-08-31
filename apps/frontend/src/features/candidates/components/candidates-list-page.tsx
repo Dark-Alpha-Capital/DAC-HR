@@ -1,7 +1,4 @@
-import {
-  useQuery,
-  type UseQueryResult,
-} from "@tanstack/react-query";
+import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { ListPageSkeleton } from "#/components/shared/list-page-skeleton";
 import { Button } from "#/components/ui/button";
@@ -29,7 +26,7 @@ export function CandidatesListPage() {
   };
 
   if (isLoading && !data) {
-    return <ListPageSkeleton layout="cards" />;
+    return <ListPageSkeleton layout="table" />;
   }
 
   if (!data) {
@@ -48,7 +45,7 @@ export function CandidatesListPage() {
     hasFilters,
   } = data;
 
-  const viewMode = search.view ?? "kanban";
+  const viewMode = search.view ?? "table";
 
   return (
     <div className="space-y-6 w-full min-w-0">

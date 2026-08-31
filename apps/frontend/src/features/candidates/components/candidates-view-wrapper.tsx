@@ -1,3 +1,9 @@
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { RefreshCw } from "lucide-react";
+import { Button } from "#/components/ui/button";
+import { cn } from "#/lib/utils";
+import { queryKeys } from "#/lib/query/query-keys";
 import ViewToggle from "./view-toggle";
 import CandidateContainer from "./candidate-container";
 import CandidateKanbanBoard from "./candidate-kanban-board";
@@ -50,10 +56,45 @@ export default function CandidatesViewWrapper({
   hasPreviousPage,
 }: CandidatesViewWrapperProps) {
   const isTableView = viewMode === "table";
+  const queryClient = useQueryClient();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      // Mark all candidate, application, and kanban queries stale and refetch
+      // the active ones so newly added candidates surface without a full reload.
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.candidates.all,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.applications.all,
+        }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.kanban.all }),
+      ]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   return (
     <div className="space-y-6 w-full min-w-0">
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-end gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          aria-label="Refresh candidates"
+          title="Refresh candidates"
+        >
+          <RefreshCw
+            className={cn("h-4 w-4", isRefreshing && "animate-spin")}
+          />
+        </Button>
         <ViewToggle viewMode={viewMode} onViewModeChange={onViewModeChange} />
       </div>
 

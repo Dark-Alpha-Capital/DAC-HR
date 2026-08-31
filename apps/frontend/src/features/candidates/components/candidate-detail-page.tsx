@@ -66,7 +66,7 @@ export function CandidateDetailPage() {
               status: undefined,
               source: undefined,
               sort: undefined,
-              view: "kanban",
+              view: "table",
               page: undefined,
             }}
           >
