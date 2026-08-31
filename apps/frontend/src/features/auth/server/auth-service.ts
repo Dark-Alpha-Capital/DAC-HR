@@ -161,10 +161,6 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (userData) => {
-          console.info("[auth] user.create.before", {
-            emailRedacted: redactEmail(userData.email),
-            path: "user.create",
-          });
           if (!isAllowedEmail(userData.email)) {
             console.warn("[auth] blocked.user.create", {
               emailRedacted: redactEmail(userData.email),
@@ -194,9 +190,6 @@ export const auth = betterAuth({
     session: {
       create: {
         before: async (sessionData) => {
-          console.info("[auth] session.create.before", {
-            userId: sessionData.userId,
-          });
           const [userRow] = await db
             .select({ email: usersTable.email })
             .from(usersTable)
@@ -229,10 +222,6 @@ export const auth = betterAuth({
 
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
-      console.info("[auth] hooks.before", {
-        path: ctx.path,
-        bodyKeys: ctx.body ? Object.keys(ctx.body) : [],
-      });
       const emailPaths = ["/sign-in/email", "/sign-up/email"];
       if (emailPaths.includes(ctx.path) && ctx.body?.email) {
         // SAFETY: the sign-in/sign-up email paths submit the email address as
@@ -251,10 +240,6 @@ export const auth = betterAuth({
       }
     }),
     after: createAuthMiddleware(async (ctx) => {
-      console.info("[auth] hooks.after", {
-        path: ctx.path,
-        hasNewSession: !!ctx.context.newSession,
-      });
       const isCallback = ctx.path.startsWith("/callback/");
       const isSignInSocial = ctx.path === "/sign-in/social";
       const isEmailAuth = ["/sign-in/email", "/sign-up/email"].includes(
@@ -266,11 +251,6 @@ export const auth = betterAuth({
       ) {
         const newSession = ctx.context.newSession;
         const signedInUser = newSession.user;
-        console.info("[auth] hooks.after.session_created", {
-          path: ctx.path,
-          emailRedacted: redactEmail(signedInUser.email),
-          isAllowed: isAllowedEmail(signedInUser.email),
-        });
         if (!isAllowedEmail(signedInUser.email)) {
           const sessionId = newSession.session?.id;
           console.warn("[auth] blocked.hooks.after", {
