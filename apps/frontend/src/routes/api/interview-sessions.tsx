@@ -33,9 +33,6 @@ export const Route = createFileRoute("/api/interview-sessions")({
           if (!authSession?.user) {
             return Response.json({ error: "Unauthorized" }, { status: 401 });
           }
-          if (authSession.user.role !== "admin") {
-            return Response.json({ error: "Forbidden" }, { status: 403 });
-          }
 
           const body = await request.json();
           const parsed = createSchema.safeParse(body);

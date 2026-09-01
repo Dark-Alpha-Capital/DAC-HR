@@ -10,7 +10,7 @@ export const Route = createFileRoute("/api/debug/openai-ping")({
         const isDev = import.meta.env.DEV;
         if (!isDev) {
           const session = await getSession();
-          if (!session?.user || session.user.role !== "admin") {
+          if (!session?.user) {
             return Response.json({ error: "Not found" }, { status: 404 });
           }
         }

@@ -17,7 +17,7 @@ export function MainLayout({
       // Keep the layout gap at icon width so hover-expand overlays instead of shifting content.
       className="[&_[data-slot=sidebar-gap]]:w-(--sidebar-width-icon)!"
     >
-      <AppSidebar session={session} />
+      <AppSidebar />
       <SidebarInset className="min-w-0 overflow-x-hidden">
         <MainSiteTopbar session={session} />
         <div

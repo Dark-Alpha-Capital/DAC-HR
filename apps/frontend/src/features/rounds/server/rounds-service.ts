@@ -143,10 +143,6 @@ export const roundsService = {
   },
 
   async create(input: RoundFormData, actor: Actor) {
-    if (actor.role !== "admin") {
-      return { error: "Only admins are allowed to create rounds" };
-    }
-
     const result = roundFormSchema.safeParse(input);
     if (!result.success) {
       return { error: result.error.flatten().fieldErrors };
@@ -217,10 +213,6 @@ export const roundsService = {
   },
 
   async update(roundId: string, data: RoundEditData, actor: Actor) {
-    if (actor.role !== "admin") {
-      return { error: "Only admins are allowed to update rounds" };
-    }
-
     const result = roundEditFormSchema.safeParse({
       name: data.name,
       description: data.description,
@@ -291,10 +283,6 @@ export const roundsService = {
   },
 
   async delete(id: string, actor: Actor) {
-    if (actor.role !== "admin") {
-      return { error: "Only admins are allowed to delete rounds" };
-    }
-
     try {
       const roundData = await getRoundById(id);
 

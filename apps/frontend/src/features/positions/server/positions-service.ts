@@ -88,10 +88,6 @@ export const positionsService = {
   },
 
   async create(input: PositionFormData, actor: Actor) {
-    if (actor.role !== "admin") {
-      return { error: "Only admins are allowed to create positions" };
-    }
-
     const { name, description, department, hireLevel, status } = input;
 
     try {
@@ -161,10 +157,6 @@ export const positionsService = {
   },
 
   async update(positionId: string, input: PositionFormData, actor: Actor) {
-    if (actor.role !== "admin") {
-      return { error: "Only admins are allowed to update positions" };
-    }
-
     const { name, description, department, hireLevel, status } = input;
 
     try {
@@ -232,10 +224,6 @@ export const positionsService = {
   },
 
   async delete(id: string, actor: Actor) {
-    if (actor.role !== "admin") {
-      return { error: "Only admins are allowed to delete positions" };
-    }
-
     try {
       const [positionData] = await db
         .select()

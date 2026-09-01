@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { z } from "zod";
-import type { AppSession } from "#/lib/auth-session";
 
 import {
   Collapsible,
@@ -196,11 +195,10 @@ function NavGroup({
   );
 }
 
-export function AppSidebar({ session }: { session: AppSession }) {
+export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { setOpen, isMobile } = useSidebar();
   const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isAdmin = session?.user?.role === "admin";
   const [openSections, setOpenSections] = useState<
     Partial<Record<NavSectionId, boolean>>
   >({});
@@ -278,16 +276,14 @@ export function AppSidebar({ session }: { session: AppSession }) {
           open={openSections.tutorial ?? false}
           onOpenChange={(open) => setSectionOpen("tutorial", open)}
         />
-        {isAdmin ? (
-          <NavGroup
-            id="admin"
-            label="Admin"
-            links={adminLinks}
-            isActive={isActive}
-            open={openSections.admin ?? false}
-            onOpenChange={(open) => setSectionOpen("admin", open)}
-          />
-        ) : null}
+        <NavGroup
+          id="admin"
+          label="Admin"
+          links={adminLinks}
+          isActive={isActive}
+          open={openSections.admin ?? false}
+          onOpenChange={(open) => setSectionOpen("admin", open)}
+        />
       </SidebarContent>
     </Sidebar>
   );
