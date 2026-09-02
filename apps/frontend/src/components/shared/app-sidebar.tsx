@@ -63,7 +63,12 @@ const openSectionsSchema = z.object({
 
 const recruitingLinks: readonly NavLink[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/candidates", label: "Candidates", icon: Users },
+  {
+    href: "/candidates",
+    label: "Candidates",
+    icon: Users,
+    withEmptySearch: true,
+  },
   { href: "/documents", label: "Documents", icon: Folders },
 ];
 

@@ -15,5 +15,5 @@ export function toCandidateSort<T>(value: T): CandidateSortOption | undefined {
 }
 
 export function toCandidateView<T>(value: T): CandidateViewMode {
-  return value === "table" ? "table" : "kanban";
+  return value === "kanban" ? "kanban" : "table";
 }

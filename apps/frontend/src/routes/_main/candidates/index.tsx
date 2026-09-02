@@ -15,6 +15,6 @@ export const Route = createFileRoute("/_main/candidates/")({
     const search = parseCandidatesSearch(location.search);
     await queryClient.ensureQueryData(candidatesIndexQueries.options(search));
   },
-  pendingComponent: () => <ListPageSkeleton layout="cards" />,
+  pendingComponent: () => <ListPageSkeleton layout="table" />,
   component: CandidatesListPage,
 });

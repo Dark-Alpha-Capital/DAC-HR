@@ -57,19 +57,7 @@ export function CandidateDetailPage() {
           removed.
         </p>
         <Button variant="secondary" asChild>
-          <Link
-            to="/candidates"
-            search={{
-              name: undefined,
-              email: undefined,
-              position: undefined,
-              status: undefined,
-              source: undefined,
-              sort: undefined,
-              view: "table",
-              page: undefined,
-            }}
-          >
+          <Link to="/candidates" search={{}}>
             Back to candidates
           </Link>
         </Button>
