@@ -36,7 +36,7 @@ describe("application status vocabulary", () => {
 });
 
 describe("buildNormalizedStatusCase", () => {
-  test("maps every legacy status and defaults unknown/null to ai_screening", () => {
+  test("maps every legacy status, keeps canonical statuses, defaults unknown/null to ai_screening", () => {
     const caseExpr = buildNormalizedStatusCase();
 
     for (const [legacy, canonical] of Object.entries(
@@ -47,7 +47,10 @@ describe("buildNormalizedStatusCase", () => {
       );
     }
     expect(caseExpr).toContain("WHEN la.status IS NULL THEN 'ai_screening'");
+    for (const status of applicationStatuses) {
+      expect(caseExpr).toContain(`'${status}'`);
+    }
+    expect(caseExpr).toContain("THEN la.status");
     expect(caseExpr).toContain("ELSE 'ai_screening'");
-    expect(caseExpr).not.toContain("ELSE la.status");
   });
 });

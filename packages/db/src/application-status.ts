@@ -83,9 +83,9 @@ export const legacyApplicationStatusMap = {
 
 /**
  * SQL CASE expression mapping raw/legacy `application.status` values to
- * canonical `ApplicationStatus` values. Unknown/legacy-missing statuses land
- * on `ai_screening` so every row falls in a kanban column and column sums
- * reconcile with the global total.
+ * canonical `ApplicationStatus` values. Canonical statuses pass through.
+ * Unknown/null statuses land on `ai_screening` so every row falls in a
+ * kanban column and column sums reconcile with the global total.
  */
 export function buildNormalizedStatusCase(): string {
   const legacyArms = Object.entries(legacyApplicationStatusMap)
@@ -95,9 +95,14 @@ export function buildNormalizedStatusCase(): string {
     )
     .join("\n");
 
+  const canonicalList = applicationStatuses
+    .map((status) => `'${status}'`)
+    .join(", ");
+
   return `CASE
   WHEN la.status IS NULL THEN 'ai_screening'
 ${legacyArms}
+  WHEN la.status IN (${canonicalList}) THEN la.status
   ELSE 'ai_screening'
 END`;
 }
