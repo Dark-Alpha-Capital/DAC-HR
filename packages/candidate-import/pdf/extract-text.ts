@@ -10,7 +10,9 @@ export async function extractDocumentText(
   }
 
   try {
-    const result = await extractText(buffer, { mergePages: true });
+    const result = await extractText(new Uint8Array(buffer), {
+      mergePages: true,
+    });
     if (Array.isArray(result.text)) {
       return result.text.filter(Boolean).join("\n").trim();
     }

@@ -12,6 +12,7 @@ import {
   THEME_STORAGE_KEY,
 } from "#/components/shared/theme-provider";
 import { NotFoundPage } from "#/components/shared/not-found";
+import { ErrorPage } from "#/components/shared/error-page";
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   head: () => ({
@@ -26,6 +27,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     scripts: [{ src: "/theme-init.js" }],
   }),
   notFoundComponent: NotFoundPage,
+  errorComponent: ErrorPage,
   component: RootDocument,
 });
 

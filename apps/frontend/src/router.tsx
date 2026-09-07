@@ -3,6 +3,7 @@ import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query
 import type { QueryClient } from "@tanstack/react-query";
 import { routeTree } from "./routeTree.gen";
 import { PageLoadingFallback } from "#/components/shared/page-loading-fallback";
+import { ErrorPage } from "#/components/shared/error-page";
 import { getQueryClient } from "#/lib/query/query-client";
 
 export type RouterContext = {
@@ -19,6 +20,7 @@ export function getRouter() {
     defaultPendingMs: 150,
     defaultPendingMinMs: 150,
     defaultPendingComponent: () => <PageLoadingFallback />,
+    defaultErrorComponent: ErrorPage,
   });
 
   setupRouterSsrQueryIntegration({
