@@ -8,3 +8,12 @@ export function getPublicBaseUrl(): string {
   }
   return "http://localhost:3000";
 }
+
+/** Default address CC'd on interview-completion notifications. */
+export function getRecruitingEmail(): string {
+  const value = env.RECRUITING_EMAIL;
+  if (value?.trim()) {
+    return value.trim();
+  }
+  return "kathleen@darkalphacapital.com";
+}

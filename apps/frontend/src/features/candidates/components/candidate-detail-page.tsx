@@ -28,6 +28,11 @@ import OnboardingCard from "#/features/candidates/components/onboarding-card";
 import { candidateDetailQueryOptions } from "#/features/candidates/query-options";
 import { ApplicationDetailSheet } from "#/features/applications/components/application-detail-sheet";
 
+// SAFETY: the candidates route's validateSearch fills in defaults for all
+// search params, so an empty search object is a valid navigation target;
+// `never` only satisfies tanstack's required-search typing.
+const emptyCandidatesSearch = {} as never;
+
 export function CandidateDetailPage() {
   const { uid } = useParams({ from: "/_main/candidates/$uid/" });
   const search = useRouterState({
@@ -57,7 +62,7 @@ export function CandidateDetailPage() {
           removed.
         </p>
         <Button variant="secondary" asChild>
-          <Link to="/candidates" search={{}}>
+          <Link to="/candidates" search={emptyCandidatesSearch}>
             Back to candidates
           </Link>
         </Button>

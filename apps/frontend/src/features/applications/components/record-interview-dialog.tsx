@@ -97,8 +97,13 @@ export default function RecordInterviewDialog({
   const [sendInviteEmail, setSendInviteEmail] = useState(false);
   const [emailSubject, setEmailSubject] = useState("");
   const [emailMessage, setEmailMessage] = useState("");
+  const currentUserEmail =
+    users.find((user) => user.id === currentUserId)?.email ?? "";
+  const [emailCc, setEmailCc] = useState(currentUserEmail);
   const [emailTouched, setEmailTouched] = useState(false);
-  const [emailActiveField, setEmailActiveField] = useState<"subject" | "message">("message");
+  const [emailActiveField, setEmailActiveField] = useState<
+    "subject" | "message"
+  >("message");
   const hasCandidateEmail = Boolean(candidateEmail);
 
   const { data: emailTemplateData } = useQuery(
@@ -151,6 +156,7 @@ export default function RecordInterviewDialog({
     setCopied(false);
     setSendInviteEmail(false);
     setEmailTouched(false);
+    setEmailCc(currentUserEmail);
     setEmailSubject(emailSubjectTemplate);
     setEmailMessage(emailBodyTemplate);
     setMode("ai_link");
@@ -229,6 +235,7 @@ export default function RecordInterviewDialog({
           sendInviteEmail,
           emailSubject: sendInviteEmail ? emailSubject : undefined,
           emailMessage: sendInviteEmail ? emailMessage : undefined,
+          emailCc: sendInviteEmail && emailCc ? emailCc : undefined,
         },
       });
 
@@ -327,8 +334,8 @@ export default function RecordInterviewDialog({
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Covers {selectedRoundIds.length} of{" "}
-                {application.rounds.length} round
+                Covers {selectedRoundIds.length} of {application.rounds.length}{" "}
+                round
                 {application.rounds.length !== 1 ? "s" : ""} for this position.
                 Expires in 72 hours.
               </p>
@@ -407,7 +414,9 @@ export default function RecordInterviewDialog({
                         </div>
                         <div className="space-y-3">
                           {application.rounds.map((round) => {
-                            const selected = selectedRoundIds.includes(round.id);
+                            const selected = selectedRoundIds.includes(
+                              round.id,
+                            );
                             return (
                               <div
                                 key={round.id}
@@ -422,7 +431,9 @@ export default function RecordInterviewDialog({
                                 >
                                   <Checkbox
                                     checked={selected}
-                                    onCheckedChange={() => toggleRound(round.id)}
+                                    onCheckedChange={() =>
+                                      toggleRound(round.id)
+                                    }
                                     onClick={(e) => e.stopPropagation()}
                                     aria-label={`Include ${round.name} round`}
                                   />
@@ -578,6 +589,25 @@ export default function RecordInterviewDialog({
                               }}
                               rows={5}
                               placeholder="Write a short, personal message to the candidate…"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <Label htmlFor="email-cc">
+                              CC (optional){" "}
+                              <span className="font-normal text-muted-foreground">
+                                — receive a copy of this invite
+                              </span>
+                            </Label>
+                            <Input
+                              id="email-cc"
+                              type="email"
+                              value={emailCc}
+                              onChange={(e) => {
+                                setEmailTouched(true);
+                                setEmailCc(e.target.value);
+                              }}
+                              placeholder="you@darkalphacapital.com"
                             />
                           </div>
 

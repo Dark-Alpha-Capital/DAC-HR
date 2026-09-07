@@ -1,6 +1,9 @@
 import { memo } from "react";
 import { Link } from "@tanstack/react-router";
-import { getApplicationStatusCardBorderClass } from "#/components/shared/application-status-badge";
+import {
+  ApplicationStatusBadge,
+  getApplicationStatusCardBorderClass,
+} from "#/components/shared/application-status-badge";
 import { formatDate, isNew } from "#/lib/utils";
 import { Badge } from "#/components/ui/badge";
 import CopyButton from "./copy-button";
@@ -13,12 +16,16 @@ type CandidateKanbanCardProps = {
     email: string;
     createdAt: Date;
     position: { id: string; name: string } | null;
+    applicationStatus: string;
   };
-  status: string;
 };
 
-function CandidateKanbanCard({ candidate, status }: CandidateKanbanCardProps) {
-  const borderColor = getApplicationStatusCardBorderClass(status);
+function CandidateKanbanCard({ candidate }: CandidateKanbanCardProps) {
+  // The card is colored by the candidate's true application status so a card
+  // that lands in the wrong column (multi-application candidates) is visible.
+  const borderColor = getApplicationStatusCardBorderClass(
+    candidate.applicationStatus,
+  );
   const title = candidate.position
     ? `${candidate.firstName} ${candidate.lastName} - ${candidate.position.name}`
     : `${candidate.firstName} ${candidate.lastName}`;
@@ -43,7 +50,8 @@ function CandidateKanbanCard({ candidate, status }: CandidateKanbanCardProps) {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 border-t border-border/50 pt-2">
+      <div className="flex flex-wrap items-center gap-2 border-t border-border/50 pt-2">
+        <ApplicationStatusBadge status={candidate.applicationStatus} />
         {isNew(candidate.createdAt) && (
           <Badge className="bg-primary text-primary-foreground border-0 text-xs">
             New

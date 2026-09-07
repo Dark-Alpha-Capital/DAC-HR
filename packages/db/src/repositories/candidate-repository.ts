@@ -17,7 +17,10 @@ import {
   type CandidateSortOption,
 } from "../candidate-list-filters";
 import type { ApplicationStatus } from "../application-status";
-import { normalizeApplicationStatus } from "../application-status";
+import {
+  normalizeApplicationStatus,
+  pickLatestApplication,
+} from "../application-status";
 import { getInterviewsByApplicationId } from "./interview-repository";
 import { sortCandidateListItems } from "../candidate-list-sort";
 
@@ -483,27 +486,46 @@ export const getCandidatesWithPositionsFiltered = async (
     const offset = (page - 1) * limit;
     const paginatedCandidates = allCandidates.slice(offset, offset + limit);
 
-    // Fetch the most recent application status for each paginated candidate
+    // Fetch applications for each paginated candidate and reduce each candidate
+    // to their single "current" application. The reduction must match the
+    // kanban SQL CTE (updated_at DESC, id DESC) so the Table badge and the
+    // Kanban column always agree for multi-application candidates.
     const candidateIds = paginatedCandidates.map((c) => c.id);
     const applications = await db
       .select({
         candidateId: application.candidateId,
+        id: application.id,
         status: application.status,
         updatedAt: application.updatedAt,
       })
       .from(application)
-      .where(inArray(application.candidateId, candidateIds))
-      .orderBy(desc(application.updatedAt));
+      .where(inArray(application.candidateId, candidateIds));
 
-    // Group applications by candidateId and get the most recent one
+    // Group applications by candidateId and pick the current one deterministically
     const applicationStatusMap = new Map<string, ApplicationStatus>();
+    const applicationsByCandidate = new Map<
+      string,
+      Array<{
+        id: string;
+        status: string | null;
+        updatedAt: Date;
+      }>
+    >();
     for (const app of applications) {
-      if (!applicationStatusMap.has(app.candidateId)) {
-        applicationStatusMap.set(
-          app.candidateId,
-          normalizeApplicationStatus(app.status) ?? "ai_screening",
-        );
+      const existing = applicationsByCandidate.get(app.candidateId);
+      if (existing) {
+        existing.push(app);
+      } else {
+        applicationsByCandidate.set(app.candidateId, [app]);
       }
+    }
+
+    for (const [candidateId, apps] of applicationsByCandidate) {
+      const latest = pickLatestApplication(apps);
+      applicationStatusMap.set(
+        candidateId,
+        normalizeApplicationStatus(latest?.status ?? "") ?? "ai_screening",
+      );
     }
 
     // Add application status to candidates

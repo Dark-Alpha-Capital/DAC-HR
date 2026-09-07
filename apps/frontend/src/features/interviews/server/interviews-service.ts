@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { db } from "@workspace/db/db";
-import { eq, desc, or, sql } from "@workspace/db";
+import { eq, desc, or, sql, inArray } from "@workspace/db";
 import {
   interview,
   interviewFeedback,
@@ -76,7 +76,10 @@ import { getOptionLabel } from "#/features/questions/helpers";
 import { unansweredStoredFormQuestionIndexes } from "#/features/voice-interview/form-interview";
 import { coerceDeliveryMode } from "@workspace/db/round-progression";
 import { enqueueEmail } from "#/lib/queues/enqueue";
-import { getPublicBaseUrl } from "#/lib/server/email-sender";
+import {
+  getPublicBaseUrl,
+  getRecruitingEmail,
+} from "#/lib/server/email-sender";
 import { renderEmailTemplate } from "@workspace/mail";
 import { parseEmailJobData } from "#/lib/queues/parse-email-job-data";
 import { parseQueuePayload } from "#/lib/queues/parse-queue-payload";
@@ -345,6 +348,8 @@ export type CreateInterviewSessionInput = {
   emailSubject?: string;
   /** Raw personalized message (placeholders allowed) — overrides the saved template. */
   emailMessage?: string;
+  /** Optional email address(es) to copy on the interview-invite email. */
+  emailCc?: string | string[];
 };
 
 export const createInterviewSession = async (
@@ -357,6 +362,7 @@ export const createInterviewSession = async (
     agentConfig,
     emailSubject,
     emailMessage,
+    emailCc,
   } = input;
   const expiresAt = new Date(Date.now() + expiryHours * 60 * 60 * 1000);
 
@@ -429,22 +435,25 @@ export const createInterviewSession = async (
           overrideSubject: emailSubject,
           overrideMessage: emailMessage,
         });
+        const emailJobData: JsonValue = {
+          type: "interview-invite",
+          to: app.candidateEmail,
+          candidateName: `${app.candidateName} ${app.candidateLastName}`.trim(),
+          positionName: app.positionName,
+          interviewUrl,
+          expiresAt: result.bundle.expiresAt.toISOString(),
+          subject,
+          customMessage,
+        };
+        if (emailCc) {
+          emailJobData.cc = emailCc;
+        }
         await enqueueEmail(db, [
           {
             jobName: "interview-invite",
             jobId: `interview-invite-${result.bundle.id}`,
             dedupeKey: `interview-invite:${result.bundle.id}:${app.candidateEmail}`,
-            data: {
-              type: "interview-invite" as const,
-              to: app.candidateEmail,
-              candidateName:
-                `${app.candidateName} ${app.candidateLastName}`.trim(),
-              positionName: app.positionName,
-              interviewUrl,
-              expiresAt: result.bundle.expiresAt.toISOString(),
-              subject,
-              customMessage,
-            },
+            data: emailJobData,
           },
         ]);
         emailSent = true;
@@ -734,6 +743,7 @@ export type BundleInviteEmail = {
   createdAt: string;
   dispatchedAt: string | null;
   to: string;
+  cc: string | string[] | null;
   candidateName: string;
   positionName: string;
   interviewUrl: string;
@@ -751,13 +761,38 @@ type InviteEmailRow = BundleInviteEmail & {
   >;
 };
 
+/** An auto-fired `interview-completed` outbox row (the thank-you email). */
+export type BundleCompletionEmail = {
+  id: string;
+  status: OutboxStatus;
+  createdAt: string;
+  to: string;
+  cc: string | string[] | null;
+};
+
+/** Whether/when the candidate finished every session of an interview bundle. */
+export type BundleScreeningStatus = {
+  totalSessions: number;
+  completedSessions: number;
+  allCompleted: boolean;
+  completedAt: string | null;
+};
+
+export type BundleEmailActivity = {
+  invites: BundleInviteEmail[];
+  completionEmails: BundleCompletionEmail[];
+  screening: BundleScreeningStatus;
+};
+
 /**
  * Load invite outbox rows for an application, newest first. Every "Generate AI
  * link" creates a new bundle for the application, so invite emails are matched
  * across all of the application's bundles — the HR sees every link email they
  * sent for this interview regardless of which bundle the URL currently shows.
  */
-async function loadInviteEmailRows(bundleId: string): Promise<InviteEmailRow[]> {
+async function loadInviteEmailRows(
+  bundleId: string,
+): Promise<InviteEmailRow[]> {
   const [bundleRow] = await db
     .select({ applicationId: interviewBundle.applicationId })
     .from(interviewBundle)
@@ -788,11 +823,7 @@ async function loadInviteEmailRows(bundleId: string): Promise<InviteEmailRow[]> 
     })
     .from(sideEffectOutbox)
     .where(
-      or(
-        ...prefixes.map((p) =>
-          sql`${sideEffectOutbox.dedupeKey} GLOB ${p}`,
-        ),
-      ),
+      or(...prefixes.map((p) => sql`${sideEffectOutbox.dedupeKey} GLOB ${p}`)),
     )
     .orderBy(desc(sideEffectOutbox.createdAt));
 
@@ -812,6 +843,7 @@ async function loadInviteEmailRows(bundleId: string): Promise<InviteEmailRow[]> 
       createdAt: row.createdAt.toISOString(),
       dispatchedAt: row.dispatchedAt?.toISOString() ?? null,
       to: jobData.to,
+      cc: jobData.cc ?? null,
       candidateName: jobData.candidateName,
       positionName: jobData.positionName,
       interviewUrl: jobData.interviewUrl,
@@ -823,6 +855,91 @@ async function loadInviteEmailRows(bundleId: string): Promise<InviteEmailRow[]> 
     });
   }
   return emails;
+}
+
+/**
+ * Load the auto-fired `interview-completed` outbox rows for a bundle (keyed by
+ * the bundle id, plus any of its sessions' ids for legacy-completion paths).
+ */
+async function loadCompletionEmailRows(
+  bundleId: string,
+): Promise<BundleCompletionEmail[]> {
+  const sessions = await db
+    .select({ id: interviewSession.id })
+    .from(interviewSession)
+    .where(eq(interviewSession.bundleId, bundleId));
+
+  const dedupeKeys = [
+    `interview-completed:${bundleId}`,
+    ...sessions.map((session) => `interview-completed:${session.id}`),
+  ];
+
+  if (dedupeKeys.length === 0) {
+    return [];
+  }
+
+  const rows = await db
+    .select({
+      id: sideEffectOutbox.id,
+      status: sideEffectOutbox.status,
+      payload: sideEffectOutbox.payload,
+      createdAt: sideEffectOutbox.createdAt,
+    })
+    .from(sideEffectOutbox)
+    .where(inArray(sideEffectOutbox.dedupeKey, dedupeKeys))
+    .orderBy(desc(sideEffectOutbox.createdAt));
+
+  const emails: BundleCompletionEmail[] = [];
+  for (const row of rows) {
+    // SAFETY: the outbox row payload is JSON; parseQueuePayload +
+    // parseEmailJobData validate it at the boundary before we read fields.
+    const queuePayload = parseQueuePayload(
+      structuredClone(row.payload) as JsonValue,
+    );
+    const jobData = parseEmailJobData(queuePayload.data);
+    if (jobData.type !== "interview-completed") continue;
+
+    emails.push({
+      id: row.id,
+      status: row.status,
+      createdAt: row.createdAt.toISOString(),
+      to: jobData.to,
+      cc: jobData.cc ?? null,
+    });
+  }
+  return emails;
+}
+
+/** Aggregate session completion state for a bundle's AI screening. */
+async function getBundleScreeningStatus(
+  bundleId: string,
+): Promise<BundleScreeningStatus> {
+  const sessions = await db
+    .select({
+      status: interviewSession.status,
+      completedAt: interviewSession.completedAt,
+    })
+    .from(interviewSession)
+    .where(eq(interviewSession.bundleId, bundleId));
+
+  const completed = sessions.filter(
+    (session) => session.status === "completed",
+  );
+
+  const completedAt = completed.reduce<number | null>(
+    (latest, session) =>
+      session.completedAt && session.completedAt.getTime() > (latest ?? 0)
+        ? session.completedAt.getTime()
+        : latest,
+    null,
+  );
+
+  return {
+    totalSessions: sessions.length,
+    completedSessions: completed.length,
+    allCompleted: sessions.length > 0 && completed.length === sessions.length,
+    completedAt: completedAt ? new Date(completedAt).toISOString() : null,
+  };
 }
 
 export const interviewsService = {
@@ -923,11 +1040,24 @@ export const interviewsService = {
     };
   },
 
-  // ---- Invite email history (outbox) ----
+  // ---- Email history + screening completion (outbox) ----
 
-  async listBundleInviteEmails(bundleId: string): Promise<BundleInviteEmail[]> {
-    const rows = await loadInviteEmailRows(bundleId);
-    return rows.map(({ dedupeKey: _dedupeKey, jobData: _jobData, ...rest }) => rest);
+  async listBundleEmailActivity(
+    bundleId: string,
+  ): Promise<BundleEmailActivity> {
+    const [rows, completionEmails, screening] = await Promise.all([
+      loadInviteEmailRows(bundleId),
+      loadCompletionEmailRows(bundleId),
+      getBundleScreeningStatus(bundleId),
+    ]);
+
+    return {
+      invites: rows.map(
+        ({ dedupeKey: _dedupeKey, jobData: _jobData, ...rest }) => rest,
+      ),
+      completionEmails,
+      screening,
+    };
   },
 
   async renderBundleEmailPreview(bundleId: string) {
@@ -967,6 +1097,7 @@ export const interviewsService = {
     };
     if (jobData.subject) data.subject = jobData.subject;
     if (jobData.customMessage) data.customMessage = jobData.customMessage;
+    if (jobData.cc) data.cc = jobData.cc;
     await enqueueEmail(db, [
       {
         jobName: "interview-invite",
@@ -1582,8 +1713,15 @@ type TokenValidationResult = Awaited<
  * paths (both form + voice); the outbox `dedupeKey` (bundleId or sessionId)
  * absorbs a DO-vs-API double-complete race. Skips silently when the candidate
  * has no email on file.
+ *
+ * The recruiter who set up the interview is CC'd (their address is read from
+ * the most recent invite email for the application), falling back to the
+ * configured `RECRUITING_EMAIL` so the team is notified when a candidate
+ * completes their AI screening.
  */
-async function enqueueInterviewCompletedEmail(sessionId: string): Promise<void> {
+async function enqueueInterviewCompletedEmail(
+  sessionId: string,
+): Promise<void> {
   try {
     const [context] = await db
       .select({
@@ -1594,7 +1732,10 @@ async function enqueueInterviewCompletedEmail(sessionId: string): Promise<void> 
         bundleId: interviewSession.bundleId,
       })
       .from(interviewSession)
-      .innerJoin(application, eq(interviewSession.applicationId, application.id))
+      .innerJoin(
+        application,
+        eq(interviewSession.applicationId, application.id),
+      )
       .innerJoin(candidate, eq(application.candidateId, candidate.id))
       .innerJoin(position, eq(application.positionId, position.id))
       .where(eq(interviewSession.id, sessionId))
@@ -1604,24 +1745,54 @@ async function enqueueInterviewCompletedEmail(sessionId: string): Promise<void> 
       return;
     }
 
+    const cc = await resolveCompletionRecruiterCc(context.bundleId);
+
     const dedupeKey = `interview-completed:${context.bundleId ?? sessionId}`;
+    const emailJobData: JsonValue = {
+      type: "interview-completed",
+      to: context.candidateEmail,
+      candidateName:
+        `${context.candidateFirstName} ${context.candidateLastName}`.trim(),
+      positionName: context.positionName,
+    };
+    if (cc) {
+      emailJobData.cc = cc;
+    }
     await enqueueEmail(db, [
       {
         jobName: "interview-completed",
         jobId: dedupeKey,
         dedupeKey,
-        data: {
-          type: "interview-completed" as const,
-          to: context.candidateEmail,
-          candidateName:
-            `${context.candidateFirstName} ${context.candidateLastName}`.trim(),
-          positionName: context.positionName,
-        },
+        data: emailJobData,
       },
     ]);
   } catch (error) {
     console.error("Failed to enqueue interview completed email:", error);
   }
+}
+
+/**
+ * Resolve the recruiter address to CC on a completion notification: prefer the
+ * CC stored on the most recent invite email for the candidate's interview
+ * (i.e. whoever set the interview up), else fall back to `RECRUITING_EMAIL`.
+ */
+async function resolveCompletionRecruiterCc(
+  bundleId: string | null | undefined,
+): Promise<string | string[] | undefined> {
+  if (bundleId) {
+    try {
+      const inviteEmails = await loadInviteEmailRows(bundleId);
+      const latestCc = inviteEmails[0]?.jobData.cc;
+      if (latestCc) {
+        return latestCc;
+      }
+    } catch (error) {
+      console.error("Failed to resolve completion email cc:", error);
+    }
+  }
+
+  const recruitingEmail = getRecruitingEmail();
+  return recruitingEmail ? recruitingEmail : undefined;
 }
 
 export type ResolvedInterviewToken =

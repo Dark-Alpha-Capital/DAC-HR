@@ -8,6 +8,8 @@ export type EmailJobType =
 export interface BaseEmailJobData {
   type: EmailJobType;
   to: string;
+  /** Optional recipient(s) to copy on the email (recruiter/team visibility). */
+  cc?: string | string[];
 }
 
 /** Raw auth email (verification / password reset) carrying subject + html. */

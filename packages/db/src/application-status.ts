@@ -166,3 +166,39 @@ export function kanbanColumnMatchesStatusFilter(
     return normalized === columnStatus;
   });
 }
+
+/** Minimal application row shape used to resolve a candidate's current status. */
+export type ApplicationCandidateRow = {
+  id: string;
+  status: string | null;
+  updatedAt: Date;
+};
+
+/**
+ * Deterministic "current application" selection. A candidate can hold multiple
+ * applications (one per position); every view must reduce to the same row so a
+ * candidate's status never disagrees between the Table badge and the Kanban
+ * column. Mirrors the kanban SQL CTE ordering (`updated_at DESC, id DESC`).
+ * UUIDs are lowercase ASCII, so JS code-unit comparison matches SQLite's
+ * byte-wise ordering for the `id` tie-break.
+ */
+export function pickLatestApplication(
+  applications: ApplicationCandidateRow[],
+): ApplicationCandidateRow | null {
+  if (applications.length === 0) {
+    return null;
+  }
+
+  return (
+    [...applications].sort((a, b) => {
+      const byUpdatedAt = b.updatedAt.getTime() - a.updatedAt.getTime();
+      if (byUpdatedAt !== 0) {
+        return byUpdatedAt;
+      }
+      if (a.id === b.id) {
+        return 0;
+      }
+      return a.id < b.id ? 1 : -1;
+    })[0] ?? null
+  );
+}

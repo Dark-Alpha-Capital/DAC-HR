@@ -2,10 +2,13 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
+  CheckCircle2,
+  Clock,
   Copy,
   Eye,
   Loader2,
   Mail,
+  MailCheck,
   MailX,
   RotateCcw,
 } from "lucide-react";
@@ -22,7 +25,10 @@ import { interviewBundleEmailsQueryOptions } from "#/features/interviews/intervi
 import { renderBundleEmailPreview } from "#/features/interviews/server/queries/interviews";
 import { resendInterviewInvite } from "#/features/interviews/server/mutations/interviews";
 import { queryKeys } from "#/lib/query/query-keys";
-import type { BundleInviteEmail } from "#/features/interviews/server/interviews-service";
+import type {
+  BundleCompletionEmail,
+  BundleInviteEmail,
+} from "#/features/interviews/server/interviews-service";
 
 const statusBadge = {
   sent: {
@@ -55,6 +61,19 @@ const statusBadge = {
   { label: string; className: string }
 >;
 
+function formatCc(cc: string | string[] | null | undefined): string | null {
+  if (!cc) return null;
+  return Array.isArray(cc) ? cc.join(", ") : cc;
+}
+
+function CcLine({ cc }: { cc: string | string[] | null | undefined }) {
+  const formatted = formatCc(cc);
+  if (!formatted) return null;
+  return (
+    <p className="text-xs text-muted-foreground break-all">CC: {formatted}</p>
+  );
+}
+
 function EmailRow({
   email,
   onPreview,
@@ -73,12 +92,15 @@ function EmailRow({
     <div className="flex flex-col gap-3 rounded-md border p-4 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0 space-y-1">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-medium">{email.subject || "Interview invitation"}</span>
+          <span className="text-sm font-medium">
+            {email.subject || "Interview invitation"}
+          </span>
           <Badge className={badge.className}>{badge.label}</Badge>
         </div>
         <p className="text-sm text-muted-foreground break-all">
           To: {email.to}
         </p>
+        <CcLine cc={email.cc} />
         <p className="text-xs text-muted-foreground">
           {formatDateTime(new Date(email.createdAt))}
           {email.status === "failed"
@@ -87,10 +109,20 @@ function EmailRow({
         </p>
       </div>
       <div className="flex shrink-0 gap-1">
-        <Button variant="secondary" size="icon" title="Preview email" onClick={() => onPreview(email)}>
+        <Button
+          variant="secondary"
+          size="icon"
+          title="Preview email"
+          onClick={() => onPreview(email)}
+        >
           <Eye className="h-4 w-4" />
         </Button>
-        <Button variant="secondary" size="icon" title="Copy link" onClick={() => onCopy(email)}>
+        <Button
+          variant="secondary"
+          size="icon"
+          title="Copy link"
+          onClick={() => onCopy(email)}
+        >
           <Copy className="h-4 w-4" />
         </Button>
         <Button
@@ -106,6 +138,31 @@ function EmailRow({
             <RotateCcw className="h-4 w-4" />
           )}
         </Button>
+      </div>
+    </div>
+  );
+}
+
+function CompletionEmailRow({ email }: { email: BundleCompletionEmail }) {
+  const badge = statusBadge[email.status];
+  return (
+    <div className="flex flex-col gap-3 rounded-md border p-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="min-w-0 space-y-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="flex items-center gap-2 text-sm font-medium">
+            <MailCheck className="h-4 w-4 text-muted-foreground" />
+            Thank-you email (auto-sent on completion)
+          </span>
+          <Badge className={badge.className}>{badge.label}</Badge>
+        </div>
+        <p className="text-sm text-muted-foreground break-all">
+          To: {email.to}
+        </p>
+        <CcLine cc={email.cc} />
+        <p className="text-xs text-muted-foreground">
+          {formatDateTime(new Date(email.createdAt))}
+          {email.status === "failed" ? " — delivery failed" : ""}
+        </p>
       </div>
     </div>
   );
@@ -127,7 +184,11 @@ export function BundleEmailsTab({ bundleId }: { bundleId: string }) {
   const { data, isLoading } = useQuery(
     interviewBundleEmailsQueryOptions(bundleId),
   );
-  const emails = data ?? [];
+
+  const invites = data?.invites ?? [];
+  const completionEmails = data?.completionEmails ?? [];
+  const screening = data?.screening;
+  const isEmpty = invites.length === 0 && completionEmails.length === 0;
 
   const handlePreview = async (email: BundleInviteEmail) => {
     setPreviewEmail(email);
@@ -175,7 +236,7 @@ export function BundleEmailsTab({ bundleId }: { bundleId: string }) {
     }
   };
 
-  if (isLoading && emails.length === 0) {
+  if (isLoading && isEmpty) {
     return (
       <div className="flex items-center justify-center py-12 text-muted-foreground">
         <Loader2 className="h-5 w-5 animate-spin" />
@@ -183,39 +244,88 @@ export function BundleEmailsTab({ bundleId }: { bundleId: string }) {
     );
   }
 
-  if (emails.length === 0) {
-    return (
-      <div className="rounded-lg border border-dashed p-10 text-center">
-        <MailX className="mx-auto h-8 w-8 text-muted-foreground" />
-        <p className="mt-3 text-sm text-muted-foreground">
-          No invite emails have been sent for this interview yet. Generate an AI
-          link with "Send invite email" enabled to email the candidate.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Mail className="h-4 w-4" />
-        {emails.length} invite email{emails.length !== 1 ? "s" : ""} sent to
-        this candidate for this interview
-      </div>
-      <div className="space-y-3">
-        {emails.map((email) => (
-          <EmailRow
-            key={email.id}
-            email={email}
-            onPreview={handlePreview}
-            onCopy={handleCopy}
-            onResend={handleResend}
-            resending={resendingId === email.id}
-          />
-        ))}
-      </div>
+    <div className="space-y-6">
+      {screening && screening.totalSessions > 0 ? (
+        <div
+          className={`flex items-start gap-3 rounded-lg border p-4 ${
+            screening.allCompleted
+              ? "border-green-200 bg-green-50 dark:border-green-900/40 dark:bg-green-950/20"
+              : "border-border bg-muted/40"
+          }`}
+        >
+          {screening.allCompleted ? (
+            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600 dark:text-green-400" />
+          ) : (
+            <Clock className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+          )}
+          <div className="min-w-0 space-y-1">
+            <p
+              className={`text-sm font-medium ${
+                screening.allCompleted
+                  ? "text-green-800 dark:text-green-300"
+                  : ""
+              }`}
+            >
+              {screening.allCompleted
+                ? "Applicant completed the AI screening"
+                : "Applicant has not completed the AI screening yet"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {screening.allCompleted && screening.completedAt
+                ? `Completed on ${formatDateTime(new Date(screening.completedAt))}`
+                : `${screening.completedSessions} of ${screening.totalSessions} round${screening.totalSessions !== 1 ? "s" : ""} completed`}
+            </p>
+          </div>
+        </div>
+      ) : null}
 
-      <Dialog open={previewEmail !== null} onOpenChange={(open) => !open && setPreviewEmail(null)}>
+      {isEmpty ? (
+        <div className="rounded-lg border border-dashed p-10 text-center">
+          <MailX className="mx-auto h-8 w-8 text-muted-foreground" />
+          <p className="mt-3 text-sm text-muted-foreground">
+            No emails have been sent for this interview yet. Generate an AI link
+            with "Send invite email" enabled to email the candidate.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {invites.length > 0 ? (
+            <>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Mail className="h-4 w-4" />
+                {invites.length} invite email{invites.length !== 1 ? "s" : ""}{" "}
+                sent to this candidate for this interview
+              </div>
+              <div className="space-y-3">
+                {invites.map((email) => (
+                  <EmailRow
+                    key={email.id}
+                    email={email}
+                    onPreview={handlePreview}
+                    onCopy={handleCopy}
+                    onResend={handleResend}
+                    resending={resendingId === email.id}
+                  />
+                ))}
+              </div>
+            </>
+          ) : null}
+
+          {completionEmails.length > 0 ? (
+            <div className="space-y-3">
+              {completionEmails.map((email) => (
+                <CompletionEmailRow key={email.id} email={email} />
+              ))}
+            </div>
+          ) : null}
+        </div>
+      )}
+
+      <Dialog
+        open={previewEmail !== null}
+        onOpenChange={(open) => !open && setPreviewEmail(null)}
+      >
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle className="break-all">

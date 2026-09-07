@@ -36,7 +36,8 @@ export const renderEmailTemplate = async (
     }
 
     case "interview-invite": {
-      const subject = jobData.subject ?? `Interview invitation — ${jobData.positionName}`;
+      const subject =
+        jobData.subject ?? `Interview invitation — ${jobData.positionName}`;
       const html = await render(
         InterviewInviteEmail({
           candidateName: jobData.candidateName,
@@ -79,7 +80,9 @@ export const renderEmailTemplate = async (
     default: {
       const _exhaustive: never = jobData;
       // SAFETY: unreachable default; cast reads .type for the diagnostic message only.
-      throw new Error(`Unknown email type: ${(_exhaustive as EmailJobData).type}`);
+      throw new Error(
+        `Unknown email type: ${(_exhaustive as EmailJobData).type}`,
+      );
     }
   }
 };
@@ -96,7 +99,7 @@ export const sendEmail = async (
   to: string,
   subject: string,
   html: string,
-  opts?: { idempotencyKey?: string },
+  opts?: { idempotencyKey?: string; cc?: string | string[] },
 ) => {
   const response = await resend.emails.send(
     {
@@ -104,6 +107,7 @@ export const sendEmail = async (
       to,
       subject,
       html,
+      cc: opts?.cc,
     },
     opts?.idempotencyKey ? { idempotencyKey: opts.idempotencyKey } : undefined,
   );
@@ -124,11 +128,16 @@ export const processEmailJob = async (
   opts?: { idempotencyKey?: string },
 ) => {
   const { subject, html } = await renderEmailTemplate(jobData);
-  const result = await sendEmail(resend, jobData.to, subject, html, opts);
+  const sendOpts = {
+    idempotencyKey: opts?.idempotencyKey,
+    cc: jobData.cc,
+  };
+  const result = await sendEmail(resend, jobData.to, subject, html, sendOpts);
   return {
     success: true,
     emailId: result?.id,
     to: jobData.to,
+    cc: jobData.cc,
     type: jobData.type,
   };
 };

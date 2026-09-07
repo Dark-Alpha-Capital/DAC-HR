@@ -5,6 +5,7 @@ import {
   buildNormalizedStatusCase,
   legacyApplicationStatusMap,
   normalizeApplicationStatus,
+  pickLatestApplication,
 } from "./application-status";
 import { applicationStatuses } from "./enums";
 
@@ -52,5 +53,43 @@ describe("buildNormalizedStatusCase", () => {
     }
     expect(caseExpr).toContain("THEN la.status");
     expect(caseExpr).toContain("ELSE 'ai_screening'");
+  });
+});
+
+describe("pickLatestApplication", () => {
+  const row = (id: string, status: string, updatedAt: string) => ({
+    id,
+    status,
+    updatedAt: new Date(updatedAt),
+  });
+
+  test("returns null for no applications", () => {
+    expect(pickLatestApplication([])).toBeNull();
+  });
+
+  test("picks the most recently updated application", () => {
+    const apps = [
+      row("a", "rejected", "2026-09-01T00:00:00.000Z"),
+      row("b", "first_round", "2026-09-03T00:00:00.000Z"),
+      row("c", "ai_screening", "2026-09-02T00:00:00.000Z"),
+    ];
+    expect(pickLatestApplication(apps)?.id).toBe("b");
+  });
+
+  test("breaks updated_at ties by highest id (matching the kanban CTE)", () => {
+    const apps = [
+      row("a-low", "rejected", "2026-09-01T00:00:00.000Z"),
+      row("b-high", "first_round", "2026-09-01T00:00:00.000Z"),
+    ];
+    expect(pickLatestApplication(apps)?.id).toBe("b-high");
+  });
+
+  test("does not mutate the input array", () => {
+    const apps = [
+      row("a", "rejected", "2026-09-01T00:00:00.000Z"),
+      row("b", "first_round", "2026-09-03T00:00:00.000Z"),
+    ];
+    pickLatestApplication(apps);
+    expect(apps[0]?.id).toBe("a");
   });
 });

@@ -28,11 +28,11 @@ export const loadInterviewAnalyses = createServerFn({ method: "GET" })
     interviewsService.getInterviewAnalyses(interviewId),
   );
 
-export const loadBundleInviteEmails = createServerFn({ method: "GET" })
+export const loadBundleEmailActivity = createServerFn({ method: "GET" })
   .middleware([serverFnAuthGuard])
   .validator((data: string) => data)
   .handler(async ({ data: bundleId }) =>
-    interviewsService.listBundleInviteEmails(bundleId),
+    interviewsService.listBundleEmailActivity(bundleId),
   );
 
 export const renderBundleEmailPreview = createServerFn({ method: "GET" })

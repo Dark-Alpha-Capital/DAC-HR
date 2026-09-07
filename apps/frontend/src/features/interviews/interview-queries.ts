@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import {
   loadBundleAiAnalyses,
-  loadBundleInviteEmails,
+  loadBundleEmailActivity,
   loadInterviewAnalyses,
   loadInterviewBundleById,
 } from "#/features/interviews/server/queries/interviews";
@@ -59,9 +59,9 @@ export function interviewBundleEmailsQueryOptions(bundleId: string) {
   return queryOptions({
     queryKey: queryKeys.interviews.bundleEmails(bundleId),
     queryFn: async () => {
-      const result = await loadBundleInviteEmails({ data: bundleId });
+      const result = await loadBundleEmailActivity({ data: bundleId });
       // SAFETY: the handler returns the same type the server fn declares.
-      return result as Awaited<ReturnType<typeof loadBundleInviteEmails>>;
+      return result as Awaited<ReturnType<typeof loadBundleEmailActivity>>;
     },
   });
 }

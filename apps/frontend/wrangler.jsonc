@@ -20,6 +20,9 @@
     "PRISMIC_REPOSITORY_NAME": "darkalpha",
     "PRISMIC_TEAM_MEMBER_TYPE": "teammember",
     "PRISMIC_OPERATING_MEMBER_TYPE": "operatingmember",
+    // Default address CC'd on interview-completion notifications when no
+    // recruiter CC was stored on the original invite email.
+    "RECRUITING_EMAIL": "kathleen@darkalphacapital.com",
   },
 
   "d1_databases": [

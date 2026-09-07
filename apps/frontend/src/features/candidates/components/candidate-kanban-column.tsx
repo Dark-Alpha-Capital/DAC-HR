@@ -169,7 +169,6 @@ function CandidateKanbanColumnInner({
                   ...candidate,
                   createdAt: new Date(candidate.createdAt),
                 }}
-                status={status}
               />
             </div>
           ))

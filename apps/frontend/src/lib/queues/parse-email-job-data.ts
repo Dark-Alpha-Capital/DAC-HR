@@ -2,16 +2,20 @@ import { z } from "zod";
 import type { EmailJobData } from "@workspace/mail";
 import type { JsonValue } from "#/lib/types/json";
 
+const ccField = z.union([z.string(), z.array(z.string())]).optional();
+
 const emailJobDataSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("auth-email"),
     to: z.string(),
+    cc: ccField,
     subject: z.string(),
     html: z.string(),
   }),
   z.object({
     type: z.literal("interview-invite"),
     to: z.string(),
+    cc: ccField,
     candidateName: z.string(),
     positionName: z.string(),
     interviewUrl: z.string(),
@@ -22,12 +26,14 @@ const emailJobDataSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("interview-completed"),
     to: z.string(),
+    cc: ccField,
     candidateName: z.string(),
     positionName: z.string(),
   }),
   z.object({
     type: z.literal("onboarding-welcome"),
     to: z.string(),
+    cc: ccField,
     candidateName: z.string(),
     positionName: z.string(),
     location: z.string().nullable().optional(),

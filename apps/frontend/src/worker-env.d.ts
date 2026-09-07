@@ -12,6 +12,8 @@ declare namespace Cloudflare {
     // Structurally matches OutboxPointerMessage in lib/queues/queue-config.ts.
     OUTBOUND_EMAIL_QUEUE: Queue<{ outboxId: string }>;
     BETTER_AUTH_URL: string;
+    // Default recruiting address CC'd on interview-completion notifications.
+    RECRUITING_EMAIL?: string;
     // Secrets — set via Cloudflare dashboard or `wrangler secret put`, not wrangler.jsonc vars
     OPENAI_API_KEY: string;
     AI_API_KEY?: string;
