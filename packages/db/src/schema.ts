@@ -6,6 +6,7 @@ import {
   uniqueIndex,
   index,
 } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
 import { type InferSelectModel } from "drizzle-orm";
 import type {
   ApplicationStatus,
@@ -139,42 +140,57 @@ export const position = sqliteTable("position", {
 
 export type Position = InferSelectModel<typeof position>;
 
-export const candidate = sqliteTable("candidate", {
-  id: uuidPk(),
-  firstName: text("first_name").notNull(),
-  lastName: text("last_name").notNull(),
-  email: text("email").notNull().unique(),
-  phone: text("phone"),
-  location: text("location"),
-  locationCity: text("location_city"),
-  locationState: text("location_state"),
-  source: text("source"),
-  sourceUrl: text("source_url"),
-  note: text("note"),
-  createdAt: createdAtCol(),
-  updatedAt: updatedAtCol(),
-});
+export const candidate = sqliteTable(
+  "candidate",
+  {
+    id: uuidPk(),
+    firstName: text("first_name").notNull(),
+    lastName: text("last_name").notNull(),
+    email: text("email").notNull().unique(),
+    phone: text("phone"),
+    location: text("location"),
+    locationCity: text("location_city"),
+    locationState: text("location_state"),
+    source: text("source"),
+    sourceUrl: text("source_url"),
+    note: text("note"),
+    createdAt: createdAtCol(),
+    updatedAt: updatedAtCol(),
+  },
+  (table) => ({
+    candidateCreatedIdx: index("candidate_created_idx").on(table.createdAt),
+    candidateSourceIdx: index("candidate_source_idx").on(table.source),
+  }),
+);
 
 export type Candidate = InferSelectModel<typeof candidate>;
 
-export const candidateDocument = sqliteTable("candidate_document", {
-  id: uuidPk(),
-  candidateId: text("candidate_id")
-    .notNull()
-    .references(() => candidate.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  description: text("description"),
-  category: text("category")
-    .$type<CandidateDocumentCategory>()
-    .default("other")
-    .notNull(),
-  url: text("url").notNull(),
-  tags: text("tags", { mode: "json" }).$type<string[]>(),
-  fileSearchDocumentName: text("file_search_document_name"),
-  vectorizeNamespace: text("vectorize_namespace"),
-  createdAt: createdAtCol(),
-  updatedAt: updatedAtCol(),
-});
+export const candidateDocument = sqliteTable(
+  "candidate_document",
+  {
+    id: uuidPk(),
+    candidateId: text("candidate_id")
+      .notNull()
+      .references(() => candidate.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    category: text("category")
+      .$type<CandidateDocumentCategory>()
+      .default("other")
+      .notNull(),
+    url: text("url").notNull(),
+    tags: text("tags", { mode: "json" }).$type<string[]>(),
+    fileSearchDocumentName: text("file_search_document_name"),
+    vectorizeNamespace: text("vectorize_namespace"),
+    createdAt: createdAtCol(),
+    updatedAt: updatedAtCol(),
+  },
+  (table) => ({
+    candidateDocumentCandidateIdx: index("candidate_document_candidate_idx").on(
+      table.candidateId,
+    ),
+  }),
+);
 export type CandidateDocument = InferSelectModel<typeof candidateDocument>;
 
 export const candidateProfile = sqliteTable("candidate_profile", {
@@ -274,46 +290,67 @@ export const candidatePosition = sqliteTable(
   }),
 );
 
-export const questionBank = sqliteTable("question_bank", {
-  id: uuidPk(),
-  questionText: text("question_text").notNull(),
-  questionType: text("question_type")
-    .$type<QuestionType>()
-    .default("text")
-    .notNull(),
-  category: text("question_category").$type<QuestionCategory>(),
-  options: text("options", { mode: "json" }).$type<QuestionOption[] | null>(),
-  timeLimitSeconds: integer("time_limit_seconds"),
-  orderIndex: integer("order_index"),
-  isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
-  createdAt: createdAtCol(),
-  updatedAt: updatedAtCol(),
-});
+export const questionBank = sqliteTable(
+  "question_bank",
+  {
+    id: uuidPk(),
+    questionText: text("question_text").notNull(),
+    questionType: text("question_type")
+      .$type<QuestionType>()
+      .default("text")
+      .notNull(),
+    category: text("question_category").$type<QuestionCategory>(),
+    options: text("options", { mode: "json" }).$type<QuestionOption[] | null>(),
+    timeLimitSeconds: integer("time_limit_seconds"),
+    orderIndex: integer("order_index"),
+    isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
+    createdAt: createdAtCol(),
+    updatedAt: updatedAtCol(),
+  },
+  (table) => ({
+    questionBankActiveIdx: index("question_bank_active_idx").on(table.isActive),
+  }),
+);
 
 export type Question = InferSelectModel<typeof questionBank>;
 
-export const roundTemplate = sqliteTable("round_template", {
-  id: uuidPk(),
-  positionId: text("position_id")
-    .notNull()
-    .references(() => position.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  description: text("description"),
-  createdAt: createdAtCol(),
-  updatedAt: updatedAtCol(),
-});
+export const roundTemplate = sqliteTable(
+  "round_template",
+  {
+    id: uuidPk(),
+    positionId: text("position_id")
+      .notNull()
+      .references(() => position.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    createdAt: createdAtCol(),
+    updatedAt: updatedAtCol(),
+  },
+  (table) => ({
+    roundTemplatePositionIdx: index("round_template_position_idx").on(
+      table.positionId,
+    ),
+  }),
+);
 
 export type RoundTemplate = InferSelectModel<typeof roundTemplate>;
 
-export const roundTemplateQuestions = sqliteTable("round_template_questions", {
-  id: uuidPk(),
-  roundTemplateId: text("round_template_id")
-    .notNull()
-    .references(() => roundTemplate.id, { onDelete: "cascade" }),
-  questionId: text("question_id")
-    .notNull()
-    .references(() => questionBank.id, { onDelete: "cascade" }),
-});
+export const roundTemplateQuestions = sqliteTable(
+  "round_template_questions",
+  {
+    id: uuidPk(),
+    roundTemplateId: text("round_template_id")
+      .notNull()
+      .references(() => roundTemplate.id, { onDelete: "cascade" }),
+    questionId: text("question_id")
+      .notNull()
+      .references(() => questionBank.id, { onDelete: "cascade" }),
+  },
+  (table) => ({
+    rtqRoundIdx: index("rtq_round_idx").on(table.roundTemplateId),
+    rtqQuestionIdx: index("rtq_question_idx").on(table.questionId),
+  }),
+);
 
 export const application = sqliteTable(
   "application",
@@ -338,27 +375,50 @@ export const application = sqliteTable(
       table.candidateId,
       table.positionId,
     ),
+    appStatusIdx: index("application_status_idx").on(table.status),
+    appPositionIdx: index("application_position_idx").on(table.positionId),
+    appCreatedIdx: index("application_created_idx").on(table.createdAt),
+    appCandidateUpdatedIdx: index("application_candidate_updated_idx").on(
+      table.candidateId,
+      table.updatedAt,
+    ),
   }),
 );
 
-export const interview = sqliteTable("interview", {
-  id: uuidPk(),
-  applicationId: text("application_id")
-    .notNull()
-    .references(() => application.id, { onDelete: "cascade" }),
-  roundId: text("round_id")
-    .notNull()
-    .references(() => roundTemplate.id, { onDelete: "cascade" }),
-  interviewerId: text("interviewer_id").references(() => user.id, {
-    onDelete: "set null",
+export const interview = sqliteTable(
+  "interview",
+  {
+    id: uuidPk(),
+    applicationId: text("application_id")
+      .notNull()
+      .references(() => application.id, { onDelete: "cascade" }),
+    roundId: text("round_id")
+      .notNull()
+      .references(() => roundTemplate.id, { onDelete: "cascade" }),
+    interviewerId: text("interviewer_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    mode: text("mode").$type<InterviewMode>().default("manual").notNull(),
+    status: text("status").$type<InterviewStatus>().default("pending").notNull(),
+    rating: integer("rating"),
+    scheduledAt: integer("scheduled_at", { mode: "timestamp_ms" }),
+    overallFeedback: text("overall_feedback"),
+    createdAt: createdAtCol(),
+  },
+  (table) => ({
+    interviewApplicationIdx: index("interview_application_idx").on(
+      table.applicationId,
+    ),
+    interviewStatusIdx: index("interview_status_idx").on(table.status),
+    interviewScheduledIdx: index("interview_scheduled_idx").on(
+      table.scheduledAt,
+    ),
+    interviewCreatedIdx: index("interview_created_idx").on(table.createdAt),
+    interviewRatingIdx: index("interview_rating_idx")
+      .on(table.rating)
+      .where(sql`${table.rating} is not null`),
   }),
-  mode: text("mode").$type<InterviewMode>().default("manual").notNull(),
-  status: text("status").$type<InterviewStatus>().default("pending").notNull(),
-  rating: integer("rating"),
-  scheduledAt: integer("scheduled_at", { mode: "timestamp_ms" }),
-  overallFeedback: text("overall_feedback"),
-  createdAt: createdAtCol(),
-});
+);
 
 export const interviewFeedback = sqliteTable(
   "interview_feedback",
@@ -381,16 +441,22 @@ export const interviewFeedback = sqliteTable(
   }),
 );
 
-export const documents = sqliteTable("documents", {
-  id: uuidPk(),
-  name: text("name").notNull(),
-  slug: text("slug").notNull().unique(),
-  description: text("description"),
-  url: text("url").notNull(),
-  tags: text("tags", { mode: "json" }).$type<string[]>(),
-  createdAt: createdAtCol(),
-  updatedAt: updatedAtCol(),
-});
+export const documents = sqliteTable(
+  "documents",
+  {
+    id: uuidPk(),
+    name: text("name").notNull(),
+    slug: text("slug").notNull().unique(),
+    description: text("description"),
+    url: text("url").notNull(),
+    tags: text("tags", { mode: "json" }).$type<string[]>(),
+    createdAt: createdAtCol(),
+    updatedAt: updatedAtCol(),
+  },
+  (table) => ({
+    documentsCreatedIdx: index("documents_created_idx").on(table.createdAt),
+  }),
+);
 
 export type Document = InferSelectModel<typeof documents>;
 
@@ -416,6 +482,9 @@ export const documentCategoryRelations = sqliteTable(
       .references(() => documentCategories.id, { onDelete: "cascade" }),
     createdAt: createdAtCol(),
   },
+  (table) => ({
+    dcrDocumentIdx: index("dcr_document_idx").on(table.documentId),
+  }),
 );
 
 export type DocumentCategoryRelation = InferSelectModel<
@@ -444,56 +513,80 @@ export const candidateOnboarding = sqliteTable("candidate_onboarding", {
   updatedAt: updatedAtCol(),
 });
 
-export const employee = sqliteTable("employee", {
-  id: uuidPk(),
-  firstName: text("first_name").notNull(),
-  lastName: text("last_name").notNull(),
-  department: text("department", { mode: "json" })
-    .$type<Department[]>()
-    .notNull(),
-  positionId: text("position_id").references(() => position.id, {
-    onDelete: "set null",
+export const employee = sqliteTable(
+  "employee",
+  {
+    id: uuidPk(),
+    firstName: text("first_name").notNull(),
+    lastName: text("last_name").notNull(),
+    department: text("department", { mode: "json" })
+      .$type<Department[]>()
+      .notNull(),
+    positionId: text("position_id").references(() => position.id, {
+      onDelete: "set null",
+    }),
+    profileImage: text("profile_image"),
+    bio: text("bio"),
+    createdAt: createdAtCol(),
+    updatedAt: updatedAtCol(),
+  },
+  (table) => ({
+    employeePositionIdx: index("employee_position_idx").on(table.positionId),
   }),
-  profileImage: text("profile_image"),
-  bio: text("bio"),
-  createdAt: createdAtCol(),
-  updatedAt: updatedAtCol(),
-});
+);
 
 export type Employee = InferSelectModel<typeof employee>;
 
-export const auditLog = sqliteTable("audit_log", {
-  id: uuidPk(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  action: text("action").notNull(),
-  entityType: text("entity_type").notNull(),
-  entityId: text("entity_id").notNull(),
-  details: text("details", { mode: "json" }).$type<JsonObject>(),
-  createdAt: createdAtCol(),
-  updatedAt: updatedAtCol(),
-});
+export const auditLog = sqliteTable(
+  "audit_log",
+  {
+    id: uuidPk(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    action: text("action").notNull(),
+    entityType: text("entity_type").notNull(),
+    entityId: text("entity_id").notNull(),
+    details: text("details", { mode: "json" }).$type<JsonObject>(),
+    createdAt: createdAtCol(),
+    updatedAt: updatedAtCol(),
+  },
+  (table) => ({
+    auditLogUserIdx: index("audit_log_user_idx").on(table.userId),
+    auditLogEntityIdx: index("audit_log_entity_idx").on(table.entityType),
+    auditLogCreatedIdx: index("audit_log_created_idx").on(table.createdAt),
+  }),
+);
 
 export type AuditLog = InferSelectModel<typeof auditLog>;
 
-export const candidateAiScreening = sqliteTable("candidate_ai_screening", {
-  id: uuidPk(),
-  candidateId: text("candidate_id")
-    .notNull()
-    .references(() => candidate.id, { onDelete: "cascade" }),
-  positionId: text("position_id").references(() => position.id, {
-    onDelete: "set null",
+export const candidateAiScreening = sqliteTable(
+  "candidate_ai_screening",
+  {
+    id: uuidPk(),
+    candidateId: text("candidate_id")
+      .notNull()
+      .references(() => candidate.id, { onDelete: "cascade" }),
+    positionId: text("position_id").references(() => position.id, {
+      onDelete: "set null",
+    }),
+    applicationId: text("application_id").references(() => application.id, {
+      onDelete: "set null",
+    }),
+    analysis: text("analysis").notNull(),
+    structuredData: text("structured_data", { mode: "json" }).$type<JsonObject>(),
+    model: text("model").default("gpt-4o-mini"),
+    createdAt: createdAtCol(),
+    updatedAt: updatedAtCol(),
+  },
+  (table) => ({
+    casCandidateCreatedIdx: index("cas_candidate_created_idx").on(
+      table.candidateId,
+      table.createdAt,
+    ),
+    casPositionIdx: index("cas_position_idx").on(table.positionId),
   }),
-  applicationId: text("application_id").references(() => application.id, {
-    onDelete: "set null",
-  }),
-  analysis: text("analysis").notNull(),
-  structuredData: text("structured_data", { mode: "json" }).$type<JsonObject>(),
-  model: text("model").default("gpt-4o-mini"),
-  createdAt: createdAtCol(),
-  updatedAt: updatedAtCol(),
-});
+);
 export type CandidateAiScreening = InferSelectModel<
   typeof candidateAiScreening
 >;
@@ -535,122 +628,160 @@ export type CandidateChecklistItem = InferSelectModel<
   typeof candidateChecklistItem
 >;
 
-export const interviewAiAnalysis = sqliteTable("interview_ai_analysis", {
-  id: uuidPk(),
-  interviewId: text("interview_id")
-    .notNull()
-    .references(() => interview.id, { onDelete: "cascade" }),
-  bundleId: text("bundle_id").references(() => interviewBundle.id, {
-    onDelete: "cascade",
+export const interviewAiAnalysis = sqliteTable(
+  "interview_ai_analysis",
+  {
+    id: uuidPk(),
+    interviewId: text("interview_id")
+      .notNull()
+      .references(() => interview.id, { onDelete: "cascade" }),
+    bundleId: text("bundle_id").references(() => interviewBundle.id, {
+      onDelete: "cascade",
+    }),
+    applicationId: text("application_id").references(() => application.id, {
+      onDelete: "set null",
+    }),
+    positionId: text("position_id").references(() => position.id, {
+      onDelete: "set null",
+    }),
+    screenerId: text("screener_id").references(() => screener.id, {
+      onDelete: "set null",
+    }),
+    analysis: text("analysis").notNull(),
+    structuredData: text("structured_data", { mode: "json" }).$type<JsonObject>(),
+    customPrompt: text("custom_prompt"),
+    model: text("model").default("gpt-4o-mini"),
+    createdAt: createdAtCol(),
+    updatedAt: updatedAtCol(),
+  },
+  (table) => ({
+    iaaInterviewIdx: index("iaa_interview_idx").on(table.interviewId),
+    iaaBundleIdx: index("iaa_bundle_idx").on(table.bundleId),
   }),
-  applicationId: text("application_id").references(() => application.id, {
-    onDelete: "set null",
-  }),
-  positionId: text("position_id").references(() => position.id, {
-    onDelete: "set null",
-  }),
-  screenerId: text("screener_id").references(() => screener.id, {
-    onDelete: "set null",
-  }),
-  analysis: text("analysis").notNull(),
-  structuredData: text("structured_data", { mode: "json" }).$type<JsonObject>(),
-  customPrompt: text("custom_prompt"),
-  model: text("model").default("gpt-4o-mini"),
-  createdAt: createdAtCol(),
-  updatedAt: updatedAtCol(),
-});
+);
 export type InterviewAiAnalysis = InferSelectModel<typeof interviewAiAnalysis>;
 
-export const recruiterWeeklyCheckin = sqliteTable("recruiter_weekly_checkin", {
-  id: uuidPk(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  weekStartDate: integer("week_start_date", { mode: "timestamp_ms" }).notNull(),
-  weekEndDate: integer("week_end_date", { mode: "timestamp_ms" }).notNull(),
-  recruiterName: text("recruiter_name").notNull(),
-  positionsWorked: text("positions_worked", { mode: "json" }).$type<string[]>(),
-  candidatesSourced: integer("candidates_sourced").default(0),
-  candidatesScreened: integer("candidates_screened").default(0),
-  candidatesRejected: integer("candidates_rejected").default(0),
-  candidatesAdvanced2ndRound: integer("candidates_advanced_2nd_round").default(
-    0,
-  ),
-  candidatesAdvanced3rdRound: integer("candidates_advanced_3rd_round").default(
-    0,
-  ),
-  offersExtended: integer("offers_extended").default(0),
-  offersAccepted: integer("offers_accepted").default(0),
-  bestPerformingChannels: text("best_performing_channels", {
-    mode: "json",
-  }).$type<string[]>(),
-  avgTimeToScreen: text("avg_time_to_screen"),
-  delaysOrBottlenecks: text("delays_or_bottlenecks"),
-  concernsOrEscalations: text("concerns_or_escalations"),
-  supportNeeded: text("support_needed"),
-  createdAt: createdAtCol(),
-  updatedAt: updatedAtCol(),
-});
+export const recruiterWeeklyCheckin = sqliteTable(
+  "recruiter_weekly_checkin",
+  {
+    id: uuidPk(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    weekStartDate: integer("week_start_date", { mode: "timestamp_ms" }).notNull(),
+    weekEndDate: integer("week_end_date", { mode: "timestamp_ms" }).notNull(),
+    recruiterName: text("recruiter_name").notNull(),
+    positionsWorked: text("positions_worked", { mode: "json" }).$type<string[]>(),
+    candidatesSourced: integer("candidates_sourced").default(0),
+    candidatesScreened: integer("candidates_screened").default(0),
+    candidatesRejected: integer("candidates_rejected").default(0),
+    candidatesAdvanced2ndRound: integer("candidates_advanced_2nd_round").default(
+      0,
+    ),
+    candidatesAdvanced3rdRound: integer("candidates_advanced_3rd_round").default(
+      0,
+    ),
+    offersExtended: integer("offers_extended").default(0),
+    offersAccepted: integer("offers_accepted").default(0),
+    bestPerformingChannels: text("best_performing_channels", {
+      mode: "json",
+    }).$type<string[]>(),
+    avgTimeToScreen: text("avg_time_to_screen"),
+    delaysOrBottlenecks: text("delays_or_bottlenecks"),
+    concernsOrEscalations: text("concerns_or_escalations"),
+    supportNeeded: text("support_needed"),
+    createdAt: createdAtCol(),
+    updatedAt: updatedAtCol(),
+  },
+  (table) => ({
+    rwcUserIdx: index("rwc_user_idx").on(table.userId),
+    rwcCreatedIdx: index("rwc_created_idx").on(table.createdAt),
+  }),
+);
 
 export type RecruiterWeeklyCheckin = InferSelectModel<
   typeof recruiterWeeklyCheckin
 >;
 
-export const interviewBundle = sqliteTable("interview_bundle", {
-  id: uuidPk(),
-  token: text("token").notNull().unique(),
-  applicationId: text("application_id")
-    .notNull()
-    .references(() => application.id, { onDelete: "cascade" }),
-  status: text("status")
-    .$type<InterviewBundleStatus>()
-    .default("pending")
-    .notNull(),
-  expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
-  createdAt: createdAtCol(),
-  updatedAt: updatedAtCol(),
-});
+export const interviewBundle = sqliteTable(
+  "interview_bundle",
+  {
+    id: uuidPk(),
+    token: text("token").notNull().unique(),
+    applicationId: text("application_id")
+      .notNull()
+      .references(() => application.id, { onDelete: "cascade" }),
+    status: text("status")
+      .$type<InterviewBundleStatus>()
+      .default("pending")
+      .notNull(),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    createdAt: createdAtCol(),
+    updatedAt: updatedAtCol(),
+  },
+  (table) => ({
+    interviewBundleApplicationIdx: index("interview_bundle_application_idx").on(
+      table.applicationId,
+    ),
+  }),
+);
 
 export type InterviewBundle = InferSelectModel<typeof interviewBundle>;
 
-export const interviewSession = sqliteTable("interview_session", {
-  id: uuidPk(),
-  token: text("token").notNull().unique(),
-  interviewId: text("interview_id")
-    .notNull()
-    .references(() => interview.id, { onDelete: "cascade" }),
-  applicationId: text("application_id")
-    .notNull()
-    .references(() => application.id, { onDelete: "cascade" }),
-  bundleId: text("bundle_id").references(() => interviewBundle.id, {
-    onDelete: "cascade",
+export const interviewSession = sqliteTable(
+  "interview_session",
+  {
+    id: uuidPk(),
+    token: text("token").notNull().unique(),
+    interviewId: text("interview_id")
+      .notNull()
+      .references(() => interview.id, { onDelete: "cascade" }),
+    applicationId: text("application_id")
+      .notNull()
+      .references(() => application.id, { onDelete: "cascade" }),
+    bundleId: text("bundle_id").references(() => interviewBundle.id, {
+      onDelete: "cascade",
+    }),
+    roundId: text("round_id")
+      .notNull()
+      .references(() => roundTemplate.id, { onDelete: "cascade" }),
+    status: text("status")
+      .$type<InterviewSessionStatus>()
+      .default("pending")
+      .notNull(),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    /** First time the candidate opened the interview link (validated the token). */
+    openedAt: integer("opened_at", { mode: "timestamp_ms" }),
+    startedAt: integer("started_at", { mode: "timestamp_ms" }),
+    completedAt: integer("completed_at", { mode: "timestamp_ms" }),
+    tabSwitches: integer("tab_switches").default(0).notNull(),
+    deliveryMode: text("delivery_mode")
+      .$type<DeliveryMode>()
+      .default("hybrid")
+      .notNull(),
+    agentConfig: text("agent_config", { mode: "json" }).$type<AgentConfig>(),
+    realtimeSessionId: text("realtime_session_id"),
+    cheatingSummary: text("cheating_summary", {
+      mode: "json",
+    }).$type<CheatingSummary>(),
+    sessionAudioUrl: text("session_audio_url"),
+    sessionAudioPath: text("session_audio_path"),
+    interruptedAt: integer("interrupted_at", { mode: "timestamp_ms" }),
+    createdAt: createdAtCol(),
+    updatedAt: updatedAtCol(),
+  },
+  (table) => ({
+    interviewSessionApplicationIdx: index(
+      "interview_session_application_idx",
+    ).on(table.applicationId),
+    interviewSessionInterviewIdx: index("interview_session_interview_idx").on(
+      table.interviewId,
+    ),
+    interviewSessionBundleIdx: index("interview_session_bundle_idx").on(
+      table.bundleId,
+    ),
   }),
-  roundId: text("round_id")
-    .notNull()
-    .references(() => roundTemplate.id, { onDelete: "cascade" }),
-  status: text("status")
-    .$type<InterviewSessionStatus>()
-    .default("pending")
-    .notNull(),
-  expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
-  startedAt: integer("started_at", { mode: "timestamp_ms" }),
-  completedAt: integer("completed_at", { mode: "timestamp_ms" }),
-  tabSwitches: integer("tab_switches").default(0).notNull(),
-  deliveryMode: text("delivery_mode")
-    .$type<DeliveryMode>()
-    .default("hybrid")
-    .notNull(),
-  agentConfig: text("agent_config", { mode: "json" }).$type<AgentConfig>(),
-  realtimeSessionId: text("realtime_session_id"),
-  cheatingSummary: text("cheating_summary", {
-    mode: "json",
-  }).$type<CheatingSummary>(),
-  sessionAudioUrl: text("session_audio_url"),
-  sessionAudioPath: text("session_audio_path"),
-  interruptedAt: integer("interrupted_at", { mode: "timestamp_ms" }),
-  createdAt: createdAtCol(),
-  updatedAt: updatedAtCol(),
-});
+);
 
 export type InterviewSession = InferSelectModel<typeof interviewSession>;
 
@@ -683,6 +814,9 @@ export const interviewBundleRound = sqliteTable(
     bundleRoundUnique: uniqueIndex("interview_bundle_round_unique").on(
       table.bundleId,
       table.roundId,
+    ),
+    bundleRoundSessionIdx: index("interview_bundle_round_session_idx").on(
+      table.sessionId,
     ),
   }),
 );

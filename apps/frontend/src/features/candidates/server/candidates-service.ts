@@ -18,6 +18,7 @@ import {
 } from "./unique-constraint";
 import type { BatchItem } from "drizzle-orm/batch";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
+import { purgeCache } from "#/lib/data-cache";
 import { getCandidateById } from "@workspace/db/repositories/candidate-repository";
 import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
 import {
@@ -218,6 +219,8 @@ export const deleteCandidateWithAssets = async (
 
   await Promise.all(deletionPromises);
   await db.delete(candidate).where(eq(candidate.id, candidateId));
+
+  purgeCache("dashboard");
 
   return {
     candidate: candidateData,

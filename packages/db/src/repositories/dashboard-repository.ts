@@ -28,152 +28,146 @@ export const getDashboardStats = async () => {
     const now = Date.now();
     const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
     const sixtyDaysAgo = now - 60 * 24 * 60 * 60 * 1000;
-
-    // Total candidates count
-    const [totalCandidatesResult] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(candidate);
-    const totalCandidates = totalCandidatesResult?.count || 0;
-
-    // Total candidates last month (30-60 days ago)
-    const [totalCandidatesLastMonthResult] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(candidate)
-      .where(
-        sql`${candidate.createdAt} >= ${sixtyDaysAgo} AND ${candidate.createdAt} < ${thirtyDaysAgo}`,
-      );
-    const totalCandidatesLastMonth = totalCandidatesLastMonthResult?.count || 0;
-
-    // Total candidates this month
-    const [totalCandidatesThisMonthResult] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(candidate)
-      .where(sql`${candidate.createdAt} >= ${thirtyDaysAgo}`);
-    const totalCandidatesThisMonth = totalCandidatesThisMonthResult?.count || 0;
-
     const activePipelineStatuses = applicationActivePipelineStatuses;
 
-    // Active candidates count (applications still in the hiring pipeline)
-    const [activeCandidatesResult] = await db
-      .select({
-        count: sql<number>`count(DISTINCT ${application.candidateId})`,
-      })
-      .from(application)
-      .where(inArray(application.status, [...activePipelineStatuses]));
-    const activeCandidates = activeCandidatesResult?.count || 0;
+    // All 17 aggregates are independent, so run them as ONE D1 batch — a single
+    // round-trip — instead of 17 sequential round-trips per dashboard load.
+    const results = await db.batch([
+      // 0: Total candidates count
+      db.select({ count: sql<number>`count(*)` }).from(candidate),
 
-    // Active candidates last month
-    const [activeCandidatesLastMonthResult] = await db
-      .select({
-        count: sql<number>`count(DISTINCT ${application.candidateId})`,
-      })
-      .from(application)
-      .where(
-        and(
-          inArray(application.status, [...activePipelineStatuses]),
-          sql`${application.updatedAt} >= ${sixtyDaysAgo} AND ${application.updatedAt} < ${thirtyDaysAgo}`,
+      // 1: Total candidates last month (30-60 days ago)
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(candidate)
+        .where(
+          sql`${candidate.createdAt} >= ${sixtyDaysAgo} AND ${candidate.createdAt} < ${thirtyDaysAgo}`,
         ),
-      );
-    const activeCandidatesLastMonth =
-      activeCandidatesLastMonthResult?.count || 0;
 
-    // Interviews scheduled count (interviews with status 'pending')
-    const [interviewsScheduledResult] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(interview)
-      .where(eq(interview.status, "pending"));
-    const interviewsScheduled = interviewsScheduledResult?.count || 0;
+      // 2: Total candidates this month
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(candidate)
+        .where(sql`${candidate.createdAt} >= ${thirtyDaysAgo}`),
 
-    // Average time to hire (in days) - from application created to onboarding status
-    const [avgTimeToHireResult] = await db
-      .select({
-        avgDays: sql<number>`cast(avg((${application.updatedAt} - ${application.createdAt}) / 86400000.0) as integer)`,
-      })
-      .from(application)
-      .where(eq(application.status, "onboarding"));
-    const avgTimeToHire = avgTimeToHireResult?.avgDays || 0;
+      // 3: Active candidates count (applications still in the pipeline)
+      db
+        .select({
+          count: sql<number>`count(DISTINCT ${application.candidateId})`,
+        })
+        .from(application)
+        .where(inArray(application.status, [...activePipelineStatuses])),
 
-    // Average time to hire last month
-    const [avgTimeToHireLastMonthResult] = await db
-      .select({
-        avgDays: sql<number>`cast(avg((${application.updatedAt} - ${application.createdAt}) / 86400000.0) as integer)`,
-      })
-      .from(application)
-      .where(
-        sql`${application.status} = 'onboarding' AND ${application.updatedAt} >= ${sixtyDaysAgo} AND ${application.updatedAt} < ${thirtyDaysAgo}`,
-      );
-    const avgTimeToHireLastMonth = avgTimeToHireLastMonthResult?.avgDays || 0;
+      // 4: Active candidates last month
+      db
+        .select({
+          count: sql<number>`count(DISTINCT ${application.candidateId})`,
+        })
+        .from(application)
+        .where(
+          and(
+            inArray(application.status, [...activePipelineStatuses]),
+            sql`${application.updatedAt} >= ${sixtyDaysAgo} AND ${application.updatedAt} < ${thirtyDaysAgo}`,
+          ),
+        ),
 
-    // Total employees count
-    const [totalEmployeesResult] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(employee);
-    const totalEmployees = totalEmployeesResult?.count || 0;
+      // 5: Interviews scheduled (status 'pending')
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(interview)
+        .where(eq(interview.status, "pending")),
 
-    // Total positions count
-    const [totalPositionsResult] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(position);
-    const totalPositions = totalPositionsResult?.count || 0;
+      // 6: Average time to hire (created -> onboarding)
+      db
+        .select({
+          avgDays: sql<number>`cast(avg((${application.updatedAt} - ${application.createdAt}) / 86400000.0) as integer)`,
+        })
+        .from(application)
+        .where(eq(application.status, "onboarding")),
 
-    // Applications this month
-    const [applicationsThisMonthResult] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(application)
-      .where(sql`${application.createdAt} >= ${thirtyDaysAgo}`);
-    const applicationsThisMonth = applicationsThisMonthResult?.count || 0;
+      // 7: Average time to hire last month
+      db
+        .select({
+          avgDays: sql<number>`cast(avg((${application.updatedAt} - ${application.createdAt}) / 86400000.0) as integer)`,
+        })
+        .from(application)
+        .where(
+          sql`${application.status} = 'onboarding' AND ${application.updatedAt} >= ${sixtyDaysAgo} AND ${application.updatedAt} < ${thirtyDaysAgo}`,
+        ),
 
-    // Applications last month
-    const [applicationsLastMonthResult] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(application)
-      .where(
-        sql`${application.createdAt} >= ${sixtyDaysAgo} AND ${application.createdAt} < ${thirtyDaysAgo}`,
-      );
-    const applicationsLastMonth = applicationsLastMonthResult?.count || 0;
+      // 8: Total employees count
+      db.select({ count: sql<number>`count(*)` }).from(employee),
 
-    // Hired this month
-    const [hiredThisMonthResult] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(application)
-      .where(
-        sql`${application.status} = 'onboarding' AND ${application.updatedAt} >= ${thirtyDaysAgo}`,
-      );
-    const hiredThisMonth = hiredThisMonthResult?.count || 0;
+      // 9: Total positions count
+      db.select({ count: sql<number>`count(*)` }).from(position),
 
-    // Hired last month
-    const [hiredLastMonthResult] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(application)
-      .where(
-        sql`${application.status} = 'onboarding' AND ${application.updatedAt} >= ${sixtyDaysAgo} AND ${application.updatedAt} < ${thirtyDaysAgo}`,
-      );
-    const hiredLastMonth = hiredLastMonthResult?.count || 0;
+      // 10: Applications this month
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(application)
+        .where(sql`${application.createdAt} >= ${thirtyDaysAgo}`),
 
-    // Total interviews count
-    const [totalInterviewsResult] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(interview);
-    const totalInterviews = totalInterviewsResult?.count || 0;
+      // 11: Applications last month
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(application)
+        .where(
+          sql`${application.createdAt} >= ${sixtyDaysAgo} AND ${application.createdAt} < ${thirtyDaysAgo}`,
+        ),
 
-    // Completed interviews (not pending)
-    const [completedInterviewsResult] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(interview)
-      .where(sql`${interview.status} != 'pending'`);
-    const completedInterviews = completedInterviewsResult?.count || 0;
+      // 12: Hired this month
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(application)
+        .where(
+          sql`${application.status} = 'onboarding' AND ${application.updatedAt} >= ${thirtyDaysAgo}`,
+        ),
 
-    // Average interview rating
-    const [avgInterviewRatingResult] = await db
-      .select({
-        avgRating: sql<number>`AVG(${interview.rating})`,
-      })
-      .from(interview)
-      .where(sql`${interview.rating} IS NOT NULL`);
-    const avgInterviewRating =
-      avgInterviewRatingResult && avgInterviewRatingResult.avgRating !== null
-        ? Number(avgInterviewRatingResult.avgRating)
-        : 0;
+      // 13: Hired last month
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(application)
+        .where(
+          sql`${application.status} = 'onboarding' AND ${application.updatedAt} >= ${sixtyDaysAgo} AND ${application.updatedAt} < ${thirtyDaysAgo}`,
+        ),
+
+      // 14: Total interviews count
+      db.select({ count: sql<number>`count(*)` }).from(interview),
+
+      // 15: Completed interviews (not pending)
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(interview)
+        .where(sql`${interview.status} != 'pending'`),
+
+      // 16: Average interview rating
+      db
+        .select({
+          avgRating: sql<number>`AVG(${interview.rating})`,
+        })
+        .from(interview)
+        .where(sql`${interview.rating} IS NOT NULL`),
+    ]);
+
+    const firstRow = <R,>(rows: readonly R[]): R | undefined => rows[0];
+
+    const totalCandidates = firstRow(results[0])?.count ?? 0;
+    const totalCandidatesLastMonth = firstRow(results[1])?.count ?? 0;
+    const totalCandidatesThisMonth = firstRow(results[2])?.count ?? 0;
+    const activeCandidates = firstRow(results[3])?.count ?? 0;
+    const activeCandidatesLastMonth = firstRow(results[4])?.count ?? 0;
+    const interviewsScheduled = firstRow(results[5])?.count ?? 0;
+    const avgTimeToHire = firstRow(results[6])?.avgDays ?? 0;
+    const avgTimeToHireLastMonth = firstRow(results[7])?.avgDays ?? 0;
+    const totalEmployees = firstRow(results[8])?.count ?? 0;
+    const totalPositions = firstRow(results[9])?.count ?? 0;
+    const applicationsThisMonth = firstRow(results[10])?.count ?? 0;
+    const applicationsLastMonth = firstRow(results[11])?.count ?? 0;
+    const hiredThisMonth = firstRow(results[12])?.count ?? 0;
+    const hiredLastMonth = firstRow(results[13])?.count ?? 0;
+    const totalInterviews = firstRow(results[14])?.count ?? 0;
+    const completedInterviews = firstRow(results[15])?.count ?? 0;
+    const avgInterviewRating = firstRow(results[16])?.avgRating ?? 0;
 
     // Calculate percentage changes
     const calculatePercentageChange = (

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { db } from "@workspace/db/db";
 import type {
   DocumentScope,
@@ -12,6 +12,14 @@ import {
   documentCategoryRelations,
   documents,
 } from "../schema";
+
+type DocumentCategoryRow = {
+  id: string;
+  name: string;
+  description: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 export async function getDocuments(
   categoryFilters?: string[],
@@ -80,18 +88,18 @@ export async function getDocuments(
     const offset = (page - 1) * limit;
     const paginatedResults = allResults.slice(offset, offset + limit);
 
-    const documentsWithCategories = await Promise.all(
-      paginatedResults.map(async (result) => {
-        const categories = await getDocumentCategoriesByDocumentId(
-          result.document.id,
-        );
-        return {
-          ...result.document,
-          tags: result.document.tags || [],
-          categories,
-        };
-      }),
+    const paginatedDocumentIds = paginatedResults.map(
+      (result) => result.document.id,
     );
+    const categoriesByDocumentId = await getDocumentCategoriesByDocumentIds(
+      paginatedDocumentIds,
+    );
+
+    const documentsWithCategories = paginatedResults.map((result) => ({
+      ...result.document,
+      tags: result.document.tags || [],
+      categories: categoriesByDocumentId.get(result.document.id) ?? [],
+    }));
 
     return { documents: documentsWithCategories, total };
   } catch (error) {
@@ -344,6 +352,46 @@ export async function deleteDocumentCategory(id: string) {
   } catch (error) {
     console.error("Error deleting document category", error);
     throw error;
+  }
+}
+
+async function getDocumentCategoriesByDocumentIds(
+  documentIds: string[],
+): Promise<Map<string, DocumentCategoryRow[]>> {
+  if (documentIds.length === 0) {
+    return new Map();
+  }
+  try {
+    const results = await db
+      .select({
+        documentId: documentCategoryRelations.documentId,
+        id: documentCategories.id,
+        name: documentCategories.name,
+        description: documentCategories.description,
+        createdAt: documentCategories.createdAt,
+        updatedAt: documentCategories.updatedAt,
+      })
+      .from(documentCategoryRelations)
+      .innerJoin(
+        documentCategories,
+        eq(documentCategoryRelations.categoryId, documentCategories.id),
+      )
+      .where(inArray(documentCategoryRelations.documentId, documentIds))
+      .orderBy(asc(documentCategories.name));
+
+    const byDocumentId = new Map<string, DocumentCategoryRow[]>();
+    for (const { documentId, ...category } of results) {
+      const existing = byDocumentId.get(documentId);
+      if (existing) {
+        existing.push(category);
+      } else {
+        byDocumentId.set(documentId, [category]);
+      }
+    }
+    return byDocumentId;
+  } catch (error) {
+    console.error("Error fetching document categories", error);
+    return new Map();
   }
 }
 

@@ -11,7 +11,7 @@ import {
   candidate,
   candidatePosition,
 } from "../schema";
-import { eq, and, or, inArray, asc } from "drizzle-orm";
+import { eq, and, or, inArray, asc, sql } from "drizzle-orm";
 import { ilike } from "../sqlite-helpers";
 import {
   hireLevels as hireLevelValues,
@@ -421,28 +421,89 @@ export const getQuestionsWithRounds = async (
   total: number;
 }> => {
   try {
-    const results = await db
-      .select({
-        questionId: questionBank.id,
-        questionText: questionBank.questionText,
-        questionType: questionBank.questionType,
-        createdAt: questionBank.createdAt,
-        updatedAt: questionBank.updatedAt,
-        roundId: roundTemplate.id,
-        roundName: roundTemplate.name,
-        positionId: position.id,
-        positionName: position.name,
-      })
+    // Filters are pushed into SQL so only the paged question subset is ever
+    // materialized (previously the whole question x round x position graph was
+    // fetched and filtered in JS on every page load).
+    const conditions = [];
+
+    if (search && search.trim()) {
+      const term = `%${search.trim().toLowerCase()}%`;
+      conditions.push(
+        sql`LOWER(${questionBank.questionText}) LIKE ${term}`,
+      );
+    }
+
+    if (positionIds && positionIds.length > 0) {
+      conditions.push(
+        sql`EXISTS (
+          SELECT 1 FROM round_template_questions rtq_pos
+          INNER JOIN round_template rt_pos ON rt_pos.id = rtq_pos.round_template_id
+          WHERE rtq_pos.question_id = ${questionBank.id}
+            AND rt_pos.position_id IN (${sql.join(
+              positionIds.map((id) => sql`${id}`),
+              sql`, `,
+            )})
+        )`,
+      );
+    }
+
+    if (roundIds && roundIds.length > 0) {
+      conditions.push(
+        sql`EXISTS (
+          SELECT 1 FROM round_template_questions rtq_round
+          WHERE rtq_round.question_id = ${questionBank.id}
+            AND rtq_round.round_template_id IN (${sql.join(
+              roundIds.map((id) => sql`${id}`),
+              sql`, `,
+            )})
+        )`,
+      );
+    }
+
+    const filtered =
+      conditions.length > 0 ? and(...conditions) : undefined;
+
+    const [countRow] = await db
+      .select({ count: sql<number>`count(*)` })
       .from(questionBank)
-      .leftJoin(
-        roundTemplateQuestions,
-        eq(questionBank.id, roundTemplateQuestions.questionId),
-      )
-      .leftJoin(
-        roundTemplate,
-        eq(roundTemplateQuestions.roundTemplateId, roundTemplate.id),
-      )
-      .leftJoin(position, eq(roundTemplate.positionId, position.id));
+      .where(filtered);
+    const total = countRow?.count ?? 0;
+
+    const offset = (page - 1) * limit;
+    const pageQuestionIds = await db
+      .select({ id: questionBank.id })
+      .from(questionBank)
+      .where(filtered)
+      .orderBy(asc(questionBank.createdAt), asc(questionBank.id))
+      .limit(limit)
+      .offset(offset);
+
+    const results =
+      pageQuestionIds.length === 0
+        ? []
+        : await db
+            .select({
+              questionId: questionBank.id,
+              questionText: questionBank.questionText,
+              questionType: questionBank.questionType,
+              createdAt: questionBank.createdAt,
+              updatedAt: questionBank.updatedAt,
+              roundId: roundTemplate.id,
+              roundName: roundTemplate.name,
+              positionId: position.id,
+              positionName: position.name,
+            })
+            .from(questionBank)
+            .leftJoin(
+              roundTemplateQuestions,
+              eq(questionBank.id, roundTemplateQuestions.questionId),
+            )
+            .leftJoin(
+              roundTemplate,
+              eq(roundTemplateQuestions.roundTemplateId, roundTemplate.id),
+            )
+            .leftJoin(position, eq(roundTemplate.positionId, position.id))
+            .where(inArray(questionBank.id, pageQuestionIds.map((r) => r.id)));
 
     // Group questions by question ID and collect rounds and positions
     const questionsMap = new Map<
@@ -511,35 +572,12 @@ export const getQuestionsWithRounds = async (
       }
     }
 
-    let allQuestions = Array.from(questionsMap.values());
-
-    // Apply filters
-    if (search && search.trim()) {
-      const searchLower = search.toLowerCase();
-      allQuestions = allQuestions.filter((question) =>
-        question.questionText.toLowerCase().includes(searchLower),
-      );
-    }
-
-    if (positionIds && positionIds.length > 0) {
-      allQuestions = allQuestions.filter((question) => {
-        const questionPositionIds = question.positions.map((p) => p.id);
-        return positionIds.some((posId) => questionPositionIds.includes(posId));
-      });
-    }
-
-    if (roundIds && roundIds.length > 0) {
-      allQuestions = allQuestions.filter((question) => {
-        const questionRoundIds = question.rounds.map((r) => r.id);
-        return roundIds.some((roundId) => questionRoundIds.includes(roundId));
-      });
-    }
-
-    const total = allQuestions.length;
-
-    // Apply pagination
-    const offset = (page - 1) * limit;
-    const paginatedQuestions = allQuestions.slice(offset, offset + limit);
+    // Restore the deterministic page ordering from the base id query (the
+    // detail query returns rows grouped by question but unordered across ids).
+    const idRank = new Map(pageQuestionIds.map((row, index) => [row.id, index]));
+    const paginatedQuestions = Array.from(questionsMap.values()).sort(
+      (a, b) => (idRank.get(a.id) ?? 0) - (idRank.get(b.id) ?? 0),
+    );
 
     return { questions: paginatedQuestions, total };
   } catch (error) {

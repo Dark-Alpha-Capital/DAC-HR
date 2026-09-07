@@ -214,6 +214,7 @@ type KanbanRow = {
   kanban_sort_at: string | number;
   position_id: string | null;
   position_name: string | null;
+  total: number;
 };
 
 function mapKanbanRow(row: KanbanRow): KanbanColumnCandidate {
@@ -257,27 +258,24 @@ export async function getKanbanColumnCandidates(
   }
 
   try {
-    const countWhereClause = buildKanbanWhereClause(
+    // The COUNT window applies to the filter-matched set (no cursor) so
+    // `total` stays the full column count on every page; the cursor is applied
+    // in the outer query after the count has been computed.
+    const baseWhereClause = buildKanbanWhereClause(
       columnStatus,
       filters,
       null,
     );
-    const whereClause = buildKanbanWhereClause(
-      columnStatus,
-      filters,
-      decodedCursor,
-    );
+    const cursorClause = decodedCursor
+      ? sql`WHERE (
+          kc.kanban_sort_at < ${decodedCursor.updatedAt}
+          OR (kc.kanban_sort_at = ${decodedCursor.updatedAt} AND kc.id < ${decodedCursor.id})
+        )`
+      : sql``;
 
-    const countResult = await db.all<{ total: number }>(sql`
-      WITH ${latestApplicationCte},
-      ${kanbanCandidatesCte}
-      SELECT COUNT(*) AS total
-      FROM kanban_candidates kc
-      WHERE ${countWhereClause}
-    `);
-
-    const totalCount = Number(countResult[0]?.total ?? 0);
-
+    // Single round-trip: the page rows carry the full match count via a
+    // window function, so the separate COUNT query (which re-evaluated the
+    // whole CTE a second time) is no longer needed.
     const rows = await db.all<KanbanRow>(sql`
       WITH ${latestApplicationCte},
       ${kanbanCandidatesCte}
@@ -298,13 +296,19 @@ export async function getKanbanColumnCandidates(
         kc.application_status,
         kc.kanban_sort_at,
         kc.position_id,
-        kc.position_name
-      FROM kanban_candidates kc
-      WHERE ${whereClause}
+        kc.position_name,
+        kc.total
+      FROM (
+        SELECT kc.*, COUNT(*) OVER () AS total
+        FROM kanban_candidates kc
+        WHERE ${baseWhereClause}
+      ) kc
+      ${cursorClause}
       ORDER BY kc.kanban_sort_at DESC, kc.id DESC
       LIMIT ${limit + 1}
     `);
 
+    const totalCount = Number(rows[0]?.total ?? 0);
     const hasMore = rows.length > limit;
     const pageRows = rows.slice(0, limit);
     const items = pageRows.map(mapKanbanRow);

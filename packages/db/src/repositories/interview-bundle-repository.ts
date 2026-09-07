@@ -238,25 +238,35 @@ export const getBundlesByApplicationId = async (applicationId: string) => {
   return result;
 };
 
-export const getActiveBundleRound = async (bundleId: string) => {
-  const rounds = await getBundleRounds(bundleId);
+export const getActiveBundleRound = async (
+  bundleId: string,
+  rounds?: Awaited<ReturnType<typeof getBundleRounds>>,
+) => {
+  const resolvedRounds =
+    rounds ?? (await getBundleRounds(bundleId));
 
-  const active = pickActiveRound(rounds.map(roundProgressOf));
+  const active = pickActiveRound(resolvedRounds.map(roundProgressOf));
   if (!active) {
     return null;
   }
 
   return (
-    rounds.find((r) => r.bundleRound.roundOrder === active.roundOrder) ?? null
+    resolvedRounds.find(
+      (r) => r.bundleRound.roundOrder === active.roundOrder,
+    ) ?? null
   );
 };
 
 const roundProgressOf = (row: { bundleRound: RoundProgress }): RoundProgress =>
   toRoundProgress(row.bundleRound);
 
-export const getCurrentRoundIndex = async (bundleId: string) => {
-  const rounds = await getBundleRounds(bundleId);
-  return currentRoundIndex(rounds.map(roundProgressOf));
+export const getCurrentRoundIndex = async (
+  bundleId: string,
+  rounds?: Awaited<ReturnType<typeof getBundleRounds>>,
+) => {
+  const resolvedRounds =
+    rounds ?? (await getBundleRounds(bundleId));
+  return currentRoundIndex(resolvedRounds.map(roundProgressOf));
 };
 
 export const startBundleRound = async (bundleRoundId: string) => {
@@ -424,8 +434,9 @@ export const assertInterviewTokenValid = async (
     }
 
     const rounds = await getBundleRounds(bundle.id);
-    const activeRound = await getActiveBundleRound(bundle.id);
-    const currentRoundIndex = await getCurrentRoundIndex(bundle.id);
+    // Reuse the single join result instead of re-fetching per helper.
+    const activeRound = await getActiveBundleRound(bundle.id, rounds);
+    const currentRoundIndex = await getCurrentRoundIndex(bundle.id, rounds);
 
     return {
       ok: true,

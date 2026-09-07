@@ -7,6 +7,7 @@ import {
   substituteTemplate,
 } from "@workspace/mail";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
+import { cached, purgeCache } from "#/lib/data-cache";
 
 export type EmailTemplateData = {
   type: EmailTemplateType;
@@ -46,25 +47,32 @@ export const emailTemplatesService = {
 export async function getEmailTemplate(
   type: EmailTemplateType,
 ): Promise<EmailTemplateData | null> {
-  const [row] = await db
-    .select({
-      type: emailTemplate.type,
-      subjectTemplate: emailTemplate.subjectTemplate,
-      bodyTemplate: emailTemplate.bodyTemplate,
-      updatedAt: emailTemplate.updatedAt,
-    })
-    .from(emailTemplate)
-    .where(eq(emailTemplate.type, type))
-    .limit(1);
+  return cached(
+    "email-templates",
+    type,
+    async () => {
+      const [row] = await db
+        .select({
+          type: emailTemplate.type,
+          subjectTemplate: emailTemplate.subjectTemplate,
+          bodyTemplate: emailTemplate.bodyTemplate,
+          updatedAt: emailTemplate.updatedAt,
+        })
+        .from(emailTemplate)
+        .where(eq(emailTemplate.type, type))
+        .limit(1);
 
-  if (!row) return null;
+      if (!row) return null;
 
-  return {
-    type: row.type,
-    subjectTemplate: row.subjectTemplate,
-    bodyTemplate: row.bodyTemplate,
-    updatedAt: row.updatedAt.toISOString(),
-  };
+      return {
+        type: row.type,
+        subjectTemplate: row.subjectTemplate,
+        bodyTemplate: row.bodyTemplate,
+        updatedAt: row.updatedAt.toISOString(),
+      };
+    },
+    { ttlMs: 30_000 },
+  );
 }
 
 /** Upsert a saved template row and audit the change. */
@@ -108,6 +116,8 @@ export async function saveEmailTemplate(
       updatedBy: actor.email,
     },
   }).catch((error) => console.error("Audit log error:", error));
+
+  purgeCache("email-templates");
 
   return { success: true };
 }

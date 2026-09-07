@@ -7,6 +7,7 @@ import {
   candidateOnboarding,
   candidatePosition,
   candidateProfile,
+  interview,
   position,
   user,
   type JsonObject,
@@ -21,8 +22,8 @@ import {
   normalizeApplicationStatus,
   pickLatestApplication,
 } from "../application-status";
-import { getInterviewsByApplicationId } from "./interview-repository";
 import { sortCandidateListItems } from "../candidate-list-sort";
+import { getInterviewsByApplicationIds } from "./interview-repository";
 
 export const getCandidateById = async (id: string) => {
   try {
@@ -86,15 +87,30 @@ export const getCandidateWithApplications = async (id: string) => {
       .where(eq(application.candidateId, id))
       .orderBy(asc(application.createdAt));
 
-    const applicationsWithInterviews = await Promise.all(
-      applications.map(async (app) => {
-        const interviews = await getInterviewsByApplicationId(app.id);
-        return {
-          ...app,
-          interviews,
-        };
-      }),
+    // Batch the interviews for all of the candidate's applications into a
+    // single indexed query instead of one round-trip per application. The
+    // returned row shape mirrors `getInterviewsByApplicationId`.
+    const applicationIds = applications.map((app) => app.id);
+    const batchedInterviews = await getInterviewsByApplicationIds(
+      applicationIds,
     );
+    const interviewsByApplicationId = new Map<
+      string,
+      typeof batchedInterviews
+    >();
+    for (const iv of batchedInterviews) {
+      const existing = interviewsByApplicationId.get(iv.applicationId);
+      if (existing) {
+        existing.push(iv);
+      } else {
+        interviewsByApplicationId.set(iv.applicationId, [iv]);
+      }
+    }
+
+    const applicationsWithInterviews = applications.map((app) => ({
+      ...app,
+      interviews: interviewsByApplicationId.get(app.id) ?? [],
+    }));
 
     const [profile] = await db
       .select()
@@ -256,69 +272,90 @@ export const getApplicationsFiltered = async (
       query = query.where(and(...conditions)) as typeof query;
     }
 
-    const allResults = await query;
-    const total = allResults.length;
-
-    const sortedResults = (() => {
-      const sorted = [...allResults];
+    const appOrderBy = (() => {
       switch (parseCandidateSortOption(sort)) {
         case "oldest":
-          return sorted.sort(
-            (a, b) =>
-              a.application.createdAt.getTime() -
-              b.application.createdAt.getTime(),
-          );
-        case "name_asc":
-          return sorted.sort((a, b) => {
-            const nameA = `${a.candidate.lastName} ${a.candidate.firstName}`;
-            const nameB = `${b.candidate.lastName} ${b.candidate.firstName}`;
-            return nameA.localeCompare(nameB);
-          });
-        case "name_desc":
-          return sorted.sort((a, b) => {
-            const nameA = `${a.candidate.lastName} ${a.candidate.firstName}`;
-            const nameB = `${b.candidate.lastName} ${b.candidate.firstName}`;
-            return nameB.localeCompare(nameA);
-          });
+          return [asc(application.createdAt), asc(application.id)];
         case "updated":
-          return sorted.sort(
-            (a, b) =>
-              b.application.updatedAt.getTime() -
-              a.application.updatedAt.getTime(),
-          );
+          return [
+            desc(application.updatedAt),
+            desc(application.createdAt),
+            desc(application.id),
+          ];
+        case "name_asc":
+          return [
+            sql`${candidate.lastName} COLLATE NOCASE ASC`,
+            sql`${candidate.firstName} COLLATE NOCASE ASC`,
+            desc(application.createdAt),
+          ];
+        case "name_desc":
+          return [
+            sql`${candidate.lastName} COLLATE NOCASE DESC`,
+            sql`${candidate.firstName} COLLATE NOCASE DESC`,
+            desc(application.createdAt),
+          ];
         case "newest":
         default:
-          return sorted.sort(
-            (a, b) =>
-              b.application.createdAt.getTime() -
-              a.application.createdAt.getTime(),
-          );
+          return [desc(application.createdAt), desc(application.id)];
       }
     })();
 
+    // Paginated page query — ordering/paging now happen in SQL so the whole
+    // filtered result set is never materialized in JS (previously every page
+    // load re-scanned and sorted the full join in memory).
     const offset = (page - 1) * limit;
-    const paginatedResults = sortedResults.slice(offset, offset + limit);
+    const pageResults = await query
+      .orderBy(...appOrderBy)
+      .limit(limit)
+      .offset(offset);
 
-    // Fetch interviews for paginated applications
-    const applicationsWithInterviews = await Promise.all(
-      paginatedResults.map(async (result) => {
-        const interviews = await getInterviewsByApplicationId(
-          result.application.id,
-        );
-        return {
-          ...result.application,
-          candidate: result.candidate,
-          position: result.position,
-          interviews: interviews.map((interview) => ({
-            id: interview.id,
-            status: interview.status,
-          })),
-        };
-      }),
-    );
+    // Total count for the same filters (1:1 inner joins => count(application)).
+    const totalQuery = db
+      .select({ count: sql<number>`count(*)` })
+      .from(application)
+      .innerJoin(candidate, eq(application.candidateId, candidate.id))
+      .innerJoin(position, eq(application.positionId, position.id));
+    const [totalResult] = await (conditions.length > 0
+      ? totalQuery.where(and(...conditions))
+      : totalQuery);
+    const total = totalResult?.count ?? 0;
+
+    const paginatedApplicationIds = pageResults.map((r) => r.application.id);
+
+    // Batch interviews for the whole page in one indexed query (replaces the
+    // per-application N+1 lookup that issued up to `limit` extra queries).
+    const pageInterviews =
+      paginatedApplicationIds.length > 0
+        ? await db
+            .select({
+              applicationId: interview.applicationId,
+              id: interview.id,
+              status: interview.status,
+            })
+            .from(interview)
+            .where(inArray(interview.applicationId, paginatedApplicationIds))
+        : [];
+
+    const interviewsByApplication = new Map<string, Array<{ id: string; status: string }>>();
+    for (const iv of pageInterviews) {
+      const existing = interviewsByApplication.get(iv.applicationId);
+      const entry = { id: iv.id, status: iv.status };
+      if (existing) {
+        existing.push(entry);
+      } else {
+        interviewsByApplication.set(iv.applicationId, [entry]);
+      }
+    }
+
+    const applications = pageResults.map((result) => ({
+      ...result.application,
+      candidate: result.candidate,
+      position: result.position,
+      interviews: interviewsByApplication.get(result.application.id) ?? [],
+    }));
 
     return {
-      applications: applicationsWithInterviews,
+      applications,
       total,
     };
   } catch (error) {

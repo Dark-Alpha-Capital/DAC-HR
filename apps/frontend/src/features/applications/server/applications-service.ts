@@ -9,6 +9,7 @@ import {
   position,
 } from "@workspace/db/schema";
 import { insertAuditLog } from "@workspace/db/repositories/audit-repository";
+import { purgeCache } from "#/lib/data-cache";
 import type { ApplicationStatus } from "#/lib/application-status";
 import {
   getApplicationsFiltered,
@@ -244,6 +245,7 @@ export const applicationsService = {
         },
       }).catch((error) => console.error("Audit log error:", error));
 
+      purgeCache("dashboard");
       return { success: true, application: newApplication };
     } catch (error) {
       console.error("Error creating application:", error);
@@ -299,6 +301,7 @@ export const applicationsService = {
         },
       }).catch((error) => console.error("Audit log error:", error));
 
+      purgeCache("dashboard");
       return { success: true, data: updatedApplication };
     } catch (error) {
       console.error("Error updating application", error);

@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@workspace/db/db";
 import {
   application,
@@ -56,6 +56,59 @@ export const getInterviewsByApplicationId = async (applicationId: string) => {
     }));
   } catch (error) {
     console.error("Error fetching interviews by application id", error);
+    return [];
+  }
+};
+
+/**
+ * Batch variant of `getInterviewsByApplicationId`: resolves the interviews for
+ * many applications in a single indexed `IN` query (kills the per-application
+ * N+1 fan-out). Each returned row keeps its `applicationId` for grouping.
+ */
+export const getInterviewsByApplicationIds = async (
+  applicationIds: string[],
+) => {
+  if (!applicationIds.length) {
+    return [];
+  }
+
+  try {
+    const results = await db
+      .select({
+        interview: {
+          id: interview.id,
+          applicationId: interview.applicationId,
+          status: interview.status,
+          mode: interview.mode,
+          rating: interview.rating,
+          scheduledAt: interview.scheduledAt,
+          overallFeedback: interview.overallFeedback,
+          createdAt: interview.createdAt,
+        },
+        roundTemplate: {
+          id: roundTemplate.id,
+          name: roundTemplate.name,
+          description: roundTemplate.description,
+        },
+        interviewer: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        },
+      })
+      .from(interview)
+      .innerJoin(roundTemplate, eq(interview.roundId, roundTemplate.id))
+      .leftJoin(user, eq(interview.interviewerId, user.id))
+      .where(inArray(interview.applicationId, applicationIds));
+
+    return results.map((result) => ({
+      ...result.interview,
+      roundTemplate: result.roundTemplate,
+      roundId: result.roundTemplate.id,
+      interviewer: result.interviewer,
+    }));
+  } catch (error) {
+    console.error("Error fetching interviews by application ids", error);
     return [];
   }
 };
