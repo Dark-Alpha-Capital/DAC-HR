@@ -143,17 +143,49 @@ function buildImportServices(env: Env): ImportServices {
         user: env.NEXTCLOUD_USER,
         password: env.NEXTCLOUD_PASSWORD,
       });
-      const blob = new Blob([buffer.slice()]);
-      const result = await uploadFile({
-        client,
-        file: blob,
-        fileName,
-        folderPath,
-      });
-      if (!result.success || !result.downloadUrl || !result.filePath) {
-        return null;
+
+      // WebDAV uploads can fail transiently (e.g. 423 lock, 503, network
+      // blips) during large bulk imports; retry before surfacing the error.
+      let lastError: { code: string; error: string } | null = null;
+      const attempts = 3;
+      for (let attempt = 1; attempt <= attempts; attempt++) {
+        const blob = new Blob([buffer.slice()]);
+        const uploadResult = await uploadFile({
+          client,
+          file: blob,
+          fileName,
+          folderPath,
+        });
+
+        if (
+          uploadResult.success &&
+          uploadResult.downloadUrl &&
+          uploadResult.filePath
+        ) {
+          return { url: uploadResult.downloadUrl, filePath: uploadResult.filePath };
+        }
+
+        lastError = {
+          code: uploadResult.code ?? "UPLOAD_FAILED",
+          error: uploadResult.error ?? "Failed to upload file",
+        };
+
+        if (attempt < attempts) {
+          log("warn", "Nextcloud upload failed — retrying", {
+            step: "workflow.upload_retry",
+            fileName,
+            folderPath,
+            attempt,
+            code: lastError.code,
+            error: lastError.error,
+          });
+          await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+        }
       }
-      return { url: result.downloadUrl, filePath: result.filePath };
+
+      throw new Error(
+        `Nextcloud upload failed (${lastError?.code ?? "UPLOAD_FAILED"}): ${lastError?.error ?? "unknown error"} (file: ${fileName})`,
+      );
     },
     updateImportProgress: async ({
       importId,

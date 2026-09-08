@@ -23,6 +23,12 @@ export type NextcloudErrorCode =
   | "DOWNLOAD_FAILED"
   | "DELETE_FAILED"
   | "NOT_FOUND"
+  | "LOCKED"
+  | "INSUFFICIENT_STORAGE"
+  | "RATE_LIMITED"
+  | "CONFLICT"
+  | "PRECONDITION_FAILED"
+  | "SERVER_ERROR"
   | "NETWORK"
   | "UNKNOWN";
 
@@ -124,7 +130,7 @@ const mapErrorCode = (
   const status =
     "status" in error
       ? // SAFETY: `status` may be a number or numeric string; Number()
-        // normalizes it for the 404 comparison below.
+        // normalizes it for the comparisons below.
         Number(error.status)
       : undefined;
 
@@ -132,11 +138,57 @@ const mapErrorCode = (
     return "NOT_FOUND";
   }
 
+  if (status === 423 || message.includes("423")) {
+    return "LOCKED";
+  }
+
+  if (status === 507 || message.includes("507")) {
+    return "INSUFFICIENT_STORAGE";
+  }
+
+  if (status === 429 || message.includes("429")) {
+    return "RATE_LIMITED";
+  }
+
+  if (status === 409 || message.includes("409")) {
+    return "CONFLICT";
+  }
+
+  if (status === 412 || message.includes("412")) {
+    return "PRECONDITION_FAILED";
+  }
+
+  if (status !== undefined && status >= 500) {
+    return "SERVER_ERROR";
+  }
+
   if (message.toLowerCase().includes("network")) {
     return "NETWORK";
   }
 
   return "UNKNOWN";
+};
+
+const describeError = (
+  error: Error | { status?: unknown },
+  fallbackCode: NextcloudErrorCode,
+  fallbackText: string,
+) => {
+  const status =
+    "status" in error
+      ? Number(error.status)
+      : undefined;
+
+  const code = mapErrorCode(error);
+  const resolvedCode = code === "UNKNOWN" ? fallbackCode : code;
+
+  const statusText = status ? ` (HTTP ${status})` : "";
+  const detail =
+    (error instanceof Error && error.message
+      ? error.message
+      : fallbackText) + statusText;
+
+  return { code: resolvedCode, error: detail };
 };
 
 export const uploadFile = async ({
@@ -178,11 +230,15 @@ export const uploadFile = async ({
   } catch (error) {
     // SAFETY: thrown values are Error instances or status-bearing DAV
     // objects; the cast narrows the catch payload to the accepted shapes.
-    const code = mapErrorCode(error as Error | { status?: unknown });
+    const { code, error: detail } = describeError(
+      error as Error | { status?: unknown },
+      "UPLOAD_FAILED",
+      "Failed to upload file",
+    );
     return {
       success: false,
-      code: code === "UNKNOWN" ? "UPLOAD_FAILED" : code,
-      error: error instanceof Error ? error.message : "Failed to upload file",
+      code,
+      error: detail,
     };
   }
 };
@@ -246,11 +302,15 @@ export const downloadFile = async ({
   } catch (error) {
     // SAFETY: thrown values are Error instances or status-bearing DAV
     // objects; the cast narrows the catch payload to the accepted shapes.
-    const code = mapErrorCode(error as Error | { status?: unknown });
+    const { code, error: detail } = describeError(
+      error as Error | { status?: unknown },
+      "DOWNLOAD_FAILED",
+      "Failed to download file",
+    );
     return {
       success: false,
-      code: code === "UNKNOWN" ? "DOWNLOAD_FAILED" : code,
-      error: error instanceof Error ? error.message : "Failed to download file",
+      code,
+      error: detail,
     };
   }
 };
@@ -269,11 +329,15 @@ export const deleteFile = async ({
   } catch (error) {
     // SAFETY: thrown values are Error instances or status-bearing DAV
     // objects; the cast narrows the catch payload to the accepted shapes.
-    const code = mapErrorCode(error as Error | { status?: unknown });
+    const { code, error: detail } = describeError(
+      error as Error | { status?: unknown },
+      "DELETE_FAILED",
+      "Failed to delete file",
+    );
     return {
       success: false,
-      code: code === "UNKNOWN" ? "DELETE_FAILED" : code,
-      error: error instanceof Error ? error.message : "Failed to delete file",
+      code,
+      error: detail,
     };
   }
 };
