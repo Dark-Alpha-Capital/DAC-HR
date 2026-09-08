@@ -41,8 +41,8 @@ function RootDocument() {
       <body className="antialiased">
         <ThemeProvider defaultTheme="system" storageKey={THEME_STORAGE_KEY}>
           <Outlet />
+          <Toaster />
         </ThemeProvider>
-        <Toaster />
         <Scripts />
       </body>
     </html>
