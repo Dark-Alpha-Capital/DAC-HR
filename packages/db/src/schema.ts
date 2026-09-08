@@ -28,6 +28,7 @@ import type {
   InterviewMode,
   InterviewSessionStatus,
   InterviewStatus,
+  ContractStatus,
   RoundDeliveryMode,
   Personality,
   PositionStatus,
@@ -1016,3 +1017,83 @@ export const emailTemplate = sqliteTable(
 );
 
 export type EmailTemplate = InferSelectModel<typeof emailTemplate>;
+
+/**
+ * Per-position / per-hire-level contract template. `bodyTemplate` is the legal
+ * text with `{{token}}` placeholders that are merged with candidate, position,
+ * and offer values at send time. Templates may pin a specific position, else
+ * they resolve by hire level as a fallback (see feature service).
+ */
+export const contractTemplate = sqliteTable(
+  "contract_template",
+  {
+    id: uuidPk(),
+    name: text("name").notNull(),
+    positionId: text("position_id").references(() => position.id, {
+      onDelete: "set null",
+    }),
+    hireLevel: text("hire_level").$type<HireLevel>(),
+    bodyTemplate: text("body_template").notNull(),
+    isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
+    createdBy: text("created_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: createdAtCol(),
+    updatedAt: updatedAtCol(),
+  },
+  (table) => [index("contract_template_position_idx").on(table.positionId)],
+);
+
+export type ContractTemplate = InferSelectModel<typeof contractTemplate>;
+
+/**
+ * A contract/offer issued to a candidate for one application. One row per
+ * application; re-sends and negotiated revisions bump `version`. The rendered
+ * merged text for the current version lives in `bodyText` so the candidate
+ * review page and legal review never re-derive from a changed template.
+ * `variables` stores the arbitrary offer values ({compensation}, {startDate},
+ * ...) used by the merge at the time of each send/version.
+ */
+export const contract = sqliteTable(
+  "contract",
+  {
+    id: uuidPk(),
+    token: text("token").notNull().unique(),
+    applicationId: text("application_id")
+      .notNull()
+      .references(() => application.id, { onDelete: "cascade" }),
+    candidateId: text("candidate_id")
+      .notNull()
+      .references(() => candidate.id, { onDelete: "cascade" }),
+    positionId: text("position_id")
+      .notNull()
+      .references(() => position.id, { onDelete: "cascade" }),
+    templateId: text("template_id").references(() => contractTemplate.id, {
+      onDelete: "set null",
+    }),
+    templateVersion: integer("template_version").default(1).notNull(),
+    status: text("status").$type<ContractStatus>().default("draft").notNull(),
+    version: integer("version").default(1).notNull(),
+    subject: text("subject"),
+    customMessage: text("custom_message"),
+    variables: text("variables", { mode: "json" }).$type<JsonObject>(),
+    bodyText: text("body_text"),
+    docUrl: text("doc_url"),
+    docPath: text("doc_path"),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }),
+    sentAt: integer("sent_at", { mode: "timestamp_ms" }),
+    openedAt: integer("opened_at", { mode: "timestamp_ms" }),
+    receiptAffirmedAt: integer("receipt_affirmed_at", { mode: "timestamp_ms" }),
+    declinedAt: integer("declined_at", { mode: "timestamp_ms" }),
+    createdAt: createdAtCol(),
+    updatedAt: updatedAtCol(),
+  },
+  (table) => [
+    index("contract_application_idx").on(table.applicationId),
+    index("contract_status_idx").on(table.status),
+    index("contract_candidate_idx").on(table.candidateId),
+    index("contract_position_idx").on(table.positionId),
+  ],
+);
+
+export type Contract = InferSelectModel<typeof contract>;

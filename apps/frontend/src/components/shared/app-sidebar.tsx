@@ -14,6 +14,7 @@ import {
   Video,
   ChevronDown,
   Mail,
+  FileSignature,
   type LucideIcon,
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
@@ -70,6 +71,7 @@ const recruitingLinks: readonly NavLink[] = [
     withEmptySearch: true,
   },
   { href: "/documents", label: "Documents", icon: Folders },
+  { href: "/contracts", label: "Contracts", icon: FileSignature },
 ];
 
 const tutorialLinks: readonly NavLink[] = [

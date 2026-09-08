@@ -53,6 +53,7 @@ import {
   syncVoiceResponsesForSession,
   insertCheatingEvents,
   upsertEvaluation,
+  markSessionOpenedById,
 } from "@workspace/db/repositories/interview-session-repository";
 import {
   getScreenerById,
@@ -1141,6 +1142,10 @@ export const interviewsService = {
 
   async getSessionById(id: string) {
     return getSessionById(id);
+  },
+
+  async markInterviewOpened(sessionId: string) {
+    return markSessionOpenedById(sessionId);
   },
 
   async getEvaluationBySessionId(sessionId: string) {

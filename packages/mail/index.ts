@@ -4,6 +4,7 @@ import {
   InterviewInviteEmail,
   InterviewCompletedEmail,
   OnboardingWelcomeEmail,
+  ContractReviewEmail,
 } from "./emails";
 import type { EmailJobData } from "./types";
 import { EMAIL_CONFIG } from "./types";
@@ -75,6 +76,27 @@ export const renderEmailTemplate = async (
         }),
       );
       return { subject, html };
+    }
+
+    case "contract-review": {
+      const subject =
+        jobData.subject ??
+        `Your contract for review — ${jobData.positionName}`;
+      const html = await render(
+        ContractReviewEmail({
+          candidateName: jobData.candidateName,
+          positionName: jobData.positionName,
+          reviewUrl: jobData.reviewUrl,
+          customMessage: jobData.customMessage,
+        }),
+      );
+      return { subject, html };
+    }
+
+    case "internal-notice": {
+      // Internal HR notice: subject + html arrive pre-rendered from the
+      // feature service that enqueued them.
+      return { subject: jobData.subject, html: jobData.html };
     }
 
     default: {

@@ -33,9 +33,11 @@ import { Route as MainInterviewsIndexRouteImport } from './routes/_main/intervie
 import { Route as MainEmployeesIndexRouteImport } from './routes/_main/employees/index'
 import { Route as MainDocumentsIndexRouteImport } from './routes/_main/documents/index'
 import { Route as MainDocsIndexRouteImport } from './routes/_main/docs/index'
+import { Route as MainContractsIndexRouteImport } from './routes/_main/contracts/index'
 import { Route as MainCandidatesIndexRouteImport } from './routes/_main/candidates/index'
 import { Route as MainApplicationsIndexRouteImport } from './routes/_main/applications/index'
 import { Route as MainAdminIndexRouteImport } from './routes/_main/admin/index'
+import { Route as ContractTokenReviewRouteImport } from './routes/contract/$token/review'
 import { Route as ApiLoginGoogleRouteImport } from './routes/api/login/google'
 import { Route as ApiKanbanCardsRouteImport } from './routes/api/kanban/cards'
 import { Route as ApiDocumentsViewRouteImport } from './routes/api/documents/view'
@@ -62,9 +64,11 @@ import { Route as MainDocsDocumentsRouteImport } from './routes/_main/docs/docum
 import { Route as MainDocsCandidatesRouteImport } from './routes/_main/docs/candidates'
 import { Route as MainDocsApplicationsRouteImport } from './routes/_main/docs/applications'
 import { Route as MainDocsAiFeaturesRouteImport } from './routes/_main/docs/ai-features'
+import { Route as MainContractsNewRouteImport } from './routes/_main/contracts/new'
 import { Route as MainCandidatesNewRouteImport } from './routes/_main/candidates/new'
 import { Route as MainAdminEmailTemplatesRouteImport } from './routes/_main/admin/email-templates'
 import { Route as MainAdminAuditLogsRouteImport } from './routes/_main/admin/audit-logs'
+import { Route as ApiContractTokenIndexRouteImport } from './routes/api/contract/$token/index'
 import { Route as ApiCandidateImportIndexRouteImport } from './routes/api/candidate/import/index'
 import { Route as ApiCandidateIdIndexRouteImport } from './routes/api/candidate/$id/index'
 import { Route as MainRoundsIdIndexRouteImport } from './routes/_main/rounds/$id/index'
@@ -84,6 +88,9 @@ import { Route as ApiInterviewTokenTokenResponsesRouteImport } from './routes/ap
 import { Route as ApiInterviewTokenTokenCompleteRouteImport } from './routes/api/interview-token/$token/complete'
 import { Route as ApiInterviewSessionsSessionIdRecordingRouteImport } from './routes/api/interview-sessions/$sessionId/recording'
 import { Route as ApiInterviewBundleBundleIdAiAnalysisRouteImport } from './routes/api/interview-bundle/$bundleId/ai-analysis'
+import { Route as ApiContractTokenNegotiateRouteImport } from './routes/api/contract/$token/negotiate'
+import { Route as ApiContractTokenDeclineRouteImport } from './routes/api/contract/$token/decline'
+import { Route as ApiContractTokenAffirmReceiptRouteImport } from './routes/api/contract/$token/affirm-receipt'
 import { Route as ApiCandidateImportIdRouteImport } from './routes/api/candidate/import/$id'
 import { Route as ApiCandidateIdDocumentsRouteImport } from './routes/api/candidate/$id/documents'
 import { Route as ApiCandidateIdAiScreeningRouteImport } from './routes/api/candidate/$id/ai-screening'
@@ -220,6 +227,11 @@ const MainDocsIndexRoute = MainDocsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => MainDocsRouteRoute,
 } as any)
+const MainContractsIndexRoute = MainContractsIndexRouteImport.update({
+  id: '/contracts/',
+  path: '/contracts/',
+  getParentRoute: () => MainRouteRoute,
+} as any)
 const MainCandidatesIndexRoute = MainCandidatesIndexRouteImport.update({
   id: '/candidates/',
   path: '/candidates/',
@@ -234,6 +246,11 @@ const MainAdminIndexRoute = MainAdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => MainAdminRouteRoute,
+} as any)
+const ContractTokenReviewRoute = ContractTokenReviewRouteImport.update({
+  id: '/contract/$token/review',
+  path: '/contract/$token/review',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiLoginGoogleRoute = ApiLoginGoogleRouteImport.update({
   id: '/api/login/google',
@@ -367,6 +384,11 @@ const MainDocsAiFeaturesRoute = MainDocsAiFeaturesRouteImport.update({
   path: '/ai-features',
   getParentRoute: () => MainDocsRouteRoute,
 } as any)
+const MainContractsNewRoute = MainContractsNewRouteImport.update({
+  id: '/contracts/new',
+  path: '/contracts/new',
+  getParentRoute: () => MainRouteRoute,
+} as any)
 const MainCandidatesNewRoute = MainCandidatesNewRouteImport.update({
   id: '/candidates/new',
   path: '/candidates/new',
@@ -381,6 +403,11 @@ const MainAdminAuditLogsRoute = MainAdminAuditLogsRouteImport.update({
   id: '/audit-logs',
   path: '/audit-logs',
   getParentRoute: () => MainAdminRouteRoute,
+} as any)
+const ApiContractTokenIndexRoute = ApiContractTokenIndexRouteImport.update({
+  id: '/api/contract/$token/',
+  path: '/api/contract/$token/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCandidateImportIndexRoute = ApiCandidateImportIndexRouteImport.update({
   id: '/api/candidate/import/',
@@ -485,6 +512,23 @@ const ApiInterviewBundleBundleIdAiAnalysisRoute =
   ApiInterviewBundleBundleIdAiAnalysisRouteImport.update({
     id: '/api/interview-bundle/$bundleId/ai-analysis',
     path: '/api/interview-bundle/$bundleId/ai-analysis',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiContractTokenNegotiateRoute =
+  ApiContractTokenNegotiateRouteImport.update({
+    id: '/api/contract/$token/negotiate',
+    path: '/api/contract/$token/negotiate',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiContractTokenDeclineRoute = ApiContractTokenDeclineRouteImport.update({
+  id: '/api/contract/$token/decline',
+  path: '/api/contract/$token/decline',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiContractTokenAffirmReceiptRoute =
+  ApiContractTokenAffirmReceiptRouteImport.update({
+    id: '/api/contract/$token/affirm-receipt',
+    path: '/api/contract/$token/affirm-receipt',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiCandidateImportIdRoute = ApiCandidateImportIdRouteImport.update({
@@ -594,6 +638,7 @@ export interface FileRoutesByFullPath {
   '/admin/audit-logs': typeof MainAdminAuditLogsRoute
   '/admin/email-templates': typeof MainAdminEmailTemplatesRoute
   '/candidates/new': typeof MainCandidatesNewRoute
+  '/contracts/new': typeof MainContractsNewRoute
   '/docs/ai-features': typeof MainDocsAiFeaturesRoute
   '/docs/applications': typeof MainDocsApplicationsRoute
   '/docs/candidates': typeof MainDocsCandidatesRoute
@@ -620,9 +665,11 @@ export interface FileRoutesByFullPath {
   '/api/documents/view': typeof ApiDocumentsViewRoute
   '/api/kanban/cards': typeof ApiKanbanCardsRoute
   '/api/login/google': typeof ApiLoginGoogleRoute
+  '/contract/$token/review': typeof ContractTokenReviewRoute
   '/admin/': typeof MainAdminIndexRoute
   '/applications/': typeof MainApplicationsIndexRoute
   '/candidates/': typeof MainCandidatesIndexRoute
+  '/contracts/': typeof MainContractsIndexRoute
   '/docs/': typeof MainDocsIndexRoute
   '/documents/': typeof MainDocumentsIndexRoute
   '/employees/': typeof MainEmployeesIndexRoute
@@ -649,6 +696,9 @@ export interface FileRoutesByFullPath {
   '/api/candidate/$id/ai-screening': typeof ApiCandidateIdAiScreeningRoute
   '/api/candidate/$id/documents': typeof ApiCandidateIdDocumentsRouteWithChildren
   '/api/candidate/import/$id': typeof ApiCandidateImportIdRoute
+  '/api/contract/$token/affirm-receipt': typeof ApiContractTokenAffirmReceiptRoute
+  '/api/contract/$token/decline': typeof ApiContractTokenDeclineRoute
+  '/api/contract/$token/negotiate': typeof ApiContractTokenNegotiateRoute
   '/api/interview-bundle/$bundleId/ai-analysis': typeof ApiInterviewBundleBundleIdAiAnalysisRoute
   '/api/interview-sessions/$sessionId/recording': typeof ApiInterviewSessionsSessionIdRecordingRoute
   '/api/interview-token/$token/complete': typeof ApiInterviewTokenTokenCompleteRoute
@@ -668,6 +718,7 @@ export interface FileRoutesByFullPath {
   '/rounds/$id/': typeof MainRoundsIdIndexRoute
   '/api/candidate/$id/': typeof ApiCandidateIdIndexRoute
   '/api/candidate/import/': typeof ApiCandidateImportIndexRoute
+  '/api/contract/$token/': typeof ApiContractTokenIndexRoute
   '/api/candidate/$id/documents/$documentId': typeof ApiCandidateIdDocumentsDocumentIdRoute
   '/interviews/bundle/$bundleId/': typeof MainInterviewsBundleBundleIdIndexRoute
   '/candidates/$uid/documents/$documentId/edit': typeof MainCandidatesUidDocumentsDocumentIdEditRoute
@@ -684,6 +735,7 @@ export interface FileRoutesByTo {
   '/admin/audit-logs': typeof MainAdminAuditLogsRoute
   '/admin/email-templates': typeof MainAdminEmailTemplatesRoute
   '/candidates/new': typeof MainCandidatesNewRoute
+  '/contracts/new': typeof MainContractsNewRoute
   '/docs/ai-features': typeof MainDocsAiFeaturesRoute
   '/docs/applications': typeof MainDocsApplicationsRoute
   '/docs/candidates': typeof MainDocsCandidatesRoute
@@ -710,9 +762,11 @@ export interface FileRoutesByTo {
   '/api/documents/view': typeof ApiDocumentsViewRoute
   '/api/kanban/cards': typeof ApiKanbanCardsRoute
   '/api/login/google': typeof ApiLoginGoogleRoute
+  '/contract/$token/review': typeof ContractTokenReviewRoute
   '/admin': typeof MainAdminIndexRoute
   '/applications': typeof MainApplicationsIndexRoute
   '/candidates': typeof MainCandidatesIndexRoute
+  '/contracts': typeof MainContractsIndexRoute
   '/docs': typeof MainDocsIndexRoute
   '/documents': typeof MainDocumentsIndexRoute
   '/employees': typeof MainEmployeesIndexRoute
@@ -739,6 +793,9 @@ export interface FileRoutesByTo {
   '/api/candidate/$id/ai-screening': typeof ApiCandidateIdAiScreeningRoute
   '/api/candidate/$id/documents': typeof ApiCandidateIdDocumentsRouteWithChildren
   '/api/candidate/import/$id': typeof ApiCandidateImportIdRoute
+  '/api/contract/$token/affirm-receipt': typeof ApiContractTokenAffirmReceiptRoute
+  '/api/contract/$token/decline': typeof ApiContractTokenDeclineRoute
+  '/api/contract/$token/negotiate': typeof ApiContractTokenNegotiateRoute
   '/api/interview-bundle/$bundleId/ai-analysis': typeof ApiInterviewBundleBundleIdAiAnalysisRoute
   '/api/interview-sessions/$sessionId/recording': typeof ApiInterviewSessionsSessionIdRecordingRoute
   '/api/interview-token/$token/complete': typeof ApiInterviewTokenTokenCompleteRoute
@@ -758,6 +815,7 @@ export interface FileRoutesByTo {
   '/rounds/$id': typeof MainRoundsIdIndexRoute
   '/api/candidate/$id': typeof ApiCandidateIdIndexRoute
   '/api/candidate/import': typeof ApiCandidateImportIndexRoute
+  '/api/contract/$token': typeof ApiContractTokenIndexRoute
   '/api/candidate/$id/documents/$documentId': typeof ApiCandidateIdDocumentsDocumentIdRoute
   '/interviews/bundle/$bundleId': typeof MainInterviewsBundleBundleIdIndexRoute
   '/candidates/$uid/documents/$documentId/edit': typeof MainCandidatesUidDocumentsDocumentIdEditRoute
@@ -779,6 +837,7 @@ export interface FileRoutesById {
   '/_main/admin/audit-logs': typeof MainAdminAuditLogsRoute
   '/_main/admin/email-templates': typeof MainAdminEmailTemplatesRoute
   '/_main/candidates/new': typeof MainCandidatesNewRoute
+  '/_main/contracts/new': typeof MainContractsNewRoute
   '/_main/docs/ai-features': typeof MainDocsAiFeaturesRoute
   '/_main/docs/applications': typeof MainDocsApplicationsRoute
   '/_main/docs/candidates': typeof MainDocsCandidatesRoute
@@ -805,9 +864,11 @@ export interface FileRoutesById {
   '/api/documents/view': typeof ApiDocumentsViewRoute
   '/api/kanban/cards': typeof ApiKanbanCardsRoute
   '/api/login/google': typeof ApiLoginGoogleRoute
+  '/contract/$token/review': typeof ContractTokenReviewRoute
   '/_main/admin/': typeof MainAdminIndexRoute
   '/_main/applications/': typeof MainApplicationsIndexRoute
   '/_main/candidates/': typeof MainCandidatesIndexRoute
+  '/_main/contracts/': typeof MainContractsIndexRoute
   '/_main/docs/': typeof MainDocsIndexRoute
   '/_main/documents/': typeof MainDocumentsIndexRoute
   '/_main/employees/': typeof MainEmployeesIndexRoute
@@ -834,6 +895,9 @@ export interface FileRoutesById {
   '/api/candidate/$id/ai-screening': typeof ApiCandidateIdAiScreeningRoute
   '/api/candidate/$id/documents': typeof ApiCandidateIdDocumentsRouteWithChildren
   '/api/candidate/import/$id': typeof ApiCandidateImportIdRoute
+  '/api/contract/$token/affirm-receipt': typeof ApiContractTokenAffirmReceiptRoute
+  '/api/contract/$token/decline': typeof ApiContractTokenDeclineRoute
+  '/api/contract/$token/negotiate': typeof ApiContractTokenNegotiateRoute
   '/api/interview-bundle/$bundleId/ai-analysis': typeof ApiInterviewBundleBundleIdAiAnalysisRoute
   '/api/interview-sessions/$sessionId/recording': typeof ApiInterviewSessionsSessionIdRecordingRoute
   '/api/interview-token/$token/complete': typeof ApiInterviewTokenTokenCompleteRoute
@@ -853,6 +917,7 @@ export interface FileRoutesById {
   '/_main/rounds/$id/': typeof MainRoundsIdIndexRoute
   '/api/candidate/$id/': typeof ApiCandidateIdIndexRoute
   '/api/candidate/import/': typeof ApiCandidateImportIndexRoute
+  '/api/contract/$token/': typeof ApiContractTokenIndexRoute
   '/api/candidate/$id/documents/$documentId': typeof ApiCandidateIdDocumentsDocumentIdRoute
   '/_main/interviews/bundle/$bundleId/': typeof MainInterviewsBundleBundleIdIndexRoute
   '/_main/candidates/$uid/documents/$documentId/edit': typeof MainCandidatesUidDocumentsDocumentIdEditRoute
@@ -873,6 +938,7 @@ export interface FileRouteTypes {
     | '/admin/audit-logs'
     | '/admin/email-templates'
     | '/candidates/new'
+    | '/contracts/new'
     | '/docs/ai-features'
     | '/docs/applications'
     | '/docs/candidates'
@@ -899,9 +965,11 @@ export interface FileRouteTypes {
     | '/api/documents/view'
     | '/api/kanban/cards'
     | '/api/login/google'
+    | '/contract/$token/review'
     | '/admin/'
     | '/applications/'
     | '/candidates/'
+    | '/contracts/'
     | '/docs/'
     | '/documents/'
     | '/employees/'
@@ -928,6 +996,9 @@ export interface FileRouteTypes {
     | '/api/candidate/$id/ai-screening'
     | '/api/candidate/$id/documents'
     | '/api/candidate/import/$id'
+    | '/api/contract/$token/affirm-receipt'
+    | '/api/contract/$token/decline'
+    | '/api/contract/$token/negotiate'
     | '/api/interview-bundle/$bundleId/ai-analysis'
     | '/api/interview-sessions/$sessionId/recording'
     | '/api/interview-token/$token/complete'
@@ -947,6 +1018,7 @@ export interface FileRouteTypes {
     | '/rounds/$id/'
     | '/api/candidate/$id/'
     | '/api/candidate/import/'
+    | '/api/contract/$token/'
     | '/api/candidate/$id/documents/$documentId'
     | '/interviews/bundle/$bundleId/'
     | '/candidates/$uid/documents/$documentId/edit'
@@ -963,6 +1035,7 @@ export interface FileRouteTypes {
     | '/admin/audit-logs'
     | '/admin/email-templates'
     | '/candidates/new'
+    | '/contracts/new'
     | '/docs/ai-features'
     | '/docs/applications'
     | '/docs/candidates'
@@ -989,9 +1062,11 @@ export interface FileRouteTypes {
     | '/api/documents/view'
     | '/api/kanban/cards'
     | '/api/login/google'
+    | '/contract/$token/review'
     | '/admin'
     | '/applications'
     | '/candidates'
+    | '/contracts'
     | '/docs'
     | '/documents'
     | '/employees'
@@ -1018,6 +1093,9 @@ export interface FileRouteTypes {
     | '/api/candidate/$id/ai-screening'
     | '/api/candidate/$id/documents'
     | '/api/candidate/import/$id'
+    | '/api/contract/$token/affirm-receipt'
+    | '/api/contract/$token/decline'
+    | '/api/contract/$token/negotiate'
     | '/api/interview-bundle/$bundleId/ai-analysis'
     | '/api/interview-sessions/$sessionId/recording'
     | '/api/interview-token/$token/complete'
@@ -1037,6 +1115,7 @@ export interface FileRouteTypes {
     | '/rounds/$id'
     | '/api/candidate/$id'
     | '/api/candidate/import'
+    | '/api/contract/$token'
     | '/api/candidate/$id/documents/$documentId'
     | '/interviews/bundle/$bundleId'
     | '/candidates/$uid/documents/$documentId/edit'
@@ -1057,6 +1136,7 @@ export interface FileRouteTypes {
     | '/_main/admin/audit-logs'
     | '/_main/admin/email-templates'
     | '/_main/candidates/new'
+    | '/_main/contracts/new'
     | '/_main/docs/ai-features'
     | '/_main/docs/applications'
     | '/_main/docs/candidates'
@@ -1083,9 +1163,11 @@ export interface FileRouteTypes {
     | '/api/documents/view'
     | '/api/kanban/cards'
     | '/api/login/google'
+    | '/contract/$token/review'
     | '/_main/admin/'
     | '/_main/applications/'
     | '/_main/candidates/'
+    | '/_main/contracts/'
     | '/_main/docs/'
     | '/_main/documents/'
     | '/_main/employees/'
@@ -1112,6 +1194,9 @@ export interface FileRouteTypes {
     | '/api/candidate/$id/ai-screening'
     | '/api/candidate/$id/documents'
     | '/api/candidate/import/$id'
+    | '/api/contract/$token/affirm-receipt'
+    | '/api/contract/$token/decline'
+    | '/api/contract/$token/negotiate'
     | '/api/interview-bundle/$bundleId/ai-analysis'
     | '/api/interview-sessions/$sessionId/recording'
     | '/api/interview-token/$token/complete'
@@ -1131,6 +1216,7 @@ export interface FileRouteTypes {
     | '/_main/rounds/$id/'
     | '/api/candidate/$id/'
     | '/api/candidate/import/'
+    | '/api/contract/$token/'
     | '/api/candidate/$id/documents/$documentId'
     | '/_main/interviews/bundle/$bundleId/'
     | '/_main/candidates/$uid/documents/$documentId/edit'
@@ -1150,12 +1236,16 @@ export interface RootRouteChildren {
   ApiDocumentsViewRoute: typeof ApiDocumentsViewRoute
   ApiKanbanCardsRoute: typeof ApiKanbanCardsRoute
   ApiLoginGoogleRoute: typeof ApiLoginGoogleRoute
+  ContractTokenReviewRoute: typeof ContractTokenReviewRoute
   ApiCandidateIndexRoute: typeof ApiCandidateIndexRoute
   InterviewTokenIndexRoute: typeof InterviewTokenIndexRoute
   ApiCandidateIdAiAnalysisRoute: typeof ApiCandidateIdAiAnalysisRoute
   ApiCandidateIdAiScreeningRoute: typeof ApiCandidateIdAiScreeningRoute
   ApiCandidateIdDocumentsRoute: typeof ApiCandidateIdDocumentsRouteWithChildren
   ApiCandidateImportIdRoute: typeof ApiCandidateImportIdRoute
+  ApiContractTokenAffirmReceiptRoute: typeof ApiContractTokenAffirmReceiptRoute
+  ApiContractTokenDeclineRoute: typeof ApiContractTokenDeclineRoute
+  ApiContractTokenNegotiateRoute: typeof ApiContractTokenNegotiateRoute
   ApiInterviewBundleBundleIdAiAnalysisRoute: typeof ApiInterviewBundleBundleIdAiAnalysisRoute
   ApiInterviewTokenTokenCompleteRoute: typeof ApiInterviewTokenTokenCompleteRoute
   ApiInterviewTokenTokenResponsesRoute: typeof ApiInterviewTokenTokenResponsesRoute
@@ -1166,6 +1256,7 @@ export interface RootRouteChildren {
   ApiInterviewIdAiAnalysisRoute: typeof ApiInterviewIdAiAnalysisRoute
   ApiCandidateIdIndexRoute: typeof ApiCandidateIdIndexRoute
   ApiCandidateImportIndexRoute: typeof ApiCandidateImportIndexRoute
+  ApiContractTokenIndexRoute: typeof ApiContractTokenIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1338,6 +1429,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainDocsIndexRouteImport
       parentRoute: typeof MainDocsRouteRoute
     }
+    '/_main/contracts/': {
+      id: '/_main/contracts/'
+      path: '/contracts'
+      fullPath: '/contracts/'
+      preLoaderRoute: typeof MainContractsIndexRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
     '/_main/candidates/': {
       id: '/_main/candidates/'
       path: '/candidates'
@@ -1358,6 +1456,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof MainAdminIndexRouteImport
       parentRoute: typeof MainAdminRouteRoute
+    }
+    '/contract/$token/review': {
+      id: '/contract/$token/review'
+      path: '/contract/$token/review'
+      fullPath: '/contract/$token/review'
+      preLoaderRoute: typeof ContractTokenReviewRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/login/google': {
       id: '/api/login/google'
@@ -1541,6 +1646,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainDocsAiFeaturesRouteImport
       parentRoute: typeof MainDocsRouteRoute
     }
+    '/_main/contracts/new': {
+      id: '/_main/contracts/new'
+      path: '/contracts/new'
+      fullPath: '/contracts/new'
+      preLoaderRoute: typeof MainContractsNewRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
     '/_main/candidates/new': {
       id: '/_main/candidates/new'
       path: '/candidates/new'
@@ -1561,6 +1673,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/audit-logs'
       preLoaderRoute: typeof MainAdminAuditLogsRouteImport
       parentRoute: typeof MainAdminRouteRoute
+    }
+    '/api/contract/$token/': {
+      id: '/api/contract/$token/'
+      path: '/api/contract/$token'
+      fullPath: '/api/contract/$token/'
+      preLoaderRoute: typeof ApiContractTokenIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/candidate/import/': {
       id: '/api/candidate/import/'
@@ -1693,6 +1812,27 @@ declare module '@tanstack/react-router' {
       path: '/api/interview-bundle/$bundleId/ai-analysis'
       fullPath: '/api/interview-bundle/$bundleId/ai-analysis'
       preLoaderRoute: typeof ApiInterviewBundleBundleIdAiAnalysisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/contract/$token/negotiate': {
+      id: '/api/contract/$token/negotiate'
+      path: '/api/contract/$token/negotiate'
+      fullPath: '/api/contract/$token/negotiate'
+      preLoaderRoute: typeof ApiContractTokenNegotiateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/contract/$token/decline': {
+      id: '/api/contract/$token/decline'
+      path: '/api/contract/$token/decline'
+      fullPath: '/api/contract/$token/decline'
+      preLoaderRoute: typeof ApiContractTokenDeclineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/contract/$token/affirm-receipt': {
+      id: '/api/contract/$token/affirm-receipt'
+      path: '/api/contract/$token/affirm-receipt'
+      fullPath: '/api/contract/$token/affirm-receipt'
+      preLoaderRoute: typeof ApiContractTokenAffirmReceiptRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/candidate/import/$id': {
@@ -1887,6 +2027,7 @@ interface MainRouteRouteChildren {
   MainDashboardRoute: typeof MainDashboardRoute
   MainIndexRoute: typeof MainIndexRoute
   MainCandidatesNewRoute: typeof MainCandidatesNewRoute
+  MainContractsNewRoute: typeof MainContractsNewRoute
   MainDocumentsNewRoute: typeof MainDocumentsNewRoute
   MainEmployeesNewRoute: typeof MainEmployeesNewRoute
   MainPositionsNewRoute: typeof MainPositionsNewRoute
@@ -1897,6 +2038,7 @@ interface MainRouteRouteChildren {
   MainWeeklyCheckinRecordsRoute: typeof MainWeeklyCheckinRecordsRoute
   MainApplicationsIndexRoute: typeof MainApplicationsIndexRoute
   MainCandidatesIndexRoute: typeof MainCandidatesIndexRoute
+  MainContractsIndexRoute: typeof MainContractsIndexRoute
   MainDocumentsIndexRoute: typeof MainDocumentsIndexRoute
   MainEmployeesIndexRoute: typeof MainEmployeesIndexRoute
   MainInterviewsIndexRoute: typeof MainInterviewsIndexRoute
@@ -1934,6 +2076,7 @@ const MainRouteRouteChildren: MainRouteRouteChildren = {
   MainDashboardRoute: MainDashboardRoute,
   MainIndexRoute: MainIndexRoute,
   MainCandidatesNewRoute: MainCandidatesNewRoute,
+  MainContractsNewRoute: MainContractsNewRoute,
   MainDocumentsNewRoute: MainDocumentsNewRoute,
   MainEmployeesNewRoute: MainEmployeesNewRoute,
   MainPositionsNewRoute: MainPositionsNewRoute,
@@ -1944,6 +2087,7 @@ const MainRouteRouteChildren: MainRouteRouteChildren = {
   MainWeeklyCheckinRecordsRoute: MainWeeklyCheckinRecordsRoute,
   MainApplicationsIndexRoute: MainApplicationsIndexRoute,
   MainCandidatesIndexRoute: MainCandidatesIndexRoute,
+  MainContractsIndexRoute: MainContractsIndexRoute,
   MainDocumentsIndexRoute: MainDocumentsIndexRoute,
   MainEmployeesIndexRoute: MainEmployeesIndexRoute,
   MainInterviewsIndexRoute: MainInterviewsIndexRoute,
@@ -2024,12 +2168,16 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDocumentsViewRoute: ApiDocumentsViewRoute,
   ApiKanbanCardsRoute: ApiKanbanCardsRoute,
   ApiLoginGoogleRoute: ApiLoginGoogleRoute,
+  ContractTokenReviewRoute: ContractTokenReviewRoute,
   ApiCandidateIndexRoute: ApiCandidateIndexRoute,
   InterviewTokenIndexRoute: InterviewTokenIndexRoute,
   ApiCandidateIdAiAnalysisRoute: ApiCandidateIdAiAnalysisRoute,
   ApiCandidateIdAiScreeningRoute: ApiCandidateIdAiScreeningRoute,
   ApiCandidateIdDocumentsRoute: ApiCandidateIdDocumentsRouteWithChildren,
   ApiCandidateImportIdRoute: ApiCandidateImportIdRoute,
+  ApiContractTokenAffirmReceiptRoute: ApiContractTokenAffirmReceiptRoute,
+  ApiContractTokenDeclineRoute: ApiContractTokenDeclineRoute,
+  ApiContractTokenNegotiateRoute: ApiContractTokenNegotiateRoute,
   ApiInterviewBundleBundleIdAiAnalysisRoute:
     ApiInterviewBundleBundleIdAiAnalysisRoute,
   ApiInterviewTokenTokenCompleteRoute: ApiInterviewTokenTokenCompleteRoute,
@@ -2042,6 +2190,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiInterviewIdAiAnalysisRoute: ApiInterviewIdAiAnalysisRoute,
   ApiCandidateIdIndexRoute: ApiCandidateIdIndexRoute,
   ApiCandidateImportIndexRoute: ApiCandidateImportIndexRoute,
+  ApiContractTokenIndexRoute: ApiContractTokenIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

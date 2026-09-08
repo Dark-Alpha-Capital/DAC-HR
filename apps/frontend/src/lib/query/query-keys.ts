@@ -102,6 +102,14 @@ export const queryKeys = {
     all: ["email-templates"] as const,
     detail: (type: string) => ["email-templates", "detail", type] as const,
   },
+  contracts: {
+    all: ["contracts"] as const,
+    templates: () => ["contracts", "templates"] as const,
+    sendTargets: (positionId: string) =>
+      ["contracts", "send-targets", positionId] as const,
+    byApplication: (applicationId: string) =>
+      ["contracts", "by-application", applicationId] as const,
+  },
   attendance: {
     all: ["attendance"] as const,
     meetings: <T extends object>(deps: T) =>

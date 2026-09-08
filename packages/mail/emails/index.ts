@@ -12,3 +12,8 @@ export {
   OnboardingWelcomeEmail,
   type OnboardingWelcomeTemplateData,
 } from "./onboarding-welcome";
+
+export {
+  ContractReviewEmail,
+  type ContractReviewTemplateData,
+} from "./contract-review";

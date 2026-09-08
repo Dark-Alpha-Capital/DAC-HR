@@ -13,6 +13,13 @@ const emailJobDataSchema = z.discriminatedUnion("type", [
     html: z.string(),
   }),
   z.object({
+    type: z.literal("internal-notice"),
+    to: z.string(),
+    cc: ccField,
+    subject: z.string(),
+    html: z.string(),
+  }),
+  z.object({
     type: z.literal("interview-invite"),
     to: z.string(),
     cc: ccField,
@@ -39,6 +46,16 @@ const emailJobDataSchema = z.discriminatedUnion("type", [
     location: z.string().nullable().optional(),
     startDate: z.string().nullable().optional(),
     contactEmail: z.string(),
+  }),
+  z.object({
+    type: z.literal("contract-review"),
+    to: z.string(),
+    cc: ccField,
+    candidateName: z.string(),
+    positionName: z.string(),
+    reviewUrl: z.string(),
+    subject: z.string().optional(),
+    customMessage: z.string().optional(),
   }),
 ]) satisfies z.ZodType<EmailJobData>;
 

@@ -83,3 +83,16 @@ export async function invalidateEmailTemplates(queryClient: QueryClient) {
     queryKey: queryKeys.emailTemplates.all,
   });
 }
+
+export async function invalidateContracts(queryClient: QueryClient) {
+  await queryClient.invalidateQueries({ queryKey: queryKeys.contracts.all });
+}
+
+export async function invalidateContractSendTargets(
+  queryClient: QueryClient,
+  positionId: string,
+) {
+  await queryClient.invalidateQueries({
+    queryKey: queryKeys.contracts.sendTargets(positionId),
+  });
+}

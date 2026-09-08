@@ -54,6 +54,21 @@ export const Route = createFileRoute("/api/interview-token/$token/validate")({
               deliveryMode: activeRound?.bundleRound.deliveryMode,
             });
 
+            // The candidate opened their interview link — record the first
+            // open so recruiters can see engagement before the interview.
+            if (session?.id) {
+              void interviewsService
+                .markInterviewOpened(session.id)
+                .catch((error) =>
+                  interviewServerLog.error(
+                    "validate",
+                    COMPONENT,
+                    "mark_opened_failed",
+                    { error: error?.message ?? String(error) },
+                  ),
+                );
+            }
+
             return Response.json({
               valid: true,
               type: "bundle",
@@ -99,6 +114,18 @@ export const Route = createFileRoute("/api/interview-token/$token/validate")({
             deliveryMode: session.deliveryMode,
             status: session.status,
           });
+
+          // Record the first open of the interview link.
+          void interviewsService
+            .markInterviewOpened(session.id)
+            .catch((error) =>
+              interviewServerLog.error(
+                "validate",
+                COMPONENT,
+                "mark_opened_failed",
+                { error: error?.message ?? String(error) },
+              ),
+            );
 
           return Response.json({
             valid: true,

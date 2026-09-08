@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "792e4daf-3101-46cd-8cd4-ef8d298d2844",
-  "prevId": "97d641de-5772-4556-8e31-946aed1bb7c9",
+  "id": "f86ed6ea-6b19-4da0-ac26-ffe6de6f1c8a",
+  "prevId": "792e4daf-3101-46cd-8cd4-ef8d298d2844",
   "tables": {
     "account": {
       "name": "account",
@@ -188,6 +188,35 @@
             "position_id"
           ],
           "isUnique": true
+        },
+        "application_status_idx": {
+          "name": "application_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "application_position_idx": {
+          "name": "application_position_idx",
+          "columns": [
+            "position_id"
+          ],
+          "isUnique": false
+        },
+        "application_created_idx": {
+          "name": "application_created_idx",
+          "columns": [
+            "created_at"
+          ],
+          "isUnique": false
+        },
+        "application_candidate_updated_idx": {
+          "name": "application_candidate_updated_idx",
+          "columns": [
+            "candidate_id",
+            "updated_at"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -282,7 +311,29 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "audit_log_user_idx": {
+          "name": "audit_log_user_idx",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        },
+        "audit_log_entity_idx": {
+          "name": "audit_log_entity_idx",
+          "columns": [
+            "entity_type"
+          ],
+          "isUnique": false
+        },
+        "audit_log_created_idx": {
+          "name": "audit_log_created_idx",
+          "columns": [
+            "created_at"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "audit_log_user_id_user_id_fk": {
           "name": "audit_log_user_id_user_id_fk",
@@ -404,6 +455,20 @@
             "email"
           ],
           "isUnique": true
+        },
+        "candidate_created_idx": {
+          "name": "candidate_created_idx",
+          "columns": [
+            "created_at"
+          ],
+          "isUnique": false
+        },
+        "candidate_source_idx": {
+          "name": "candidate_source_idx",
+          "columns": [
+            "source"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {},
@@ -479,7 +544,23 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "cas_candidate_created_idx": {
+          "name": "cas_candidate_created_idx",
+          "columns": [
+            "candidate_id",
+            "created_at"
+          ],
+          "isUnique": false
+        },
+        "cas_position_idx": {
+          "name": "cas_position_idx",
+          "columns": [
+            "position_id"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "candidate_ai_screening_candidate_id_candidate_id_fk": {
           "name": "candidate_ai_screening_candidate_id_candidate_id_fk",
@@ -674,7 +755,15 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "candidate_document_candidate_idx": {
+          "name": "candidate_document_candidate_idx",
+          "columns": [
+            "candidate_id"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "candidate_document_candidate_id_candidate_id_fk": {
           "name": "candidate_document_candidate_id_candidate_id_fk",
@@ -1469,6 +1558,13 @@
             "candidate_id"
           ],
           "isUnique": false
+        },
+        "contract_position_idx": {
+          "name": "contract_position_idx",
+          "columns": [
+            "position_id"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -1723,7 +1819,15 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "dcr_document_idx": {
+          "name": "dcr_document_idx",
+          "columns": [
+            "document_id"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "document_category_relations_document_id_documents_id_fk": {
           "name": "document_category_relations_document_id_documents_id_fk",
@@ -1823,6 +1927,13 @@
             "slug"
           ],
           "isUnique": true
+        },
+        "documents_created_idx": {
+          "name": "documents_created_idx",
+          "columns": [
+            "created_at"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {},
@@ -1963,7 +2074,15 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "employee_position_idx": {
+          "name": "employee_position_idx",
+          "columns": [
+            "position_id"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "employee_position_id_position_id_fk": {
           "name": "employee_position_id_position_id_fk",
@@ -2059,7 +2178,44 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "interview_application_idx": {
+          "name": "interview_application_idx",
+          "columns": [
+            "application_id"
+          ],
+          "isUnique": false
+        },
+        "interview_status_idx": {
+          "name": "interview_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "interview_scheduled_idx": {
+          "name": "interview_scheduled_idx",
+          "columns": [
+            "scheduled_at"
+          ],
+          "isUnique": false
+        },
+        "interview_created_idx": {
+          "name": "interview_created_idx",
+          "columns": [
+            "created_at"
+          ],
+          "isUnique": false
+        },
+        "interview_rating_idx": {
+          "name": "interview_rating_idx",
+          "columns": [
+            "rating"
+          ],
+          "isUnique": false,
+          "where": "\"interview\".\"rating\" is not null"
+        }
+      },
       "foreignKeys": {
         "interview_application_id_application_id_fk": {
           "name": "interview_application_id_application_id_fk",
@@ -2194,7 +2350,22 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "iaa_interview_idx": {
+          "name": "iaa_interview_idx",
+          "columns": [
+            "interview_id"
+          ],
+          "isUnique": false
+        },
+        "iaa_bundle_idx": {
+          "name": "iaa_bundle_idx",
+          "columns": [
+            "bundle_id"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "interview_ai_analysis_interview_id_interview_id_fk": {
           "name": "interview_ai_analysis_interview_id_interview_id_fk",
@@ -2327,6 +2498,13 @@
             "token"
           ],
           "isUnique": true
+        },
+        "interview_bundle_application_idx": {
+          "name": "interview_bundle_application_idx",
+          "columns": [
+            "application_id"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -2431,6 +2609,13 @@
             "round_id"
           ],
           "isUnique": true
+        },
+        "interview_bundle_round_session_idx": {
+          "name": "interview_bundle_round_session_idx",
+          "columns": [
+            "session_id"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -2972,6 +3157,27 @@
             "token"
           ],
           "isUnique": true
+        },
+        "interview_session_application_idx": {
+          "name": "interview_session_application_idx",
+          "columns": [
+            "application_id"
+          ],
+          "isUnique": false
+        },
+        "interview_session_interview_idx": {
+          "name": "interview_session_interview_idx",
+          "columns": [
+            "interview_id"
+          ],
+          "isUnique": false
+        },
+        "interview_session_bundle_idx": {
+          "name": "interview_session_bundle_idx",
+          "columns": [
+            "bundle_id"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -3403,7 +3609,15 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "question_bank_active_idx": {
+          "name": "question_bank_active_idx",
+          "columns": [
+            "is_active"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
@@ -3560,7 +3774,22 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "rwc_user_idx": {
+          "name": "rwc_user_idx",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        },
+        "rwc_created_idx": {
+          "name": "rwc_created_idx",
+          "columns": [
+            "created_at"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "recruiter_weekly_checkin_user_id_user_id_fk": {
           "name": "recruiter_weekly_checkin_user_id_user_id_fk",
@@ -3626,7 +3855,15 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "round_template_position_idx": {
+          "name": "round_template_position_idx",
+          "columns": [
+            "position_id"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "round_template_position_id_position_id_fk": {
           "name": "round_template_position_id_position_id_fk",
@@ -3671,7 +3908,22 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "rtq_round_idx": {
+          "name": "rtq_round_idx",
+          "columns": [
+            "round_template_id"
+          ],
+          "isUnique": false
+        },
+        "rtq_question_idx": {
+          "name": "rtq_question_idx",
+          "columns": [
+            "question_id"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "round_template_questions_round_template_id_round_template_id_fk": {
           "name": "round_template_questions_round_template_id_round_template_id_fk",

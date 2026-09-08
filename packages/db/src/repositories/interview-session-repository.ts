@@ -1,4 +1,4 @@
-import { and, eq, type SQL } from "drizzle-orm";
+import { and, eq, isNull, inArray, type SQL } from "drizzle-orm";
 import { db } from "@workspace/db/db";
 import type {
   AgentConfig,
@@ -6,6 +6,7 @@ import type {
   CheatingSummary,
   DeliveryMode,
   InputMethod,
+  InterviewSessionStatus,
 } from "../enums";
 import {
   interview,
@@ -124,6 +125,40 @@ export const updateSessionStatus = async (
 
   return row;
 };
+
+const SESSION_OPENABLE_STATUSES = [
+  "pending",
+  "invited",
+  "in_progress",
+] as const satisfies readonly InterviewSessionStatus[];
+
+/**
+ * Record the first time a candidate opened their interview link. Fire-and-
+ * forget from the public validate route; only writes when the session has not
+ * been opened yet and is still actionable (pending/invited/in_progress), so a
+ * completed or expired session never back-fills an open.
+ */
+const applyMarkSessionOpened = async (where: SQL) => {
+  const [row] = await db
+    .update(interviewSession)
+    .set({ openedAt: new Date() })
+    .where(
+      and(
+        where,
+        isNull(interviewSession.openedAt),
+        inArray(interviewSession.status, SESSION_OPENABLE_STATUSES),
+      ),
+    )
+    .returning({ id: interviewSession.id });
+
+  return row ?? null;
+};
+
+export const markSessionOpenedByToken = async (token: string) =>
+  applyMarkSessionOpened(eq(interviewSession.token, token));
+
+export const markSessionOpenedById = async (id: string) =>
+  applyMarkSessionOpened(eq(interviewSession.id, id));
 
 const sessionContextSelect = {
   session: interviewSession,

@@ -215,3 +215,21 @@ export const candidateImportRowStatuses = [
 ] as const;
 export type CandidateImportRowStatus =
   (typeof candidateImportRowStatuses)[number];
+
+/**
+ * Lifecycle of a contract/offer sent to a candidate for a given application.
+ * The candidate-facing states progress sent_for_review → receipt_affirmed →
+ * (negotiation ↔ negotiated) → sent_for_signature → signed/declined. `draft`
+ * is an HR-side not-yet-sent record.
+ */
+export const contractStatuses = [
+  "draft",
+  "sent_for_review",
+  "receipt_affirmed",
+  "negotiation",
+  "negotiated",
+  "sent_for_signature",
+  "signed",
+  "declined",
+] as const;
+export type ContractStatus = (typeof contractStatuses)[number];
