@@ -13,7 +13,10 @@ export const Route = createFileRoute("/_main/rounds/")({
   validateSearch: parseRoundsSearch,
   loader: async ({ context: { queryClient }, location }) => {
     const search = parseRoundsSearch(location.search);
-    await queryClient.ensureQueryData(roundsIndexQueryOptions(search));
+    await queryClient.query({
+      ...roundsIndexQueryOptions(search),
+      staleTime: "static",
+    });
   },
   pendingComponent: () => <ListPageSkeleton />,
   component: RoundsListPage,

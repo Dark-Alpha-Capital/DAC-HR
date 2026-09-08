@@ -13,7 +13,10 @@ export const Route = createFileRoute("/_main/employees/")({
   validateSearch: parseEmployeesSearch,
   loader: async ({ context: { queryClient }, location }) => {
     const search = parseEmployeesSearch(location.search);
-    await queryClient.ensureQueryData(prismicMembersQueryOptions(search));
+    await queryClient.query({
+      ...prismicMembersQueryOptions(search),
+      staleTime: "static",
+    });
   },
   pendingComponent: () => <ListPageSkeleton />,
   component: EmployeesListPage,

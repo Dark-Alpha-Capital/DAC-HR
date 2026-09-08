@@ -8,7 +8,10 @@ export const Route = createFileRoute("/_main/applications/$id/")({
     meta: [{ title: "Application Detail" }],
   }),
   loader: async ({ context: { queryClient }, params }) => {
-    await queryClient.ensureQueryData(applicationDetailQueryOptions(params.id));
+    await queryClient.query({
+      ...applicationDetailQueryOptions(params.id),
+      staleTime: "static",
+    });
   },
   pendingComponent: () => (
     <DetailPageSkeleton container tabs showBreadcrumb showActions />

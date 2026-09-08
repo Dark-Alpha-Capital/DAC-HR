@@ -7,7 +7,10 @@ export const Route = createFileRoute("/_main/dashboard")({
     meta: [{ title: "Dashboard - DAC HR" }],
   }),
   loader: async ({ context: { queryClient } }) => {
-    await queryClient.ensureQueryData(dashboardStatsQueryOptions());
+    await queryClient.query({
+      ...dashboardStatsQueryOptions(),
+      staleTime: "static",
+    });
   },
   pendingComponent: DashboardPagePending,
   component: DashboardPage,

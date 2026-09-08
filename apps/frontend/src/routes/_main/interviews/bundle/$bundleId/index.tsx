@@ -15,17 +15,23 @@ export const Route = createFileRoute("/_main/interviews/bundle/$bundleId/")({
   }),
   validateSearch: parseBundleDetailSearch,
   loader: async ({ context: { queryClient }, params }) => {
-    const detail = await queryClient.ensureQueryData(
-      interviewBundleDetailQueryOptions(params.bundleId),
-    );
+    const detail = await queryClient.query({
+      ...interviewBundleDetailQueryOptions(params.bundleId),
+      staleTime: "static",
+    });
     await Promise.all([
-      queryClient.ensureQueryData(screenersListQueryOptions()),
-      queryClient.ensureQueryData(
-        interviewBundleScreeningsQueryOptions(params.bundleId),
-      ),
-      queryClient.ensureQueryData(
-        interviewBundleEmailsQueryOptions(params.bundleId),
-      ),
+      queryClient.query({
+        ...screenersListQueryOptions(),
+        staleTime: "static",
+      }),
+      queryClient.query({
+        ...interviewBundleScreeningsQueryOptions(params.bundleId),
+        staleTime: "static",
+      }),
+      queryClient.query({
+        ...interviewBundleEmailsQueryOptions(params.bundleId),
+        staleTime: "static",
+      }),
     ]);
     return detail ?? null;
   },

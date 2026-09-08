@@ -13,7 +13,10 @@ export const Route = createFileRoute("/_main/questions/")({
   validateSearch: parseQuestionsSearch,
   loader: async ({ context: { queryClient }, location }) => {
     const search = parseQuestionsSearch(location.search);
-    await queryClient.ensureQueryData(questionsIndexQueryOptions(search));
+    await queryClient.query({
+      ...questionsIndexQueryOptions(search),
+      staleTime: "static",
+    });
   },
   pendingComponent: () => <ListPageSkeleton />,
   component: QuestionsListPage,

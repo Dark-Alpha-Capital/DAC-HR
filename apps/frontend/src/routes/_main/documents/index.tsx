@@ -13,7 +13,10 @@ export const Route = createFileRoute("/_main/documents/")({
   validateSearch: parseDocumentsSearch,
   loader: async ({ context: { queryClient }, location }) => {
     const search = parseDocumentsSearch(location.search);
-    await queryClient.ensureQueryData(documentsIndexQueryOptions(search));
+    await queryClient.query({
+      ...documentsIndexQueryOptions(search),
+      staleTime: "static",
+    });
   },
   pendingComponent: () => <ListPageSkeleton />,
   component: DocumentsListPage,

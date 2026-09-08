@@ -15,7 +15,10 @@ export const Route = createFileRoute("/_main/weekly-checkin/records")({
   validateSearch: parseWeeklyCheckinRecordsSearch,
   loader: async ({ context: { queryClient }, location }) => {
     const search = parseWeeklyCheckinRecordsSearch(location.search);
-    await queryClient.ensureQueryData(weeklyCheckinRecordsQueryOptions(search));
+    await queryClient.query({
+      ...weeklyCheckinRecordsQueryOptions(search),
+      staleTime: "static",
+    });
   },
   pendingComponent: WeeklyCheckinRecordsPending,
   component: WeeklyCheckinRecordsPage,

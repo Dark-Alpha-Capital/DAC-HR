@@ -10,7 +10,10 @@ export const Route = createFileRoute("/_main/employees/attendance/")({
   validateSearch: parseConferencesSearch,
   loaderDeps: ({ search }) => search,
   loader: async ({ context: { queryClient }, deps }) => {
-    await queryClient.ensureQueryData(meetingsQueryOptions(deps));
+    await queryClient.query({
+      ...meetingsQueryOptions(deps),
+      staleTime: "static",
+    });
   },
   pendingComponent: MeetingsPending,
   component: MeetingsListPage,

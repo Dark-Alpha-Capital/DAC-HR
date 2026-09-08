@@ -11,7 +11,10 @@ export const Route = createFileRoute(
   validateSearch: parseMeetingAttendanceSearch,
   loader: async ({ context: { queryClient }, location }) => {
     const search = parseMeetingAttendanceSearch(location.search);
-    await queryClient.ensureQueryData(storedAttendanceQueries.options(search));
+    await queryClient.query({
+      ...storedAttendanceQueries.options(search),
+      staleTime: "static",
+    });
   },
   pendingComponent: MeetingAttendancePending,
   component: MeetingAttendancePage,

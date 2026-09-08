@@ -13,7 +13,10 @@ export const Route = createFileRoute("/_main/applications/")({
   validateSearch: parseApplicationsSearch,
   loader: async ({ context: { queryClient }, location }) => {
     const search = parseApplicationsSearch(location.search);
-    await queryClient.ensureQueryData(applicationsIndexQueryOptions(search));
+    await queryClient.query({
+      ...applicationsIndexQueryOptions(search),
+      staleTime: "static",
+    });
   },
   pendingComponent: () => (
     <ListPageSkeleton filterCount={5} layout="cards" showActions={false} />

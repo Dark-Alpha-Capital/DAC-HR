@@ -13,9 +13,10 @@ export const Route = createFileRoute("/_main/employees/member/$uid")({
   validateSearch: parseMemberSearch,
   loader: async ({ context: { queryClient }, params, location }) => {
     const { kind } = parseMemberSearch(location.search);
-    await queryClient.ensureQueryData(
-      prismicMemberQueryOptions(params.uid, kind),
-    );
+    await queryClient.query({
+      ...prismicMemberQueryOptions(params.uid, kind),
+      staleTime: "static",
+    });
   },
   pendingComponent: () => <DetailPageSkeleton />,
   component: PrismicMemberDetailPage,

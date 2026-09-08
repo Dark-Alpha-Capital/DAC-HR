@@ -8,7 +8,10 @@ export const Route = createFileRoute("/_main/employees/$id/")({
     meta: [{ title: "Employee Detail" }],
   }),
   loader: async ({ context: { queryClient }, params }) => {
-    await queryClient.ensureQueryData(employeeDetailQueryOptions(params.id));
+    await queryClient.query({
+      ...employeeDetailQueryOptions(params.id),
+      staleTime: "static",
+    });
   },
   pendingComponent: () => <DetailPageSkeleton container tabs showBreadcrumb />,
   component: EmployeeDetailPage,

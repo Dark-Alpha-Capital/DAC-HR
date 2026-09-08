@@ -9,7 +9,10 @@ export const Route = createFileRoute(
     meta: [{ title: "Attendance" }],
   }),
   loader: async ({ context: { queryClient }, params }) => {
-    await queryClient.ensureQueryData(attendanceDetailQueryOptions(params.conferenceId));
+    await queryClient.query({
+      ...attendanceDetailQueryOptions(params.conferenceId),
+      staleTime: "static",
+    });
   },
   pendingComponent: AttendanceDetailPending,
   component: AttendanceDetailPage,

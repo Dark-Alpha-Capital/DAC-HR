@@ -14,11 +14,15 @@ export const Route = createFileRoute("/_main/candidates/$uid/")({
   validateSearch: parseCandidateDetailSearch,
   loader: async ({ context: { queryClient }, params, location }) => {
     const search = parseCandidateDetailSearch(location.search);
-    await queryClient.ensureQueryData(candidateDetailQueryOptions(params.uid));
+    await queryClient.query({
+      ...candidateDetailQueryOptions(params.uid),
+      staleTime: "static",
+    });
     if (search.applicationId) {
-      await queryClient.ensureQueryData(
-        applicationDetailQueryOptions(search.applicationId),
-      );
+      await queryClient.query({
+        ...applicationDetailQueryOptions(search.applicationId),
+        staleTime: "static",
+      });
     }
   },
   pendingComponent: () => <DetailPageSkeleton tabs tabCount={4} />,

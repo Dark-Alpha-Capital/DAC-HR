@@ -11,9 +11,10 @@ export const Route = createFileRoute("/_main/interviews/$id/")({
   loader: async ({ context: { queryClient }, params }) => {
     const result = await loadInterviewById({ data: params.id });
     if (result?.interview) {
-      await queryClient.ensureQueryData(
-        interviewScreeningsQueryOptions(params.id),
-      );
+      await queryClient.query({
+        ...interviewScreeningsQueryOptions(params.id),
+        staleTime: "static",
+      });
     }
     return result;
   },

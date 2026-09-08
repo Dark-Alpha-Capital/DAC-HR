@@ -13,7 +13,10 @@ export const Route = createFileRoute("/_main/admin/audit-logs")({
   validateSearch: parseAuditLogsSearch,
   loader: async ({ context: { queryClient }, location }) => {
     const search = parseAuditLogsSearch(location.search);
-    await queryClient.ensureQueryData(auditLogsIndexQueryOptions(search));
+    await queryClient.query({
+      ...auditLogsIndexQueryOptions(search),
+      staleTime: "static",
+    });
   },
   pendingComponent: () => <ListPageSkeleton rowCount={8} showActions={false} />,
   component: AuditLogsPage,

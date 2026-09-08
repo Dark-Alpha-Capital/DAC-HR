@@ -10,7 +10,7 @@ type PlaceholderData = <T>(previousData: T | undefined) => T | undefined;
  * Collapses the per-route inline `queryOptions` wrappers into a single seam:
  *
  *   const candidatesQ = defineEntityQueries(queryKeys.candidates.list, loadCandidatesIndex)
- *   candidatesQ.options(search)   // -> queryOptions for useQuery / ensureQueryData
+ *   candidatesQ.options(search)   // -> queryOptions for useQuery / queryClient.query
  *
  * `queryKey` is derived from the loader and the deps, so `invalidateQueries`
  * against the shared key registry (`queryKeys`) still works.
