@@ -4,6 +4,9 @@ import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "#/components/ui/button";
+import { SubmitButton } from "#/components/shared/submit-button";
+import { shouldShowFieldError } from "#/lib/form-feedback";
+import { zodFormValidator } from "#/lib/zod-form-validator";
 import {
   Field,
   FieldDescription,
@@ -26,7 +29,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "#/components/ui/select";
-import { Loader2 } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import { roundFormSchema } from "#/features/rounds/schemas";
 import { createRound } from "#/features/rounds/server/mutations/create-round";
@@ -51,7 +53,8 @@ const RoundUploadForm = ({
       positionId: preSelectedPositionId,
     },
     validators: {
-      onSubmit: roundFormSchema,
+      onBlur: zodFormValidator(roundFormSchema),
+      onSubmit: zodFormValidator(roundFormSchema),
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
@@ -102,16 +105,13 @@ const RoundUploadForm = ({
           >
             Reset
           </Button>
-          <Button type="submit" form="round-upload-form" disabled={isPending}>
-            {isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              "Submit"
-            )}
-          </Button>
+          <SubmitButton
+            form="round-upload-form"
+            loading={isPending}
+            loadingLabel="Submitting..."
+          >
+            Submit
+          </SubmitButton>
         </div>
       </div>
       <form
@@ -126,8 +126,10 @@ const RoundUploadForm = ({
           <form.Field
             name="name"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Round Name</FieldLabel>
@@ -150,8 +152,10 @@ const RoundUploadForm = ({
           <form.Field
             name="description"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Description</FieldLabel>
@@ -185,8 +189,10 @@ const RoundUploadForm = ({
           <form.Field
             name="positionId"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Position</FieldLabel>

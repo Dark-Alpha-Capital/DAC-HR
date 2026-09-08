@@ -3,6 +3,9 @@ import { useTransition, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import { Button } from "#/components/ui/button";
+import { SubmitButton } from "#/components/shared/submit-button";
+import { shouldShowFieldError } from "#/lib/form-feedback";
+import { zodFormValidator } from "#/lib/zod-form-validator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
 import {
   Field,
@@ -25,8 +28,6 @@ import {
   Users,
   BarChart3,
   FileText,
-  Loader2,
-  CheckCircle2,
 } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import { weeklyCheckinFormSchema } from "#/features/weekly-checkin/schemas";
@@ -135,7 +136,8 @@ export default function WeeklyCheckinForm({
       supportNeeded: "",
     },
     validators: {
-      onSubmit: weeklyCheckinFormSchema,
+      onBlur: zodFormValidator(weeklyCheckinFormSchema),
+      onSubmit: zodFormValidator(weeklyCheckinFormSchema),
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
@@ -145,11 +147,14 @@ export default function WeeklyCheckinForm({
           });
 
           if (result.error) {
-            toast.error(result.error);
+            toast.error(result.error, {
+              position: "bottom-right",
+            });
             return;
           }
 
           toast.success("Weekly check-in submitted successfully", {
+            position: "bottom-right",
             description: "Your weekly report has been recorded.",
           });
 
@@ -159,6 +164,9 @@ export default function WeeklyCheckinForm({
             error instanceof Error
               ? error.message
               : "Failed to submit check-in",
+            {
+              position: "bottom-right",
+            },
           );
         }
       });
@@ -191,19 +199,13 @@ export default function WeeklyCheckinForm({
           >
             Reset
           </Button>
-          <Button type="submit" form="weekly-checkin-form" disabled={isPending}>
-            {isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="mr-2 h-4 w-4" />
-                Submit Check-in
-              </>
-            )}
-          </Button>
+          <SubmitButton
+            form="weekly-checkin-form"
+            loading={isPending}
+            loadingLabel="Submitting..."
+          >
+            Submit Check-in
+          </SubmitButton>
         </div>
       </div>
 
@@ -241,8 +243,10 @@ export default function WeeklyCheckinForm({
                 <form.Field
                   name="weekStartDate"
                   children={(field) => {
-                    const isInvalid =
-                      field.state.meta.isTouched && !field.state.meta.isValid;
+                    const isInvalid = shouldShowFieldError(
+                      field.state.meta,
+                      form.state.submissionAttempts,
+                    );
                     return (
                       <Field data-invalid={isInvalid}>
                         <FieldLabel htmlFor={field.name}>
@@ -270,8 +274,10 @@ export default function WeeklyCheckinForm({
                 <form.Field
                   name="weekEndDate"
                   children={(field) => {
-                    const isInvalid =
-                      field.state.meta.isTouched && !field.state.meta.isValid;
+                    const isInvalid = shouldShowFieldError(
+                      field.state.meta,
+                      form.state.submissionAttempts,
+                    );
                     return (
                       <Field data-invalid={isInvalid}>
                         <FieldLabel htmlFor={field.name}>
@@ -300,8 +306,10 @@ export default function WeeklyCheckinForm({
               <form.Field
                 name="recruiterName"
                 children={(field) => {
-                  const isInvalid =
-                    field.state.meta.isTouched && !field.state.meta.isValid;
+                  const isInvalid = shouldShowFieldError(
+                    field.state.meta,
+                    form.state.submissionAttempts,
+                  );
                   return (
                     <Field data-invalid={isInvalid}>
                       <FieldLabel htmlFor={field.name}>Your Name</FieldLabel>
@@ -375,24 +383,36 @@ export default function WeeklyCheckinForm({
                   <form.Field
                     key={metric.name}
                     name={metric.name}
-                    children={(field) => (
-                      <Field>
-                        <FieldLabel htmlFor={field.name}>
-                          {metric.label}
-                        </FieldLabel>
-                        <Input
-                          id={field.name}
-                          name={field.name}
-                          type="number"
-                          min="0"
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(e) =>
-                            field.handleChange(parseInt(e.target.value) || 0)
-                          }
-                        />
-                      </Field>
-                    )}
+                    children={(field) => {
+                      const isInvalid = shouldShowFieldError(
+                        field.state.meta,
+                        form.state.submissionAttempts,
+                      );
+                      return (
+                        <Field data-invalid={isInvalid}>
+                          <FieldLabel htmlFor={field.name}>
+                            {metric.label}
+                          </FieldLabel>
+                          <Input
+                            id={field.name}
+                            name={field.name}
+                            type="number"
+                            min="0"
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(e) =>
+                              field.handleChange(
+                                parseInt(e.target.value) || 0,
+                              )
+                            }
+                            aria-invalid={isInvalid}
+                          />
+                          {isInvalid && (
+                            <FieldError errors={field.state.meta.errors} />
+                          )}
+                        </Field>
+                      );
+                    }}
                   />
                 ))}
               </div>
@@ -438,24 +458,34 @@ export default function WeeklyCheckinForm({
 
               <form.Field
                 name="avgTimeToScreen"
-                children={(field) => (
-                  <Field>
-                    <FieldLabel htmlFor={field.name}>
-                      Average Time to Screen Candidate
-                    </FieldLabel>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      placeholder="e.g., 30 minutes, 1 hour"
-                    />
-                    <FieldDescription>
-                      Enter the average time it took to screen each candidate
-                    </FieldDescription>
-                  </Field>
-                )}
+                children={(field) => {
+                  const isInvalid = shouldShowFieldError(
+                    field.state.meta,
+                    form.state.submissionAttempts,
+                  );
+                  return (
+                    <Field data-invalid={isInvalid}>
+                      <FieldLabel htmlFor={field.name}>
+                        Average Time to Screen Candidate
+                      </FieldLabel>
+                      <Input
+                        id={field.name}
+                        name={field.name}
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        placeholder="e.g., 30 minutes, 1 hour"
+                        aria-invalid={isInvalid}
+                      />
+                      <FieldDescription>
+                        Enter the average time it took to screen each candidate
+                      </FieldDescription>
+                      {isInvalid && (
+                        <FieldError errors={field.state.meta.errors} />
+                      )}
+                    </Field>
+                  );
+                }}
               />
             </FieldGroup>
           </TabsContent>
@@ -467,30 +497,42 @@ export default function WeeklyCheckinForm({
                 <form.Field
                   key={noteField.name}
                   name={noteField.name}
-                  children={(field) => (
-                    <Field>
-                      <FieldLabel htmlFor={field.name}>
-                        {noteField.label}
-                      </FieldLabel>
-                      <InputGroup>
-                        <InputGroupTextarea
-                          id={field.name}
-                          name={field.name}
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                          placeholder={noteField.placeholder}
-                          rows={4}
-                          className="min-h-24 resize-none"
-                        />
-                        <InputGroupAddon align="block-end">
-                          <InputGroupText className="tabular-nums">
-                            {field.state.value.length}/2000
-                          </InputGroupText>
-                        </InputGroupAddon>
-                      </InputGroup>
-                    </Field>
-                  )}
+                  children={(field) => {
+                    const isInvalid = shouldShowFieldError(
+                      field.state.meta,
+                      form.state.submissionAttempts,
+                    );
+                    return (
+                      <Field data-invalid={isInvalid}>
+                        <FieldLabel htmlFor={field.name}>
+                          {noteField.label}
+                        </FieldLabel>
+                        <InputGroup>
+                          <InputGroupTextarea
+                            id={field.name}
+                            name={field.name}
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(e) =>
+                              field.handleChange(e.target.value)
+                            }
+                            placeholder={noteField.placeholder}
+                            rows={4}
+                            className="min-h-24 resize-none"
+                            aria-invalid={isInvalid}
+                          />
+                          <InputGroupAddon align="block-end">
+                            <InputGroupText className="tabular-nums">
+                              {field.state.value.length}/2000
+                            </InputGroupText>
+                          </InputGroupAddon>
+                        </InputGroup>
+                        {isInvalid && (
+                          <FieldError errors={field.state.meta.errors} />
+                        )}
+                      </Field>
+                    );
+                  }}
                 />
               ))}
             </FieldGroup>

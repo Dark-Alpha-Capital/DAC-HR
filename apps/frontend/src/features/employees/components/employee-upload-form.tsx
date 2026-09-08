@@ -3,6 +3,9 @@ import { useTransition, useState, useEffect } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import { Button } from "#/components/ui/button";
+import { SubmitButton } from "#/components/shared/submit-button";
+import { shouldShowFieldError } from "#/lib/form-feedback";
+import { zodFormValidator } from "#/lib/zod-form-validator";
 import {
   Field,
   FieldDescription,
@@ -26,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "#/components/ui/select";
-import { Loader2, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import {
   employeeFormSchema,
@@ -109,13 +112,8 @@ const EmployeeUploadForm = ({
   const form = useForm({
     defaultValues: getInitialValues(),
     validators: {
-      onSubmit: ({ value }) => {
-        const result = employeeFormSchema.safeParse(value);
-        if (!result.success) {
-          return result.error.format();
-        }
-        return undefined;
-      },
+      onBlur: zodFormValidator(employeeFormSchema),
+      onSubmit: zodFormValidator(employeeFormSchema),
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
@@ -296,20 +294,13 @@ const EmployeeUploadForm = ({
           >
             Reset
           </Button>
-          <Button
-            type="submit"
+          <SubmitButton
             form="employee-upload-form"
-            disabled={isPending}
+            loading={isPending}
+            loadingLabel="Submitting..."
           >
-            {isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              "Submit"
-            )}
-          </Button>
+            Submit
+          </SubmitButton>
         </div>
       </div>
       <form
@@ -324,8 +315,10 @@ const EmployeeUploadForm = ({
           <form.Field
             name="firstName"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>First Name</FieldLabel>
@@ -348,8 +341,10 @@ const EmployeeUploadForm = ({
           <form.Field
             name="lastName"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Last Name</FieldLabel>
@@ -372,8 +367,10 @@ const EmployeeUploadForm = ({
           <form.Field
             name="department"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               const selectedDepartments = field.state.value || [];
               return (
                 <Field data-invalid={isInvalid}>
@@ -439,8 +436,10 @@ const EmployeeUploadForm = ({
           <form.Field
             name="positionId"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>
@@ -479,8 +478,10 @@ const EmployeeUploadForm = ({
           <form.Field
             name="profileImage"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <>
                   <Field>
@@ -536,8 +537,10 @@ const EmployeeUploadForm = ({
           <form.Field
             name="bio"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Bio (Optional)</FieldLabel>

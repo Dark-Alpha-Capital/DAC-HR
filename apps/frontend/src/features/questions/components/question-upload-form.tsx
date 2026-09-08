@@ -24,6 +24,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "#/components/ui/select";
+import { SubmitButton } from "#/components/shared/submit-button";
+import { shouldShowFieldError } from "#/lib/form-feedback";
+import { zodFormValidator } from "#/lib/zod-form-validator";
 import { Loader2 } from "lucide-react";
 import { Link, useRouter } from "@tanstack/react-router";
 import {
@@ -63,11 +66,15 @@ function RoundSelectField({
   value,
   onChange,
   positions,
+  invalid,
+  errors,
 }: {
   positionId: string;
   value: string;
   onChange: (roundId: string) => void;
   positions: QuestionUploadFormProps["positions"];
+  invalid: boolean;
+  errors: Array<{ message?: string } | undefined>;
 }) {
   const { data: rounds = [], isLoading } = useQuery({
     queryKey: queryKeys.rounds.byPosition(positionId),
@@ -81,7 +88,7 @@ function RoundSelectField({
   const isDisabled = !positionId;
 
   return (
-    <Field>
+    <Field data-invalid={invalid}>
       <FieldLabel htmlFor="roundTemplateId">Round</FieldLabel>
       <Select
         value={value || undefined}
@@ -92,6 +99,7 @@ function RoundSelectField({
           id="roundTemplateId"
           className="w-full"
           disabled={isDisabled || isLoading}
+          aria-invalid={invalid}
         >
           <SelectValue
             placeholder={
@@ -138,6 +146,7 @@ function RoundSelectField({
           Choose the interview round this question belongs to.
         </FieldDescription>
       )}
+      {invalid && <FieldError errors={errors} />}
     </Field>
   );
 }
@@ -156,6 +165,10 @@ const QuestionUploadForm = ({
       positionId: preSelectedPositionId,
       roundTemplateId: preSelectedRoundId,
     },
+    validators: {
+      onBlur: zodFormValidator(questionFormSchema),
+      onSubmit: zodFormValidator(questionFormSchema),
+    },
     onSubmit: async ({ value }) => {
       const payload: QuestionFormSchema = buildQuestionFormPayload({
         questionType: value.questionType,
@@ -165,16 +178,8 @@ const QuestionUploadForm = ({
         roundTemplateId: value.roundTemplateId,
       });
 
-      const parsed = questionFormSchema.safeParse(payload);
-      if (!parsed.success) {
-        toast.error("Please complete all required fields", {
-          position: "bottom-right",
-        });
-        return;
-      }
-
       startTransition(async () => {
-        const result = await createQuestion({ data: parsed.data });
+        const result = await createQuestion({ data: payload });
 
         if (result.error) {
           const errorMessage = z.string().safeParse(result.error);
@@ -220,20 +225,13 @@ const QuestionUploadForm = ({
           >
             Reset
           </Button>
-          <Button
-            type="submit"
+          <SubmitButton
             form="question-upload-form"
-            disabled={isPending}
+            loading={isPending}
+            loadingLabel="Saving..."
           >
-            {isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              "Save question"
-            )}
-          </Button>
+            Save question
+          </SubmitButton>
         </div>
       </div>
 
@@ -249,8 +247,10 @@ const QuestionUploadForm = ({
           <form.Field
             name="positionId"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Position</FieldLabel>
@@ -261,7 +261,11 @@ const QuestionUploadForm = ({
                       form.setFieldValue("roundTemplateId", "");
                     }}
                   >
-                    <SelectTrigger id={field.name} className="w-full">
+                    <SelectTrigger
+                      id={field.name}
+                      className="w-full"
+                      aria-invalid={isInvalid}
+                    >
                       <SelectValue placeholder="Select a position" />
                     </SelectTrigger>
                     <SelectContent>
@@ -275,9 +279,7 @@ const QuestionUploadForm = ({
                   <FieldDescription>
                     Pick the job position first.
                   </FieldDescription>
-                  {isInvalid ? (
-                    <FieldError errors={field.state.meta.errors} />
-                  ) : null}
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>
               );
             }}
@@ -289,21 +291,20 @@ const QuestionUploadForm = ({
               <form.Field
                 name="roundTemplateId"
                 children={(field) => {
-                  const isInvalid =
-                    field.state.meta.isTouched && !field.state.meta.isValid;
+                  const isInvalid = shouldShowFieldError(
+                    field.state.meta,
+                    form.state.submissionAttempts,
+                  );
 
                   return (
-                    <div data-invalid={isInvalid}>
-                      <RoundSelectField
-                        positionId={positionId}
-                        value={field.state.value}
-                        onChange={field.handleChange}
-                        positions={positions}
-                      />
-                      {isInvalid ? (
-                        <FieldError errors={field.state.meta.errors} />
-                      ) : null}
-                    </div>
+                    <RoundSelectField
+                      positionId={positionId}
+                      value={field.state.value}
+                      onChange={field.handleChange}
+                      positions={positions}
+                      invalid={isInvalid}
+                      errors={field.state.meta.errors}
+                    />
                   );
                 }}
               />
@@ -312,38 +313,51 @@ const QuestionUploadForm = ({
 
           <form.Field
             name="questionType"
-            children={(field) => (
-              <Field>
-                <FieldLabel htmlFor={field.name}>Question type</FieldLabel>
-                <Select
-                  value={field.state.value}
-                  onValueChange={(value: "text" | "mcq") => {
-                    field.handleChange(value);
-                    if (value === "mcq") {
-                      const currentOptions = form.getFieldValue("options");
-                      if (currentOptions.length < 2) {
-                        form.setFieldValue("options", defaultMcqOptions());
+            children={(field) => {
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
+              return (
+                <Field data-invalid={isInvalid}>
+                  <FieldLabel htmlFor={field.name}>Question type</FieldLabel>
+                  <Select
+                    value={field.state.value}
+                    onValueChange={(value: "text" | "mcq") => {
+                      field.handleChange(value);
+                      if (value === "mcq") {
+                        const currentOptions = form.getFieldValue("options");
+                        if (currentOptions.length < 2) {
+                          form.setFieldValue("options", defaultMcqOptions());
+                        }
                       }
-                    }
-                  }}
-                >
-                  <SelectTrigger id={field.name} className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="text">Text</SelectItem>
-                    <SelectItem value="mcq">Multiple choice</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Field>
-            )}
+                    }}
+                  >
+                    <SelectTrigger
+                      id={field.name}
+                      className="w-full"
+                      aria-invalid={isInvalid}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="text">Text</SelectItem>
+                      <SelectItem value="mcq">Multiple choice</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
+            }}
           />
 
           <form.Field
             name="questionText"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Question</FieldLabel>
@@ -365,9 +379,7 @@ const QuestionUploadForm = ({
                       </InputGroupText>
                     </InputGroupAddon>
                   </InputGroup>
-                  {isInvalid ? (
-                    <FieldError errors={field.state.meta.errors} />
-                  ) : null}
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
                 </Field>
               );
             }}
@@ -379,13 +391,21 @@ const QuestionUploadForm = ({
               questionType === "mcq" ? (
                 <form.Field
                   name="options"
-                  children={(field) => (
-                    <McqOptionsField
-                      options={field.state.value}
-                      onChange={field.handleChange}
-                      disabled={isPending}
-                    />
-                  )}
+                  children={(field) => {
+                    const isInvalid = shouldShowFieldError(
+                      field.state.meta,
+                      form.state.submissionAttempts,
+                    );
+                    return (
+                      <McqOptionsField
+                        options={field.state.value}
+                        onChange={field.handleChange}
+                        disabled={isPending}
+                        invalid={isInvalid}
+                        errors={field.state.meta.errors}
+                      />
+                    );
+                  }}
                 />
               ) : null
             }

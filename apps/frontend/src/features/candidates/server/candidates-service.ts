@@ -733,6 +733,80 @@ export const deleteCandidateDocument = async (
   return { success: true };
 };
 
+export const updateCandidateDocument = async (
+  candidateId: string,
+  documentId: string,
+  input: {
+    name: string;
+    description: string;
+    category: "resume" | "cover-letter" | "portfolio" | "other";
+    url: string;
+    tags: string[];
+  },
+  actor: Actor,
+) => {
+  try {
+    const [existingDocument] = await db
+      .select({ candidateId: candidateDocument.candidateId })
+      .from(candidateDocument)
+      .where(eq(candidateDocument.id, documentId))
+      .limit(1);
+
+    if (!existingDocument) {
+      return { error: "Document not found" };
+    }
+    if (existingDocument.candidateId !== candidateId) {
+      return { error: "Document does not belong to this candidate" };
+    }
+
+    const [updatedCandidateDocument] = await db
+      .update(candidateDocument)
+      .set({
+        name: input.name,
+        description: input.description?.trim() || null,
+        category: input.category || "other",
+        url: input.url,
+        tags: input.tags?.length ? input.tags : null,
+        updatedAt: new Date(),
+      })
+      .where(eq(candidateDocument.id, documentId))
+      .returning();
+
+    insertAuditLog({
+      userId: actor.id,
+      action: "update_candidate_document",
+      entityType: "candidate_document",
+      entityId: documentId,
+      details: {
+        candidateDocument: {
+          id: documentId,
+          candidateId,
+          name: input.name,
+          category: input.category,
+          url: input.url,
+        },
+        input: {
+          name: input.name,
+          description: input.description?.trim() || null,
+          category: input.category || "other",
+          url: input.url,
+          tags: input.tags?.length ? input.tags : null,
+        },
+        updatedBy: { id: actor.id, email: actor.email, name: actor.name },
+        metadata: { timestamp: new Date().toISOString() },
+      },
+    }).catch((error) => console.error("Audit log error:", error));
+
+    return { success: true, data: updatedCandidateDocument };
+  } catch (error) {
+    console.error(error);
+    if (error instanceof Error) {
+      return { error: error.message };
+    }
+    return { error: "Failed to update document" };
+  }
+};
+
 export const updateImportOriginalFileUrl = async (
   importId: string,
   url: string,
@@ -807,6 +881,7 @@ export const candidatesService = {
   updateChecklistItems,
   createDocument: createCandidateDocument,
   deleteDocument: deleteCandidateDocument,
+  updateDocument: updateCandidateDocument,
   updateImportOriginalFileUrl,
   listRecentImports: listRecentCandidateImports,
 

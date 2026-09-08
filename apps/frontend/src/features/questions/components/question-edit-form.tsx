@@ -18,11 +18,13 @@ import {
   InputGroupTextarea,
 } from "#/components/ui/input-group";
 import { Badge } from "#/components/ui/badge";
+import { SubmitButton } from "#/components/shared/submit-button";
+import { shouldShowFieldError } from "#/lib/form-feedback";
+import { zodFormValidator } from "#/lib/zod-form-validator";
 import {
   questionEditFormSchema,
   type QuestionEditFormSchema,
 } from "#/features/questions/schemas";
-import { Loader2 } from "lucide-react";
 import { patchQuestion } from "#/features/questions/server/mutations/patch-question";
 import { useRouter } from "@tanstack/react-router";
 import type { Question } from "#/features/questions/types";
@@ -49,6 +51,10 @@ const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
       questionType,
       options: initialOptionsFrom(question.questionType, question.options),
     },
+    validators: {
+      onBlur: zodFormValidator(questionEditFormSchema),
+      onSubmit: zodFormValidator(questionEditFormSchema),
+    },
     onSubmit: async ({ value }) => {
       const payload: QuestionEditFormSchema = buildQuestionEditPayload({
         questionType: value.questionType,
@@ -56,17 +62,11 @@ const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
         options: value.options,
       });
 
-      const parsed = questionEditFormSchema.safeParse(payload);
-      if (!parsed.success) {
-        toast.error("Please fix the form errors", { position: "bottom-right" });
-        return;
-      }
-
       startTransition(async () => {
         const result = await patchQuestion({
           data: {
             questionId: question.id,
-            formData: parsed.data,
+            formData: payload,
           },
         });
         if ("success" in result && result.success) {
@@ -118,16 +118,13 @@ const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
           >
             Reset
           </Button>
-          <Button type="submit" form="question-edit-form" disabled={isPending}>
-            {isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Updating...
-              </>
-            ) : (
-              "Update"
-            )}
-          </Button>
+          <SubmitButton
+            form="question-edit-form"
+            loading={isPending}
+            loadingLabel="Updating..."
+          >
+            Update
+          </SubmitButton>
         </div>
       </div>
       <form
@@ -152,8 +149,10 @@ const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
           <form.Field
             name="questionText"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Question Text</FieldLabel>
@@ -184,13 +183,21 @@ const QuestionEditForm = ({ question }: QuestionEditFormProps) => {
           {questionType === "mcq" ? (
             <form.Field
               name="options"
-              children={(field) => (
-                <McqOptionsField
-                  options={field.state.value}
-                  onChange={field.handleChange}
-                  disabled={isPending}
-                />
-              )}
+              children={(field) => {
+                const isInvalid = shouldShowFieldError(
+                  field.state.meta,
+                  form.state.submissionAttempts,
+                );
+                return (
+                  <McqOptionsField
+                    options={field.state.value}
+                    onChange={field.handleChange}
+                    disabled={isPending}
+                    invalid={isInvalid}
+                    errors={field.state.meta.errors}
+                  />
+                );
+              }}
             />
           ) : null}
         </FieldGroup>

@@ -3,6 +3,9 @@ import { useTransition, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import { Button } from "#/components/ui/button";
+import { SubmitButton } from "#/components/shared/submit-button";
+import { shouldShowFieldError } from "#/lib/form-feedback";
+import { zodFormValidator } from "#/lib/zod-form-validator";
 import {
   Field,
   FieldDescription,
@@ -18,7 +21,6 @@ import {
   InputGroupTextarea,
 } from "#/components/ui/input-group";
 import { Checkbox } from "#/components/ui/checkbox";
-import { Loader2 } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import type { DocumentCategory } from "#/features/documents/types";
 import { documentUploadInputSchema } from "#/features/documents/schemas";
@@ -45,21 +47,12 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
       tags: [] as string[],
     },
     validators: {
-      onSubmit: formValidationSchema,
+      onBlur: zodFormValidator(formValidationSchema),
+      onSubmit: zodFormValidator(formValidationSchema),
     },
     onSubmit: async ({ value }) => {
       if (!file) {
         toast.error("Please upload a file", {
-          position: "bottom-right",
-        });
-        return;
-      }
-
-      const validationResult = formValidationSchema.safeParse(value);
-      if (!validationResult.success) {
-        const errors = validationResult.error.flatten().fieldErrors;
-        const firstError = Object.values(errors)[0]?.[0];
-        toast.error(firstError || "Please check the form for errors", {
           position: "bottom-right",
         });
         return;
@@ -215,20 +208,13 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
           >
             Reset
           </Button>
-          <Button
-            type="submit"
+          <SubmitButton
             form="document-upload-form"
-            disabled={isPending}
+            loading={isPending}
+            loadingLabel="Submitting..."
           >
-            {isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              "Submit"
-            )}
-          </Button>
+            Submit
+          </SubmitButton>
         </div>
       </div>
       <form
@@ -267,8 +253,10 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
           <form.Field
             name="name"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Document Name</FieldLabel>
@@ -291,8 +279,10 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
           <form.Field
             name="description"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Description</FieldLabel>
@@ -323,8 +313,10 @@ const DocumentUploadForm = ({ categories }: DocumentUploadFormProps) => {
           <form.Field
             name="categoryIds"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Categories</FieldLabel>

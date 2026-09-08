@@ -4,6 +4,9 @@ import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import { useUrlSearchParams } from "#/lib/hooks/use-url-search-params";
 import * as z from "zod";
+import { SubmitButton } from "#/components/shared/submit-button";
+import { shouldShowFieldError } from "#/lib/form-feedback";
+import { zodFormValidator } from "#/lib/zod-form-validator";
 import { Button } from "#/components/ui/button";
 import {
   Field,
@@ -25,7 +28,7 @@ import { Checkbox } from "#/components/ui/checkbox";
 import { Label } from "#/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
 import { Separator } from "#/components/ui/separator";
-import { Loader2, Copy, Check, Sparkles } from "lucide-react";
+import { Copy, Check, Sparkles } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import { candidateFormSchema } from "#/features/candidates/schemas";
 import {
@@ -109,13 +112,8 @@ const CandidateUploadForm = ({
       positionIds: defaultPositionId ? [defaultPositionId] : [],
     },
     validators: {
-      onSubmit: ({ value }) => {
-        const result = candidateFormSchema.safeParse(value);
-        if (!result.success) {
-          return result.error.format();
-        }
-        return undefined;
-      },
+      onBlur: zodFormValidator(candidateFormSchema),
+      onSubmit: zodFormValidator(candidateFormSchema),
     },
     onSubmit: async ({ value }) => {
       if (!userSession) {
@@ -319,20 +317,13 @@ const CandidateUploadForm = ({
           >
             Reset
           </Button>
-          <Button
-            type="submit"
+          <SubmitButton
             form="candidate-upload-form"
-            disabled={isPending}
+            loading={isPending}
+            loadingLabel="Submitting..."
           >
-            {isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              "Submit"
-            )}
-          </Button>
+            Submit
+          </SubmitButton>
         </div>
       </div>
 
@@ -377,8 +368,10 @@ const CandidateUploadForm = ({
           <form.Field
             name="firstName"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>First Name</FieldLabel>
@@ -401,8 +394,10 @@ const CandidateUploadForm = ({
           <form.Field
             name="lastName"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Last Name</FieldLabel>
@@ -425,8 +420,10 @@ const CandidateUploadForm = ({
           <form.Field
             name="email"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Email</FieldLabel>
@@ -448,29 +445,11 @@ const CandidateUploadForm = ({
 
           <form.Field
             name="phone"
-            validators={{
-              onChange: ({ value }) => {
-                if (!value || value.trim() === "") return undefined;
-                const cleaned = value.replace(/[\s\-\(\)\+\.\[\]]/g, "");
-                if (!/^\d{7,15}$/.test(cleaned)) {
-                  return [
-                    {
-                      message:
-                        "Please enter a valid phone number (7-15 digits). Format: +1 (555) 123-4567 or 5551234567",
-                    },
-                  ];
-                }
-                if (value.length > 20) {
-                  return [
-                    { message: "Phone number must be at most 20 characters." },
-                  ];
-                }
-                return undefined;
-              },
-            }}
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Phone</FieldLabel>
@@ -491,8 +470,10 @@ const CandidateUploadForm = ({
           <form.Field
             name="locationCity"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>City</FieldLabel>
@@ -515,8 +496,10 @@ const CandidateUploadForm = ({
           <form.Field
             name="locationState"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>State</FieldLabel>
@@ -548,8 +531,10 @@ const CandidateUploadForm = ({
           <form.Field
             name="source"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Source</FieldLabel>
@@ -597,8 +582,10 @@ const CandidateUploadForm = ({
             <form.Field
               name="sourceUrl"
               children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
+                const isInvalid = shouldShowFieldError(
+                  field.state.meta,
+                  form.state.submissionAttempts,
+                );
                 return (
                   <Field data-invalid={isInvalid}>
                     <FieldLabel htmlFor={field.name}>
@@ -631,8 +618,10 @@ const CandidateUploadForm = ({
           <form.Field
             name="positionIds"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               const selectedId = field.state.value?.[0] || "";
               return (
                 <Field data-invalid={isInvalid}>
@@ -732,8 +721,10 @@ const CandidateUploadForm = ({
           <form.Field
             name="note"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Note</FieldLabel>

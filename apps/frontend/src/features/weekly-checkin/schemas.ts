@@ -18,13 +18,13 @@ export const weeklyCheckinFormSchema = z.object({
   positionsWorked: z.array(z.string()),
 
   // Tab 2: Positions in Pipeline
-  candidatesSourced: z.number().int().min(0),
-  candidatesScreened: z.number().int().min(0),
-  candidatesRejected: z.number().int().min(0),
-  candidatesAdvanced2ndRound: z.number().int().min(0),
-  candidatesAdvanced3rdRound: z.number().int().min(0),
-  offersExtended: z.number().int().min(0),
-  offersAccepted: z.number().int().min(0),
+  candidatesSourced: z.number().int().min(0, "Must be 0 or greater."),
+  candidatesScreened: z.number().int().min(0, "Must be 0 or greater."),
+  candidatesRejected: z.number().int().min(0, "Must be 0 or greater."),
+  candidatesAdvanced2ndRound: z.number().int().min(0, "Must be 0 or greater."),
+  candidatesAdvanced3rdRound: z.number().int().min(0, "Must be 0 or greater."),
+  offersExtended: z.number().int().min(0, "Must be 0 or greater."),
+  offersAccepted: z.number().int().min(0, "Must be 0 or greater."),
 
   // Tab 3: Candidate Quality, Channels & Efficiency
   bestPerformingChannels: z.array(z.enum(sourcingChannels)),

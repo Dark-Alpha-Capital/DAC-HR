@@ -3,6 +3,9 @@ import { useTransition, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import { Button } from "#/components/ui/button";
+import { SubmitButton } from "#/components/shared/submit-button";
+import { shouldShowFieldError } from "#/lib/form-feedback";
+import { zodFormValidator } from "#/lib/zod-form-validator";
 import {
   Field,
   FieldDescription,
@@ -26,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "#/components/ui/select";
-import { Loader2, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import {
   employeeFormSchema,
@@ -71,13 +74,8 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
       bio: employee.bio || "",
     },
     validators: {
-      onSubmit: ({ value }) => {
-        const result = employeeFormSchema.safeParse(value);
-        if (!result.success) {
-          return result.error.format();
-        }
-        return undefined;
-      },
+      onBlur: zodFormValidator(employeeFormSchema),
+      onSubmit: zodFormValidator(employeeFormSchema),
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
@@ -217,16 +215,13 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
           >
             Cancel
           </Button>
-          <Button type="submit" form="employee-edit-form" disabled={isPending}>
-            {isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Updating...
-              </>
-            ) : (
-              "Update"
-            )}
-          </Button>
+          <SubmitButton
+            form="employee-edit-form"
+            loading={isPending}
+            loadingLabel="Updating..."
+          >
+            Update
+          </SubmitButton>
         </div>
       </div>
       <form
@@ -241,8 +236,10 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
           <form.Field
             name="firstName"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>First Name</FieldLabel>
@@ -265,8 +262,10 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
           <form.Field
             name="lastName"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Last Name</FieldLabel>
@@ -289,8 +288,10 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
           <form.Field
             name="department"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               const selectedDepartments = field.state.value || [];
               return (
                 <Field data-invalid={isInvalid}>
@@ -356,8 +357,10 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
           <form.Field
             name="positionId"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>
@@ -396,8 +399,10 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
           <form.Field
             name="profileImage"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <>
                   {employee.profileImage && !file && (
@@ -465,8 +470,10 @@ const EmployeeEditForm = ({ employee, positions }: EmployeeEditFormProps) => {
           <form.Field
             name="bio"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Bio (Optional)</FieldLabel>

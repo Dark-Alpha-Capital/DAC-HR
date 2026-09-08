@@ -47,7 +47,7 @@ export function CandidateDocumentEditPage() {
             </CardContent>
           </Card>
         ) : (
-          <CandidateDocumentEditForm />
+          <CandidateDocumentEditForm document={document} />
         )}
       </Suspense>
     </div>

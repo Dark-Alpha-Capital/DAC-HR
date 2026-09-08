@@ -3,6 +3,9 @@ import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import { Button } from "#/components/ui/button";
+import { SubmitButton } from "#/components/shared/submit-button";
+import { shouldShowFieldError } from "#/lib/form-feedback";
+import { zodFormValidator } from "#/lib/zod-form-validator";
 import {
   Field,
   FieldDescription,
@@ -25,7 +28,7 @@ import {
   positionStatusEnum,
 } from "#/features/positions/schemas";
 import { departmentEnum } from "#/features/employees/schemas";
-import { Loader2, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -62,13 +65,8 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
       status: position.status || "active",
     },
     validators: {
-      onSubmit: ({ value }) => {
-        const result = positionFormSchema.safeParse(value);
-        if (!result.success) {
-          return result.error.format();
-        }
-        return undefined;
-      },
+      onBlur: zodFormValidator(positionFormSchema),
+      onSubmit: zodFormValidator(positionFormSchema),
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
@@ -76,7 +74,7 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
           data: [position.id, value],
         });
         if ("success" in result && result.success) {
-          toast("Position updated successfully", {
+          toast.success("Position updated successfully", {
             position: "bottom-right",
             action: {
               label: "View Position",
@@ -87,7 +85,7 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
           });
           router.navigate({ to: `/positions/${result.data?.slug}` });
         } else {
-          toast("Failed to update position", {
+          toast.error(result.error || "Failed to update position", {
             position: "bottom-right",
           });
         }
@@ -123,16 +121,13 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
           >
             Reset
           </Button>
-          <Button type="submit" form="position-edit-form" disabled={isPending}>
-            {isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Updating...
-              </>
-            ) : (
-              "Update"
-            )}
-          </Button>
+          <SubmitButton
+            form="position-edit-form"
+            loading={isPending}
+            loadingLabel="Updating..."
+          >
+            Update
+          </SubmitButton>
         </div>
       </div>
       <form
@@ -147,8 +142,10 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
           <form.Field
             name="name"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Position Name</FieldLabel>
@@ -170,8 +167,10 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
           <form.Field
             name="description"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>
@@ -195,8 +194,10 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
           <form.Field
             name="department"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               const selectedDepartments = field.state.value || [];
               return (
                 <Field data-invalid={isInvalid}>
@@ -261,8 +262,10 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
           <form.Field
             name="hireLevel"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Hire Level</FieldLabel>
@@ -303,8 +306,10 @@ const PositionEditForm = ({ position }: PositionEditFormProps) => {
           <form.Field
             name="status"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Status</FieldLabel>

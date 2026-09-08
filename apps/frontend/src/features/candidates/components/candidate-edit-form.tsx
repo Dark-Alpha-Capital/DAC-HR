@@ -2,6 +2,9 @@ import * as React from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
+import { SubmitButton } from "#/components/shared/submit-button";
+import { shouldShowFieldError } from "#/lib/form-feedback";
+import { zodFormValidator } from "#/lib/zod-form-validator";
 import { Button } from "#/components/ui/button";
 import {
   Field,
@@ -19,7 +22,6 @@ import {
   InputGroupText,
   InputGroupTextarea,
 } from "#/components/ui/input-group";
-import { Loader2 } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
 import {
@@ -104,38 +106,10 @@ const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
       positionIds: candidate.positionIds || [],
     },
     validators: {
-      onSubmit: ({ value }) => {
-        const result = candidateFormSchema.safeParse(value);
-        if (!result.success) {
-          return result.error.format();
-        }
-        return undefined;
-      },
-    },
-    onSubmitInvalid: ({ value }) => {
-      const result = candidateFormSchema.safeParse(value);
-      if (result.success) return;
-      const flattened = result.error.flatten();
-      const messages = [
-        ...Object.values(flattened.fieldErrors).flat(),
-        ...flattened.formErrors,
-      ];
-      console.error(
-        "[candidate-edit-form] validation failed",
-        JSON.stringify(flattened),
-      );
-      toast.error(
-        messages.length > 0
-          ? messages.join(" ")
-          : "Please fix the highlighted fields.",
-        { position: "bottom-right" },
-      );
+      onBlur: zodFormValidator(candidateFormSchema),
+      onSubmit: zodFormValidator(candidateFormSchema),
     },
     onSubmit: ({ value }) => {
-      console.log(
-        "[candidate-edit-form] form submitted",
-        JSON.stringify(value),
-      );
       updateMutation.mutate(value);
     },
   });
@@ -165,20 +139,13 @@ const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
           >
             Reset
           </Button>
-          <Button
-            type="submit"
+          <SubmitButton
             form="candidate-edit-form"
-            disabled={updateMutation.isPending}
+            loading={updateMutation.isPending}
+            loadingLabel="Updating..."
           >
-            {updateMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Updating...
-              </>
-            ) : (
-              "Update"
-            )}
-          </Button>
+            Update
+          </SubmitButton>
         </div>
       </div>
       <form
@@ -193,8 +160,10 @@ const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
           <form.Field
             name="firstName"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>First Name</FieldLabel>
@@ -217,8 +186,10 @@ const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
           <form.Field
             name="lastName"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Last Name</FieldLabel>
@@ -241,8 +212,10 @@ const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
           <form.Field
             name="email"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Email</FieldLabel>
@@ -265,8 +238,10 @@ const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
           <form.Field
             name="phone"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Phone</FieldLabel>
@@ -287,8 +262,10 @@ const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
           <form.Field
             name="source"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Source</FieldLabel>
@@ -336,8 +313,10 @@ const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
             <form.Field
               name="sourceUrl"
               children={(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
+                const isInvalid = shouldShowFieldError(
+                  field.state.meta,
+                  form.state.submissionAttempts,
+                );
                 return (
                   <Field data-invalid={isInvalid}>
                     <FieldLabel htmlFor={field.name}>
@@ -370,8 +349,10 @@ const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
           <form.Field
             name="locationCity"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>City</FieldLabel>
@@ -394,8 +375,10 @@ const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
           <form.Field
             name="locationState"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>State</FieldLabel>
@@ -427,8 +410,10 @@ const CandidateEditForm = ({ candidate }: CandidateEditFormProps) => {
           <form.Field
             name="note"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Note</FieldLabel>

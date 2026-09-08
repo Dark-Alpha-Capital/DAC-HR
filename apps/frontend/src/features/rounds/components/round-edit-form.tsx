@@ -4,6 +4,9 @@ import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "#/components/ui/button";
+import { SubmitButton } from "#/components/shared/submit-button";
+import { shouldShowFieldError } from "#/lib/form-feedback";
+import { zodFormValidator } from "#/lib/zod-form-validator";
 import {
   Field,
   FieldDescription,
@@ -19,7 +22,6 @@ import {
   InputGroupTextarea,
 } from "#/components/ui/input-group";
 import { roundEditFormSchema } from "#/features/rounds/schemas";
-import { Loader2 } from "lucide-react";
 import { updateRound } from "#/features/rounds/server/mutations/update-round";
 import { useRouter } from "@tanstack/react-router";
 import type { RoundTemplate } from "#/features/rounds/types";
@@ -38,7 +40,8 @@ const RoundEditForm = ({ round }: RoundEditFormProps) => {
       description: round.description || "",
     },
     validators: {
-      onSubmit: roundEditFormSchema,
+      onBlur: zodFormValidator(roundEditFormSchema),
+      onSubmit: zodFormValidator(roundEditFormSchema),
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
@@ -97,16 +100,13 @@ const RoundEditForm = ({ round }: RoundEditFormProps) => {
           >
             Reset
           </Button>
-          <Button type="submit" form="round-edit-form" disabled={isPending}>
-            {isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Updating...
-              </>
-            ) : (
-              "Update"
-            )}
-          </Button>
+          <SubmitButton
+            form="round-edit-form"
+            loading={isPending}
+            loadingLabel="Updating..."
+          >
+            Update
+          </SubmitButton>
         </div>
       </div>
       <form
@@ -121,8 +121,10 @@ const RoundEditForm = ({ round }: RoundEditFormProps) => {
           <form.Field
             name="name"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Round Name</FieldLabel>
@@ -144,8 +146,10 @@ const RoundEditForm = ({ round }: RoundEditFormProps) => {
           <form.Field
             name="description"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>
