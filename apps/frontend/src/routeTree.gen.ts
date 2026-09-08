@@ -86,8 +86,6 @@ import { Route as ApiInterviewSessionsSessionIdRecordingRouteImport } from './ro
 import { Route as ApiInterviewBundleBundleIdAiAnalysisRouteImport } from './routes/api/interview-bundle/$bundleId/ai-analysis'
 import { Route as ApiCandidateImportIdRouteImport } from './routes/api/candidate/import/$id'
 import { Route as ApiCandidateIdDocumentsRouteImport } from './routes/api/candidate/$id/documents'
-import { Route as ApiCandidateIdAiScreeningRouteImport } from './routes/api/candidate/$id/ai-screening'
-import { Route as ApiCandidateIdAiAnalysisRouteImport } from './routes/api/candidate/$id/ai-analysis'
 import { Route as MainScreenersIdEditRouteImport } from './routes/_main/screeners/$id/edit'
 import { Route as MainRoundsIdEditRouteImport } from './routes/_main/rounds/$id/edit'
 import { Route as MainRoundsIdAddQuestionRouteImport } from './routes/_main/rounds/$id/add-question'
@@ -497,18 +495,6 @@ const ApiCandidateIdDocumentsRoute = ApiCandidateIdDocumentsRouteImport.update({
   path: '/api/candidate/$id/documents',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiCandidateIdAiScreeningRoute =
-  ApiCandidateIdAiScreeningRouteImport.update({
-    id: '/api/candidate/$id/ai-screening',
-    path: '/api/candidate/$id/ai-screening',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiCandidateIdAiAnalysisRoute =
-  ApiCandidateIdAiAnalysisRouteImport.update({
-    id: '/api/candidate/$id/ai-analysis',
-    path: '/api/candidate/$id/ai-analysis',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const MainScreenersIdEditRoute = MainScreenersIdEditRouteImport.update({
   id: '/screeners/$id/edit',
   path: '/screeners/$id/edit',
@@ -645,8 +631,6 @@ export interface FileRoutesByFullPath {
   '/rounds/$id/add-question': typeof MainRoundsIdAddQuestionRoute
   '/rounds/$id/edit': typeof MainRoundsIdEditRoute
   '/screeners/$id/edit': typeof MainScreenersIdEditRoute
-  '/api/candidate/$id/ai-analysis': typeof ApiCandidateIdAiAnalysisRoute
-  '/api/candidate/$id/ai-screening': typeof ApiCandidateIdAiScreeningRoute
   '/api/candidate/$id/documents': typeof ApiCandidateIdDocumentsRouteWithChildren
   '/api/candidate/import/$id': typeof ApiCandidateImportIdRoute
   '/api/interview-bundle/$bundleId/ai-analysis': typeof ApiInterviewBundleBundleIdAiAnalysisRoute
@@ -735,8 +719,6 @@ export interface FileRoutesByTo {
   '/rounds/$id/add-question': typeof MainRoundsIdAddQuestionRoute
   '/rounds/$id/edit': typeof MainRoundsIdEditRoute
   '/screeners/$id/edit': typeof MainScreenersIdEditRoute
-  '/api/candidate/$id/ai-analysis': typeof ApiCandidateIdAiAnalysisRoute
-  '/api/candidate/$id/ai-screening': typeof ApiCandidateIdAiScreeningRoute
   '/api/candidate/$id/documents': typeof ApiCandidateIdDocumentsRouteWithChildren
   '/api/candidate/import/$id': typeof ApiCandidateImportIdRoute
   '/api/interview-bundle/$bundleId/ai-analysis': typeof ApiInterviewBundleBundleIdAiAnalysisRoute
@@ -830,8 +812,6 @@ export interface FileRoutesById {
   '/_main/rounds/$id/add-question': typeof MainRoundsIdAddQuestionRoute
   '/_main/rounds/$id/edit': typeof MainRoundsIdEditRoute
   '/_main/screeners/$id/edit': typeof MainScreenersIdEditRoute
-  '/api/candidate/$id/ai-analysis': typeof ApiCandidateIdAiAnalysisRoute
-  '/api/candidate/$id/ai-screening': typeof ApiCandidateIdAiScreeningRoute
   '/api/candidate/$id/documents': typeof ApiCandidateIdDocumentsRouteWithChildren
   '/api/candidate/import/$id': typeof ApiCandidateImportIdRoute
   '/api/interview-bundle/$bundleId/ai-analysis': typeof ApiInterviewBundleBundleIdAiAnalysisRoute
@@ -924,8 +904,6 @@ export interface FileRouteTypes {
     | '/rounds/$id/add-question'
     | '/rounds/$id/edit'
     | '/screeners/$id/edit'
-    | '/api/candidate/$id/ai-analysis'
-    | '/api/candidate/$id/ai-screening'
     | '/api/candidate/$id/documents'
     | '/api/candidate/import/$id'
     | '/api/interview-bundle/$bundleId/ai-analysis'
@@ -1014,8 +992,6 @@ export interface FileRouteTypes {
     | '/rounds/$id/add-question'
     | '/rounds/$id/edit'
     | '/screeners/$id/edit'
-    | '/api/candidate/$id/ai-analysis'
-    | '/api/candidate/$id/ai-screening'
     | '/api/candidate/$id/documents'
     | '/api/candidate/import/$id'
     | '/api/interview-bundle/$bundleId/ai-analysis'
@@ -1108,8 +1084,6 @@ export interface FileRouteTypes {
     | '/_main/rounds/$id/add-question'
     | '/_main/rounds/$id/edit'
     | '/_main/screeners/$id/edit'
-    | '/api/candidate/$id/ai-analysis'
-    | '/api/candidate/$id/ai-screening'
     | '/api/candidate/$id/documents'
     | '/api/candidate/import/$id'
     | '/api/interview-bundle/$bundleId/ai-analysis'
@@ -1152,8 +1126,6 @@ export interface RootRouteChildren {
   ApiLoginGoogleRoute: typeof ApiLoginGoogleRoute
   ApiCandidateIndexRoute: typeof ApiCandidateIndexRoute
   InterviewTokenIndexRoute: typeof InterviewTokenIndexRoute
-  ApiCandidateIdAiAnalysisRoute: typeof ApiCandidateIdAiAnalysisRoute
-  ApiCandidateIdAiScreeningRoute: typeof ApiCandidateIdAiScreeningRoute
   ApiCandidateIdDocumentsRoute: typeof ApiCandidateIdDocumentsRouteWithChildren
   ApiCandidateImportIdRoute: typeof ApiCandidateImportIdRoute
   ApiInterviewBundleBundleIdAiAnalysisRoute: typeof ApiInterviewBundleBundleIdAiAnalysisRoute
@@ -1709,20 +1681,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCandidateIdDocumentsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/candidate/$id/ai-screening': {
-      id: '/api/candidate/$id/ai-screening'
-      path: '/api/candidate/$id/ai-screening'
-      fullPath: '/api/candidate/$id/ai-screening'
-      preLoaderRoute: typeof ApiCandidateIdAiScreeningRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/candidate/$id/ai-analysis': {
-      id: '/api/candidate/$id/ai-analysis'
-      path: '/api/candidate/$id/ai-analysis'
-      fullPath: '/api/candidate/$id/ai-analysis'
-      preLoaderRoute: typeof ApiCandidateIdAiAnalysisRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_main/screeners/$id/edit': {
       id: '/_main/screeners/$id/edit'
       path: '/screeners/$id/edit'
@@ -2026,8 +1984,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiLoginGoogleRoute: ApiLoginGoogleRoute,
   ApiCandidateIndexRoute: ApiCandidateIndexRoute,
   InterviewTokenIndexRoute: InterviewTokenIndexRoute,
-  ApiCandidateIdAiAnalysisRoute: ApiCandidateIdAiAnalysisRoute,
-  ApiCandidateIdAiScreeningRoute: ApiCandidateIdAiScreeningRoute,
   ApiCandidateIdDocumentsRoute: ApiCandidateIdDocumentsRouteWithChildren,
   ApiCandidateImportIdRoute: ApiCandidateImportIdRoute,
   ApiInterviewBundleBundleIdAiAnalysisRoute:

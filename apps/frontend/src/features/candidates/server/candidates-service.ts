@@ -23,10 +23,8 @@ import { getCandidateById } from "@workspace/db/repositories/candidate-repositor
 import { getDocumentsByCandidateId } from "@workspace/db/repositories/document-repository";
 import {
   getCandidateAiScreenings,
-  getLatestCandidateAiScreening,
   getOrCreateCandidateOnboarding,
   getUsers,
-  saveCandidateAiScreening,
 } from "@workspace/db/repositories/candidate-repository";
 import {
   getCandidateImportById,
@@ -1059,30 +1057,6 @@ export const candidatesService = {
     return { documents };
   },
 
-  async getDocumentForIndexing(documentId: string) {
-    const [row] = await db
-      .select({
-        candidateId: candidateDocument.candidateId,
-        name: candidateDocument.name,
-        category: candidateDocument.category,
-        url: candidateDocument.url,
-      })
-      .from(candidateDocument)
-      .where(eq(candidateDocument.id, documentId))
-      .limit(1);
-    if (!row) {
-      throw new Error(`Candidate document ${documentId} not found`);
-    }
-    return row;
-  },
-
-  async setDocumentVectorizeNamespace(documentId: string, namespace: string) {
-    await db
-      .update(candidateDocument)
-      .set({ vectorizeNamespace: namespace })
-      .where(eq(candidateDocument.id, documentId));
-  },
-
   async insertAudit(input: Parameters<typeof insertAuditLog>[0]) {
     return insertAuditLog(input);
   },
@@ -1098,20 +1072,6 @@ export const candidatesService = {
     limit?: number,
   ) {
     return getKanbanColumnCandidatesFn(columnStatus, filters, cursor, limit);
-  },
-
-  async getAiScreenings(candidateId: string, positionId?: string) {
-    return getCandidateAiScreenings(candidateId, positionId);
-  },
-
-  async getLatestAiScreening(candidateId: string, positionId?: string) {
-    return getLatestCandidateAiScreening(candidateId, positionId);
-  },
-
-  async saveAiScreening(
-    params: Parameters<typeof saveCandidateAiScreening>[0],
-  ) {
-    return saveCandidateAiScreening(params);
   },
 
   async getImportById(importId: string) {

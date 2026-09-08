@@ -478,7 +478,6 @@ CANDIDATE BROWSER                           SERVER (Cloudflare Worker)          
 | 8 | `packages/ai-config/openai-client.ts` | 32 | Cached OpenAI client singleton |
 | 9 | `packages/ai-config/ai-sdk-provider.ts` | 21 | Cached Vercel AI SDK provider |
 | 10 | `apps/frontend/src/workflows/interview-evaluation.ts` | 106 | Post-interview AI evaluation workflow |
-| 11 | `apps/frontend/src/workflows/document-indexing.ts` | 224 | Document RAG indexing workflow |
 | 12 | `apps/frontend/src/lib/interview-realtime/ws-handler.ts` | 43 | WebSocket upgrade handler → routes to DO |
 | 13 | `apps/frontend/src/server.ts` | 20 | Worker entry point — routes `/api/interview-realtime/ws` |
 | 14 | `apps/frontend/src/hooks/useVoiceInterview.ts` | 776 | Client-side — WebRTC, WS, recording orchestration |

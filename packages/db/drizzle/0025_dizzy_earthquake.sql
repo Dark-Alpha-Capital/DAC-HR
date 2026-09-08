@@ -1,0 +1,1 @@
+ALTER TABLE `candidate_document` DROP COLUMN `vectorize_namespace`;

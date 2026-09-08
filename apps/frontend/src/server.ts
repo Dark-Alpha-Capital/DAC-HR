@@ -3,7 +3,6 @@ import { handleInterviewRealtimeWs } from "#/features/voice-interview/ws-handler
 import { handleRecordingUpload } from "#/features/voice-interview/interview-recording-upload";
 import { handleAsyncJobQueue } from "#/lib/queues/consume";
 
-export { DocumentIndexingWorkflow } from "./workflows/document-indexing";
 export { InterviewEvaluationWorkflow } from "./workflows/interview-evaluation";
 export { CandidateImportWorkflow } from "./workflows/candidate-import";
 export { InterviewSessionDO } from "./durable-objects/interview-session-do";

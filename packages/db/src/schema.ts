@@ -181,7 +181,6 @@ export const candidateDocument = sqliteTable(
     url: text("url").notNull(),
     tags: text("tags", { mode: "json" }).$type<string[]>(),
     fileSearchDocumentName: text("file_search_document_name"),
-    vectorizeNamespace: text("vectorize_namespace"),
     createdAt: createdAtCol(),
     updatedAt: updatedAtCol(),
   },

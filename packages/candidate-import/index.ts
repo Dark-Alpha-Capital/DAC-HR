@@ -18,7 +18,6 @@ export type {
   ProcessImportResult,
   ResumeChunk,
   ResumeFields,
-  TriggerDocumentIndexingFn,
   UpdateImportProgressFn,
 } from "./types";
 

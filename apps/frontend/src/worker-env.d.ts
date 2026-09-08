@@ -3,8 +3,6 @@
 declare namespace Cloudflare {
   interface Env {
     DB: D1Database;
-    VECTORIZE: VectorizeIndex;
-    DOCUMENT_INDEXING_WORKFLOW: Workflow;
     INTERVIEW_EVALUATION_WORKFLOW: Workflow;
     CANDIDATE_IMPORT_WORKFLOW: Workflow;
     INTERVIEW_SESSION_DO: DurableObjectNamespace;

@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { env } from "cloudflare:workers";
 import { fetchSession as getSession } from "#/lib/auth-session";
 import { candidatesService } from "#/features/candidates/server/candidates-service";
 
@@ -192,23 +191,6 @@ export const Route = createFileRoute("/api/candidate/$id/documents")({
             },
             user,
           );
-
-          if (newCandidateDocument && nextcloudFilePath) {
-            env.DOCUMENT_INDEXING_WORKFLOW &&
-              env.DOCUMENT_INDEXING_WORKFLOW.create({
-                id: `index-${newCandidateDocument.id}`,
-                params: {
-                  documentId: newCandidateDocument.id,
-                  nextcloudFilePath,
-                },
-              })
-                .catch((err) =>
-                  console.error(
-                    "Failed to start document indexing workflow:",
-                    err,
-                  ),
-                );
-          }
 
           return Response.json(
             { success: true, data: newCandidateDocument },

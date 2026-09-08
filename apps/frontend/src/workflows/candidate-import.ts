@@ -41,15 +41,6 @@ type Env = {
   NEXTCLOUD_USER: string;
   NEXTCLOUD_PASSWORD: string;
   OPENAI_API_KEY: string;
-  DOCUMENT_INDEXING_WORKFLOW?: {
-    create: (opts: {
-      id: string;
-      params: {
-        documentId: string;
-        nextcloudFilePath: string;
-      };
-    }) => Promise<{ id: string }>;
-  };
 };
 
 type Params = {
@@ -164,17 +155,6 @@ function buildImportServices(env: Env): ImportServices {
       }
       return { url: result.downloadUrl, filePath: result.filePath };
     },
-    triggerDocumentIndexing: env.DOCUMENT_INDEXING_WORKFLOW
-      ? async (args) => {
-          await env.DOCUMENT_INDEXING_WORKFLOW!.create({
-            id: `index-${args.documentId}`,
-            params: {
-              documentId: args.documentId,
-              nextcloudFilePath: args.nextcloudFilePath,
-            },
-          });
-        }
-      : undefined,
     updateImportProgress: async ({
       importId,
       totalCandidates,

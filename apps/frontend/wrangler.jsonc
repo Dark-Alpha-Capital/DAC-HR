@@ -35,14 +35,6 @@
     },
   ],
 
-  "vectorize": [
-    {
-      "binding": "VECTORIZE",
-      "index_name": "hr-documents-index",
-      "remote": true,
-    },
-  ],
-
   "queues": {
     "producers": [
       {
@@ -61,11 +53,6 @@
   },
 
   "workflows": [
-    {
-      "name": "document-indexing",
-      "binding": "DOCUMENT_INDEXING_WORKFLOW",
-      "class_name": "DocumentIndexingWorkflow",
-    },
     {
       "name": "interview-evaluation",
       "binding": "INTERVIEW_EVALUATION_WORKFLOW",

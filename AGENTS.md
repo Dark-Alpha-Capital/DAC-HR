@@ -119,7 +119,7 @@ import {
 - Template: `apps/frontend/.env.example`.
 - No `DATABASE_URL` — D1 is bound via `wrangler.jsonc`.
 - `apps/frontend/.dev.vars` duplicates secrets for **wrangler dev** (Cloudflare Workers runtime can't read `.env`).
-- **Local dev uses LOCAL D1** (`vite.config.ts` sets `remoteBindings: false`; `wrangler.jsonc` D1 binding has `remote: false`) — `bun run dev` reads/writes `.wrangler/state`, production data stays untouched, no `wrangler login` needed. Vectorize stays remote-only (`remote: true`; used only by the document-indexing workflow). Deploys always target the remote `database_id` regardless.
+- **Local dev uses LOCAL D1** (`vite.config.ts` sets `remoteBindings: false`; `wrangler.jsonc` D1 binding has `remote: false`) — `bun run dev` reads/writes `.wrangler/state`, production data stays untouched, no `wrangler login` needed. Deploys always target the remote `database_id` regardless.
 - Run `cd packages/db && bun run db:migrate` after pulling schema changes so local D1 matches; `db:reset:local` rebuilds it from scratch if it's corrupted or stale.
 - Secrets (OPENAI*API_KEY, NEXTCLOUD*_, BETTER*AUTH_SECRET, GOOGLE_CLIENT*_, RESEND_API_KEY) live in the Cloudflare dashboard or `wrangler secret put` for production — never in `wrangler.jsonc` (deploy would overwrite dashboard values).
 - Non-secret config lives in `wrangler.jsonc` vars: `BETTER_AUTH_URL`, `PRISMIC_REPOSITORY_NAME` (`darkalpha`), `PRISMIC_TEAM_MEMBER_TYPE` (`teammember`), `PRISMIC_OPERATING_MEMBER_TYPE` (`operatingmember`).
@@ -157,8 +157,6 @@ import {
 ## Cloudflare bindings (wrangler.jsonc)
 
 - D1 binding `DB` → database `hr-automation-db`.
-- Vectorize binding `VECTORIZE` → index `hr-documents-index` (reserved for RAG).
-- Workflow `DOCUMENT_INDEXING_WORKFLOW` → `DocumentIndexingWorkflow` (`src/workflows/document-indexing.ts`).
 - Workflow `INTERVIEW_EVALUATION_WORKFLOW` → `InterviewEvaluationWorkflow` (`src/workflows/interview-evaluation.ts`).
 - Workflow `CANDIDATE_IMPORT_WORKFLOW` → `CandidateImportWorkflow` (`src/workflows/candidate-import.ts`, ~465 lines; delegates to `@workspace/candidate-import`).
 - Durable Object `INTERVIEW_SESSION_DO` → `InterviewSessionDO` (`src/durable-objects/interview-session-do.ts`, ~2400 lines — realtime WebSocket + voice interviews).

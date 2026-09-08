@@ -6,11 +6,7 @@ import {
   formatPersonName,
 } from "@workspace/nextcloud";
 import { importLog } from "../logger";
-import type {
-  ImportDocumentInput,
-  ImportServices,
-  TriggerDocumentIndexingFn,
-} from "../types";
+import type { ImportDocumentInput, ImportServices } from "../types";
 
 export async function attachImportResume(args: {
   candidateId: string;
@@ -92,24 +88,6 @@ export async function attachImportResume(args: {
         resumeText: resumeText.trim(),
       });
     }
-  }
-
-  const triggerIndexing: TriggerDocumentIndexingFn | undefined =
-    services.triggerDocumentIndexing;
-
-  if (triggerIndexing) {
-    importLog("log", "Triggering document indexing workflow", {
-      step: "unified.indexing_triggered",
-      importId,
-      rowIndex,
-      candidateId,
-      documentId: doc.id,
-    });
-
-    await triggerIndexing({
-      documentId: doc.id,
-      nextcloudFilePath: uploadResult.filePath,
-    });
   }
 
   return { documentId: doc.id };
