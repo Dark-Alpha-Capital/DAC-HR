@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "#/components/ui/dialog";
-import { Label } from "#/components/ui/label";
+import { Field, FieldError, FieldLabel } from "#/components/ui/field";
 import {
   Select,
   SelectContent,
@@ -57,11 +57,19 @@ export function AddRoundQuestionDialog({
   const [questionText, setQuestionText] = useState("");
   const [options, setOptions] = useState(defaultMcqOptions);
   const [loading, setLoading] = useState(false);
+  const [questionTextError, setQuestionTextError] = useState<string | null>(
+    null,
+  );
+  const [optionsErrors, setOptionsErrors] = useState<
+    Array<{ message?: string }> | undefined
+  >(undefined);
 
   const resetForm = () => {
     setQuestionType("text");
     setQuestionText("");
     setOptions(defaultMcqOptions());
+    setQuestionTextError(null);
+    setOptionsErrors(undefined);
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -70,8 +78,6 @@ export function AddRoundQuestionDialog({
     }
     setOpen(nextOpen);
   };
-
-  const canSubmit = !loading && Boolean(questionText.trim());
 
   const submitQuestion = async () => {
     const payload: QuestionFormSchema = buildQuestionFormPayload({
@@ -84,7 +90,22 @@ export function AddRoundQuestionDialog({
 
     const parsed = questionFormSchema.safeParse(payload);
     if (!parsed.success) {
-      toast.error("Please complete all required fields");
+      let nextQuestionTextError: string | undefined;
+      const nextOptionsErrors: Array<{ message?: string }> = [];
+      for (const issue of parsed.error.issues) {
+        if (issue.path[0] === "questionText" && !nextQuestionTextError) {
+          nextQuestionTextError = issue.message;
+        } else if (
+          issue.path[0] === "options" &&
+          !nextOptionsErrors.some((error) => error.message === issue.message)
+        ) {
+          nextOptionsErrors.push({ message: issue.message });
+        }
+      }
+      setQuestionTextError(nextQuestionTextError ?? null);
+      setOptionsErrors(
+        nextOptionsErrors.length > 0 ? nextOptionsErrors : undefined,
+      );
       return;
     }
 
@@ -115,7 +136,7 @@ export function AddRoundQuestionDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canSubmit) return;
+    if (loading) return;
     await submitQuestion();
   };
 
@@ -126,7 +147,7 @@ export function AddRoundQuestionDialog({
 
     if (e.target instanceof HTMLTextAreaElement) {
       e.preventDefault();
-      if (canSubmit) {
+      if (!loading) {
         formRef.current?.requestSubmit();
       }
     }
@@ -158,10 +179,10 @@ export function AddRoundQuestionDialog({
             save or Esc to close.
           </DialogDescription>
         </DialogHeader>
-        <form ref={formRef} onSubmit={handleSubmit}>
+        <form ref={formRef} onSubmit={handleSubmit} noValidate>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="question-type">Question type</Label>
+            <Field>
+              <FieldLabel htmlFor="question-type">Question type</FieldLabel>
               <Select
                 value={questionType}
                 onValueChange={(value: "text" | "mcq") => {
@@ -169,6 +190,7 @@ export function AddRoundQuestionDialog({
                   if (value === "mcq" && options.length < 2) {
                     setOptions(defaultMcqOptions());
                   }
+                  setOptionsErrors(undefined);
                 }}
               >
                 <SelectTrigger id="question-type">
@@ -179,27 +201,39 @@ export function AddRoundQuestionDialog({
                   <SelectItem value="mcq">Multiple choice</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="question-text">Question</Label>
+            </Field>
+            <Field data-invalid={Boolean(questionTextError)}>
+              <FieldLabel htmlFor="question-text">Question</FieldLabel>
               <Textarea
                 id="question-text"
                 value={questionText}
-                onChange={(e) => setQuestionText(e.target.value)}
+                onChange={(e) => {
+                  setQuestionText(e.target.value);
+                  if (questionTextError) setQuestionTextError(null);
+                }}
                 onKeyDown={handleEnterToSubmit}
                 placeholder="Enter the question"
                 rows={4}
+                aria-invalid={Boolean(questionTextError)}
                 required
               />
               <p className="text-xs text-muted-foreground">
                 Enter saves. Shift+Enter adds a new line.
               </p>
-            </div>
+              {questionTextError ? (
+                <FieldError>{questionTextError}</FieldError>
+              ) : null}
+            </Field>
             {questionType === "mcq" ? (
               <McqOptionsField
                 options={options}
-                onChange={setOptions}
+                onChange={(nextOptions) => {
+                  setOptions(nextOptions);
+                  if (optionsErrors) setOptionsErrors(undefined);
+                }}
                 disabled={loading}
+                invalid={Boolean(optionsErrors)}
+                errors={optionsErrors}
               />
             ) : null}
           </div>
@@ -211,7 +245,7 @@ export function AddRoundQuestionDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={!canSubmit}>
+            <Button type="submit" disabled={loading}>
               {loading ? "Saving..." : "Save question"}
             </Button>
           </DialogFooter>

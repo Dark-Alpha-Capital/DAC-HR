@@ -13,8 +13,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "#/components/ui/dialog";
+import { Field, FieldError, FieldLabel } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
-import { Label } from "#/components/ui/label";
 import { Textarea } from "#/components/ui/textarea";
 import { updateRound } from "#/features/rounds/server/mutations/update-round";
 import { useQueryInvalidation } from "#/hooks/use-query-invalidation";
@@ -36,11 +36,13 @@ export function EditRoundDialog({
   const [name, setName] = useState(round.name);
   const [description, setDescription] = useState(round.description ?? "");
   const [loading, setLoading] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
       setName(round.name);
       setDescription(round.description ?? "");
+      setNameError(null);
     }
   }, [open, round.name, round.description]);
 
@@ -52,9 +54,10 @@ export function EditRoundDialog({
     e.preventDefault();
 
     if (!name.trim()) {
-      toast.error("Round name is required");
+      setNameError("Round name is required.");
       return;
     }
+    setNameError(null);
 
     setLoading(true);
 
@@ -113,20 +116,27 @@ export function EditRoundDialog({
             Update the interview round details.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-round-name">Round name</Label>
+            <Field data-invalid={Boolean(nameError)}>
+              <FieldLabel htmlFor="edit-round-name">Round name</FieldLabel>
               <Input
                 id="edit-round-name"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (nameError) setNameError(null);
+                }}
                 placeholder="e.g. Screening/Recruiter Round"
+                aria-invalid={Boolean(nameError)}
                 required
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-round-description">Description</Label>
+              {nameError ? <FieldError>{nameError}</FieldError> : null}
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="edit-round-description">
+                Description
+              </FieldLabel>
               <Textarea
                 id="edit-round-description"
                 value={description}
@@ -134,7 +144,7 @@ export function EditRoundDialog({
                 placeholder="Optional details about this round"
                 rows={4}
               />
-            </div>
+            </Field>
           </div>
           <DialogFooter>
             <Button
@@ -145,7 +155,7 @@ export function EditRoundDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading || !name.trim()}>
+            <Button type="submit" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

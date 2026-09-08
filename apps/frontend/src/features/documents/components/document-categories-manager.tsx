@@ -28,6 +28,7 @@ import { Input } from "#/components/ui/input";
 import {
   Field,
   FieldDescription,
+  FieldError,
   FieldLabel,
 } from "#/components/ui/field";
 import {
@@ -54,10 +55,12 @@ export default function DocumentCategoriesManager({
     name: "",
     description: "",
   });
+  const [nameError, setNameError] = useState<string | null>(null);
 
   const handleAddCategory = () => {
     setFormData({ name: "", description: "" });
     setSelectedCategory(null);
+    setNameError(null);
     setIsAddDialogOpen(true);
   };
 
@@ -67,6 +70,7 @@ export default function DocumentCategoriesManager({
       name: category.name,
       description: category.description || "",
     });
+    setNameError(null);
     setIsEditDialogOpen(true);
   };
 
@@ -77,6 +81,11 @@ export default function DocumentCategoriesManager({
 
   const handleSubmitAdd = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.name.trim()) {
+      setNameError("Category name is required.");
+      return;
+    }
+    setNameError(null);
     startTransition(async () => {
       try {
         const result = await createCategory({
@@ -100,7 +109,11 @@ export default function DocumentCategoriesManager({
   const handleSubmitEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCategory) return;
-
+    if (!formData.name.trim()) {
+      setNameError("Category name is required.");
+      return;
+    }
+    setNameError(null);
     startTransition(async () => {
       try {
         const result = await updateCategory({
@@ -171,7 +184,7 @@ export default function DocumentCategoriesManager({
             </Button>
           </DialogTrigger>
           <DialogContent>
-            <form onSubmit={handleSubmitAdd}>
+            <form onSubmit={handleSubmitAdd} noValidate>
               <DialogHeader>
                 <DialogTitle>Add Document Category</DialogTitle>
                 <DialogDescription>
@@ -179,21 +192,24 @@ export default function DocumentCategoriesManager({
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
-                <Field>
+                <Field data-invalid={Boolean(nameError)}>
                   <FieldLabel htmlFor="add-name">Name</FieldLabel>
                   <Input
                     id="add-name"
                     value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
+                    onChange={(e) => {
+                      setFormData({ ...formData, name: e.target.value });
+                      if (nameError) setNameError(null);
+                    }}
                     placeholder="e.g., Job Description"
+                    aria-invalid={Boolean(nameError)}
                     required
                     disabled={isPending}
                   />
                   <FieldDescription>
                     A unique name for this category
                   </FieldDescription>
+                  {nameError ? <FieldError>{nameError}</FieldError> : null}
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="add-description">Description</FieldLabel>
@@ -294,7 +310,7 @@ export default function DocumentCategoriesManager({
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
-          <form onSubmit={handleSubmitEdit}>
+          <form onSubmit={handleSubmitEdit} noValidate>
             <DialogHeader>
               <DialogTitle>Edit Document Category</DialogTitle>
               <DialogDescription>
@@ -302,18 +318,21 @@ export default function DocumentCategoriesManager({
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <Field>
+              <Field data-invalid={Boolean(nameError)}>
                 <FieldLabel htmlFor="edit-name">Name</FieldLabel>
                 <Input
                   id="edit-name"
                   value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setFormData({ ...formData, name: e.target.value });
+                    if (nameError) setNameError(null);
+                  }}
                   placeholder="e.g., Job Description"
+                  aria-invalid={Boolean(nameError)}
                   required
                   disabled={isPending}
                 />
+                {nameError ? <FieldError>{nameError}</FieldError> : null}
               </Field>
               <Field>
                 <FieldLabel htmlFor="edit-description">Description</FieldLabel>

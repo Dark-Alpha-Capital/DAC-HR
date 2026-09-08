@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "#/components/ui/dialog";
-import { Label } from "#/components/ui/label";
+import { Field, FieldError, FieldLabel } from "#/components/ui/field";
 import {
   Select,
   SelectContent,
@@ -39,6 +39,7 @@ export function CreateApplicationDialog({
   const [open, setOpen] = useState(false);
   const [positionId, setPositionId] = useState("");
   const [loading, setLoading] = useState(false);
+  const [positionError, setPositionError] = useState<string | null>(null);
 
   const { data: positions = [], isLoading: positionsLoading } = useQuery({
     queryKey: ["position-options"],
@@ -56,6 +57,7 @@ export function CreateApplicationDialog({
     if (!nextOpen) {
       setPositionId("");
     }
+    setPositionError(null);
     setOpen(nextOpen);
   };
 
@@ -63,9 +65,10 @@ export function CreateApplicationDialog({
     e.preventDefault();
 
     if (!positionId) {
-      toast.error("Please select a position");
+      setPositionError("Please select a position.");
       return;
     }
+    setPositionError(null);
 
     setLoading(true);
 
@@ -114,17 +117,20 @@ export function CreateApplicationDialog({
             Select a position to create a new application for this candidate.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="position">Position</Label>
+            <Field data-invalid={Boolean(positionError)}>
+              <FieldLabel htmlFor="position">Position</FieldLabel>
               <Select
                 value={positionId}
-                onValueChange={setPositionId}
+                onValueChange={(value) => {
+                  setPositionId(value);
+                  if (positionError) setPositionError(null);
+                }}
                 disabled={positionsLoading || availablePositions.length === 0}
                 required
               >
-                <SelectTrigger id="position">
+                <SelectTrigger id="position" aria-invalid={Boolean(positionError)}>
                   <SelectValue
                     placeholder={
                       positionsLoading
@@ -148,7 +154,10 @@ export function CreateApplicationDialog({
                   This candidate already has applications for all positions.
                 </p>
               ) : null}
-            </div>
+              {positionError ? (
+                <FieldError>{positionError}</FieldError>
+              ) : null}
+            </Field>
           </div>
           <DialogFooter>
             <Button
@@ -163,7 +172,6 @@ export function CreateApplicationDialog({
               disabled={
                 loading ||
                 positionsLoading ||
-                !positionId ||
                 availablePositions.length === 0
               }
             >

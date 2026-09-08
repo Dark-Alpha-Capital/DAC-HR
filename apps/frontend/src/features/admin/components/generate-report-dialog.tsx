@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "#/components/ui/select";
+import { Field, FieldError, FieldLabel } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { Download, Loader2 } from "lucide-react";
@@ -29,19 +30,33 @@ export default function GenerateReportDialog() {
   const [startDate, setStartDate] = React.useState<string>("");
   const [endDate, setEndDate] = React.useState<string>("");
   const [isGenerating, setIsGenerating] = React.useState(false);
+  const [dateErrors, setDateErrors] = React.useState<{
+    startDate?: string;
+    endDate?: string;
+  }>({});
 
   const handleGenerate = async () => {
     // Validate custom date range
     if (reportType === "custom") {
-      if (!startDate || !endDate) {
-        toast.error("Please select both start and end dates");
-        return;
-      }
-      if (new Date(startDate) > new Date(endDate)) {
-        toast.error("Start date must be before end date");
+      const startMissing = !startDate;
+      const endMissing = !endDate;
+      const startAfterEnd =
+        !startMissing &&
+        !endMissing &&
+        new Date(startDate) > new Date(endDate);
+      if (startMissing || endMissing || startAfterEnd) {
+        setDateErrors({
+          startDate: startMissing ? "Start date is required." : undefined,
+          endDate: endMissing
+            ? "End date is required."
+            : startAfterEnd
+              ? "End date must be on or after the start date."
+              : undefined,
+        });
         return;
       }
     }
+    setDateErrors({});
 
     setIsGenerating(true);
     try {
@@ -90,8 +105,13 @@ export default function GenerateReportDialog() {
     }
   };
 
+  const handleOpenChange = (nextOpen: boolean) => {
+    setDateErrors({});
+    setOpen(nextOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="secondary" className="gap-2">
           <Download className="h-4 w-4" />
@@ -111,11 +131,12 @@ export default function GenerateReportDialog() {
             <Label htmlFor="reportType">Report Type</Label>
             <Select
               value={reportType}
-              onValueChange={(value) =>
+              onValueChange={(value) => {
+                setDateErrors({});
                 // SAFETY: the <SelectItem> values above are exactly the ReportType
                 // literals ("full", "last3days", "lastWeek", "lastMonth", "custom").
-                setReportType(value as ReportType)
-              }
+                setReportType(value as ReportType);
+              }}
             >
               <SelectTrigger id="reportType">
                 <SelectValue placeholder="Select report type" />
@@ -132,25 +153,49 @@ export default function GenerateReportDialog() {
 
           {reportType === "custom" && (
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="startDate">Start Date</Label>
+              <Field data-invalid={Boolean(dateErrors.startDate)}>
+                <FieldLabel htmlFor="startDate">Start Date</FieldLabel>
                 <Input
                   id="startDate"
                   type="date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    if (dateErrors.startDate) {
+                      setDateErrors((prev) => ({
+                        ...prev,
+                        startDate: undefined,
+                      }));
+                    }
+                  }}
+                  aria-invalid={Boolean(dateErrors.startDate)}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="endDate">End Date</Label>
+                {dateErrors.startDate ? (
+                  <FieldError>{dateErrors.startDate}</FieldError>
+                ) : null}
+              </Field>
+              <Field data-invalid={Boolean(dateErrors.endDate)}>
+                <FieldLabel htmlFor="endDate">End Date</FieldLabel>
                 <Input
                   id="endDate"
                   type="date"
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  onChange={(e) => {
+                    setEndDate(e.target.value);
+                    if (dateErrors.endDate) {
+                      setDateErrors((prev) => ({
+                        ...prev,
+                        endDate: undefined,
+                      }));
+                    }
+                  }}
                   min={startDate}
+                  aria-invalid={Boolean(dateErrors.endDate)}
                 />
-              </div>
+                {dateErrors.endDate ? (
+                  <FieldError>{dateErrors.endDate}</FieldError>
+                ) : null}
+              </Field>
             </div>
           )}
 

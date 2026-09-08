@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2, Save, Sparkles } from "lucide-react";
 import { Button } from "#/components/ui/button";
+import { Field, FieldError, FieldLabel } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { Textarea } from "#/components/ui/textarea";
@@ -33,6 +34,10 @@ export function EmailTemplatesPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [activeField, setActiveField] = useState<TemplateField>("message");
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<{
+    subject?: string;
+    message?: string;
+  }>({});
 
   const subjectTemplate = subject ?? data?.subjectTemplate ?? "";
   const bodyTemplate = message ?? data?.bodyTemplate ?? "";
@@ -59,8 +64,12 @@ export function EmailTemplatesPage() {
   const handleSave = async () => {
     const nextSubject = subjectTemplate.trim();
     const nextBody = bodyTemplate.trim();
+    const nextErrors = {
+      subject: nextSubject ? undefined : "Subject is required.",
+      message: nextBody ? undefined : "Message is required.",
+    };
+    setErrors(nextErrors);
     if (!nextSubject || !nextBody) {
-      toast.error("Subject and message are required");
       return;
     }
     setSaving(true);
@@ -78,6 +87,7 @@ export function EmailTemplatesPage() {
         toast.success("Interview invite email template saved");
         setSubject(null);
         setMessage(null);
+        setErrors({});
         void invalidate.emailTemplates();
       }
     } catch {
@@ -138,30 +148,44 @@ export function EmailTemplatesPage() {
           </p>
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="template-subject">Subject</Label>
+        <Field data-invalid={Boolean(errors.subject)}>
+          <FieldLabel htmlFor="template-subject">Subject</FieldLabel>
           <Input
             id="template-subject"
             value={subjectTemplate}
             onFocus={() => setActiveField("subject")}
-            onChange={(e) => setSubject(e.target.value)}
+            onChange={(e) => {
+              setSubject(e.target.value);
+              if (errors.subject) {
+                setErrors((prev) => ({ ...prev, subject: undefined }));
+              }
+            }}
+            aria-invalid={Boolean(errors.subject)}
             placeholder="Interview invitation — {positionName}"
           />
-        </div>
+          {errors.subject ? <FieldError>{errors.subject}</FieldError> : null}
+        </Field>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="template-message">
+        <Field data-invalid={Boolean(errors.message)}>
+          <FieldLabel htmlFor="template-message">
             Message (rendered above the "Start my interview" button)
-          </Label>
+          </FieldLabel>
           <Textarea
             id="template-message"
             value={bodyTemplate}
             onFocus={() => setActiveField("message")}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={(e) => {
+              setMessage(e.target.value);
+              if (errors.message) {
+                setErrors((prev) => ({ ...prev, message: undefined }));
+              }
+            }}
             rows={6}
+            aria-invalid={Boolean(errors.message)}
             placeholder="We were impressed by your background and would like you to complete a short interview for the {positionName} position…"
           />
-        </div>
+          {errors.message ? <FieldError>{errors.message}</FieldError> : null}
+        </Field>
 
         <div className="space-y-2 rounded-md bg-muted/60 p-4">
           <p className="text-xs font-medium text-muted-foreground">
