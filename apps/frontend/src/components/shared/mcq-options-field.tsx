@@ -1,5 +1,5 @@
 import { Button } from "#/components/ui/button";
-import { Field, FieldLabel } from "#/components/ui/field";
+import { Field, FieldError, FieldLabel } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
 import { Plus, Trash2 } from "lucide-react";
 
@@ -12,12 +12,18 @@ interface McqOptionsFieldProps {
   options: McqOptionInput[];
   onChange: (options: McqOptionInput[]) => void;
   disabled?: boolean;
+  /** Highlight empty options + render errors (wire from the form field's meta). */
+  invalid?: boolean;
+  /** Field-level errors for the options array (e.g. min/max options). */
+  errors?: Array<{ message?: string } | undefined>;
 }
 
 export function McqOptionsField({
   options,
   onChange,
   disabled = false,
+  invalid = false,
+  errors,
 }: McqOptionsFieldProps) {
   const updateOption = (index: number, text: string) => {
     const next = options.map((option, i) =>
@@ -41,7 +47,7 @@ export function McqOptionsField({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" data-invalid={invalid}>
       <FieldLabel>Answer options</FieldLabel>
       {options.map((option, index) => (
         <Field key={option.id ?? `option-${index}`}>
@@ -56,6 +62,7 @@ export function McqOptionsField({
               maxLength={200}
               disabled={disabled}
               className="flex-1"
+              aria-invalid={invalid && option.text.trim().length === 0}
             />
             <Button
               type="button"
@@ -80,6 +87,16 @@ export function McqOptionsField({
         <Plus className="mr-1.5 size-4" />
         Add option
       </Button>
+      {invalid ? (
+        <FieldError
+          errors={errors}
+          className="mt-1"
+        >
+          {errors?.length
+            ? undefined
+            : "Add at least two options and fill in every option."}
+        </FieldError>
+      ) : null}
     </div>
   );
 }

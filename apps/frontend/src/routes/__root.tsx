@@ -11,6 +11,7 @@ import {
   ThemeProvider,
   THEME_STORAGE_KEY,
 } from "#/components/shared/theme-provider";
+import { Toaster } from "#/components/ui/sonner";
 import { NotFoundPage } from "#/components/shared/not-found";
 import { ErrorPage } from "#/components/shared/error-page";
 
@@ -41,6 +42,7 @@ function RootDocument() {
         <ThemeProvider defaultTheme="system" storageKey={THEME_STORAGE_KEY}>
           <Outlet />
         </ThemeProvider>
+        <Toaster />
         <Scripts />
       </body>
     </html>

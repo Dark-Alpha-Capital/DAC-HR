@@ -1,9 +1,11 @@
-import * as React from "react";
 import { useTransition } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import * as z from "zod";
 import { Button } from "#/components/ui/button";
+import { SubmitButton } from "#/components/shared/submit-button";
+import { shouldShowFieldError } from "#/lib/form-feedback";
+import { zodFormValidator } from "#/lib/zod-form-validator";
 import {
   Field,
   FieldDescription,
@@ -26,7 +28,7 @@ import {
   positionStatusEnum,
 } from "#/features/positions/schemas";
 import { departmentEnum } from "#/features/employees/schemas";
-import { Loader2, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -64,19 +66,14 @@ const PositionUploadForm = () => {
     },
 
     validators: {
-      onSubmit: ({ value }) => {
-        const result = positionFormSchema.safeParse(value);
-        if (!result.success) {
-          return result.error.format();
-        }
-        return undefined;
-      },
+      onBlur: zodFormValidator(positionFormSchema),
+      onSubmit: zodFormValidator(positionFormSchema),
     },
     onSubmit: async ({ value }) => {
       startTransition(async () => {
         const result = await createPosition({ data: value });
         if ("success" in result && result.success) {
-          toast("Position uploaded successfully", {
+          toast.success("Position created successfully", {
             position: "bottom-right",
             action: {
               label: "View Position",
@@ -88,7 +85,7 @@ const PositionUploadForm = () => {
           form.reset();
           router.navigate({ to: `/positions/${result.data?.slug}` });
         } else {
-          toast(result.error || "Failed to upload position", {
+          toast.error(result.error || "Failed to create position", {
             position: "bottom-right",
           });
         }
@@ -116,20 +113,13 @@ const PositionUploadForm = () => {
           >
             Reset
           </Button>
-          <Button
-            type="submit"
+          <SubmitButton
             form="position-upload-form"
-            disabled={isPending}
+            loading={isPending}
+            loadingLabel="Submitting..."
           >
-            {isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              "Submit"
-            )}
-          </Button>
+            Submit
+          </SubmitButton>
         </div>
       </div>
       <form
@@ -144,8 +134,10 @@ const PositionUploadForm = () => {
           <form.Field
             name="name"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Position Name</FieldLabel>
@@ -167,8 +159,10 @@ const PositionUploadForm = () => {
           <form.Field
             name="description"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>
@@ -192,8 +186,10 @@ const PositionUploadForm = () => {
           <form.Field
             name="department"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               const selectedDepartments = field.state.value || [];
               return (
                 <Field data-invalid={isInvalid}>
@@ -258,8 +254,10 @@ const PositionUploadForm = () => {
           <form.Field
             name="hireLevel"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Hire Level</FieldLabel>
@@ -299,8 +297,10 @@ const PositionUploadForm = () => {
           <form.Field
             name="status"
             children={(field) => {
-              const isInvalid =
-                field.state.meta.isTouched && !field.state.meta.isValid;
+              const isInvalid = shouldShowFieldError(
+                field.state.meta,
+                form.state.submissionAttempts,
+              );
               return (
                 <Field data-invalid={isInvalid}>
                   <FieldLabel htmlFor={field.name}>Status</FieldLabel>
