@@ -31,6 +31,7 @@ CREATE UNIQUE INDEX `contract_token_unique` ON `contract` (`token`);--> statemen
 CREATE INDEX `contract_application_idx` ON `contract` (`application_id`);--> statement-breakpoint
 CREATE INDEX `contract_status_idx` ON `contract` (`status`);--> statement-breakpoint
 CREATE INDEX `contract_candidate_idx` ON `contract` (`candidate_id`);--> statement-breakpoint
+CREATE INDEX `contract_position_idx` ON `contract` (`position_id`);--> statement-breakpoint
 CREATE TABLE `contract_template` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
@@ -45,5 +46,4 @@ CREATE TABLE `contract_template` (
 	FOREIGN KEY (`created_by`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE set null
 );
 --> statement-breakpoint
-CREATE INDEX `contract_template_position_idx` ON `contract_template` (`position_id`);--> statement-breakpoint
-ALTER TABLE `interview_session` ADD `opened_at` integer;
+CREATE INDEX `contract_template_position_idx` ON `contract_template` (`position_id`);
